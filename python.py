@@ -11,7 +11,7 @@ from streamlit_folium import st_folium
 import google.generativeai as genai
 
 # ----------------- CONFIG -----------------
-genai.configure(api_key="REVOKED_CREDENTIAL_REMOVED")  # 🔑 Replace with your Gemini API key
+genai.configure(api_key=".")  # 🔑 Replace with your Gemini API key
 MODEL_NAME = "gemini-1.5-flash"
 EMBED_MODEL = "models/text-embedding-004"
 llm = genai.GenerativeModel(MODEL_NAME)
@@ -121,7 +121,6 @@ def answer_from_data(user_query: str, df: pd.DataFrame):
         if not lat_col or not lon_col:
             return {"type": "text", "content": "⚠️ Dataset has no `latitude` and `longitude` columns."}
 
-        # --- Specific cases like max/min queries ---
         if "max" in user_query.lower() or "min" in user_query.lower() or "with" in user_query.lower():
             retrieved = retrieve_context(user_query, k=5)
             context = "\n".join(retrieved)
@@ -147,16 +146,11 @@ def answer_from_data(user_query: str, df: pd.DataFrame):
                     ).add_to(m)
 
                 return {"type": "map", "content": m._repr_html_()}
-
             else:
                 return {"type": "text", "content": "⚠️ Could not find the specified location. Please try a different query."}
-
-        # --- Default Arabian Sea map (show only 5 floats) ---
         else:
             m = folium.Map(location=[15, 65], zoom_start=4)
             subset = df[(df[lat_col].between(5, 25)) & (df[lon_col].between(55, 75))]
-
-            # sample up to 5 floats
             subset = subset.sample(n=min(5, len(subset)), random_state=42)
 
             for _, row in subset.iterrows():
@@ -189,11 +183,62 @@ def answer_from_data(user_query: str, df: pd.DataFrame):
 # ----------------- STREAMLIT UI -----------------
 st.set_page_config(page_title="FLOATCHAT-OCEAN DATA BOT", page_icon="🌊", layout="wide")
 
+# 🌊 Ocean background animation
+st.markdown("""
+    <style>
+    .stApp {
+        background: transparent !important;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    .ocean {
+      height: 100%;
+      width: 100%;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      background: #015871;
+      z-index: -1;
+    }
+    .wave {
+      background: url("https://raw.githubusercontent.com/mahdikhashan/ocean-wave-animation/main/wave.svg") repeat-x;
+      position: absolute;
+      top: -198px;
+      width: 6400px;
+      height: 200px;
+      animation: wave 7s cubic-bezier(.36,.45,.63,.53) infinite;
+      transform: translate3d(0, 0, 0);
+    }
+    .wave:nth-of-type(2) {
+      top: -175px;
+      animation: wave 10s cubic-bezier(.36,.45,.63,.53) -.125s infinite, swell 10s ease -1.25s infinite;
+      opacity: 0.5;
+    }
+    @keyframes wave {
+      0% { margin-left: 0; }
+      100% { margin-left: -1600px; }
+    }
+    @keyframes swell {
+      0%, 100% { transform: translate3d(0,-25px,0); }
+      50% { transform: translate3d(0,5px,0); }
+    }
+    </style>
+    <div class="ocean">
+      <div class="wave"></div>
+      <div class="wave"></div>
+    </div>
+""", unsafe_allow_html=True)
+
+# ----------------- SIDEBAR -----------------
 with st.sidebar:
     st.title("⚙️ Settings")
     show_code = st.checkbox("Show generated Pandas code", value=True)
     st.info("Tip: Try:\n- 'Show me average temperature by depth'\n- 'Plot salinity vs temperature'\n- 'Show me the location map'\n- 'Give me a map of the float with max salinity'")
 
+# ----------------- MAIN UI -----------------
 st.title("🌊 FLOAT-CHAT")
 st.markdown("Interact with the **Indian Ocean Argo float dataset** using natural language.")
 
@@ -217,7 +262,15 @@ for msg in st.session_state["messages"]:
             st.markdown("**🗺️ Location Map:**")
             st.components.v1.html(msg["content"], height=500)
 
+# ----------------- CHAT INPUT -----------------
 if user_input := st.chat_input("Ask about the ocean dataset..."):
+    # ⚡ Trigger faster splash animation when user sends message
+    st.markdown("""
+        <style>
+        .wave { animation-duration: 3s !important; }
+        </style>
+    """, unsafe_allow_html=True)
+
     st.session_state["messages"].append({"role": "user", "content": user_input, "type": "text"})
     with st.chat_message("user"):
         st.markdown(user_input)
