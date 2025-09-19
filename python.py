@@ -1,23 +1,24 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
-import faiss
-import google.generativeai as genai
 import os
-import pickle
 import re
+import pickle
+import faiss
+import numpy as np
+import pandas as pd
+import streamlit as st
+import matplotlib.pyplot as plt
+import folium
+from streamlit_folium import st_folium
+import google.generativeai as genai
 
 # ----------------- CONFIG -----------------
-genai.configure(api_key="REVOKED_CREDENTIAL_REMOVED")  
+genai.configure(api_key="REVOKED_CREDENTIAL_REMOVED")  # 🔑 Replace with your key
 MODEL_NAME = "gemini-1.5-flash"
 EMBED_MODEL = "models/text-embedding-004"
-
 llm = genai.GenerativeModel(MODEL_NAME)
 
 DATA_PATH = r"C:\Users\anuva\OneDrive\Desktop\argofloat\FloatChat\indian_ocean_profiles_01Jan2025_31Jan2025.parquet"
 INDEX_PATH = "faiss_index.bin"
 DOCS_PATH = "documents.pkl"
-
 
 # ----------------- LOAD DATA -----------------
 @st.cache_data
@@ -26,16 +27,15 @@ def load_data():
 
 df = load_data()
 
-
 # ----------------- BUILD OR LOAD INDEX -----------------
 def build_and_save_index(df: pd.DataFrame, sample_size: int = 200):
     documents = []
 
-    # Schema
+    # Always include schema (all columns)
     schema_text = " | ".join([f"{col}: {str(df[col].dtype)}" for col in df.columns])
     documents.append("COLUMNS: " + schema_text)
 
-    # Sample rows
+    # Add sample rows
     sample_df = df.sample(n=min(sample_size, len(df)), random_state=42)
     for _, row in sample_df.iterrows():
         text = " | ".join([f"{col}: {row[col]}" for col in df.columns])
@@ -63,7 +63,6 @@ def build_and_save_index(df: pd.DataFrame, sample_size: int = 200):
 
     return index, documents
 
-
 @st.cache_resource
 def load_index_and_docs(df):
     if os.path.exists(INDEX_PATH) and os.path.exists(DOCS_PATH):
@@ -74,9 +73,7 @@ def load_index_and_docs(df):
     else:
         return build_and_save_index(df)
 
-
 index, documents = load_index_and_docs(df)
-
 
 # ----------------- RAG PIPELINE -----------------
 def retrieve_context(query: str, k: int = 5):
@@ -85,14 +82,12 @@ def retrieve_context(query: str, k: int = 5):
     distances, indices = index.search(q_emb, k)
     return [documents[i] for i in indices[0]]
 
-
 def clean_code(output: str) -> str:
     """Remove markdown fences + extra text, keep only code."""
     code = output.strip()
     code = re.sub(r"```.*?```", lambda m: m.group(0).replace("```python", "").replace("```", ""), code, flags=re.S)
     code = code.replace("```python", "").replace("```", "")
     return code.strip()
-
 
 def generate_query(user_query: str, context: str):
     prompt = f"""
@@ -111,7 +106,6 @@ Context (schema + sample rows):
     response = llm.generate_content(prompt)
     return clean_code(response.text)
 
-
 def execute_query(code: str, df: pd.DataFrame):
     local_env = {"df": df, "pd": pd, "np": np}
     try:
@@ -119,7 +113,6 @@ def execute_query(code: str, df: pd.DataFrame):
         return eval(code, local_env)
     except SyntaxError:
         try:
-            # Ensure result variable exists if assignment is missing
             if "result" not in code:
                 code = f"result = {code}"
             exec(code, local_env)
@@ -127,22 +120,57 @@ def execute_query(code: str, df: pd.DataFrame):
         except Exception as e:
             return f"⚠️ Error running query: {e}"
 
-
 def answer_from_data(user_query: str, df: pd.DataFrame):
+    # ----------------- Special case: MAP -----------------
+    if "map" in user_query.lower() or "location" in user_query.lower():
+        if "latitude" in df.columns and "longitude" in df.columns:
+            st.markdown("**🗺️ Location Map of Floats in the Arabian Sea**")
+            m = folium.Map(location=[15, 65], zoom_start=4)
+
+            # Filter Arabian Sea region (approx lat 5–25, lon 55–75)
+            subset = df[(df["latitude"].between(5, 25)) & (df["longitude"].between(55, 75))]
+
+            for _, row in subset.iterrows():
+                folium.CircleMarker(
+                    location=[row["latitude"], row["longitude"]],
+                    radius=3,
+                    color="blue",
+                    fill=True,
+                    fill_opacity=0.7,
+                    popup=f"Profile ID: {row.get('profile_id', 'N/A')}"
+                ).add_to(m)
+
+            st_folium(m, width=700, height=500)
+            return "✅ Plotted Arabian Sea float locations on map."
+        else:
+            return "⚠️ Dataset has no `latitude` and `longitude` columns."
+
+    # ----------------- Normal RAG flow -----------------
     retrieved = retrieve_context(user_query, k=5)
     context = "\n".join(retrieved)
-
     query_code = generate_query(user_query, context)
     result = execute_query(query_code, df)
 
     return query_code, result
 
-
 # ----------------- STREAMLIT UI -----------------
-st.set_page_config(page_title="FLOATCHAT-OCEAN DATA BOT", page_icon="🌊", layout="wide")
-st.title("🌊 FLOAT-CHAT")
-st.markdown("Chat with the Indian Ocean Argo float dataset (Jan 2025).")
+st.set_page_config(
+    page_title="FLOATCHAT-OCEAN DATA BOT",
+    page_icon="🌊",
+    layout="wide"
+)
 
+# Sidebar
+with st.sidebar:
+    st.title("⚙️ Settings")
+    show_code = st.checkbox("Show generated Pandas code", value=True)
+    st.info("Tip: Try:\n- 'Show me average temperature by depth'\n- 'Plot salinity vs temperature'\n- 'Show me the location map'")
+
+# Header
+st.title("🌊 FLOAT-CHAT")
+st.markdown("Interact with the **Indian Ocean Argo float dataset** using natural language.")
+
+# Chat history
 if "messages" not in st.session_state:
     st.session_state["messages"] = []
 
@@ -150,22 +178,43 @@ for msg in st.session_state["messages"]:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
+# User input
 if user_input := st.chat_input("Ask about the ocean dataset..."):
     st.session_state["messages"].append({"role": "user", "content": user_input})
     with st.chat_message("user"):
         st.markdown(user_input)
 
     with st.chat_message("assistant"):
-        with st.spinner("Analyzing data..."):
-            query_code, result = answer_from_data(user_input, df)
+        with st.spinner("🔎 Analyzing data..."):
+            result = answer_from_data(user_input, df)
 
-            st.markdown("**🔎 Generated Pandas Query:**")
-            st.code(query_code, language="python")
-
-            st.markdown("**📊 Result:**")
-            if isinstance(result, (pd.DataFrame, pd.Series)):
-                st.dataframe(result)
-            else:
+            # If map handler → result is just a string
+            if isinstance(result, str) and "map" in result.lower():
                 st.write(result)
+            else:
+                try:
+                    query_code, output = result
+                except:
+                    query_code, output = None, result
+
+                if show_code and query_code:
+                    st.markdown("**📝 Generated Pandas Query:**")
+                    st.code(query_code, language="python")
+
+                if isinstance(output, (pd.DataFrame, pd.Series)):
+                    st.markdown("**📊 Result:**")
+                    st.dataframe(output)
+                elif "plot" in user_input.lower() or "graph" in user_input.lower():
+                    try:
+                        st.markdown("**📈 Generated Plot:**")
+                        fig, ax = plt.subplots(figsize=(6, 4))
+                        exec(query_code, {"df": df, "pd": pd, "np": np, "plt": plt, "ax": ax})
+                        st.pyplot(fig)
+                    except Exception as e:
+                        st.error(f"⚠️ Could not generate plot: {e}")
+                        st.write(output)
+                else:
+                    st.markdown("**📊 Result:**")
+                    st.write(output)
 
     st.session_state["messages"].append({"role": "assistant", "content": str(result)})
