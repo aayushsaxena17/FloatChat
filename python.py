@@ -11,7 +11,7 @@ from streamlit_folium import st_folium
 import google.generativeai as genai
 
 # ----------------- CONFIG -----------------
-genai.configure(api_key=".")  # 🔑 Replace with your Gemini API key
+genai.configure(api_key="YOUR_API_KEY")  # 🔑 Replace with your Gemini API key
 MODEL_NAME = "gemini-1.5-flash"
 EMBED_MODEL = "models/text-embedding-004"
 llm = genai.GenerativeModel(MODEL_NAME)
@@ -183,53 +183,48 @@ def answer_from_data(user_query: str, df: pd.DataFrame):
 # ----------------- STREAMLIT UI -----------------
 st.set_page_config(page_title="FLOATCHAT-OCEAN DATA BOT", page_icon="🌊", layout="wide")
 
-# 🌊 Ocean background animation
-st.markdown("""
+# ----------------- BACKGROUND VIDEO & OVERLAY -----------------
+# Use a reliable ocean MP4. If you want a different one, replace this URL with another MP4 link.
+video_src = "https://cdn.coverr.co/videos/coverr-waves-crashing-on-rocks-7547/1080p.mp4"
+
+st.markdown(f"""
     <style>
-    .stApp {
-        background: transparent !important;
-    }
-    body {
-      margin: 0;
-      padding: 0;
-      overflow-x: hidden;
-    }
-    .ocean {
-      height: 100%;
-      width: 100%;
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      background: #015871;
-      z-index: -1;
-    }
-    .wave {
-      background: url("https://raw.githubusercontent.com/mahdikhashan/ocean-wave-animation/main/wave.svg") repeat-x;
-      position: absolute;
-      top: -198px;
-      width: 6400px;
-      height: 200px;
-      animation: wave 7s cubic-bezier(.36,.45,.63,.53) infinite;
-      transform: translate3d(0, 0, 0);
-    }
-    .wave:nth-of-type(2) {
-      top: -175px;
-      animation: wave 10s cubic-bezier(.36,.45,.63,.53) -.125s infinite, swell 10s ease -1.25s infinite;
-      opacity: 0.5;
-    }
-    @keyframes wave {
-      0% { margin-left: 0; }
-      100% { margin-left: -1600px; }
-    }
-    @keyframes swell {
-      0%, 100% { transform: translate3d(0,-25px,0); }
-      50% { transform: translate3d(0,5px,0); }
-    }
+    /* make app background transparent so video shows through */
+    .stApp {{
+        background: none !important;
+    }}
+    /* full-screen ocean video (behind content) */
+    video#bgvid {{
+        position: fixed;
+        right: 0;
+        bottom: 0;
+        min-width: 100%;
+        min-height: 100%;
+        width: auto;
+        height: auto;
+        z-index: -2;
+        object-fit: cover;
+        filter: brightness(0.6); /* slightly dim the video */
+    }}
+    /* dark overlay between video and UI to keep text readable */
+    .bg-overlay {{
+        position: fixed;
+        right: 0;
+        bottom: 0;
+        min-width: 100%;
+        min-height: 100%;
+        z-index: -1;
+        background: rgba(0, 10, 20, 0.45);
+        pointer-events: none;
+    }}
+    /* ensure sidebar and main content remain above overlay */
+    .css-1lcbmhc {{ z-index: 1; }} /* Streamlit main container (class may vary between Streamlit versions) */
     </style>
-    <div class="ocean">
-      <div class="wave"></div>
-      <div class="wave"></div>
-    </div>
+
+    <video autoplay muted loop id="bgvid">
+        <source src="{video_src}" type="video/mp4">
+    </video>
+    <div class="bg-overlay"></div>
 """, unsafe_allow_html=True)
 
 # ----------------- SIDEBAR -----------------
@@ -264,13 +259,6 @@ for msg in st.session_state["messages"]:
 
 # ----------------- CHAT INPUT -----------------
 if user_input := st.chat_input("Ask about the ocean dataset..."):
-    # ⚡ Trigger faster splash animation when user sends message
-    st.markdown("""
-        <style>
-        .wave { animation-duration: 3s !important; }
-        </style>
-    """, unsafe_allow_html=True)
-
     st.session_state["messages"].append({"role": "user", "content": user_input, "type": "text"})
     with st.chat_message("user"):
         st.markdown(user_input)
