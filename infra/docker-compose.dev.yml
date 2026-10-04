@@ -1,0 +1,108 @@
+name: ${COMPOSE_PROJECT_NAME:-floatchat-dev}
+
+x-app-environment: &app-environment
+  DATABASE_URL: ${DATABASE_URL:?Run scripts/dev.py dev to initialize local configuration}
+  REDIS_URL: ${REDIS_URL:?Local broker URL required}
+  OBJECT_STORAGE_ENDPOINT: ${OBJECT_STORAGE_ENDPOINT:?Local storage URL required}
+  OBJECT_STORAGE_ACCESS_KEY: ${OBJECT_STORAGE_ACCESS_KEY:?Local application key required}
+  OBJECT_STORAGE_SECRET_KEY: ${OBJECT_STORAGE_SECRET_KEY:?Local application credential required}
+  OBJECT_STORAGE_BUCKET: ${OBJECT_STORAGE_BUCKET:-floatchat-dev}
+  OBJECT_STORAGE_REGION: ${OBJECT_STORAGE_REGION:-us-east-1}
+
+services:
+  db:
+    build: { context: .., dockerfile: infra/docker/postgres.Dockerfile, target: runtime }
+    environment:
+      POSTGRES_USER: floatchat_admin
+      POSTGRES_PASSWORD: ${DB_ADMIN_PASSWORD:?Local admin credential required}
+      POSTGRES_DB: floatchat
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U floatchat_admin -d floatchat"]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+  redis:
+    image: library/redis:7.4.2-alpine@sha256:02419de7eddf55aa5bcf49efb74e88fa8d931b4d77c07eff8a6b2144472b6952
+    command: [redis-server, --appendonly, "yes"]
+    volumes: [redis_data:/data]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  minio:
+    build: { context: .., dockerfile: infra/docker/minio.Dockerfile, target: runtime }
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Local admin user required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Local admin credential required}
+      MINIO_BROWSER: "off"
+    volumes: [minio_data:/data]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9000/minio/health/ready', timeout=2)"]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+  db-init:
+    build: { context: .., dockerfile: infra/docker/api.Dockerfile, target: runtime }
+    environment:
+      DATABASE_ADMIN_URL: ${DATABASE_ADMIN_URL:?Local migration role required}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:?Local application credential required}
+    command: [python, scripts/bootstrap_db.py]
+    depends_on:
+      db: { condition: service_healthy }
+    restart: "no"
+  storage-init:
+    build: { context: .., dockerfile: infra/docker/minio.Dockerfile, target: runtime }
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Local admin user required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Local admin credential required}
+      OBJECT_STORAGE_ENDPOINT: ${OBJECT_STORAGE_ENDPOINT:?Local endpoint required}
+      OBJECT_STORAGE_ACCESS_KEY: ${OBJECT_STORAGE_ACCESS_KEY:?Local application key required}
+      OBJECT_STORAGE_SECRET_KEY: ${OBJECT_STORAGE_SECRET_KEY:?Local application credential required}
+      OBJECT_STORAGE_BUCKET: ${OBJECT_STORAGE_BUCKET:-floatchat-dev}
+    command: [python, /bootstrap_storage.py]
+    depends_on:
+      minio: { condition: service_healthy }
+    restart: "no"
+  api:
+    build: { context: .., dockerfile: infra/docker/api.Dockerfile, target: runtime }
+    environment: *app-environment
+    ports: ["127.0.0.1:${API_PORT:-8000}:8000"]
+    depends_on:
+      db-init: { condition: service_completed_successfully }
+      storage-init: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/v1/health/ready', timeout=5)"]
+      interval: 2s
+      timeout: 6s
+      retries: 30
+  worker:
+    build: { context: .., dockerfile: infra/docker/api.Dockerfile, target: runtime }
+    environment: *app-environment
+    command: [celery, -A, floatchat_workers.app:app, worker, --loglevel=WARNING, --concurrency=1, --hostname=worker@floatchat]
+    depends_on:
+      api: { condition: service_healthy }
+    healthcheck:
+      test: [CMD, celery, -A, floatchat_workers.app:app, inspect, ping, --destination=worker@floatchat, --timeout=3]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  web:
+    build: { context: .., dockerfile: infra/docker/web.Dockerfile, target: development }
+    environment:
+      API_PROXY_TARGET: ${API_PROXY_TARGET:-http://api:8000}
+    ports: ["127.0.0.1:${WEB_PORT:-5173}:5173"]
+    depends_on:
+      api: { condition: service_healthy }
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:5173').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:

@@ -1,0 +1,8 @@
+title = "FloatChat Stage 0"
+[extend]
+useDefault = true
+
+# Only generated dependency/tool material; never exempt Prototype, legacy, fixtures, or .env.
+[[allowlists]]
+description = "Generated dependencies and tool caches"
+paths = ['''(^|/)(\.cache|\.venv|node_modules|__pycache__)/''']

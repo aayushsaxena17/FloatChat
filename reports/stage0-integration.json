@@ -1,0 +1,32 @@
+{
+  "project": "floatchat-stage0-test-23fe249d1c46",
+  "complete": true,
+  "checks": [
+    {
+      "check": "empty-volume-startup",
+      "seconds": 26.062000000005355
+    },
+    {
+      "check": "db-outage-recovery",
+      "passed": true
+    },
+    {
+      "check": "redis-outage-recovery",
+      "passed": true
+    },
+    {
+      "check": "minio-outage-recovery",
+      "passed": true
+    },
+    {
+      "check": "repeat-startup-persistence",
+      "seconds": 14.672000000005937
+    },
+    {
+      "check": "worker-storage-migrations-browser",
+      "passed": true
+    }
+  ],
+  "volumes": "preserved",
+  "private_configuration": "C:\\Users\\aayus\\AppData\\Local\\FloatChat\\integration\\floatchat-stage0-test-23fe249d1c46"
+}

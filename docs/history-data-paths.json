@@ -1,0 +1,15 @@
+{
+  "inventory_only_not_removal_approval": true,
+  "paths": [
+    "indian_ocean_profiles_01Apr2025_30Apr2025.parquet",
+    "indian_ocean_profiles_01Aug2025_31Aug2025.parquet",
+    "indian_ocean_profiles_01Feb2025_28Feb2025.parquet",
+    "indian_ocean_profiles_01Feb2025_31Feb2025.parquet",
+    "indian_ocean_profiles_01Jan2025_31Jan2025.parquet",
+    "indian_ocean_profiles_01Jly2025_31Jly2025.parquet",
+    "indian_ocean_profiles_01Jun2025_30Jun2025.parquet",
+    "indian_ocean_profiles_01Mar2025_31Mar2025.parquet",
+    "indian_ocean_profiles_01May2025_31May2025.parquet",
+    "indian_ocean_profiles_01Sep2025_19Sep2025.parquet"
+  ]
+}

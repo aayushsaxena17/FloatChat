@@ -1,0 +1,41 @@
+[project]
+name = "floatchat-workspace"
+version = "0.0.0"
+requires-python = ">=3.12,<3.13"
+dependencies = []
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["apps/api", "workers", "packages/core"]
+
+[dependency-groups]
+dev = [
+  "ruff==0.15.6", "mypy==1.19.1", "pytest==9.0.2",
+  "pytest-asyncio==1.3.0", "httpx==0.28.1", "pyarrow==23.0.1",
+  "pyyaml==6.0.3", "types-PyYAML==6.0.12.20250915", "pre-commit==4.5.1",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = ["legacy", "Prototype", ".cache", "pytest-cache-files-*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+files = ["packages/core/src", "apps/api/src", "workers/src"]
+
+[[tool.mypy.overrides]]
+module = ["celery.*", "boto3.*", "botocore.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = ["integration: requires local Docker services"]
