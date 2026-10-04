@@ -47,3 +47,7 @@ Install Ubuntu 24.04 in WSL2 and verify the documented Make commands from a sepa
 ## ADR-0012 — Scan the committing repository's index
 
 The scanner originally defaulted to the script's repository. A hook invoked in a separate repository therefore scanned the wrong index; the original dirty index concealed that defect by containing an unrelated known leak. Default the scan source to the caller's working directory, retain explicit `--source` for isolated scans, and verify rejection with the script's checkout clean. The disposable hook test exercises an actual Git commit and must fail because of that disposable repository's synthetic finding.
+
+## ADR-0013 — Portable test invocation and preserved document formatting
+
+Invoke tests through `python -m pytest` in Make and CI so the workspace root is on Python's import path. The standalone pytest launcher on Linux otherwise failed to import the root scripts package. Preserve the original PRD's Markdown hard breaks and archived prototype whitespace; their attributes exempt only those whitespace checks, never secret scanning.

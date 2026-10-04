@@ -12,7 +12,7 @@ setup:
 	pnpm install --frozen-lockfile
 	uv run --all-packages --frozen pre-commit install
 test:
-	uv run --all-packages --frozen pytest -m 'not integration'
+	uv run --all-packages --frozen python -m pytest -m 'not integration'
 	pnpm test
 integration:
 	uv run --all-packages --frozen python -m scripts.integration

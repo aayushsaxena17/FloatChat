@@ -15,7 +15,7 @@ jobs:
       - run: uv run --all-packages --frozen ruff check .
       - run: uv run --all-packages --frozen ruff format --check .
       - run: uv run --all-packages --frozen mypy
-      - run: uv run --all-packages --frozen pytest -m 'not integration'
+      - run: uv run --all-packages --frozen python -m pytest -m 'not integration'
   web:
     name: web
     runs-on: ubuntu-24.04
