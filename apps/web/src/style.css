@@ -1,0 +1,37 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #123646;
+  background: #f4f9fa;
+}
+body {
+  margin: 0;
+}
+main {
+  max-width: 850px;
+  margin: 12vh auto;
+  padding: 24px;
+}
+.eyebrow {
+  letter-spacing: 0.22em;
+  font-weight: 700;
+  color: #087b83;
+}
+h1 {
+  font-size: clamp(2.4rem, 5vw, 4rem);
+  line-height: 1.08;
+}
+p {
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+.construction {
+  display: inline-block;
+  background: #dfedef;
+  padding: 8px 16px;
+  border-radius: 8px;
+}
+footer {
+  margin-top: 80px;
+  font-size: 0.85rem;
+  color: #46616c;
+}

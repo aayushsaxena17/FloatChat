@@ -1,0 +1,25 @@
+.env
+.env.*
+!.env.example
+.venv/
+.cache/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+pytest-cache-files-*/
+.ruff_cache/
+.mypy_cache/
+node_modules/
+dist/
+coverage/
+test-results/
+playwright-report/
+desktop.ini
+*.parquet
+!tests/fixtures/*.parquet
+# Original preserved material is not part of the foundation package.
+/Prototype/
+# Remediation evidence must also remain outside this repository.
+*gitleaks-report*
+*secret-mapping*
+commit-map

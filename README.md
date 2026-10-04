@@ -1,147 +1,113 @@
-# 🌊 FloatChat - AI-Powered Conversational Interface for ARGO Ocean Data Discovery and Visualization
+# FloatChat
 
-## 🚀 Project Overview
+FloatChat is a research workspace for exploring Argo ocean observations through a conversational interface. This repository is being rebuilt from a hackathon prototype into a Python/React monorepo. Stage 0 provides local infrastructure and a tested scaffold; scientific ingestion, query features, and LLM integration belong to later stages.
 
-**FloatChat** is an advanced AI-powered conversational system designed to simplify access to and exploration of oceanographic data, specifically focusing on ARGO float data. The system empowers users—ranging from domain experts to decision-makers and non-technical personnel—to query, analyze, and visualize ocean data using simple natural language queries, without needing deep technical expertise or familiarity with complex data formats.
+**Status: under construction. Stage 0 final verification in progress. Stage 1 is blocked.**
 
----
+## Local development
 
-## 🌐 Background
+Required cloud infrastructure cost: **zero**. PostgreSQL/PostGIS/pgvector, Redis, MinIO, FastAPI, Celery, and React/Vite run locally in Docker. Startup and tests require no LLM calls, Argovis access, production credentials, or cloud services.
 
-Oceanographic data is vast, complex, and highly heterogeneous. It includes a wide variety of sources such as:
-- **Satellite observations**
-- **In-situ measurements** (like CTD casts, Argo floats, and BGC sensors)
+The supported development environment is WSL2 Ubuntu 24.04 with Docker Desktop's Linux engine and WSL integration. Docker/WSL installation is owner-managed. Use a separate checkout on the WSL Linux filesystem; do not move or rewrite the preserved dirty Windows checkout. Docker acceptance has passed using the native Windows Python driver and Docker's Linux engine. The separate Ubuntu checkout and exact Make entry points remain unverified.
 
-Among these, the **Argo Program** is a global initiative that deploys autonomous profiling floats across the world’s oceans. These floats collect essential ocean variables such as:
-- Temperature
-- Salinity
-- Bio-Geo-Chemical (BGC) parameters
+Prerequisites: Git, GNU Make, Python 3.12.12, uv 0.10.4, Node 24.15.0, pnpm 10.33.0, Docker Desktop with Compose v2 supporting `--wait` and successful initialization dependencies. Container bases are pinned by digest in `infra/images.json`; upstream source archives are checksum-pinned. The MinIO server/client build from source and require no account or license purchase. First builds download public dependencies and can take up to 20 minutes; service startup is measured separately.
 
-Data from these floats is stored in **NetCDF format**—a complex, multidimensional data structure used widely in scientific data analysis.
+From the repository root in WSL:
 
-However, accessing, querying, and visualizing this data traditionally requires:
-- Domain knowledge
-- Technical expertise
-- Proficiency in tools like Python, NetCDF libraries, SQL databases, and GIS tools
+```bash
+python3 scripts/security/install_gitleaks.py
+make setup
+pnpm --filter @floatchat/web exec playwright install --with-deps chromium
+make dev
+```
 
-The goal of FloatChat is to **democratize access** to ARGO data by building an intuitive, interactive AI system that removes these barriers.
+Open http://127.0.0.1:5173. API health endpoints are http://127.0.0.1:8000/v1/health/live and http://127.0.0.1:8000/v1/health/ready.
 
----
+The existing Windows checkout can also start its already-installed environment from PowerShell:
 
-## 🎯 Problem Statement
+```powershell
+.\.venv\Scripts\python.exe -m scripts.dev dev
+```
 
-The challenge is to develop a system that enables users to interact with ARGO ocean data via **natural language queries** and gain insights through visual and tabular summaries.
+The driver detects Docker Desktop's per-user installation when it is not yet on the shell PATH. It adjusts only its own process environment.
 
-### Key Objectives:
-- Ingest and convert ARGO NetCDF files into structured formats like **SQL** or **Parquet** for easier querying.
-- Store metadata and data summaries in a **vector database** (e.g., FAISS or Chroma) to facilitate efficient retrieval.
-- Use advanced **Retrieval-Augmented Generation (RAG)** techniques combined with **multimodal Large Language Models (LLMs)** such as GPT, QWEN, LLaMA, or Mistral, to translate user questions into database queries.
-- Provide an interactive **dashboard interface** to visualize ARGO float data (e.g., mapped trajectories, depth-time plots).
-- Implement a **chatbot interface** where users can simply ask questions like:
-    - “Show me salinity profiles near the equator in March 2023”
-    - “Compare BGC parameters in the Arabian Sea for the last 6 months”
-    - “What are the nearest ARGO floats to this location?”
+`make dev` creates missing development configuration in an access-restricted directory **outside the checkout**, runs ordered migrations and private bucket/application-policy initialization, and waits for health. Linux defaults to `~/.local/state/FloatChat/development`; Windows tooling defaults to `%LOCALAPPDATA%/FloatChat/development`. Set `FLOATCHAT_CONFIG_DIR` to another protected, non-synced directory. Existing configuration is never overwritten. `.env.example` documents every application variable. Edit the generated `.env` to configure `DATABASE_URL`, `REDIS_URL`, and object-storage settings; defaults point to local containers. Do not place administrative credentials in the API, worker, or browser configuration.
 
----
+```bash
+make test
+make lint
+make typecheck
+make integration
+make secrets-current
+make secrets-history
+make stop
+```
 
-## ⚡ Expected Solution Architecture
+`make stop` preserves volumes. `make restart` restarts application services. There is no ordinary reset/volume-deletion command. Integration uses a unique project and unused loopback ports, stops that project afterward, and retains its volumes. It never interrupts the normal development project. Restricted configuration and diagnostic logs are retained outside Git alongside those volumes. The reports identify retained test projects for later owner-controlled cleanup.
 
-### 1. **Data Ingestion and Processing**
-- Convert raw **ARGO NetCDF files** into structured formats:
-    - **Relational Database** (PostgreSQL) for structured storage of profiles, measurements, timestamps, and metadata.
-    - **Parquet Files** for efficient columnar storage and faster data access.
-- Extract and summarize metadata for fast lookup and retrieval.
+Empty-volume startup must finish within 300 seconds after builds; subsequent startup must finish within 120 seconds. Readiness returns a sanitized `503` within five seconds when a required dependency is unavailable. Liveness remains `200` while the API process runs. Database and Redis have no published ports; API and web bind to loopback only. The application bucket is private.
 
-### 2. **Vector Database**
-- Store metadata summaries and vector embeddings of data chunks in a **FAISS or Chroma vector database**.
-- Enable semantic search and similarity-based retrieval of relevant data points.
+## Security gate
 
-### 3. **LLM-Based Natural Language Interface**
-- Implement a **Retrieval-Augmented Generation (RAG)** pipeline.
-    - User natural language input → Semantic search in vector DB → Relevant context retrieved → LLM generates SQL query and/or formatted answer.
-    - Use the **Model Context Protocol (MCP)** for structured and scalable interaction between the backend and LLM.
-- Example Query Flow:
-    1. User types: “Show me salinity profiles near the equator in March 2023”
-    2. The system converts this into SQL:
-        ```sql
-        SELECT * FROM argo_data WHERE region = 'Equator' AND month = 'March' AND year = 2023;
-        ```
-    3. Data is retrieved and visualized.
+Current-file scanning, staged-index scanning, and full reachable-history scanning are separate. The hook scans the actual Git index, not just working copies. Generated dependencies are excluded; prototype, legacy code, fixtures, and local configuration are not exempt from source scanning. All displayed finding values are fully redacted. Scanner reports and replacement mappings must remain outside Git, build contexts, shared logs, and CI artifacts.
 
-### 4. **Interactive Visualization Dashboard**
-- Built using tools like **Streamlit** or **Dash**.
-- Visualizations include:
-    - **Mapped Float Trajectories**: Interactive maps showing float movements.
-    - **Depth-Time Plots**: Time series of measurements at different depths.
-    - **Parameter Comparisons**: Side-by-side comparison of temperature, salinity, BGC parameters.
-    - **Profile Comparisons** and more.
-- Export options: CSV, ASCII, NetCDF formats.
+Seven affected remote branches have been sanitized and published using a tested isolated rewrite. The preserved original Windows checkout and backups still contain contaminated historical objects and must never be pushed. See [remediation preparation](docs/history-remediation.md), [execution contract](docs/stage0-contract.md), and [gate report](docs/stage0-gate.md). Local scanner success is evidence for the recorded rules/ref scope; it is not a universal guarantee that every secret has been found.
 
-### 5. **Chatbot Interface**
-- Conversational interface where users can ask questions in natural language.
-- The chatbot provides:
-    - Direct answers
-    - Links to visualizations
-    - Suggested queries and guidance for exploration.
+GitHub workflows define the required Stage 0 checks; their executed results are recorded in the gate report. They use no production services. Required check names are `python`, `web`, `docker`, `integration`, `secrets-current`, and `secrets-history`. The owner must configure merge protection and verify successful execution. CI must remain within a free entitlement; do not enable billable runners or paid services. The checks run against sanitized history. Old-clone recovery instructions are in the remediation document.
 
----
+## Prototype fixture and attribution
 
-## ⚙️ Technologies Used
+`tests/fixtures/profiles.parquet` contains the first 128 physical rows of the preserved January 2025 prototype snapshot. Its manifest records schema, sampling, source checksum, output checksum, byte count, and attribution. It is less than 1,000,000 bytes. Retrieval time and a monthly GDAC snapshot identifier were not recorded by the prototype and are not invented.
 
-| Layer | Technologies |
-|-------|------------|
-| Data Ingestion | Python, netCDF4, Pandas, Pyarrow (Parquet format) |
-| Database | PostgreSQL (Relational), FAISS/Chroma (Vector DB) |
-| AI Model | GPT / QWEN / LLaMA / Mistral (via MCP protocol) |
-| Retrieval | RAG Pipeline |
-| Frontend | Streamlit / Dash |
-| Visualization | Plotly, Leaflet, Cesium |
-| Deployment | Docker, Streamlit sharing, Flask API backend |
+```bash
+uv run --all-packages --frozen python scripts/sample_fixture.py /path/to/preserved/prototype.parquet
+```
 
----
+The optional `scripts/refetch_prototype.py` downloads an owner-provided HTTPS snapshot with a required checksum, byte bound, timeout, and atomic publication. It does not implement an Argovis adapter. A durable approved source URL is pending; normal startup and tests use the committed fixture. Production ingestion starts in Stage 1.
 
-## ✅ Proof of Concept (PoC)
+Argo data are provided freely by the International Argo Program and participating national programs, within the Global Ocean Observing System. Dataset: Argo (2000), *Argo float data and metadata from Global Data Assembly Centre (Argo GDAC)*, SEANOE, [DOI 10.17882/42182](https://doi.org/10.17882/42182). Follow the [Argo acknowledgement guidance](https://argo.ucsd.edu/data/acknowledging-argo/).
 
-The system will demonstrate the following use cases:
-1. Ingest sample Indian Ocean ARGO float data.
-2. Interactive chatbot that successfully interprets natural language queries.
-3. Visual dashboards for:
-    - Mapping ARGO float trajectories
-    - Depth vs Time parameter plots
-    - Comparing BGC data across regions and timeframes
-4. Export of queried datasets in tabular and NetCDF formats.
-5. Extensibility designed to incorporate:
-    - BGC floats
-    - Gliders
-    - Buoy data
-    - Satellite data
+Prototype access used Argovis. Reference: Tucker, Giglio, Scanderbeg, and Shen (2020), *Argovis: A Web Application for Fast Delivery, Visualization, and Analysis of Argo Data*, [DOI 10.1175/JTECH-D-19-0041.1](https://doi.org/10.1175/JTECH-D-19-0041.1).
 
----
+## Target architecture
 
-## 🎯 Future Scope
+The following PRD Â§4 diagram is the **target architecture**, not a statement of implemented features.
 
-- Support for multimodal data (images, charts).
-- Integration with real-time ARGO float data updates.
-- Advanced alerting system for anomaly detection.
-- Multilingual support for queries.
+```mermaid
+flowchart TB
+    U[Researcher browser] --> CDN[CDN / static hosting]
+    CDN --> FE[React + TypeScript application]
+    FE -->|HTTPS REST| API[FastAPI API]
+    FE -->|SSE progress/streaming| API
 
----
+    IDP[OIDC identity provider] --> FE
+    API -->|Validate token| IDP
 
-## 📚 Acronyms
+    API --> ORCH[Query orchestrator]
+    ORCH --> PLAN[Intent and query-plan service]
+    PLAN --> RAG[Metadata retrieval / pgvector]
+    PLAN --> LLM[LLM provider adapter]
+    ORCH --> PG[(PostgreSQL + PostGIS + pgvector)]
+    ORCH --> QUEUE[Celery queue / Redis]
 
-| Acronym | Meaning |
-|---------|---------|
-| NetCDF | Network Common Data Format |
-| CTD | Conductivity Temperature and Depth |
-| BGC | Bio-Geo-Chemical floats |
-| RAG | Retrieval-Augmented Generation |
-| MCP | Model Context Protocol |
+    QUEUE --> IW[Ingestion workers]
+    QUEUE --> AW[Analysis and export workers]
+    QUEUE --> FW[Forecast workers]
 
----
+    IW --> SRC[Argovis / GDAC / ERDDAP adapters]
+    IW --> OBJ[(Object storage)]
+    IW --> PG
+    AW --> DUCK[DuckDB]
+    DUCK --> OBJ
+    AW --> OBJ
+    FW --> PG
+    FW --> OBJ
 
-## 👥 Organization
+    API --> OBJ
+    OBJ -->|Short-lived signed download| U
 
-**Ministry of Earth Sciences (MoES)**  
-**Department:** Indian National Centre for Ocean Information Services (INCOIS)
-
----
+    API --> OTEL[OpenTelemetry collector]
+    IW --> OTEL
+    AW --> OTEL
+    FW --> OTEL
+```

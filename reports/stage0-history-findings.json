@@ -1,0 +1,69 @@
+{
+  "count": 8,
+  "findings": [
+    {
+      "id": "REMOTE-001",
+      "type": "gcp-api-key",
+      "commit": "40c7d737b5e6929a0f4d5f7320a460231e80bba0",
+      "path": "python.py",
+      "line": 15,
+      "value": "[REDACTED]"
+    },
+    {
+      "id": "REMOTE-002",
+      "type": "gcp-api-key",
+      "commit": "ef16b21f4a42ecabac1a8fcf8e98452b69843419",
+      "path": "python.py",
+      "line": 15,
+      "value": "[REDACTED]"
+    },
+    {
+      "id": "REMOTE-003",
+      "type": "gcp-api-key",
+      "commit": "723fc802bc56b392b890079014d0903bb097ff0d",
+      "path": "python.py",
+      "line": 14,
+      "value": "[REDACTED]"
+    },
+    {
+      "id": "REMOTE-004",
+      "type": "gcp-api-key",
+      "commit": "65982ad427aff934cb14bce185f62e44bdfc8568",
+      "path": "python.py",
+      "line": 14,
+      "value": "[REDACTED]"
+    },
+    {
+      "id": "REMOTE-005",
+      "type": "gcp-api-key",
+      "commit": "e931d184a217fc3f22e3a123ff7ea6ceb513db6b",
+      "path": "enhanced_ai_floatchat.py",
+      "line": 17,
+      "value": "[REDACTED]"
+    },
+    {
+      "id": "REMOTE-006",
+      "type": "gcp-api-key",
+      "commit": "dc139a2512be8b9bc99dca105612e2e0a4908f77",
+      "path": "python.py",
+      "line": 14,
+      "value": "[REDACTED]"
+    },
+    {
+      "id": "REMOTE-007",
+      "type": "gcp-api-key",
+      "commit": "63ebb0f660308e4547782aed07046cc0fde7cee0",
+      "path": "python.py",
+      "line": 11,
+      "value": "[REDACTED]"
+    },
+    {
+      "id": "REMOTE-008",
+      "type": "gcp-api-key",
+      "commit": "5232edddf1e56754ea038e89161da9746cc88593",
+      "path": "python.py",
+      "line": 5,
+      "value": "[REDACTED]"
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "source": "indian_ocean_profiles_01Jan2025_31Jan2025.parquet",
+  "source_sha256": "2abf05ec52b2cbbbbd29eeabdbffa02394c21bd78a6562579c4c2c9ea31955ac",
+  "source_rows": 1054757,
+  "selection": "First 128 physical rows of the first row group, original order",
+  "rows": 128,
+  "bytes": 5617,
+  "sha256": "4b210995462f91a2ce7e88878c8175ffa5734ccaac412e0d47c452976a5737f7",
+  "schema": [
+    {
+      "name": "platform_number",
+      "type": "string"
+    },
+    {
+      "name": "date",
+      "type": "timestamp[ns, tz=UTC]"
+    },
+    {
+      "name": "date_qc",
+      "type": "int64"
+    },
+    {
+      "name": "cycle_number",
+      "type": "int64"
+    },
+    {
+      "name": "direction",
+      "type": "string"
+    },
+    {
+      "name": "position_qc",
+      "type": "int64"
+    },
+    {
+      "name": "lon",
+      "type": "double"
+    },
+    {
+      "name": "lat",
+      "type": "double"
+    },
+    {
+      "name": "temp",
+      "type": "double"
+    },
+    {
+      "name": "psal",
+      "type": "double"
+    },
+    {
+      "name": "pres",
+      "type": "double"
+    }
+  ],
+  "writer": "pyarrow 23.0.1; parquet 2.6; zstd; no pandas metadata",
+  "attribution": "Argo GDAC, DOI 10.17882/42182; access service Argovis",
+  "retrieval_time": "Not recorded by the prototype; not inferred"
+}

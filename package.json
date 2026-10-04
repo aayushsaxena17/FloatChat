@@ -1,0 +1,15 @@
+{
+  "name": "floatchat",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": "24.15.0"
+  },
+  "scripts": {
+    "lint": "pnpm --filter @floatchat/web lint",
+    "typecheck": "pnpm --filter @floatchat/web typecheck",
+    "test": "pnpm --filter @floatchat/web test",
+    "build": "pnpm --filter @floatchat/web build",
+    "format:check": "pnpm --filter @floatchat/web format:check"
+  }
+}

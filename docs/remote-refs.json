@@ -1,0 +1,63 @@
+{
+  "scope": "All advertised heads/tags fetched into isolated mirror; seven heads, no tags",
+  "before": [
+    {
+      "id": "23d8222642a65cce717a8d2fa1e8126fcbbbea03",
+      "ref": "refs/heads/Ankita"
+    },
+    {
+      "id": "bde4d2a3f9c18de93d231621a0c183de43ed0a71",
+      "ref": "refs/heads/Piyush"
+    },
+    {
+      "id": "b411962c2891cf2238fb1e490e56a8531dcf28dd",
+      "ref": "refs/heads/anuvansh"
+    },
+    {
+      "id": "40c7d737b5e6929a0f4d5f7320a460231e80bba0",
+      "ref": "refs/heads/anuvansh2"
+    },
+    {
+      "id": "acb6fcd97a3ae2aea5686354d4ff365a46ace6b2",
+      "ref": "refs/heads/ashmit"
+    },
+    {
+      "id": "64b6fb998df273262ba528e40cbba341f06f031e",
+      "ref": "refs/heads/data"
+    },
+    {
+      "id": "40c7d737b5e6929a0f4d5f7320a460231e80bba0",
+      "ref": "refs/heads/main"
+    }
+  ],
+  "published": [
+    {
+      "id": "94ce5e66f31dd27abaef8655825e4b70bd3123c3",
+      "ref": "refs/heads/Ankita"
+    },
+    {
+      "id": "910b9013ea8e1d9500fdc48894e1a1a1879dc333",
+      "ref": "refs/heads/Piyush"
+    },
+    {
+      "id": "70956d576a587905c7148a3ef081be433f279bea",
+      "ref": "refs/heads/anuvansh"
+    },
+    {
+      "id": "fa5d6d92339820faaf7773e9dd860d1b7b41d884",
+      "ref": "refs/heads/anuvansh2"
+    },
+    {
+      "id": "e9a70f1295b7a87d0b4df5fe65ec83b76dc9cb22",
+      "ref": "refs/heads/ashmit"
+    },
+    {
+      "id": "588659c353047699dfc3a82303a3d0571b25c181",
+      "ref": "refs/heads/data"
+    },
+    {
+      "id": "fa5d6d92339820faaf7773e9dd860d1b7b41d884",
+      "ref": "refs/heads/main"
+    }
+  ]
+}
