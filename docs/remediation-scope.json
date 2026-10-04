@@ -1,0 +1,25 @@
+{
+  "authorization": "Explicit owner authorization in this session",
+  "published": true,
+  "affected_refs": [
+    "refs/heads/Ankita",
+    "refs/heads/Piyush",
+    "refs/heads/anuvansh",
+    "refs/heads/anuvansh2",
+    "refs/heads/ashmit",
+    "refs/heads/data",
+    "refs/heads/main"
+  ],
+  "credential_paths": [
+    "python.py",
+    "enhanced_ai_floatchat.py"
+  ],
+  "removed_dataset_paths": [
+    "indian_ocean_profiles_01Jan2025_31Jan2025.parquet"
+  ],
+  "unrelated_data": "Other monthly Parquet datasets were preserved; only January dataset and identical historical blobs were in removal scope.",
+  "tags": "None advertised at inventory/publication",
+  "internal_refs": "Never published",
+  "commit_mapping_entries": 33,
+  "mapping": "Stored outside Git; not a CI artifact."
+}

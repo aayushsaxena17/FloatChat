@@ -1,0 +1,66 @@
+{
+  "observed_utc": "2026-10-04T22:05:18.703299+00:00",
+  "host_driver": "Windows PowerShell/Python",
+  "backend": "Docker Desktop Linux engine with WSL2",
+  "docker_engine": "29.8.1",
+  "compose": "5.5.1",
+  "endpoints": {
+    "live": {
+      "status": 200,
+      "body": {
+        "status": "ok"
+      }
+    },
+    "ready": {
+      "status": 200,
+      "body": {
+        "status": "ok"
+      }
+    },
+    "web": {
+      "status": 200
+    }
+  },
+  "services": [
+    {
+      "service": "api",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "db",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "minio",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "redis",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "web",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "worker",
+      "state": "running",
+      "health": "healthy"
+    }
+  ],
+  "database_extension_probe": "17.6 (Debian 17.6-2.pgdg12+1)|3.6.4|0.8.2|POINT(0 0)|0",
+  "built_image_ids": {
+    "db": "sha256:7f43169a00f7c8e99ead5f63e8e219f56add4c6e91d24f26f670971bd32e720f",
+    "api": "sha256:e29d9634a1cfdb772a55fc409d48e4db4ef1af5ad141efa52ed9754b60220aee",
+    "worker": "sha256:48bfd3c8f9179d99e59143187a2517ac0e5cd87e0548b9e20117b2315dd3a3ac",
+    "minio": "sha256:840f42594c7ed94d4ff6d62f81b110940ac545f57a6129d94eeceec05094a334",
+    "web": "sha256:b43c336665de23ab1755a4e87d5fc3848b7363fd4f60afdadb14125682cab48e"
+  },
+  "ubuntu_24_04_development_checkout": "not installed/verified",
+  "cloud_resources_created": false
+}

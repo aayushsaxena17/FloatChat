@@ -1,0 +1,19 @@
+{
+  "remote": "https://github.com/Proxpekt/FloatChat.git",
+  "observed_utc": "2026-10-04T22:57:16.591354+00:00",
+  "fresh_clone": true,
+  "all_advertised_branches": 7,
+  "advertised_tags": 0,
+  "current_findings": 0,
+  "history_findings": 0,
+  "gitleaks": "8.30.1",
+  "decode_depth": 3,
+  "published_refs_match_candidate": true,
+  "removed_dataset_paths": [
+    "indian_ocean_profiles_01Jan2025_31Jan2025.parquet"
+  ],
+  "removed_dataset_blobs_not_reachable": true,
+  "no_object_alternates": true,
+  "rules": "Upstream defaults plus committed dependency/cache exclusions; no credential allowlist",
+  "scope": "All advertised heads/tags, fetched separately; inaccessible forks/provider caches excluded"
+}

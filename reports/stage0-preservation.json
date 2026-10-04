@@ -1,0 +1,12 @@
+{
+  "verified": true,
+  "files": 63237,
+  "bytes": 1524631548,
+  "git_database_preserved": true,
+  "ignored_configuration_preserved": true,
+  "foundation_files": 121,
+  "workspace_git_history_modified": false,
+  "location": "Restricted per-user temporary storage, outside Git and OneDrive",
+  "pointer": "%TEMP%/FloatChat-stage0-completion-location.txt",
+  "original_backup": "Preserved separately; see %TEMP%/FloatChat-stage0-location.txt"
+}
