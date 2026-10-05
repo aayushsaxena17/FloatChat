@@ -115,8 +115,35 @@ def main() -> None:
                 "-v",
                 "ON_ERROR_STOP=1",
                 "-c",
-                "CREATE TABLE stage0_persistence(value text); "
-                "INSERT INTO stage0_persistence VALUES ('preserved');",
+                "CREATE TABLE app.stage0_persistence(value text); "
+                "INSERT INTO app.stage0_persistence VALUES ('preserved'); "
+                "CREATE TABLE app.stage0_permissions("
+                "id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, value text);",
+            )
+            probe("permissions")
+            # Reproduce drift from the old blanket grant, then prove repeat bootstrap repairs it.
+            compose(
+                "exec",
+                "-T",
+                "db",
+                "psql",
+                "-U",
+                "floatchat_admin",
+                "-d",
+                "floatchat",
+                "-v",
+                "ON_ERROR_STOP=1",
+                "-c",
+                "GRANT ALL ON public.spatial_ref_sys TO floatchat_app;",
+            )
+            compose("run", "--rm", "db-init")
+            probe("permissions")
+            evidence.append(
+                {"check": "postgis-metadata-permissions-and-repeat-bootstrap", "passed": True}
+            )
+            probe("readiness-deadline")
+            evidence.append(
+                {"check": "hard-readiness-deadline-and-resource-disposal", "passed": True}
             )
             probe("seed")
             for dependency in ["db", "redis", "minio"]:
@@ -172,7 +199,7 @@ def main() -> None:
                         "complete": complete,
                         "checks": evidence,
                         "volumes": "preserved",
-                        "private_configuration": str(private),
+                        "diagnostics": "Restricted local logs/configuration retained outside Git",
                     },
                     indent=2,
                 )

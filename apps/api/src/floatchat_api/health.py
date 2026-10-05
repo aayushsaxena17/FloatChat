@@ -9,6 +9,44 @@ from floatchat_core.config import Settings
 from redis.asyncio import Redis
 
 Check = Callable[[], Awaitable[None]]
+_cleanup_tasks: set[asyncio.Task[bool]] = set()
+_CLEANUP_GRACE_SECONDS = 0.05
+
+
+class _DatabaseCheck:
+    def __init__(self, url: str) -> None:
+        self.url = url
+        self.connections: dict[asyncio.Task[Any], psycopg.AsyncConnection[Any]] = {}
+        self.deadlines: dict[asyncio.Task[Any], float] = {}
+
+    async def __call__(self) -> None:
+        task = asyncio.current_task()
+        assert task is not None
+        try:
+            remaining = self.deadlines.get(task, asyncio.get_running_loop().time() + 1)
+            remaining -= asyncio.get_running_loop().time()
+            statement_ms = max(1, int(min(1, max(0, remaining)) * 1000))
+            connection = await psycopg.AsyncConnection.connect(
+                self.url,
+                connect_timeout=2,
+                autocommit=True,
+                options=f"-c statement_timeout={statement_ms}",
+            )
+            self.connections[task] = connection
+            cursor = connection.cursor()
+            await cursor.execute("SELECT 1")
+            if await cursor.fetchone() != (1,):
+                raise RuntimeError("database unavailable")
+        finally:
+            self.abort(task)
+
+    def abort(self, task: asyncio.Task[Any]) -> None:
+        connection = self.connections.pop(task, None)
+        self.deadlines.pop(task, None)
+        if connection is not None:
+            # Direct, synchronous socket disposal: no query cancellation round trip,
+            # transaction rollback, pool return, or awaited context-manager cleanup.
+            connection.pgconn.finish()
 
 
 def storage_client(settings: Settings) -> Any:
@@ -28,16 +66,6 @@ def storage_client(settings: Settings) -> Any:
 
 
 def dependency_checks(settings: Settings) -> dict[str, Check]:
-    async def database() -> None:
-        connection = await psycopg.AsyncConnection.connect(
-            settings.database_url.get_secret_value(), connect_timeout=2
-        )
-        async with connection:
-            async with connection.cursor() as cursor:
-                await cursor.execute("SELECT 1")
-                if await cursor.fetchone() != (1,):
-                    raise RuntimeError("database unavailable")
-
     async def redis() -> None:
         client = Redis.from_url(
             settings.redis_url.get_secret_value(), socket_connect_timeout=1, socket_timeout=1
@@ -58,7 +86,11 @@ def dependency_checks(settings: Settings) -> dict[str, Check]:
 
         await asyncio.to_thread(access)
 
-    return {"database": database, "redis": redis, "storage": storage}
+    return {
+        "database": _DatabaseCheck(settings.database_url.get_secret_value()),
+        "redis": redis,
+        "storage": storage,
+    }
 
 
 async def ready(checks: dict[str, Check], budget_seconds: float) -> bool:
@@ -69,8 +101,38 @@ async def ready(checks: dict[str, Check], budget_seconds: float) -> bool:
         except Exception:
             return False
 
-    try:
-        async with asyncio.timeout(budget_seconds):
-            return all(await asyncio.gather(*(probe(check) for check in checks.values())))
-    except TimeoutError:
+    if not checks:
         return False
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + max(0, budget_seconds)
+    tasks = {asyncio.create_task(probe(check)): check for check in checks.values()}
+    for task, check in tasks.items():
+        if isinstance(check, _DatabaseCheck):
+            check.deadlines[task] = deadline
+    try:
+        done, pending = await asyncio.wait(tasks, timeout=max(0, deadline - loop.time()))
+        return not pending and all(not task.cancelled() and task.result() for task in done)
+    finally:
+        # asyncio.wait does not wait for cancellation cleanup. Retain and reap tasks
+        # outside the HTTP response path, including when the caller itself is cancelled.
+        for task, check in tasks.items():
+            if task.done():
+                continue
+            if isinstance(check, _DatabaseCheck):
+                try:
+                    check.abort(task)
+                except Exception:
+                    pass  # Diagnostics never enter the health response.
+            task.cancel()
+            _cleanup_tasks.add(task)
+            repeat_cancel = loop.call_later(_CLEANUP_GRACE_SECONDS, task.cancel)
+
+            def reaped(
+                finished: asyncio.Task[bool], timer: asyncio.TimerHandle = repeat_cancel
+            ) -> None:
+                timer.cancel()
+                _cleanup_tasks.discard(finished)
+                if not finished.cancelled():
+                    finished.exception()
+
+            task.add_done_callback(reaped)
