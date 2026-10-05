@@ -3,7 +3,7 @@ repos:
     hooks:
       - id: gitleaks-staged
         name: Gitleaks staged content (fully redacted)
-        entry: python scripts/security/scan.py staged
+        entry: uv run --all-packages --frozen python scripts/security/scan.py staged
         language: system
         pass_filenames: false
         always_run: true

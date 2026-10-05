@@ -1,4 +1,33 @@
-# Stage 0 - COMPLETE
+# Stage 0 - corrective verification and review gate
+
+## Astra corrective verification
+
+The original results below are historical measurements, not approval of the subsequently
+discovered defects. The correction starts on a clean branch from sanitized main
+7e642a104d469e57c2857e8ad698bb8417553e18. The original Windows checkout and dirty Ubuntu
+verification checkout are not used as source. Dirty verification artifacts were independently
+preserved outside Git and inspected for local paths; they were not copied into this PR.
+
+| Finding | Correction and executed regression |
+|---|---|
+| Readiness deadline | Concurrent probes use an independent deadline; database sockets are disposed synchronously, and cancellation cleanup is reaped outside the HTTP path. A delayed-cancellation regression enforces 50 ms budget + 50 ms scheduling tolerance. Real PostgreSQL pg_sleep also proves the response bound and disposal of client/server query resources. |
+| PostGIS metadata | Revoke previous blanket/default public writes. Existing and future application tables use the dedicated app schema and migration owner; extension members are excluded and read-only. Real CRUD/identity-sequence access, all six prohibited metadata privileges, actual denied INSERT/UPDATE/DELETE and repeated-bootstrap repair pass. |
+| Managed hook | The exact repository YAML runs the frozen uv workspace. A clean non-activated shell whose PATH has no python successfully commits clean source and rejects a synthetic staged finding with fully redacted output. |
+| Refetch deadline | A spawned worker receives remaining connect/read budgets; an independent supervisor bounds DNS, TLS/header trickles, body trickles, EOF and cleanup. Termination/reaping has a reserve inside the unchanged 30-second budget. Real local HTTPS slow-body, delayed-EOF and slow-header tests enforce 500 ms budget + 100 ms scheduling tolerance; existing output and temporary-file/process cleanup are verified. |
+
+[Committed corrective evidence](../reports/stage0-review-verification.json) records 28 Python tests,
+three frontend tests, one real browser test, static checks, image builds, empty/repeat startup,
+metadata permissions, readiness, worker, storage and persistence. The initial regressions failed
+against the baseline before fixes. Test tolerances do not increase production deadlines.
+
+Required checks remain python, web, docker, integration, secrets-current and secrets-history.
+Their actual PR results are the authoritative CI gate. Merge also requires an Astra review
+reporting no remaining P1 or P2 findings; that review is not claimed here.
+No merge/check bypass, cloud resource, Stage 1 implementation or second history rewrite is part
+of this PR. All evidence linked here exists in Git; raw operational logs and local final
+attestations remain private and are not dependencies of a fresh clone.
+
+## Original foundation verification
 
 The gate passed on verified merged main `dc3d409c5fc9605c48ec0e7f8ca230d6c5e719b2`, containing tested source `608e4356b312f4422ad40996e1604fb1ef28a640`. [Foundation PR #1](https://github.com/aayushsaxena17/FloatChat/pull/1) was merged after all required checks passed. This documentation-only follow-up records measurements made after that merge. No Stage 1 implementation or cloud infrastructure was introduced.
 

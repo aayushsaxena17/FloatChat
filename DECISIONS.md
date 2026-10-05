@@ -59,3 +59,40 @@ A documentation-only follow-up on the same Stage 0 branch records the fresh merg
 The owner-authorized foundation merge used the administrator exception for the pre-existing two-review requirement only after every required check actually passed. Administrator enforcement was strengthened immediately afterward. If the evidence-only merge needs that same narrowly scoped exception, retain all required checks and force-push prohibitions, then restore administrator enforcement immediately. Ordinary development must satisfy the final protected rule. No failed check is bypassed.
 
 Twenty-nine original commits had signatures tied to their old IDs. Rewriting invalidates those signatures; original records remain in the restricted preservation copy. Authors and timestamps of the 31 retained commits were preserved. New commits use the account's GitHub noreply identity and honest current timestamps.
+
+## ADR-0015 - Hard I/O deadlines include cleanup
+
+Readiness uses independently timed concurrent tasks rather than waiting for gather cancellation.
+Each database probe tracks connections by task, uses autocommit and a server statement timeout
+bounded by remaining readiness budget (maximum one second), and disposes its libpq socket without
+a network cancellation round trip. Retained cleanup tasks receive a second cancellation after
+50 ms and have exceptions drained. Cleanup is outside the response deadline; concurrent requests
+do not share connection ownership.
+
+The optional snapshot downloader uses a spawned I/O worker with a parent watchdog. Socket
+timeouts and read1 bound ordinary reads; process isolation also bounds slow DNS, TLS/header
+trickles and response cleanup. A 50 ms termination/reaping reserve comes out of the existing
+total budget. Only the parent atomically replaces a verified output; failure kills/reaps the
+worker before deleting its partial file. Injected test openers must be spawn-picklable.
+
+## ADR-0016 - Application grants are separated from extension metadata
+
+Extensions and Alembic metadata remain in public. Application tables belong to the migration
+role in the dedicated app schema; future table/sequence defaults apply only there. Bootstrap
+removes old public write/default grants and restores read-only access to extension members in
+any schema. Repeated initialization repairs legacy grant drift without dropping extensions.
+Future extension installation must stay outside the reserved application schema.
+
+## ADR-0017 - Verify the actual managed hook and committed evidence
+
+The pre-commit hook uses the frozen uv workspace, not a system executable named python.
+Regression tests copy the exact YAML unchanged and exercise real clean/rejected Git commits
+with no activated environment or python on PATH.
+The hook fixture exposes only explicit uv/git/bash/sh symlinks: hosted Ubuntu also installs
+/usr/bin/python, so inheriting /usr/bin would invalidate the absence test. The assertions and
+committed hook entry are unchanged by this test-environment correction.
+
+Dirty Ubuntu reports were preserved and inspected privately, not reused as source or copied
+into this correction. New corrective
+evidence contains measured results and relative repository references, without private
+configuration paths. CI and a clean Astra review remain explicit merge gates.
