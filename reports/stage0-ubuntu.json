@@ -1,0 +1,62 @@
+{
+  "observed_utc": "2026-10-04T23:22:12.981284+00:00",
+  "source_commit": "608e4356b312f4422ad40996e1604fb1ef28a640",
+  "platform": "Ubuntu 24.04.5 on WSL2; Docker Desktop integration",
+  "user": "floatchat (non-root)",
+  "linux_filesystem_checkout": "/home/floatchat/FloatChat-stage0",
+  "make_setup": "passed",
+  "make_lint": "passed including Ruff and Prettier formatting",
+  "make_typecheck": "passed",
+  "make_test": "22 Python and 3 frontend tests passed",
+  "make_secrets_current": "passed, zero findings",
+  "make_secrets_history": "passed, zero findings",
+  "make_eval": "expected Stage 0 stub",
+  "make_build": "passed",
+  "web_build_target": "passed",
+  "make_integration": "passed",
+  "integration": {
+    "project": "floatchat-stage0-test-e2826803a7a9",
+    "complete": true,
+    "checks": [
+      {
+        "check": "empty-volume-startup",
+        "seconds": 25.226179901000023
+      },
+      {
+        "check": "db-outage-recovery",
+        "passed": true
+      },
+      {
+        "check": "redis-outage-recovery",
+        "passed": true
+      },
+      {
+        "check": "minio-outage-recovery",
+        "passed": true
+      },
+      {
+        "check": "repeat-startup-persistence",
+        "seconds": 17.747279618999983
+      },
+      {
+        "check": "worker-storage-migrations-browser",
+        "passed": true
+      }
+    ],
+    "volumes": "preserved",
+    "private_configuration": "/home/floatchat/.local/state/FloatChat/integration/floatchat-stage0-test-e2826803a7a9"
+  },
+  "versions": {
+    "node": "v24.15.0",
+    "pnpm": "10.33.0",
+    "uv": "uv 0.10.4",
+    "make": "GNU Make 4.3",
+    "docker": "29.8.1",
+    "compose": "5.5.1"
+  },
+  "cloud_resources_created": false,
+  "configuration": "Restricted outside checkout; a distinct public project name preserves the existing Windows development volumes",
+  "make_dev": "passed from an empty distinct local project",
+  "make_dev_repeat": "passed; configuration unchanged and initialized services healthy",
+  "make_dev_repeat_including_cached_build_seconds": 11.103773435999983
+}

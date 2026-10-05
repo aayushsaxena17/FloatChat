@@ -6,7 +6,7 @@ The approved execution contract and owner amendments govern Stage 0. `FLOATCHAT_
 
 ## ADR-0002 — Local services with zero required cloud infrastructure cost
 
-Use WSL2 Ubuntu 24.04 and Docker Desktop with local PostgreSQL/PostGIS/pgvector, Redis, MinIO, FastAPI, Celery, and React/Vite. No Azure, Supabase, OpenAI API, cloud database, cloud object store, or paid resource is created. Portable environment configuration preserves a later migration path; demonstrations and deployment belong in Stage 8. Docker installation is owner-managed. Docker acceptance passed from Windows; the Ubuntu 24.04 development checkout remains unverified.
+Use WSL2 Ubuntu 24.04 and Docker Desktop with local PostgreSQL/PostGIS/pgvector, Redis, MinIO, FastAPI, Celery, and React/Vite. No Azure, Supabase, OpenAI API, cloud database, cloud object store, or paid resource is created. Portable environment configuration preserves a later migration path; demonstrations and deployment belong in Stage 8. Docker installation is owner-managed. Docker acceptance passed from Windows and from the supported Ubuntu 24.04 WSL2 checkout using Make.
 
 ## ADR-0003 — Preserve originals; sanitize before archiving
 
@@ -14,7 +14,7 @@ The existing dirty tree was backed up and verified before source edits. Current 
 
 ## ADR-0004 — Separate preparation from completion
 
-The original inventory was expanded into a tested candidate and a separate validation clone. The owner subsequently explicitly authorized the tested isolated rewrite, affected-ref publication, Stage 0 PR and checked merge. Seven branches were published atomically with exact leases; the dirty checkout remained intact. Known leaks are not allowlisted. CI must be rerun on the sanitized baseline after approved publication. Stage 1 remains blocked.
+The original inventory was expanded into a tested candidate and a separate validation clone. The owner subsequently explicitly authorized the tested isolated rewrite, affected-ref publication, Stage 0 PR and checked merge. Seven branches were published atomically with exact leases; the dirty checkout remained intact. Known leaks are not allowlisted. All six checks passed on the sanitized foundation PR and merged main; fresh-clone Ubuntu verification passed. Stage 1 has not started.
 
 ## ADR-0005 — MinIO community source build
 
@@ -34,11 +34,11 @@ The original PostGIS image used Debian Bullseye repositories that failed during 
 
 ## ADR-0009 — Windows driver and isolated acceptance diagnostics
 
-Detect Docker Desktop's per-user installation and expose its credential helpers only in the driver's process PATH. Preserve restricted integration configuration and logs outside Git alongside retained volumes; prevent ambient application configuration from redirecting integration tests to cloud services. Run uv commands with `--all-packages --frozen` so workspace package dependencies remain installed. Windows-driven Docker acceptance passed; verification of the Ubuntu 24.04 development checkout and Make commands remains pending.
+Detect Docker Desktop's per-user installation and expose its credential helpers only in the driver's process PATH. Preserve restricted integration configuration and logs outside Git alongside retained volumes; prevent ambient application configuration from redirecting integration tests to cloud services. Run uv commands with `--all-packages --frozen` so workspace package dependencies remain installed. Windows-driven Docker acceptance and Ubuntu 24.04 Make setup, builds, checks, empty/repeat startup and full acceptance passed.
 
 ## ADR-0010 — Authorized publication and repository controls
 
-Publish only the seven inventoried affected branch refs after rechecking remote IDs; use one atomic push with an explicit force-with-lease for each ref. Temporarily permit force updates only for that publication window, restore the force-push prohibition immediately, and add all six required CI checks while preserving the existing two-review rule. Preserve old/new commit mapping and raw diagnostics only outside Git. New foundation commits use the account?s GitHub noreply identity and current timestamps. Old clones and forks require the documented recovery procedure.
+Publish only the seven inventoried affected branch refs after rechecking remote IDs; use one atomic push with an explicit force-with-lease for each ref. Temporarily permit force updates only for that publication window, restore the force-push prohibition immediately, and add all six required CI checks while preserving the existing two-review rule. Preserve old/new commit mapping and raw diagnostics only outside Git. New foundation commits use the account's GitHub noreply identity and current timestamps. Old clones and forks require the documented recovery procedure.
 
 ## ADR-0011 — Complete Windows/Ubuntu verification and formatting
 
@@ -51,3 +51,11 @@ The scanner originally defaulted to the script's repository. A hook invoked in a
 ## ADR-0013 — Portable test invocation and preserved document formatting
 
 Invoke tests through `python -m pytest` in Make and CI so the workspace root is on Python's import path. The standalone pytest launcher on Linux otherwise failed to import the root scripts package. Preserve the original PRD's Markdown hard breaks and archived prototype whitespace; their attributes exempt only those whitespace checks, never secret scanning.
+
+## ADR-0014 - Post-merge evidence and protected Stage 0 integration
+
+A documentation-only follow-up on the same Stage 0 branch records the fresh merged-main checks and final gate after foundation PR #1. This additional PR is necessary because evidence measured after the first merge cannot be recorded honestly beforehand. Runtime source remains identical to tested commit 608e4356b312f4422ad40996e1604fb1ef28a640; documentation checks run again. Published implementation commits are not cosmetically rewritten; the evidence commit uses a conventional message.
+
+The owner-authorized foundation merge used the administrator exception for the pre-existing two-review requirement only after every required check actually passed. Administrator enforcement was strengthened immediately afterward. If the evidence-only merge needs that same narrowly scoped exception, retain all required checks and force-push prohibitions, then restore administrator enforcement immediately. Ordinary development must satisfy the final protected rule. No failed check is bypassed.
+
+Twenty-nine original commits had signatures tied to their old IDs. Rewriting invalidates those signatures; original records remain in the restricted preservation copy. Authors and timestamps of the 31 retained commits were preserved. New commits use the account's GitHub noreply identity and honest current timestamps.
