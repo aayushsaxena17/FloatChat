@@ -82,7 +82,13 @@ def test_exact_committed_hook_without_system_python(tmp_path: Path) -> None:
     managed_bin = tmp_path / "bin"
     managed_bin.mkdir()
     (managed_bin / "uv").symlink_to(Path(uv).resolve())
-    environment = dict(os.environ, PATH=f"{managed_bin}:/usr/bin:/bin")
+    # Hosted Ubuntu also ships /usr/bin/python. Expose only the commands needed
+    # by Git/pre-commit, so absence of python is tested on every supported host.
+    for name in ["git", "bash", "sh"]:
+        executable = shutil.which(name)
+        assert executable
+        (managed_bin / name).symlink_to(Path(executable).resolve())
+    environment = dict(os.environ, PATH=str(managed_bin))
     for key in ["VIRTUAL_ENV", "PYTHONPATH", "UV_PROJECT_ENVIRONMENT"]:
         environment.pop(key, None)
     assert shutil.which("python", path=environment["PATH"]) is None

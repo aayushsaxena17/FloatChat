@@ -87,7 +87,12 @@ Future extension installation must stay outside the reserved application schema.
 
 The pre-commit hook uses the frozen uv workspace, not a system executable named python.
 Regression tests copy the exact YAML unchanged and exercise real clean/rejected Git commits
-with no activated environment or python on PATH. Dirty Ubuntu reports were preserved and
-inspected privately, not reused as source or copied into this correction. New corrective
+with no activated environment or python on PATH.
+The hook fixture exposes only explicit uv/git/bash/sh symlinks: hosted Ubuntu also installs
+/usr/bin/python, so inheriting /usr/bin would invalidate the absence test. The assertions and
+committed hook entry are unchanged by this test-environment correction.
+
+Dirty Ubuntu reports were preserved and inspected privately, not reused as source or copied
+into this correction. New corrective
 evidence contains measured results and relative repository references, without private
 configuration paths. CI and a clean Astra review remain explicit merge gates.
