@@ -1,10 +1,18 @@
 {
-  "project": "floatchat-stage0-test-e2826803a7a9",
+  "project": "floatchat-stage0-test-00890240b8bf",
   "complete": true,
   "checks": [
     {
       "check": "empty-volume-startup",
-      "seconds": 25.226179901000023
+      "seconds": 23.157347261001632
+    },
+    {
+      "check": "postgis-metadata-permissions-and-repeat-bootstrap",
+      "passed": true
+    },
+    {
+      "check": "hard-readiness-deadline-and-resource-disposal",
+      "passed": true
     },
     {
       "check": "db-outage-recovery",
@@ -20,7 +28,7 @@
     },
     {
       "check": "repeat-startup-persistence",
-      "seconds": 17.747279618999983
+      "seconds": 21.148697655000433
     },
     {
       "check": "worker-storage-migrations-browser",
@@ -28,5 +36,5 @@
     }
   ],
   "volumes": "preserved",
-  "private_configuration": "/home/floatchat/.local/state/FloatChat/integration/floatchat-stage0-test-e2826803a7a9"
+  "diagnostics": "Restricted local logs/configuration retained outside Git"
 }

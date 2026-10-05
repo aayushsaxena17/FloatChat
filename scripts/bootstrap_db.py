@@ -29,19 +29,67 @@ def main() -> None:
             )
             cursor.execute("GRANT CONNECT ON DATABASE floatchat TO floatchat_app")
             cursor.execute("GRANT USAGE ON SCHEMA public TO floatchat_app")
+            cursor.execute("CREATE SCHEMA IF NOT EXISTS app AUTHORIZATION floatchat_admin")
+            cursor.execute("GRANT USAGE ON SCHEMA app TO floatchat_app")
+            # Remove the previous public-schema defaults and blanket write grants.
             cursor.execute(
-                "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public "
-                "TO floatchat_app"
-            )
-            cursor.execute("GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO floatchat_app")
-            cursor.execute("REVOKE INSERT, UPDATE, DELETE ON alembic_version FROM floatchat_app")
-            cursor.execute(
-                "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, "
-                "UPDATE, DELETE ON TABLES TO floatchat_app"
+                "ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE SELECT, INSERT, UPDATE, "
+                "DELETE ON TABLES FROM floatchat_app"
             )
             cursor.execute(
-                "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE ON SEQUENCES "
-                "TO floatchat_app"
+                "ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE USAGE ON SEQUENCES "
+                "FROM floatchat_app"
+            )
+            cursor.execute(
+                "REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER "
+                "ON ALL TABLES IN SCHEMA public FROM floatchat_app"
+            )
+            cursor.execute("REVOKE ALL ON alembic_version FROM floatchat_app")
+            # Extension members can occur in schemas other than public too.
+            cursor.execute(
+                "SELECT n.nspname, c.relname FROM pg_class c "
+                "JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "JOIN pg_depend d ON d.classid = 'pg_class'::regclass AND d.objid = c.oid "
+                "WHERE d.refclassid = 'pg_extension'::regclass AND d.deptype = 'e' "
+                "AND c.relkind IN ('r','p','v','m','f')"
+            )
+            for schema, table in cursor.fetchall():
+                cursor.execute(
+                    sql.SQL(
+                        "REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER "
+                        "ON TABLE {}.{} FROM floatchat_app"
+                    ).format(sql.Identifier(schema), sql.Identifier(table))
+                )
+                cursor.execute(
+                    sql.SQL("GRANT SELECT ON TABLE {}.{} TO floatchat_app").format(
+                        sql.Identifier(schema), sql.Identifier(table)
+                    )
+                )
+            # Application objects are owned by the migration role in the app schema.
+            # Never include extension members in existing-object grants.
+            cursor.execute(
+                "SELECT c.relname, c.relkind FROM pg_class c "
+                "JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'app' AND c.relowner = current_user::regrole "
+                "AND c.relkind IN ('r','p','S') AND NOT EXISTS "
+                "(SELECT 1 FROM pg_depend d WHERE d.classid = 'pg_class'::regclass "
+                "AND d.objid = c.oid AND d.refclassid = 'pg_extension'::regclass "
+                "AND d.deptype = 'e')"
+            )
+            for name, kind in cursor.fetchall():
+                privileges = "USAGE" if kind == "S" else "SELECT, INSERT, UPDATE, DELETE"
+                object_type = "SEQUENCE" if kind == "S" else "TABLE"
+                cursor.execute(
+                    sql.SQL("GRANT {} ON {} app.{} TO floatchat_app").format(
+                        sql.SQL(privileges), sql.SQL(object_type), sql.Identifier(name)
+                    )
+                )
+            cursor.execute(
+                "ALTER DEFAULT PRIVILEGES IN SCHEMA app GRANT SELECT, INSERT, UPDATE, "
+                "DELETE ON TABLES TO floatchat_app"
+            )
+            cursor.execute(
+                "ALTER DEFAULT PRIVILEGES IN SCHEMA app GRANT USAGE ON SEQUENCES TO floatchat_app"
             )
             cursor.execute("SELECT extname FROM pg_extension WHERE extname IN ('postgis','vector')")
             if {row[0] for row in cursor.fetchall()} != {"postgis", "vector"}:
