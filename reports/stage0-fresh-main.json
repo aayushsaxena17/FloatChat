@@ -1,0 +1,61 @@
+{
+  "observed_utc": "2026-10-04T23:40:24.001054+00:00",
+  "commit": "dc3d409c5fc9605c48ec0e7f8ca230d6c5e719b2",
+  "branch": "main",
+  "clone": "Fresh HTTPS remote clone on Ubuntu Linux filesystem",
+  "clone_path": "/home/floatchat/FloatChat-stage0-final",
+  "advertised_refs": [
+    "94ce5e66f31dd27abaef8655825e4b70bd3123c3\trefs/heads/Ankita",
+    "910b9013ea8e1d9500fdc48894e1a1a1879dc333\trefs/heads/Piyush",
+    "70956d576a587905c7148a3ef081be433f279bea\trefs/heads/anuvansh",
+    "fa5d6d92339820faaf7773e9dd860d1b7b41d884\trefs/heads/anuvansh2",
+    "e9a70f1295b7a87d0b4df5fe65ec83b76dc9cb22\trefs/heads/ashmit",
+    "608e4356b312f4422ad40996e1604fb1ef28a640\trefs/heads/codex/stage-0-foundation",
+    "588659c353047699dfc3a82303a3d0571b25c181\trefs/heads/data",
+    "dc3d409c5fc9605c48ec0e7f8ca230d6c5e719b2\trefs/heads/main"
+  ],
+  "current_findings": 0,
+  "history_findings": 0,
+  "gitleaks_version": "8.30.1",
+  "decode_depth": 3,
+  "make_setup": "passed",
+  "make_lint": "passed including both formatters",
+  "make_typecheck": "passed",
+  "python_tests": 22,
+  "frontend_tests": 3,
+  "frontend_build": "passed",
+  "docker_image_builds": "passed including explicit web build target",
+  "integration": {
+    "project": "floatchat-stage0-test-25d905f6dd83",
+    "complete": true,
+    "checks": [
+      {
+        "check": "empty-volume-startup",
+        "seconds": 34.36644199300008
+      },
+      {
+        "check": "db-outage-recovery",
+        "passed": true
+      },
+      {
+        "check": "redis-outage-recovery",
+        "passed": true
+      },
+      {
+        "check": "minio-outage-recovery",
+        "passed": true
+      },
+      {
+        "check": "repeat-startup-persistence",
+        "seconds": 28.42955824899991
+      },
+      {
+        "check": "worker-storage-migrations-browser",
+        "passed": true
+      }
+    ],
+    "volumes": "preserved",
+    "private_configuration": "/home/floatchat/.local/state/FloatChat/integration/floatchat-stage0-test-25d905f6dd83"
+  },
+  "cloud_resources_created": false
+}

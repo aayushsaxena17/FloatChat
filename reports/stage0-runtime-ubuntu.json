@@ -1,0 +1,99 @@
+{
+  "observed_utc": "2026-10-04T23:28:54.719834+00:00",
+  "source_commit": "608e4356b312f4422ad40996e1604fb1ef28a640",
+  "host_driver": "WSL2 Ubuntu 24.04.5, non-root floatchat user, Make",
+  "backend": "Docker Desktop Linux engine",
+  "project": "floatchat-stage0-wsl-dev",
+  "docker_engine": "29.8.1",
+  "compose": "5.5.1",
+  "endpoints": {
+    "live": {
+      "status": 200,
+      "body": {
+        "status": "ok"
+      }
+    },
+    "ready": {
+      "status": 200,
+      "body": {
+        "status": "ok"
+      }
+    },
+    "web": {
+      "status": 200
+    }
+  },
+  "services": [
+    {
+      "service": "api",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "db",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "minio",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "redis",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "web",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "worker",
+      "state": "running",
+      "health": "healthy"
+    }
+  ],
+  "database_extension_probe": "17.6 (Debian 17.6-2.pgdg12+1)|3.6.4|0.8.2|POINT(0 0)|0",
+  "port_bindings": {
+    "api": {
+      "8000/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "8000"
+        }
+      ]
+    },
+    "db": {
+      "5432/tcp": null
+    },
+    "minio": {
+      "9000/tcp": null
+    },
+    "redis": {
+      "6379/tcp": null
+    },
+    "web": {
+      "5173/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "5173"
+        }
+      ]
+    },
+    "worker": {
+      "8000/tcp": null
+    }
+  },
+  "built_image_ids": {
+    "api": "sha256:8bb27b423dece7cdd0b5a3292a1624b5155ef9c11e7e251491922e73e9e07431",
+    "db": "sha256:2bc54b2e74fa474089f858439f745ca72874a9e43cd8a508f5b5c08765f929e4",
+    "minio": "sha256:492810c133a75724a89e395372b5fffb9206846054ec48eacbc204aea04effa6",
+    "redis": "sha256:02419de7eddf55aa5bcf49efb74e88fa8d931b4d77c07eff8a6b2144472b6952",
+    "web": "sha256:aa18a5931644819864c748ff43b745739a9cf0a9cea5de94a23283a6438bdce4",
+    "worker": "sha256:4806bbef1d4a67a2b416010fdfef4b3146507cf955904399d7d052ece69fb5fb"
+  },
+  "volumes": "Preserved; original Windows project remains stopped with its configuration and volumes intact",
+  "cloud_resources_created": false
+}

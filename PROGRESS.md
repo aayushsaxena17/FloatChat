@@ -1,27 +1,22 @@
 # Stage progress
 
-## Stage 0 - in progress; final verification pending
+## Stage 0 - COMPLETE
 
 Owner confirmed revocation.
 
-- [x] Inventory and verified restricted backup of original tracked/untracked work outside Git and OneDrive.
-- [x] Current files and locally available Git history scanned separately with Gitleaks 8.30.1.
-- [x] Fully redacted findings; raw reports restricted outside Git.
-- [x] Sanitize current Python/notebook and create legacy copies before packaging.
-- [x] Deterministic 128-row, 5,617-byte fixture and provenance manifest.
-- [x] uv/Python and pnpm/React/Vite workspaces and lockfiles.
-- [x] Local Compose scaffold, migration/storage bootstrap, health API and worker smoke task.
-- [x] Unit tests, static checks, frontend build, and synthetic scanner/hook failure controls.
-- [x] Separate isolated inventory clone; no rewrite performed and push URL disabled.
-- [x] Explicit owner authorization of tested scope/publication, foundation PR and checked merge; old-clone recovery documented.
-- [x] Tested isolated candidate and separate validation clone; 33-entry mapping retained outside Git.
-- [x] Docker Desktop Linux-container startup, image builds, migrations, storage, worker, persistence, outages and browser integration verified from Windows.
-- [ ] Ubuntu 24.04 WSL development checkout and exact Make entry points verified.
-- [x] Preserve original folder outside runtime packaging; live scientific refetch is optional and excluded from normal startup/tests.
-- [x] Atomic publication of seven affected branches using exact per-ref leases; force pushes disabled afterward.
-- [x] Fresh published remote clone; current-file and full-history scans pass with full advertised head/tag coverage.
-- [ ] CI executes and passes; merge protection verified within free usage.
+- [x] Inventory and verify preservation of tracked, untracked, ignored configuration and Git data outside Git and OneDrive; durable restricted copy retained.
+- [x] Sanitize prototype sources and notebooks before archiving; preserve original working inputs.
+- [x] Scan current files and all advertised branch/tag history separately, with fully redacted evidence.
+- [x] Test isolated rewrite and independent validation, preserve private commit mapping, and publish seven affected refs atomically with explicit leases.
+- [x] Verify fresh published clone, removed January dataset paths/blobs, and unchanged unrelated refs.
+- [x] Implement local uv/pnpm foundation, pinned toolchains, locked dependencies, safe configuration and persistent Compose services.
+- [x] Verify deterministic 128-row, 5,617-byte attributed fixture and mocked bounded refetch behavior.
+- [x] Verify WSL2 Ubuntu 24.04 Make setup, empty and repeat startup, lint/format, type checks, tests, image builds and acceptance matrix.
+- [x] Merge foundation PR #1 only after all six required checks execute successfully.
+- [x] Verify fresh merged-main current/history scans and complete CI-equivalent suite on Ubuntu.
+- [x] Verify main CI and strict required GitHub Actions checks, two reviews, administrator enforcement and force-push/deletion prohibitions.
+- [x] Record final evidence and old-clone recovery in the Stage 0 gate report.
 
-Stage 1 must not begin. No cloud infrastructure, external credentials, or real upstream calls are part of Stage 0.
+Stage 1 has not started. No cloud infrastructure, production credentials, real LLM calls or required Argovis access were introduced.
 
-See `docs/stage0-gate.md` for measured validation and pending actions.
+See [the complete gate report](docs/stage0-gate.md). The tested foundation commit is `608e4356b312f4422ad40996e1604fb1ef28a640`; verified merged main is `dc3d409c5fc9605c48ec0e7f8ca230d6c5e719b2`. A documentation-only follow-up records the post-merge evidence without changing tested runtime source.
