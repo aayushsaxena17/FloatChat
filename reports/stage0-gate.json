@@ -1,0 +1,36 @@
+{
+  "status": "COMPLETE",
+  "observed_utc": "2026-10-05T09:07:44.787164+00:00",
+  "verified_merged_main": "dc3d409c5fc9605c48ec0e7f8ca230d6c5e719b2",
+  "tested_source": "608e4356b312f4422ad40996e1604fb1ef28a640",
+  "foundation_pr": 1,
+  "publication": "seven affected branches, atomic explicit leases",
+  "preservation_verified": true,
+  "fresh_current_findings": 0,
+  "fresh_history_findings": 0,
+  "required_checks": [
+    "python",
+    "web",
+    "docker",
+    "integration",
+    "secrets-current",
+    "secrets-history"
+  ],
+  "ci_runs": [
+    37242811531,
+    37243966049
+  ],
+  "ci": "all six jobs completed successfully in both runs",
+  "wsl_make": "full suite passed on fresh merged-main clone",
+  "acceptance": "all applicable tests passed; real upstream and cloud deployment not applicable by Stage 0 contract",
+  "protection": "strict app-bound checks, two reviews, administrators enforced, force/deletion disabled",
+  "evidence_document": "docs/stage0-gate.md",
+  "stage1_started": false,
+  "cloud_resources_created": false,
+  "limitations": [
+    "old clones and four forks/provider caches outside published ref scope",
+    "original signatures invalidated by rewritten IDs",
+    "other monthly historical datasets outside January scope",
+    "optional live snapshot URL not configured"
+  ]
+}

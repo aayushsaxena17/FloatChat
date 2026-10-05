@@ -80,5 +80,8 @@
   "publication_finished_utc": "2026-10-04T22:53:21.171892+00:00",
   "per_ref_leases": true,
   "atomic": true,
-  "commit_mapping": "Retained outside Git in restricted remediation directory; see local recovery pointer."
+  "commit_mapping": "Retained outside Git in restricted remediation directory; see local recovery pointer.",
+  "original_signed_commits": 29,
+  "original_tags": 0,
+  "signature_handling": "Rewritten commit signatures cannot authenticate new IDs; original records are preserved in the restricted backup."
 }

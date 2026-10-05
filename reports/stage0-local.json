@@ -10,7 +10,7 @@
   "current_scanner_findings": 0,
   "history_initial_findings": 8,
   "docker_integration": "passed from Windows against Docker Desktop Linux engine",
-  "ci": "not run",
+  "ci": "six required PR and merged-main jobs completed successfully",
   "rewrite": "validated and published atomically with explicit leases",
   "docker_engine": "29.8.1",
   "compose": "5.5.1",
@@ -19,9 +19,12 @@
   "browser_integration": "passed",
   "web_production_docker_build": "passed",
   "development_services": "six running healthy services",
-  "ubuntu_development_checkout": "not installed/verified",
-  "stage0": "final verification in progress",
+  "ubuntu_development_checkout": "Ubuntu 24.04.5 WSL2 Make suite passed",
+  "stage0": "complete",
   "cloud_resources_created": false,
   "frontend_formatting": "Prettier 3.8.1 passed",
-  "fresh_published_scans": "current and full history: zero findings"
+  "fresh_published_scans": "current and full history: zero findings",
+  "source_commit": "608e4356b312f4422ad40996e1604fb1ef28a640",
+  "verified_merged_main": "dc3d409c5fc9605c48ec0e7f8ca230d6c5e719b2",
+  "fresh_main_ci_equivalent": "passed"
 }
