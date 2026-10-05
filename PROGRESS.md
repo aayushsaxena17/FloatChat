@@ -1,6 +1,6 @@
 # Stage progress
 
-## Stage 0 - COMPLETE
+## Stage 0 - corrective branch verified locally; review gate remains
 
 Owner confirmed revocation.
 
@@ -18,5 +18,13 @@ Owner confirmed revocation.
 - [x] Record final evidence and old-clone recovery in the Stage 0 gate report.
 
 Stage 1 has not started. No cloud infrastructure, production credentials, real LLM calls or required Argovis access were introduced.
+
+The preceding checklist records the original foundation execution. Astra subsequently identified
+four defects in readiness cancellation, metadata permissions, hook interpreter selection and
+refetch deadlines. The corrective branch starts cleanly from sanitized main 7e642a1.
+All four now have regression coverage and local full-suite verification; see
+reports/stage0-review-verification.json. Required CI must pass on the actual PR head.
+Do not merge until Astra reports no remaining P1 or P2 findings. No review approval is inferred
+from local tests, and no published history is rewritten by this correction.
 
 See [the complete gate report](docs/stage0-gate.md). The tested foundation commit is `608e4356b312f4422ad40996e1604fb1ef28a640`; verified merged main is `dc3d409c5fc9605c48ec0e7f8ca230d6c5e719b2`. A documentation-only follow-up records the post-merge evidence without changing tested runtime source.

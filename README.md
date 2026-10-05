@@ -2,7 +2,7 @@
 
 FloatChat is a research workspace for exploring Argo ocean observations through a conversational interface. This repository is being rebuilt from a hackathon prototype into a Python/React monorepo. Stage 0 provides local infrastructure and a tested scaffold; scientific ingestion, query features, and LLM integration belong to later stages.
 
-**Status: under construction. Stage 0 complete. Stage 1 has not started.**
+**Status: under construction. Stage 0 corrective review in progress. Stage 1 has not started.**
 
 ## Local development
 
@@ -19,7 +19,7 @@ git clone https://github.com/Proxpekt/FloatChat.git ~/FloatChat
 cd ~/FloatChat
 ```
 
-For this verified machine, open `wsl -d Ubuntu-24.04` and use the fresh checkout at `~/FloatChat-stage0-verified`. The pinned tools are installed and on the `floatchat` user's shell PATH. From the repository root:
+Open Ubuntu with `wsl -d Ubuntu-24.04`, install the pinned prerequisite tools, and use a fresh Linux-filesystem clone. For the corrections awaiting review, check out `codex/stage-0-review-fixes`. From the repository root:
 
 ```bash
 python3 scripts/security/install_gitleaks.py

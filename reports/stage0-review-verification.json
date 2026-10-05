@@ -1,0 +1,91 @@
+{
+  "observed_utc": "2026-10-05T11:50:36.079278+00:00",
+  "status": "local verification passed; required CI and Astra review are external merge gates",
+  "base_commit": "7e642a104d469e57c2857e8ad698bb8417553e18",
+  "implementation_commit": "9ee9c9dcf9affeb211a8c15435b2336ce1e05928",
+  "branch": "codex/stage-0-review-fixes",
+  "platform": "WSL2 Ubuntu 24.04.5, non-activated managed uv environment, Docker Desktop Linux engine",
+  "targeted_regression_tests": 22,
+  "full_python_tests": 28,
+  "frontend_unit_tests": 3,
+  "browser_tests": 1,
+  "ruff_lint_and_format": "passed",
+  "python_and_frontend_types": "passed",
+  "frontend_lint_and_format": "passed",
+  "frontend_production_build": "passed",
+  "compose_image_builds": "passed",
+  "explicit_web_production_target": "passed",
+  "make_dev_and_repeat": "passed",
+  "integration_checks": [
+    {
+      "check": "empty-volume-startup",
+      "seconds": 23.157347261001632
+    },
+    {
+      "check": "postgis-metadata-permissions-and-repeat-bootstrap",
+      "passed": true
+    },
+    {
+      "check": "hard-readiness-deadline-and-resource-disposal",
+      "passed": true
+    },
+    {
+      "check": "db-outage-recovery",
+      "passed": true
+    },
+    {
+      "check": "redis-outage-recovery",
+      "passed": true
+    },
+    {
+      "check": "minio-outage-recovery",
+      "passed": true
+    },
+    {
+      "check": "repeat-startup-persistence",
+      "seconds": 21.148697655000433
+    },
+    {
+      "check": "worker-storage-migrations-browser",
+      "passed": true
+    }
+  ],
+  "current_secret_scan_findings": 0,
+  "history_secret_scan_findings": 0,
+  "scanner_version": "8.30.1",
+  "deadline_contracts": {
+    "readiness": "configured total budget; 50 ms scheduling tolerance in delayed-cleanup regression",
+    "refetch": "30 seconds including a 50 ms reserved process cleanup budget; 500 ms regression budgets + 100 ms scheduling tolerance"
+  },
+  "commands": [
+    "python3 scripts/security/install_gitleaks.py",
+    "make setup",
+    "uv run --all-packages --frozen python -m pytest tests/test_health.py tests/test_refetch.py tests/test_security.py -q --tb=short",
+    "make lint",
+    "make typecheck",
+    "PYTEST_ADDOPTS=--junitxml=/tmp/floatchat-review-python.xml make test",
+    "pnpm build",
+    "make build",
+    "docker build --target build -t floatchat-web:stage0-review-build -f infra/docker/web.Dockerfile .",
+    "make integration",
+    "make dev (twice)",
+    "make secrets-current",
+    "make secrets-history",
+    "make eval"
+  ],
+  "source_safety": {
+    "clean_remote_clone": true,
+    "dirty_verification_artifacts_preserved_and_inspected": true,
+    "dirty_artifacts_copied_as_source": false,
+    "original_windows_checkout_modified": false,
+    "new_report_private_paths": false,
+    "published_history_modified": false
+  },
+  "cloud_resources_created": false,
+  "stage1_started": false,
+  "merge_conditions": [
+    "all six required checks actually pass on the PR head",
+    "Astra review reports no remaining P1/P2 findings"
+  ],
+  "astra_review": "not claimed"
+}
