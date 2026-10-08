@@ -1,48 +1,48 @@
 {
   "acceptance_status": "not_certified_by_this_report",
   "active_generation_ids": [
-    "5267bdf3-89c1-41fd-84cd-e0a1eff9230f"
+    "19173e31-c537-4b31-8a03-13a1056d2a0c"
   ],
   "active_partition_no_change": false,
   "after_at_report_snapshot": {
-    "active_generation_sha256": "e4bc8bc64964337be5408d514c8d6bd920501528e0457596d891da4e5f96ae1d",
+    "active_generation_sha256": "e37aa48189c8fcf36013962df0bcbe81c9af170ab830beaa208e9c4d50bba1d2",
     "active_partitions": 1,
     "attempts": 46,
     "audit_rows": 143,
     "floats": 1,
     "measurement_levels": 27,
-    "profile_manifest_sha256": "d539955654fac1a7fa0ed012abd553baad03f07430a5777cb8576b0fe8cf27d4",
+    "profile_manifest_sha256": "dad7d5a22a71f3c03f5e63495b6891471a037e8f5edf1f1d8f5088ace75af845",
     "profiles": 9,
     "runs": 9
   },
   "audit_and_attempt_rows_may_increase": true,
   "before": {
-    "active_generation_sha256": "1d3ed4677bebe1f963be90cc4c7fb74008f53040118b44e2162a04eb9fc3afd5",
+    "active_generation_sha256": "5b58be62fbfe6043fe8dbed242d19ab9a23256b498bfc584973292ce20e77cdc",
     "active_partitions": 1,
     "attempts": 38,
     "audit_rows": 123,
     "floats": 1,
     "measurement_levels": 24,
-    "profile_manifest_sha256": "dfeec773d4f90cffb3b1b98243cbbccd2e4795ae554c882b8524c2ff3be5652e",
+    "profile_manifest_sha256": "5b0d9a8e56cd0dea674caee3be9948332c8e90ca1b4b9d499affbbd36ac651e1",
     "profiles": 8,
     "reconciliation": {
       "full_snapshot": {
-        "manifest_sha256": "dfeec773d4f90cffb3b1b98243cbbccd2e4795ae554c882b8524c2ff3be5652e",
+        "manifest_sha256": "5b0d9a8e56cd0dea674caee3be9948332c8e90ca1b4b9d499affbbd36ac651e1",
         "measurement_levels": 24,
         "profiles": 8
       },
       "full_stored": {
-        "manifest_sha256": "dfeec773d4f90cffb3b1b98243cbbccd2e4795ae554c882b8524c2ff3be5652e",
+        "manifest_sha256": "5b0d9a8e56cd0dea674caee3be9948332c8e90ca1b4b9d499affbbd36ac651e1",
         "measurement_levels": 24,
         "profiles": 8
       },
       "run_eligible_snapshot": {
-        "manifest_sha256": "dfeec773d4f90cffb3b1b98243cbbccd2e4795ae554c882b8524c2ff3be5652e",
+        "manifest_sha256": "5b0d9a8e56cd0dea674caee3be9948332c8e90ca1b4b9d499affbbd36ac651e1",
         "measurement_levels": 24,
         "profiles": 8
       },
       "run_eligible_stored": {
-        "manifest_sha256": "dfeec773d4f90cffb3b1b98243cbbccd2e4795ae554c882b8524c2ff3be5652e",
+        "manifest_sha256": "5b0d9a8e56cd0dea674caee3be9948332c8e90ca1b4b9d499affbbd36ac651e1",
         "measurement_levels": 24,
         "profiles": 8
       }
@@ -58,52 +58,17 @@
         "known_source_levels": 3,
         "observed_profile_occurrences": 1,
         "raw_roles": {
-          "inventory_after": "d004b825-5ffb-458f-b643-09dd23679cc0",
-          "inventory_before": "3473b51d-80e1-4294-a873-bcd8861bc5c2",
-          "metadata": "8b2a077f-6ab3-4a72-b2fb-4c2bd19d66e6",
-          "profile": "cbbbb0ab-f415-47e6-9857-622c85893914"
+          "inventory_after": "bd23116e-c08b-41dc-abf7-6589334ad84e",
+          "inventory_before": "313505a3-1419-49e5-a742-b30e37263846",
+          "metadata": "78a6d7ec-3642-4d2a-a5fd-76f900d17214",
+          "profile": "147a350b-ae1c-4f8c-ac30-dba8355a8f7a"
         },
         "unknown_level_profiles": 0
       },
-      "completed_at": null,
-      "control_epoch": 2,
-      "fence": 2,
-      "id": "2c574d6f-46fa-4179-b3eb-17cd51bec8d8",
-      "leaf": true,
-      "logical_chunk_key": "1",
-      "parent_id": null,
-      "plan_version": "explicit-component-not-regional",
-      "processing_claims": 1,
-      "publication_attempts": 1,
-      "reason": "deadline_expired",
-      "requested_end": "2025-01-07 00:00:00+00:00",
-      "requested_start": "2025-01-01 00:00:00+00:00",
-      "state": "failed",
-      "tile": {
-        "height": 10,
-        "south": 10,
-        "west": 80,
-        "width": 10
-      }
-    },
-    {
-      "accounting": {
-        "canonical_input_bytes": 4192,
-        "inventory_verified": true,
-        "known_source_levels": 3,
-        "observed_profile_occurrences": 1,
-        "raw_roles": {
-          "inventory_after": "d142a1fa-5adb-4538-9d53-a152b8ec25b4",
-          "inventory_before": "096d6fc0-0808-4da8-bcd7-8d0157f1e793",
-          "metadata": "aab8800f-fd7a-4cbf-884e-b057eac71cfa",
-          "profile": "59bb20a7-f962-4c40-927e-0272cb2ab1b4"
-        },
-        "unknown_level_profiles": 0
-      },
-      "completed_at": "2026-10-08 11:32:18.181258+00:00",
+      "completed_at": "2026-10-08 15:39:40.789871+00:00",
       "control_epoch": 2,
       "fence": 1,
-      "id": "4b77f91f-4a7a-4d88-9949-fcaf60014100",
+      "id": "89b49c0c-fc17-4834-93ae-cacaa32e74c4",
       "leaf": true,
       "logical_chunk_key": "0",
       "parent_id": null,
@@ -118,6 +83,41 @@
         "height": 10,
         "south": 10,
         "west": 70,
+        "width": 10
+      }
+    },
+    {
+      "accounting": {
+        "canonical_input_bytes": 4192,
+        "inventory_verified": true,
+        "known_source_levels": 3,
+        "observed_profile_occurrences": 1,
+        "raw_roles": {
+          "inventory_after": "f61bbb5c-4e36-4a19-8ef8-e93fe5c78771",
+          "inventory_before": "2b7c03f8-38d6-4be5-8ca5-3f4808cf3439",
+          "metadata": "22868eae-de11-453c-b7ab-18bed43f868e",
+          "profile": "c2eb90e9-6849-4699-99ef-ea56c4e86c93"
+        },
+        "unknown_level_profiles": 0
+      },
+      "completed_at": null,
+      "control_epoch": 2,
+      "fence": 2,
+      "id": "eee51466-5532-4503-b042-eddcc4666ac2",
+      "leaf": true,
+      "logical_chunk_key": "1",
+      "parent_id": null,
+      "plan_version": "explicit-component-not-regional",
+      "processing_claims": 1,
+      "publication_attempts": 1,
+      "reason": "deadline_expired",
+      "requested_end": "2025-01-07 00:00:00+00:00",
+      "requested_start": "2025-01-01 00:00:00+00:00",
+      "state": "failed",
+      "tile": {
+        "height": 10,
+        "south": 10,
+        "west": 80,
         "width": 10
       }
     }
@@ -316,7 +316,7 @@
     },
     "scope": "Full Indian Ocean request geometry at frozen commit snapshot; seeded component plans do not prove the region",
     "selectable_generation_ids": [
-      "5267bdf3-89c1-41fd-84cd-e0a1eff9230f"
+      "19173e31-c537-4b31-8a03-13a1056d2a0c"
     ],
     "source_absence_evidence": [],
     "verified_empty_evidence": []
@@ -347,17 +347,17 @@
   "persisted_metrics": {
     "active_generations": [
       {
-        "bytes": 20179,
-        "committed_at": "2026-10-08T11:32:18.177177+00:00",
+        "bytes": 20182,
+        "committed_at": "2026-10-08T15:39:40.786279+00:00",
         "generation": 9,
-        "id": "5267bdf3-89c1-41fd-84cd-e0a1eff9230f",
+        "id": "19173e31-c537-4b31-8a03-13a1056d2a0c",
         "levels": 27,
         "logical_key": "argovis/core/2025-01/70:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
-        "object_key": "normalised/sha256/1d068ee933778e124984299662f2dec20f8c5403e45e36a4fd1fba53e7f705a8.parquet",
+        "object_key": "normalised/sha256/dd7efec2da892899c342533673ed8943b58d964cdd6cf5974771e444229ad737.parquet",
         "profiles": 9,
-        "sha256": "1d068ee933778e124984299662f2dec20f8c5403e45e36a4fd1fba53e7f705a8",
+        "sha256": "dd7efec2da892899c342533673ed8943b58d964cdd6cf5974771e444229ad737",
         "verification_evidence": {
-          "membership_sha256": "17e0b72afab3550830de8506e6fec321b8dc6a3e4b95b692e9c022918ec90d29",
+          "membership_sha256": "f7ec8ac88ca9792bff8b3a495be1591552a97851fdab4f6bc9f22916e992b7a1",
           "profiles": 9,
           "rows": 27,
           "schema_sha256": "265e6149cab7be216f5b87228bd67fdd1ab3cad8cd807bea328b8ff7bdc88c80",
@@ -481,9 +481,9 @@
               "temperature_unit_source": "string[pyarrow]"
             },
             "pandas_deep_memory_bytes": 59103,
-            "pandas_to_parquet_ratio": 2.92893602259775,
+            "pandas_to_parquet_ratio": 2.928500644138341,
             "pandas_version": "2.3.3",
-            "parquet_bytes": 20179,
+            "parquet_bytes": 20182,
             "parquet_index": "source level_index; pandas RangeIndex not stored",
             "pyarrow_version": "23.0.1",
             "ratio_status": "measured",
@@ -505,7 +505,7 @@
             "write_statistics": true
           }
         },
-        "verified_at": "2026-10-08T11:32:18.086009+00:00",
+        "verified_at": "2026-10-08T15:39:40.684104+00:00",
         "versions": {
           "geometry": "indian-ocean-v1",
           "hash": "scientific-json-v2",
@@ -532,10 +532,10 @@
       {
         "attempts": 8,
         "disposition": "verified_raw",
-        "elapsed_seconds_max": 0.03551,
-        "elapsed_seconds_sum": 0.233923,
-        "first_started_at": "2026-10-08T11:32:17.731167+00:00",
-        "last_finished_at": "2026-10-08T11:32:17.894007+00:00",
+        "elapsed_seconds_max": 0.042657,
+        "elapsed_seconds_sum": 0.246133,
+        "first_started_at": "2026-10-08T15:39:40.308567+00:00",
+        "last_finished_at": "2026-10-08T15:39:40.48014+00:00",
         "origin": "captured",
         "unfinished_attempts": 0
       }
@@ -601,13 +601,13 @@
     "coverage_receipt_count": 9,
     "coverage_receipts": [
       {
-        "committed_at": "2026-10-08T11:30:06.475695+00:00",
+        "committed_at": "2026-10-08T15:36:25.344526+00:00",
         "fetch_disposition": "profiles_returned",
-        "id": "21caebb2-1695-4ceb-b1fc-ed56c3032c79",
+        "id": "16456370-8212-49b9-818b-46ca9378b71d",
         "logical_key": "argovis/core/2025-01/70:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
         "requested_end": "2025-01-07T00:00:00+00:00",
         "requested_start": "2025-01-01T00:00:00+00:00",
-        "slot_version": 3,
+        "slot_version": 1,
         "stored_disposition": "active_generation",
         "tile": {
           "height": 10,
@@ -617,73 +617,9 @@
         }
       },
       {
-        "committed_at": "2026-10-08T11:29:36.635937+00:00",
+        "committed_at": "2026-10-08T15:38:25.368429+00:00",
         "fetch_disposition": "profiles_returned",
-        "id": "5d5389df-b4b2-4dc8-b437-b492e3c3d88c",
-        "logical_key": "argovis/core/2025-01/70:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
-        "requested_end": "2025-01-07T00:00:00+00:00",
-        "requested_start": "2025-01-01T00:00:00+00:00",
-        "slot_version": 2,
-        "stored_disposition": "active_generation",
-        "tile": {
-          "height": 10,
-          "south": 10,
-          "west": 70,
-          "width": 10
-        }
-      },
-      {
-        "committed_at": "2026-10-08T11:32:08.366558+00:00",
-        "fetch_disposition": "profiles_returned",
-        "id": "78e9c97e-c992-4329-b46c-a059618483e4",
-        "logical_key": "argovis/core/2025-01/70:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
-        "requested_end": "2025-01-07T00:00:00+00:00",
-        "requested_start": "2025-01-01T00:00:00+00:00",
-        "slot_version": 8,
-        "stored_disposition": "active_generation",
-        "tile": {
-          "height": 10,
-          "south": 10,
-          "west": 70,
-          "width": 10
-        }
-      },
-      {
-        "committed_at": "2026-10-08T11:31:48.240411+00:00",
-        "fetch_disposition": "profiles_returned",
-        "id": "7bcfc4d2-7945-43f4-946d-fc3bee16c6f8",
-        "logical_key": "argovis/core/2025-01/70:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
-        "requested_end": "2025-01-07T00:00:00+00:00",
-        "requested_start": "2025-01-01T00:00:00+00:00",
-        "slot_version": 7,
-        "stored_disposition": "active_generation",
-        "tile": {
-          "height": 10,
-          "south": 10,
-          "west": 70,
-          "width": 10
-        }
-      },
-      {
-        "committed_at": "2026-10-08T11:31:28.058071+00:00",
-        "fetch_disposition": "profiles_returned",
-        "id": "be861276-8306-46e3-890b-344fa620df73",
-        "logical_key": "argovis/core/2025-01/70:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
-        "requested_end": "2025-01-07T00:00:00+00:00",
-        "requested_start": "2025-01-01T00:00:00+00:00",
-        "slot_version": 6,
-        "stored_disposition": "active_generation",
-        "tile": {
-          "height": 10,
-          "south": 10,
-          "west": 70,
-          "width": 10
-        }
-      },
-      {
-        "committed_at": "2026-10-08T11:31:06.190071+00:00",
-        "fetch_disposition": "profiles_returned",
-        "id": "cb824a44-9b05-4005-ad3e-b00a759910df",
+        "id": "2121b453-8b45-47d3-b940-8120eb19a76b",
         "logical_key": "argovis/core/2025-01/70:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
         "requested_end": "2025-01-07T00:00:00+00:00",
         "requested_start": "2025-01-01T00:00:00+00:00",
@@ -697,9 +633,25 @@
         }
       },
       {
-        "committed_at": "2026-10-08T11:30:36.303803+00:00",
+        "committed_at": "2026-10-08T15:38:57.854961+00:00",
         "fetch_disposition": "profiles_returned",
-        "id": "d045af80-d73a-4b22-8670-55b72cf9275e",
+        "id": "47d0507c-7fe5-400d-89af-ec129cd54fc2",
+        "logical_key": "argovis/core/2025-01/70:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+        "requested_end": "2025-01-07T00:00:00+00:00",
+        "requested_start": "2025-01-01T00:00:00+00:00",
+        "slot_version": 6,
+        "stored_disposition": "active_generation",
+        "tile": {
+          "height": 10,
+          "south": 10,
+          "west": 70,
+          "width": 10
+        }
+      },
+      {
+        "committed_at": "2026-10-08T15:37:55.626125+00:00",
+        "fetch_disposition": "profiles_returned",
+        "id": "5f38672a-deaa-4101-9d6d-09190332cdbb",
         "logical_key": "argovis/core/2025-01/70:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
         "requested_end": "2025-01-07T00:00:00+00:00",
         "requested_start": "2025-01-01T00:00:00+00:00",
@@ -713,9 +665,57 @@
         }
       },
       {
-        "committed_at": "2026-10-08T11:32:18.17848+00:00",
+        "committed_at": "2026-10-08T15:39:11.047638+00:00",
         "fetch_disposition": "profiles_returned",
-        "id": "dbd6d651-da64-4976-bb67-938bcb95b0b2",
+        "id": "83431d61-23e2-4a29-b259-9a8c75133f83",
+        "logical_key": "argovis/core/2025-01/70:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+        "requested_end": "2025-01-07T00:00:00+00:00",
+        "requested_start": "2025-01-01T00:00:00+00:00",
+        "slot_version": 7,
+        "stored_disposition": "active_generation",
+        "tile": {
+          "height": 10,
+          "south": 10,
+          "west": 70,
+          "width": 10
+        }
+      },
+      {
+        "committed_at": "2026-10-08T15:37:24.960518+00:00",
+        "fetch_disposition": "profiles_returned",
+        "id": "8b3a463a-149d-4129-9d51-ec487553f21c",
+        "logical_key": "argovis/core/2025-01/70:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+        "requested_end": "2025-01-07T00:00:00+00:00",
+        "requested_start": "2025-01-01T00:00:00+00:00",
+        "slot_version": 3,
+        "stored_disposition": "active_generation",
+        "tile": {
+          "height": 10,
+          "south": 10,
+          "west": 70,
+          "width": 10
+        }
+      },
+      {
+        "committed_at": "2026-10-08T15:36:54.939434+00:00",
+        "fetch_disposition": "profiles_returned",
+        "id": "b1b126ae-f8a9-4af2-83d8-2856d6de1683",
+        "logical_key": "argovis/core/2025-01/70:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+        "requested_end": "2025-01-07T00:00:00+00:00",
+        "requested_start": "2025-01-01T00:00:00+00:00",
+        "slot_version": 2,
+        "stored_disposition": "active_generation",
+        "tile": {
+          "height": 10,
+          "south": 10,
+          "west": 70,
+          "width": 10
+        }
+      },
+      {
+        "committed_at": "2026-10-08T15:39:40.787737+00:00",
+        "fetch_disposition": "profiles_returned",
+        "id": "dc4564dd-172f-4c59-8108-a93c9a8cf5fc",
         "logical_key": "argovis/core/2025-01/70:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
         "requested_end": "2025-01-07T00:00:00+00:00",
         "requested_start": "2025-01-01T00:00:00+00:00",
@@ -729,13 +729,13 @@
         }
       },
       {
-        "committed_at": "2026-10-08T11:29:07.100391+00:00",
+        "committed_at": "2026-10-08T15:39:31.198401+00:00",
         "fetch_disposition": "profiles_returned",
-        "id": "e6d041d4-c096-4c0b-89ea-e406201edfc4",
+        "id": "eec17c67-6c9e-4f4c-afa5-d9acfb1839b6",
         "logical_key": "argovis/core/2025-01/70:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
         "requested_end": "2025-01-07T00:00:00+00:00",
         "requested_start": "2025-01-01T00:00:00+00:00",
-        "slot_version": 1,
+        "slot_version": 8,
         "stored_disposition": "active_generation",
         "tile": {
           "height": 10,
@@ -758,37 +758,37 @@
       {
         "episodes": 1,
         "phase": "complete",
-        "wall_seconds_sum": 29.375046
+        "wall_seconds_sum": 29.475732
       },
       {
         "episodes": 1,
         "phase": "failed",
-        "wall_seconds_sum": 0.002106
+        "wall_seconds_sum": 0.012578
       },
       {
         "episodes": 2,
         "phase": "fetching",
-        "wall_seconds_sum": 0.288412
+        "wall_seconds_sum": 0.301432
       },
       {
         "episodes": 2,
         "phase": "landed",
-        "wall_seconds_sum": 0.006115
+        "wall_seconds_sum": 0.006375
       },
       {
         "episodes": 2,
         "phase": "planned",
-        "wall_seconds_sum": 0.142484
+        "wall_seconds_sum": 0.176357
       },
       {
         "episodes": 2,
         "phase": "publishing",
-        "wall_seconds_sum": 29.895628
+        "wall_seconds_sum": 30.017978
       },
       {
         "episodes": 2,
         "phase": "validating",
-        "wall_seconds_sum": 0.070995
+        "wall_seconds_sum": 0.081858
       }
     ],
     "policy_versions": {
@@ -825,9 +825,9 @@
     },
     "resource_limits": [],
     "run_timing": {
-      "created_actual_utc": "2026-10-08T11:32:09.981183+00:00",
-      "elapsed_seconds": 37.575206,
-      "terminal_event_actual_utc": "2026-10-08T11:32:47.556389+00:00"
+      "created_actual_utc": "2026-10-08T15:39:32.918352+00:00",
+      "elapsed_seconds": 37.34735,
+      "terminal_event_actual_utc": "2026-10-08T15:40:10.265702+00:00"
     },
     "selected_profiles_by_slot": {
       "argovis/core/2025-01/70:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2": 9
@@ -916,89 +916,9 @@
     "verified_raw_provenance": [
       {
         "application_commit": "offline-broker-proof",
-        "bytes": 871,
-        "endpoint_path": "/argo",
-        "id": "096d6fc0-0808-4da8-bcd7-8d0157f1e793",
-        "logical_request_sha256": "6729ab7a2212e7692bf4d9f48474ced9123bb7741191b8263b6cb2e212b64dcc",
-        "object_key": "raw/sha256/5a422cef487f721955021375d63ada500635132c34adee552823daaf211bdc48.json",
-        "origin": "captured",
-        "request_parameters": {
-          "endDate": "2025-01-07T00:00:00Z",
-          "polygon": "[[69.999999,9.999999],[80.000001,9.999999],[80.000001,20.000001],[69.999999,20.000001],[69.999999,9.999999]]",
-          "startDate": "2025-01-01T00:00:00Z"
-        },
-        "retrieved_at": "2026-10-08T11:32:09.978253+00:00",
-        "role": "inventory_before",
-        "sanitization": {
-          "credential_fields_removed": 0,
-          "input_kind": "synthetic_offline_chunk_fixture",
-          "input_origin": "captured",
-          "read_at_actual_utc": "2026-10-08T11:32:17.763406+00:00",
-          "urls_scrubbed": 0,
-          "validation": {
-            "documents": 1,
-            "schema": "argovis-core-2.36.2+ifremer-fluorescence-v1-object-array"
-          },
-          "version": "raw-sanitization-v1"
-        },
-        "sha256": "5a422cef487f721955021375d63ada500635132c34adee552823daaf211bdc48",
-        "versions": {
-          "geometry": "indian-ocean-v1",
-          "hash": "scientific-json-v2",
-          "mapping": "argovis-core-v1",
-          "qc": "core-good-v1",
-          "source_contract": "argovis-core-2.36.2+ifremer-fluorescence-v1",
-          "specification": "2.36.2",
-          "specification_sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
-          "translator_revision": "cbf2bb48ed5d95532c18bb2cd5217e44618356cf",
-          "translator_sha256": "279af8ef7b2adabad38d94ca71de02d86dd11efe28e3c1f174f874b7ed73224f"
-        }
-      },
-      {
-        "application_commit": "offline-broker-proof",
-        "bytes": 871,
-        "endpoint_path": "/argo",
-        "id": "3473b51d-80e1-4294-a873-bcd8861bc5c2",
-        "logical_request_sha256": "7830f50cf0f7d2638d4742f9fd54659dd056448b2e753c8b7fb29ea2229fc293",
-        "object_key": "raw/sha256/15f15a2fa4e7bef3fc5188de13724c92f38f9350f148f3da51ddf50e89703034.json",
-        "origin": "captured",
-        "request_parameters": {
-          "endDate": "2025-01-07T00:00:00Z",
-          "polygon": "[[79.999999,9.999999],[90.000001,9.999999],[90.000001,20.000001],[79.999999,20.000001],[79.999999,9.999999]]",
-          "startDate": "2025-01-01T00:00:00Z"
-        },
-        "retrieved_at": "2026-10-08T11:32:09.97909+00:00",
-        "role": "inventory_before",
-        "sanitization": {
-          "credential_fields_removed": 0,
-          "input_kind": "synthetic_offline_chunk_fixture",
-          "input_origin": "captured",
-          "read_at_actual_utc": "2026-10-08T11:32:17.789239+00:00",
-          "urls_scrubbed": 0,
-          "validation": {
-            "documents": 1,
-            "schema": "argovis-core-2.36.2+ifremer-fluorescence-v1-object-array"
-          },
-          "version": "raw-sanitization-v1"
-        },
-        "sha256": "15f15a2fa4e7bef3fc5188de13724c92f38f9350f148f3da51ddf50e89703034",
-        "versions": {
-          "geometry": "indian-ocean-v1",
-          "hash": "scientific-json-v2",
-          "mapping": "argovis-core-v1",
-          "qc": "core-good-v1",
-          "source_contract": "argovis-core-2.36.2+ifremer-fluorescence-v1",
-          "specification": "2.36.2",
-          "specification_sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
-          "translator_revision": "cbf2bb48ed5d95532c18bb2cd5217e44618356cf",
-          "translator_sha256": "279af8ef7b2adabad38d94ca71de02d86dd11efe28e3c1f174f874b7ed73224f"
-        }
-      },
-      {
-        "application_commit": "offline-broker-proof",
         "bytes": 975,
         "endpoint_path": "/argo",
-        "id": "59bb20a7-f962-4c40-927e-0272cb2ab1b4",
+        "id": "147a350b-ae1c-4f8c-ac30-dba8355a8f7a",
         "logical_request_sha256": "f6f66b2fb3bb5217d19bd77717ed29ac8a6bc05571a81d29fbc795b7f3f142ba",
         "object_key": "raw/sha256/0a55d70bc1beac31d5d561305cee614ca004f0a26405adac970241b7317ee39c.json",
         "origin": "captured",
@@ -1008,13 +928,13 @@
           "polygon": "[[69.999999,9.999999],[80.000001,9.999999],[80.000001,20.000001],[69.999999,20.000001],[69.999999,9.999999]]",
           "startDate": "2025-01-01T00:00:00Z"
         },
-        "retrieved_at": "2026-10-08T11:32:09.978461+00:00",
+        "retrieved_at": "2026-10-08T15:39:32.915365+00:00",
         "role": "profile",
         "sanitization": {
           "credential_fields_removed": 0,
           "input_kind": "synthetic_offline_chunk_fixture",
           "input_origin": "captured",
-          "read_at_actual_utc": "2026-10-08T11:32:17.799653+00:00",
+          "read_at_actual_utc": "2026-10-08T15:39:40.381969+00:00",
           "urls_scrubbed": 0,
           "validation": {
             "documents": 1,
@@ -1039,20 +959,20 @@
         "application_commit": "offline-broker-proof",
         "bytes": 360,
         "endpoint_path": "/argo/meta",
-        "id": "8b2a077f-6ab3-4a72-b2fb-4c2bd19d66e6",
+        "id": "22868eae-de11-453c-b7ab-18bed43f868e",
         "logical_request_sha256": "46775e61266b0b2bda8d85d07c9f34c2430b92e2fc2ddbb4ad6dc52ec64bfd9e",
         "object_key": "raw/sha256/8c707f40b8f74c5d9aa03d743b2ae523b2c92af51d08decdb4c229c605e1ea29.json",
         "origin": "captured",
         "request_parameters": {
           "id": "1901094_m0"
         },
-        "retrieved_at": "2026-10-08T11:32:09.979688+00:00",
+        "retrieved_at": "2026-10-08T15:39:32.916737+00:00",
         "role": "metadata",
         "sanitization": {
           "credential_fields_removed": 0,
           "input_kind": "synthetic_offline_chunk_fixture",
           "input_origin": "captured",
-          "read_at_actual_utc": "2026-10-08T11:32:17.891081+00:00",
+          "read_at_actual_utc": "2026-10-08T15:39:40.478411+00:00",
           "urls_scrubbed": 0,
           "validation": {
             "documents": 1,
@@ -1061,85 +981,6 @@
           "version": "raw-sanitization-v1"
         },
         "sha256": "8c707f40b8f74c5d9aa03d743b2ae523b2c92af51d08decdb4c229c605e1ea29",
-        "versions": {
-          "geometry": "indian-ocean-v1",
-          "hash": "scientific-json-v2",
-          "mapping": "argovis-core-v1",
-          "qc": "core-good-v1",
-          "source_contract": "argovis-core-2.36.2+ifremer-fluorescence-v1",
-          "specification": "2.36.2",
-          "specification_sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
-          "translator_revision": "cbf2bb48ed5d95532c18bb2cd5217e44618356cf",
-          "translator_sha256": "279af8ef7b2adabad38d94ca71de02d86dd11efe28e3c1f174f874b7ed73224f"
-        }
-      },
-      {
-        "application_commit": "offline-broker-proof",
-        "bytes": 360,
-        "endpoint_path": "/argo/meta",
-        "id": "aab8800f-fd7a-4cbf-884e-b057eac71cfa",
-        "logical_request_sha256": "46775e61266b0b2bda8d85d07c9f34c2430b92e2fc2ddbb4ad6dc52ec64bfd9e",
-        "object_key": "raw/sha256/8c707f40b8f74c5d9aa03d743b2ae523b2c92af51d08decdb4c229c605e1ea29.json",
-        "origin": "captured",
-        "request_parameters": {
-          "id": "1901094_m0"
-        },
-        "retrieved_at": "2026-10-08T11:32:09.979688+00:00",
-        "role": "metadata",
-        "sanitization": {
-          "credential_fields_removed": 0,
-          "input_kind": "synthetic_offline_chunk_fixture",
-          "input_origin": "captured",
-          "read_at_actual_utc": "2026-10-08T11:32:17.858215+00:00",
-          "urls_scrubbed": 0,
-          "validation": {
-            "documents": 1,
-            "schema": "argovis-core-2.36.2+ifremer-fluorescence-v1-object-array"
-          },
-          "version": "raw-sanitization-v1"
-        },
-        "sha256": "8c707f40b8f74c5d9aa03d743b2ae523b2c92af51d08decdb4c229c605e1ea29",
-        "versions": {
-          "geometry": "indian-ocean-v1",
-          "hash": "scientific-json-v2",
-          "mapping": "argovis-core-v1",
-          "qc": "core-good-v1",
-          "source_contract": "argovis-core-2.36.2+ifremer-fluorescence-v1",
-          "specification": "2.36.2",
-          "specification_sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
-          "translator_revision": "cbf2bb48ed5d95532c18bb2cd5217e44618356cf",
-          "translator_sha256": "279af8ef7b2adabad38d94ca71de02d86dd11efe28e3c1f174f874b7ed73224f"
-        }
-      },
-      {
-        "application_commit": "offline-broker-proof",
-        "bytes": 975,
-        "endpoint_path": "/argo",
-        "id": "cbbbb0ab-f415-47e6-9857-622c85893914",
-        "logical_request_sha256": "68175debe81fb3860b667fec6e3499a32cb34059bfcc87559da2ee674dff3aa2",
-        "object_key": "raw/sha256/e1004098695855dec96be5c3833ecb1951fae0098618f3c18a55aa96caaa92b4.json",
-        "origin": "captured",
-        "request_parameters": {
-          "data": "all",
-          "endDate": "2025-01-07T00:00:00Z",
-          "polygon": "[[79.999999,9.999999],[90.000001,9.999999],[90.000001,20.000001],[79.999999,20.000001],[79.999999,9.999999]]",
-          "startDate": "2025-01-01T00:00:00Z"
-        },
-        "retrieved_at": "2026-10-08T11:32:09.979411+00:00",
-        "role": "profile",
-        "sanitization": {
-          "credential_fields_removed": 0,
-          "input_kind": "synthetic_offline_chunk_fixture",
-          "input_origin": "captured",
-          "read_at_actual_utc": "2026-10-08T11:32:17.827806+00:00",
-          "urls_scrubbed": 0,
-          "validation": {
-            "documents": 1,
-            "schema": "argovis-core-2.36.2+ifremer-fluorescence-v1-object-array"
-          },
-          "version": "raw-sanitization-v1"
-        },
-        "sha256": "e1004098695855dec96be5c3833ecb1951fae0098618f3c18a55aa96caaa92b4",
         "versions": {
           "geometry": "indian-ocean-v1",
           "hash": "scientific-json-v2",
@@ -1156,8 +997,8 @@
         "application_commit": "offline-broker-proof",
         "bytes": 871,
         "endpoint_path": "/argo",
-        "id": "d004b825-5ffb-458f-b643-09dd23679cc0",
-        "logical_request_sha256": "6aa435adb370fedc8032a70db4c6e581a73a039efdb96bd62cacbefad63e742f",
+        "id": "2b7c03f8-38d6-4be5-8ca5-3f4808cf3439",
+        "logical_request_sha256": "7830f50cf0f7d2638d4742f9fd54659dd056448b2e753c8b7fb29ea2229fc293",
         "object_key": "raw/sha256/15f15a2fa4e7bef3fc5188de13724c92f38f9350f148f3da51ddf50e89703034.json",
         "origin": "captured",
         "request_parameters": {
@@ -1165,13 +1006,13 @@
           "polygon": "[[79.999999,9.999999],[90.000001,9.999999],[90.000001,20.000001],[79.999999,20.000001],[79.999999,9.999999]]",
           "startDate": "2025-01-01T00:00:00Z"
         },
-        "retrieved_at": "2026-10-08T11:32:09.979613+00:00",
-        "role": "inventory_after",
+        "retrieved_at": "2026-10-08T15:39:32.915769+00:00",
+        "role": "inventory_before",
         "sanitization": {
           "credential_fields_removed": 0,
           "input_kind": "synthetic_offline_chunk_fixture",
           "input_origin": "captured",
-          "read_at_actual_utc": "2026-10-08T11:32:17.859184+00:00",
+          "read_at_actual_utc": "2026-10-08T15:39:40.380498+00:00",
           "urls_scrubbed": 0,
           "validation": {
             "documents": 1,
@@ -1196,8 +1037,8 @@
         "application_commit": "offline-broker-proof",
         "bytes": 871,
         "endpoint_path": "/argo",
-        "id": "d142a1fa-5adb-4538-9d53-a152b8ec25b4",
-        "logical_request_sha256": "c86e454265521caaef56fe1235b06dcd4c572c12fd70b7d31aeec8085f6f2353",
+        "id": "313505a3-1419-49e5-a742-b30e37263846",
+        "logical_request_sha256": "6729ab7a2212e7692bf4d9f48474ced9123bb7741191b8263b6cb2e212b64dcc",
         "object_key": "raw/sha256/5a422cef487f721955021375d63ada500635132c34adee552823daaf211bdc48.json",
         "origin": "captured",
         "request_parameters": {
@@ -1205,13 +1046,13 @@
           "polygon": "[[69.999999,9.999999],[80.000001,9.999999],[80.000001,20.000001],[69.999999,20.000001],[69.999999,9.999999]]",
           "startDate": "2025-01-01T00:00:00Z"
         },
-        "retrieved_at": "2026-10-08T11:32:09.978652+00:00",
-        "role": "inventory_after",
+        "retrieved_at": "2026-10-08T15:39:32.915063+00:00",
+        "role": "inventory_before",
         "sanitization": {
           "credential_fields_removed": 0,
           "input_kind": "synthetic_offline_chunk_fixture",
           "input_origin": "captured",
-          "read_at_actual_utc": "2026-10-08T11:32:17.829958+00:00",
+          "read_at_actual_utc": "2026-10-08T15:39:40.348503+00:00",
           "urls_scrubbed": 0,
           "validation": {
             "documents": 1,
@@ -1220,6 +1061,165 @@
           "version": "raw-sanitization-v1"
         },
         "sha256": "5a422cef487f721955021375d63ada500635132c34adee552823daaf211bdc48",
+        "versions": {
+          "geometry": "indian-ocean-v1",
+          "hash": "scientific-json-v2",
+          "mapping": "argovis-core-v1",
+          "qc": "core-good-v1",
+          "source_contract": "argovis-core-2.36.2+ifremer-fluorescence-v1",
+          "specification": "2.36.2",
+          "specification_sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
+          "translator_revision": "cbf2bb48ed5d95532c18bb2cd5217e44618356cf",
+          "translator_sha256": "279af8ef7b2adabad38d94ca71de02d86dd11efe28e3c1f174f874b7ed73224f"
+        }
+      },
+      {
+        "application_commit": "offline-broker-proof",
+        "bytes": 360,
+        "endpoint_path": "/argo/meta",
+        "id": "78a6d7ec-3642-4d2a-a5fd-76f900d17214",
+        "logical_request_sha256": "46775e61266b0b2bda8d85d07c9f34c2430b92e2fc2ddbb4ad6dc52ec64bfd9e",
+        "object_key": "raw/sha256/8c707f40b8f74c5d9aa03d743b2ae523b2c92af51d08decdb4c229c605e1ea29.json",
+        "origin": "captured",
+        "request_parameters": {
+          "id": "1901094_m0"
+        },
+        "retrieved_at": "2026-10-08T15:39:32.916737+00:00",
+        "role": "metadata",
+        "sanitization": {
+          "credential_fields_removed": 0,
+          "input_kind": "synthetic_offline_chunk_fixture",
+          "input_origin": "captured",
+          "read_at_actual_utc": "2026-10-08T15:39:40.446151+00:00",
+          "urls_scrubbed": 0,
+          "validation": {
+            "documents": 1,
+            "schema": "argovis-core-2.36.2+ifremer-fluorescence-v1-object-array"
+          },
+          "version": "raw-sanitization-v1"
+        },
+        "sha256": "8c707f40b8f74c5d9aa03d743b2ae523b2c92af51d08decdb4c229c605e1ea29",
+        "versions": {
+          "geometry": "indian-ocean-v1",
+          "hash": "scientific-json-v2",
+          "mapping": "argovis-core-v1",
+          "qc": "core-good-v1",
+          "source_contract": "argovis-core-2.36.2+ifremer-fluorescence-v1",
+          "specification": "2.36.2",
+          "specification_sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
+          "translator_revision": "cbf2bb48ed5d95532c18bb2cd5217e44618356cf",
+          "translator_sha256": "279af8ef7b2adabad38d94ca71de02d86dd11efe28e3c1f174f874b7ed73224f"
+        }
+      },
+      {
+        "application_commit": "offline-broker-proof",
+        "bytes": 871,
+        "endpoint_path": "/argo",
+        "id": "bd23116e-c08b-41dc-abf7-6589334ad84e",
+        "logical_request_sha256": "c86e454265521caaef56fe1235b06dcd4c572c12fd70b7d31aeec8085f6f2353",
+        "object_key": "raw/sha256/5a422cef487f721955021375d63ada500635132c34adee552823daaf211bdc48.json",
+        "origin": "captured",
+        "request_parameters": {
+          "endDate": "2025-01-07T00:00:00Z",
+          "polygon": "[[69.999999,9.999999],[80.000001,9.999999],[80.000001,20.000001],[69.999999,20.000001],[69.999999,9.999999]]",
+          "startDate": "2025-01-01T00:00:00Z"
+        },
+        "retrieved_at": "2026-10-08T15:39:32.915587+00:00",
+        "role": "inventory_after",
+        "sanitization": {
+          "credential_fields_removed": 0,
+          "input_kind": "synthetic_offline_chunk_fixture",
+          "input_origin": "captured",
+          "read_at_actual_utc": "2026-10-08T15:39:40.414650+00:00",
+          "urls_scrubbed": 0,
+          "validation": {
+            "documents": 1,
+            "schema": "argovis-core-2.36.2+ifremer-fluorescence-v1-object-array"
+          },
+          "version": "raw-sanitization-v1"
+        },
+        "sha256": "5a422cef487f721955021375d63ada500635132c34adee552823daaf211bdc48",
+        "versions": {
+          "geometry": "indian-ocean-v1",
+          "hash": "scientific-json-v2",
+          "mapping": "argovis-core-v1",
+          "qc": "core-good-v1",
+          "source_contract": "argovis-core-2.36.2+ifremer-fluorescence-v1",
+          "specification": "2.36.2",
+          "specification_sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
+          "translator_revision": "cbf2bb48ed5d95532c18bb2cd5217e44618356cf",
+          "translator_sha256": "279af8ef7b2adabad38d94ca71de02d86dd11efe28e3c1f174f874b7ed73224f"
+        }
+      },
+      {
+        "application_commit": "offline-broker-proof",
+        "bytes": 975,
+        "endpoint_path": "/argo",
+        "id": "c2eb90e9-6849-4699-99ef-ea56c4e86c93",
+        "logical_request_sha256": "68175debe81fb3860b667fec6e3499a32cb34059bfcc87559da2ee674dff3aa2",
+        "object_key": "raw/sha256/e1004098695855dec96be5c3833ecb1951fae0098618f3c18a55aa96caaa92b4.json",
+        "origin": "captured",
+        "request_parameters": {
+          "data": "all",
+          "endDate": "2025-01-07T00:00:00Z",
+          "polygon": "[[79.999999,9.999999],[90.000001,9.999999],[90.000001,20.000001],[79.999999,20.000001],[79.999999,9.999999]]",
+          "startDate": "2025-01-01T00:00:00Z"
+        },
+        "retrieved_at": "2026-10-08T15:39:32.916052+00:00",
+        "role": "profile",
+        "sanitization": {
+          "credential_fields_removed": 0,
+          "input_kind": "synthetic_offline_chunk_fixture",
+          "input_origin": "captured",
+          "read_at_actual_utc": "2026-10-08T15:39:40.415080+00:00",
+          "urls_scrubbed": 0,
+          "validation": {
+            "documents": 1,
+            "schema": "argovis-core-2.36.2+ifremer-fluorescence-v1-object-array"
+          },
+          "version": "raw-sanitization-v1"
+        },
+        "sha256": "e1004098695855dec96be5c3833ecb1951fae0098618f3c18a55aa96caaa92b4",
+        "versions": {
+          "geometry": "indian-ocean-v1",
+          "hash": "scientific-json-v2",
+          "mapping": "argovis-core-v1",
+          "qc": "core-good-v1",
+          "source_contract": "argovis-core-2.36.2+ifremer-fluorescence-v1",
+          "specification": "2.36.2",
+          "specification_sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
+          "translator_revision": "cbf2bb48ed5d95532c18bb2cd5217e44618356cf",
+          "translator_sha256": "279af8ef7b2adabad38d94ca71de02d86dd11efe28e3c1f174f874b7ed73224f"
+        }
+      },
+      {
+        "application_commit": "offline-broker-proof",
+        "bytes": 871,
+        "endpoint_path": "/argo",
+        "id": "f61bbb5c-4e36-4a19-8ef8-e93fe5c78771",
+        "logical_request_sha256": "6aa435adb370fedc8032a70db4c6e581a73a039efdb96bd62cacbefad63e742f",
+        "object_key": "raw/sha256/15f15a2fa4e7bef3fc5188de13724c92f38f9350f148f3da51ddf50e89703034.json",
+        "origin": "captured",
+        "request_parameters": {
+          "endDate": "2025-01-07T00:00:00Z",
+          "polygon": "[[79.999999,9.999999],[90.000001,9.999999],[90.000001,20.000001],[79.999999,20.000001],[79.999999,9.999999]]",
+          "startDate": "2025-01-01T00:00:00Z"
+        },
+        "retrieved_at": "2026-10-08T15:39:32.916635+00:00",
+        "role": "inventory_after",
+        "sanitization": {
+          "credential_fields_removed": 0,
+          "input_kind": "synthetic_offline_chunk_fixture",
+          "input_origin": "captured",
+          "read_at_actual_utc": "2026-10-08T15:39:40.448094+00:00",
+          "urls_scrubbed": 0,
+          "validation": {
+            "documents": 1,
+            "schema": "argovis-core-2.36.2+ifremer-fluorescence-v1-object-array"
+          },
+          "version": "raw-sanitization-v1"
+        },
+        "sha256": "15f15a2fa4e7bef3fc5188de13724c92f38f9350f148f3da51ddf50e89703034",
         "versions": {
           "geometry": "indian-ocean-v1",
           "hash": "scientific-json-v2",
@@ -1254,29 +1254,29 @@
   ],
   "reconciliation_populations": {
     "full_snapshot": {
-      "manifest_sha256": "d539955654fac1a7fa0ed012abd553baad03f07430a5777cb8576b0fe8cf27d4",
+      "manifest_sha256": "dad7d5a22a71f3c03f5e63495b6891471a037e8f5edf1f1d8f5088ace75af845",
       "measurement_levels": 27,
       "profiles": 9
     },
     "full_stored": {
-      "manifest_sha256": "d539955654fac1a7fa0ed012abd553baad03f07430a5777cb8576b0fe8cf27d4",
+      "manifest_sha256": "dad7d5a22a71f3c03f5e63495b6891471a037e8f5edf1f1d8f5088ace75af845",
       "measurement_levels": 27,
       "profiles": 9
     },
     "run_eligible_snapshot": {
-      "manifest_sha256": "d539955654fac1a7fa0ed012abd553baad03f07430a5777cb8576b0fe8cf27d4",
+      "manifest_sha256": "dad7d5a22a71f3c03f5e63495b6891471a037e8f5edf1f1d8f5088ace75af845",
       "measurement_levels": 27,
       "profiles": 9
     },
     "run_eligible_stored": {
-      "manifest_sha256": "d539955654fac1a7fa0ed012abd553baad03f07430a5777cb8576b0fe8cf27d4",
+      "manifest_sha256": "dad7d5a22a71f3c03f5e63495b6891471a037e8f5edf1f1d8f5088ace75af845",
       "measurement_levels": 27,
       "profiles": 9
     }
   },
   "reference_time_utc": "2025-04-01 00:00:00+00:00",
   "run_eligible_balanced": true,
-  "run_id": "70915a4a-e3fe-41e8-9d6b-a4d35b190cfe",
+  "run_id": "21fd2e20-c7c4-440c-98c3-08cdbc82d0a1",
   "scientific_level_delta_balanced": true,
   "scientific_no_change": false,
   "snapshot_evidence_scope": "Committed membership and persisted Parquet verification; this report does not replace a fresh byte-integrity selector check.",
