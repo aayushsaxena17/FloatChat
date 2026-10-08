@@ -656,3 +656,32 @@ worker and one credentialed request in flight stay; two workers in one 1 GiB cgr
 were rejected (would halve the per-worker bound), and two separate worker containers
 were deferred as riskier orchestration on a 3 GB host. The 60-second final evidence
 reserve, retry counts and every other bound are unchanged.
+
+## ADR-0044 - Set-based publication level checks and an owner-slot index
+
+Advisor (Fable) agreed 2026-10-08. The third live run (session 5f59c62f122295a7) failed
+one leaf with `database_deadline` (`reports/stage1-live-commit-5f59c62f.json`): a chunk
+of 35 deep profiles (42,374 levels) held the publication transaction past 60 s, and the
+controller heartbeat timed out waiting for the run row lock meanwhile. Cause:
+`commit_publication` validated and inserted levels one at a time and fetched each
+level's canonical value with `science->'levels'->i`, copying the profile's whole level
+array per level. A disposable benchmark measured 312 ms for one 1,210-level profile
+against 2 ms set-based; cost grew with depth squared, which monthly chunks exposed.
+
+Migration 0011 replaces only that block: one set-based index check
+(`invalid_level_index`), one set-based content check (`measurement_content_mismatch`,
+same 12 numeric and 24 non-numeric fields), one set-based insert that always stores
+the canonical exact values (positive zero), and the unchanged `level_set_mismatch`
+count. New tests assert each category and the canonical-value rule. It also adds an
+expression index on exactly the `app.owner_slot(...)` expression every catalogue
+membership and receipt query uses, so those no longer scan all stored profiles.
+
+Measured on one 10,000-level profile (`tests/stage1/test_publication_scale.py`): the
+first set-based version still took 23.5 s because `(jsonb_populate_record(...)).*`
+evaluates the function once per output column (about 45); the per-level loop had the
+same pattern. Evaluating it once per level through `LATERAL` brought the commit to
+1.3 s. The scale test fails above 10 s.
+
+Rejected: raising the 60 s transaction bound (keeps the run row locked and the
+controller heartbeat failing), splitting on a level budget (reintroduces retained
+re-certification and refetches) and reverting to weekly slices (13x amplification).

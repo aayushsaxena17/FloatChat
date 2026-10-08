@@ -1,0 +1,59 @@
+{
+    "kind": "stage1_acceptance_interrupted_by_host_sleep",
+    "note": "Run recovered by controller adoption after resume; restarted for a full wall-clock budget. Not acceptance evidence.",
+    "session": "a34de3720b9c2402",
+    "chunk_states": {
+        "planned": 263,
+        "complete": 6,
+        "fetching": 1
+    },
+    "recovery_events": [
+        {
+            "at": "2026-10-08T07:02:05.793428+00:00",
+            "state": "publishing",
+            "reason": "validated_candidate"
+        },
+        {
+            "at": "2026-10-08T07:02:05.793547+00:00",
+            "state": "publishing",
+            "reason": "child_phase"
+        },
+        {
+            "at": "2026-10-08T07:03:19.448104+00:00",
+            "state": "complete",
+            "reason": "verified_publication"
+        },
+        {
+            "at": "2026-10-08T07:03:19.829512+00:00",
+            "state": "fetching",
+            "reason": "worker_started"
+        },
+        {
+            "at": "2026-10-08T07:03:19.830181+00:00",
+            "state": "fetching",
+            "reason": "child_phase"
+        },
+        {
+            "at": "2026-10-08T07:03:23.544804+00:00",
+            "state": "planned",
+            "reason": "processing_claim"
+        },
+        {
+            "at": "2026-10-08T09:48:08.000858+00:00",
+            "state": null,
+            "reason": "controller_adoption"
+        },
+        {
+            "at": "2026-10-08T09:48:09.016333+00:00",
+            "state": "fetching",
+            "reason": "processing_claim"
+        },
+        {
+            "at": "2026-10-08T09:48:11.026073+00:00",
+            "state": "planned",
+            "reason": "processing_claim"
+        }
+    ],
+    "windows_sleep_local": "2026-10-08T12:33:46+05:30",
+    "windows_resume_local": "2026-10-08T15:17:47+05:30"
+}

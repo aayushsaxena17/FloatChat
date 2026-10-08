@@ -383,6 +383,7 @@ def postgres():
         execute((ROOT / "infra/migrations/versions/0008_resource_evidence.sql").read_text())
         execute((ROOT / "infra/migrations/versions/0009_stage1_v3.sql").read_text())
         execute((ROOT / "infra/migrations/versions/0010_stage1_v3_runtime.sql").read_text())
+        execute((ROOT / "infra/migrations/versions/0011_set_based_publication.sql").read_text())
         execute(SEED)
         execute.container_name = name
         yield execute
@@ -589,14 +590,14 @@ def test_B09_actual_alembic_repeat_and_refused_downgrade(postgres):
         assert result.returncode == 0, result.stderr.decode()
     assert (
         postgres("SELECT version_num FROM alembic_version", database="migration_probe")
-        == "0010_stage1_v3_runtime"
+        == "0011_set_based_publication"
     )
     result = subprocess.run([*command, "downgrade", "base"], capture_output=True, timeout=60)
     assert result.returncode != 0
     assert b"Downgrade refused" in result.stderr
     assert (
         postgres("SELECT version_num FROM alembic_version", database="migration_probe")
-        == "0010_stage1_v3_runtime"
+        == "0011_set_based_publication"
     )
 
 
@@ -1330,6 +1331,67 @@ def test_P06_P07_atomic_publication_and_complete_retry(postgres, wire, linked_me
     """
     )
     assert result.splitlines()[-6:] == ["complete", "committed", "1", "3", "1|3", "1"]
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    "mutation,category",
+    [
+        ("index_out_of_range", "invalid_level_index"),
+        ("index_missing", "invalid_level_index"),
+        ("numeric_value", "measurement_content_mismatch"),
+        ("qc_flag", "measurement_content_mismatch"),
+        ("unit", "measurement_content_mismatch"),
+        ("none", "committed"),
+    ],
+)
+def test_ADR0044_set_based_level_checks_keep_categories(
+    postgres, wire, linked_metadata, mutation, category
+):
+    profile, candidate = _candidate(wire, linked_metadata)
+    level = candidate["levels"][1]
+    if mutation == "index_out_of_range":
+        level["level_index"] = len(candidate["levels"])
+    elif mutation == "index_missing":
+        del level["level_index"]
+    elif mutation == "numeric_value":
+        level["temperature"] = (level["temperature"] or 0) + 1
+    elif mutation == "qc_flag":
+        level["temperature_qc"] = "9" if level.get("temperature_qc") != "9" else "1"
+    elif mutation == "unit":
+        level["pressure_unit"] = "synthetic-unit"
+    setup, _, generations, receipts = _publishing(profile, candidate)
+    result = postgres(
+        setup
+        + f"""
+      CREATE FUNCTION pg_temp.attempt() RETURNS text LANGUAGE plpgsql AS $body$
+      BEGIN
+        PERFORM app.commit_publication('{RUN}','{CHUNK}',1,1,'{INTENT}',
+          {_literal(generations)},{_literal(receipts)});
+        RETURN 'committed';
+      EXCEPTION WHEN raise_exception THEN RETURN SQLERRM;
+      END $body$;
+      SELECT pg_temp.attempt();
+      SELECT count(*) FROM app.core_measurement;
+      ROLLBACK;
+    """
+    )
+    lines = result.splitlines()
+    assert lines[-2] == category
+    assert lines[-1] == ("3" if category == "committed" else "0")
+
+
+@pytest.mark.integration
+def test_ADR0044_canonical_values_replace_staged_floats(postgres, wire, linked_metadata):
+    profile, candidate = _candidate(wire, linked_metadata)
+    setup, commit, _, _ = _publishing(profile, candidate)
+    result = postgres(
+        setup + commit + "SELECT bool_and(m.pressure IS NOT DISTINCT FROM "
+        "(m.canonical_level->'pressure'->>'exact')::float8 AND m.temperature IS NOT DISTINCT FROM "
+        "(m.canonical_level->'temperature'->>'exact')::float8) FROM app.core_measurement m; "
+        "SELECT count(*) FROM pg_indexes WHERE indexname='argo_profile_owner_slot_idx'; ROLLBACK;"
+    )
+    assert result.splitlines()[-2:] == ["t", "1"]
 
 
 @pytest.mark.integration

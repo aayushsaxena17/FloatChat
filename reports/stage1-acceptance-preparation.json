@@ -1,9 +1,9 @@
 {
   "actual_head_CI": "pending",
-  "bucket": "floatchat-s1-acceptance-c9af101ab1d458b9",
-  "database": "floatchat_s1_c9af101ab1d458b9",
-  "environment_file_sha256": "37f6427cb32d57b961efe667b68337e69e0f0c2b0e2189c0cb686d65e39755a9",
-  "environment_id": "cadb919c-4f1a-49a5-8f15-7bad5710a3e9",
+  "bucket": "floatchat-s1-acceptance-5f59c62f122295a7",
+  "database": "floatchat_s1_5f59c62f122295a7",
+  "environment_file_sha256": "a496bd0594ce1f1271894c908beac631c79f038a9c8104ad9beb8737e6b328eb",
+  "environment_id": "0e7337ae-1356-4f8c-8aed-18e8b3f95658",
   "full_acceptance": "pending_owner_opt_in",
   "images": {
     "API": "sha256:7055829eacc85bbc99fbbaefb735bd3ce8a916c93d4aec115ccf12ded1eccd2a",
@@ -27,10 +27,10 @@
     ],
     "host_port_bindings": [],
     "live_network_created": false,
-    "network": "floatchat-s1-acceptance-c9af101ab1d458b9_default",
+    "network": "floatchat-s1-acceptance-5f59c62f122295a7_default",
     "network_internal": true,
-    "other_volume_count": 47,
-    "project": "floatchat-s1-acceptance-c9af101ab1d458b9",
+    "other_volume_count": 56,
+    "project": "floatchat-s1-acceptance-5f59c62f122295a7",
     "services": [
       "db",
       "minio",
@@ -40,44 +40,44 @@
     ],
     "shared_development_volumes": [],
     "volumes": [
-      "floatchat-s1-acceptance-c9af101ab1d458b9_minio_data",
-      "floatchat-s1-acceptance-c9af101ab1d458b9_postgres_data",
-      "floatchat-s1-acceptance-c9af101ab1d458b9_redis_data"
+      "floatchat-s1-acceptance-5f59c62f122295a7_minio_data",
+      "floatchat-s1-acceptance-5f59c62f122295a7_postgres_data",
+      "floatchat-s1-acceptance-5f59c62f122295a7_redis_data"
     ]
   },
   "live_executed": false,
-  "live_request_id": "f39e4f3e-e1bb-480a-bc2a-0a71d7a2315a",
-  "prepared_at_utc": "2026-10-08T06:07:14.619337+00:00",
-  "project": "floatchat-s1-acceptance-c9af101ab1d458b9",
-  "queue": "floatchat-s1-acceptance-c9af101ab1d458b9.ingestion",
+  "live_request_id": "c9eaab5f-63f2-4835-aa73-20a923660968",
+  "prepared_at_utc": "2026-10-08T09:50:37.286613+00:00",
+  "project": "floatchat-s1-acceptance-5f59c62f122295a7",
+  "queue": "floatchat-s1-acceptance-5f59c62f122295a7.ingestion",
   "redis_database": 13,
-  "redis_prefix": "floatchat-s1-acceptance-c9af101ab1d458b9:",
+  "redis_prefix": "floatchat-s1-acceptance-5f59c62f122295a7:",
   "reference_time_utc": "2025-04-01T00:00:00Z",
-  "replay_request_id": "785d2c63-a4cc-4f5e-a39b-ce60ff9936be",
+  "replay_request_id": "41aeb8cf-4c0b-48d6-99ba-b38920cfdb91",
   "runtime_proof": {
     "bucket_readback_sha256": "33109011aed2654347cf7d82a9505f20085775fe5816cb1e71ba07d8419fc9b3",
     "bucket_scoped_identity": true,
-    "denied_control_bucket": "floatchat-s1-acceptance-c9af101ab1d458b9-control",
+    "denied_control_bucket": "floatchat-s1-acceptance-5f59c62f122295a7-control",
     "environment": {
-      "bucket": "floatchat-s1-acceptance-c9af101ab1d458b9",
-      "compose_project": "floatchat-s1-acceptance-c9af101ab1d458b9",
+      "bucket": "floatchat-s1-acceptance-5f59c62f122295a7",
+      "compose_project": "floatchat-s1-acceptance-5f59c62f122295a7",
       "disposable": true,
-      "id": "cadb919c-4f1a-49a5-8f15-7bad5710a3e9",
+      "id": "0e7337ae-1356-4f8c-8aed-18e8b3f95658",
       "mode": "acceptance",
-      "name": "floatchat-s1-acceptance-c9af101ab1d458b9",
-      "queue_namespace": "floatchat-s1-acceptance-c9af101ab1d458b9.ingestion"
+      "name": "floatchat-s1-acceptance-5f59c62f122295a7",
+      "queue_namespace": "floatchat-s1-acceptance-5f59c62f122295a7.ingestion"
     },
     "identity": {
-      "database": "floatchat_s1_c9af101ab1d458b9",
+      "database": "floatchat_s1_5f59c62f122295a7",
       "login": "acceptance_ingestion",
       "role": "floatchat_ingestor"
     },
     "kind": "offline_acceptance_isolation_proof",
     "live_disabled_admission_refused": true,
-    "migration": "0009_stage1_v3",
-    "queue": "floatchat-s1-acceptance-c9af101ab1d458b9.ingestion",
+    "migration": "0010_stage1_v3_runtime",
+    "queue": "floatchat-s1-acceptance-5f59c62f122295a7.ingestion",
     "redis_database": 13,
-    "redis_prefix": "floatchat-s1-acceptance-c9af101ab1d458b9:",
+    "redis_prefix": "floatchat-s1-acceptance-5f59c62f122295a7:",
     "run_created": false,
     "science_counts": {
       "levels": 0,
@@ -88,6 +88,6 @@
   },
   "scope": "offline preparation only; no ingestion or upstream calls",
   "services_stopped": true,
-  "session": "c9af101ab1d458b9",
-  "source_sha256": "738074699fd9ba82a7e233debc0e43d395bcdf5bac26e97695e0997ef6fb6ce4"
+  "session": "5f59c62f122295a7",
+  "source_sha256": "e55bfa6029bcf2e9a3761c9170f371110621e1e241afefcca836f07f01071346"
 }
