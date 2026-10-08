@@ -1,0 +1,148 @@
+"""Real restricted repository + MinIO; only HTTP transport is synthetic."""
+
+import tempfile
+import time
+import uuid
+from datetime import UTC, datetime
+from pathlib import Path
+
+from floatchat_core.ingestion.landing import RequestOwner
+from floatchat_core.ingestion.numeric import Rejection
+from floatchat_core.ingestion.reporting import markdown_report, persisted_report
+from floatchat_core.ingestion.transport import HTTPFailure, Response
+from psycopg.types.json import Jsonb
+
+
+def verify_http_path(repository, store, environment, piece):
+    evidence = []
+    frozen = []
+    scenarios = ((429, 503, 200), (401,), (403,), (503, 503, 503, 503))
+    for statuses in scenarios:
+        result = repository.admit(
+            environment,
+            uuid.uuid4(),
+            "acceptance",
+            piece.interval,
+            {"execution_seconds": 600},
+            input_kind="live",
+            descriptor={"live_opt_in": True},
+        )
+        run = uuid.UUID(result["run_id"])
+        epoch = repository.start_controller(run, uuid.uuid4())
+        chunk = uuid.uuid4()
+        with repository.transaction() as cursor:
+            cursor.execute("SELECT app.persist_baseline(%s,%s)", (run, epoch))
+        repository.connection.execute("RESET ROLE")
+        repository.connection.execute(
+            "INSERT INTO app.ingestion_chunk(id,run_id,logical_chunk_key,requested_start,"
+            "requested_end,tile,plan_version) VALUES(%s,%s,'http-component',%s,%s,%s,'component')",
+            (
+                chunk,
+                run,
+                piece.interval.start,
+                piece.interval.end,
+                Jsonb({"west": 70, "south": 10, "width": 10, "height": 10}),
+            ),
+        )
+        repository.connection.execute("SET ROLE floatchat_ingestor")
+        authority = repository.claim(run, chunk, epoch)
+        repository.transition(authority, "fetching", "offline_http_probe")
+        calls = []
+
+        def transport(
+            path, parameters, credential, account, *, statuses=statuses, calls=calls, **kwargs
+        ):
+            assert path == "/argo" and parameters == {"id": "synthetic-http-probe"}
+            assert credential == "offline-transport-sentinel"
+            status = statuses[len(calls)]
+            calls.append(status)
+            if status != 200:
+                raise HTTPFailure(status, "0" if status == 429 else None)
+            account(2)
+            return Response(b"[]", 2, datetime.now(UTC), {})
+
+        with tempfile.TemporaryDirectory() as directory:
+            owner = RequestOwner(
+                repository,
+                store,
+                authority,
+                deadline=time.monotonic() + 60,
+                application_commit="offline-http-component",
+                enabled=lambda: True,
+                credential=lambda: "offline-transport-sentinel",
+                transport=transport,
+                originals=Path(directory) / "originals",
+                jitter=lambda: 0,
+            )
+            if statuses[-1] == 200:
+                assert (
+                    owner.obtain("/argo", {"id": "synthetic-http-probe"}, "profile").payload
+                    == b"[]"
+                )
+                # Verified landing reuse must not make a fifth/new HTTP call.
+                assert (
+                    owner.obtain("/argo", {"id": "synthetic-http-probe"}, "profile").payload
+                    == b"[]"
+                )
+            else:
+                try:
+                    owner.obtain("/argo", {"id": "synthetic-http-probe"}, "profile")
+                except Rejection as error:
+                    assert error.category == "http_retry_exhausted"
+                else:
+                    raise AssertionError("Expected terminal HTTP failure")
+        assert calls == list(statuses)
+        with repository.transaction(readonly_snapshot=True) as cursor:
+            cursor.execute(
+                "SELECT disposition,http_status,error_category,finished_at,request_attempt "
+                "FROM app.ingestion_attempt WHERE chunk_id=%s ORDER BY attempt_number",
+                (chunk,),
+            )
+            attempts = cursor.fetchall()
+        assert [row["http_status"] for row in attempts] == list(statuses)
+        assert [row["request_attempt"] for row in attempts] == list(range(1, len(statuses) + 1))
+        assert all(row["finished_at"] is not None for row in attempts)
+        assert [row["disposition"] for row in attempts] == [
+            "verified_raw" if status == 200 else "http_failure" for status in statuses
+        ]
+        assert [row["error_category"] for row in attempts] == [
+            None if status == 200 else "upstream_http_failure" for status in statuses
+        ]
+        repository.transition(
+            authority,
+            "failed",
+            "http_retry_exhausted" if statuses[-1] != 200 else "component_request_probe_complete",
+        )
+        assert repository.finalize(run) == "failed"
+        report = persisted_report(repository, run)
+        metrics = report["persisted_metrics"]
+        assert metrics["resource_counters"]["http_attempts"] == len(statuses)
+        assert metrics["http_retries"] == len(statuses) - 1
+        assert all(row["unfinished_attempts"] == 0 for row in metrics["attempt_timing"])
+        assert all(row["elapsed_seconds_sum"] > 0 for row in metrics["attempt_timing"])
+        assert report["final_evidence_frozen"]
+        frozen.append((run, report, markdown_report(report)))
+        assert report["scientific_no_change"] and report["active_partition_no_change"]
+        evidence.append(
+            {
+                "run_id": str(run),
+                "chunk_id": str(chunk),
+                "statuses": list(statuses),
+                "dispositions": [row["disposition"] for row in attempts],
+                "http_retries": metrics["http_retries"],
+                "attempts": len(attempts),
+                "timings_finished": True,
+                "positive_elapsed_timings": True,
+                "safe_error_categories": True,
+                "frozen_resource_counters": metrics["resource_counters"],
+                "state_reasons": metrics["state_reasons"],
+                "scientific_no_change": True,
+                "scope": "Real repository/MinIO, mocked HTTP; request-only component",
+            }
+        )
+    for run, report, rendered in frozen:
+        assert persisted_report(repository, run) == report
+        assert markdown_report(persisted_report(repository, run)) == rendered
+    for item in evidence:
+        item["frozen_reporting_identical_after_later_runs"] = True
+    return evidence
