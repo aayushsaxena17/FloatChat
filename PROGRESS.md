@@ -1,5 +1,386 @@
 # Stage progress
 
+## Stage 1 - stage1-v3 implemented (ADR-0040..0042), 2026-10-08
+
+- [x] Original session terminalized with the reviewed command: exit 3,
+  `terminalized_incomplete`, closed/partial, 120 complete/1,132 failed/8 quarantined,
+  science unchanged at 819 profiles/572,347 levels/67 partitions
+  ([frozen evidence](reports/stage1-original-terminalization.json)).
+- [x] Live empty-selection probe: both re-requested historical 404 selections return
+  404 `application/json` `[\n\n]\n` for all three roles; a control tile returns 200
+  ([probe](reports/stage1-live-empty-semantics.json)).
+- [x] Inventory-only census of all 1,260 weekly Jan-Mar 2025 leaves: 922 with documents,
+  338 empty (all the same 404 body), zero failures, 5,845 unique owned profiles, densest
+  month/tile slot 87 ([census](reports/stage1-inventory-census.json)). Depth spot-check
+  outside January: 384 levels/profile; one full-month request on the densest slot:
+  200, 87 profiles, 2.66 MB.
+- [x] Measured canonical content 1,214 B/level; weekly slices republish month slots
+  (~13 conversions/profile). ADR-0041 adopts monthly plan v2 and a 40 GiB run cap.
+- [x] ADR-0040 activates S1-SOURCE-2 (empty-delivery receipt, `excluded_source_loss`);
+  ADR-0042 defines the worker memory criterion. Migration 0009, transport/landing/
+  processor/reporting changes, contract/PRD/build-prompt text updated.
+- [x] Offline suite 424 passed; previously failing DB/processor integration tests pass,
+  including 404-receipt, mixed-triple, exclusion and combined-warning scenarios.
+- [ ] Full suite, commits, fresh isolated preparation, live acceptance and captured
+  replay, memory evidence, push and actual-head CI, gate report.
+
+## Stage 1 - owner authorization for completion (ADR-0039), 2026-10-07
+
+The owner authorized live Argovis access with the key in the git-ignored `.env.txt`,
+operation of the preserved session and pushing/gate decisions on advisor (Fable)
+agreement, and asked for Stage 1 completion followed by Stage 2. Baseline before any
+change: lint, type checks and `make test` pass (410 Python passed, 45 integration
+deselected; 3 web). Planned order: terminalize the preserved run with the reviewed
+command; bounded live validation of empty-selection/404 behaviour; canonical-work
+amplification analysis and an inventory-only regional census; source-policy and
+capacity ADRs from measured evidence; fresh isolated acceptance and captured replay;
+commits, push and actual-head CI; gate report; then Stage 2. The current NO-GO stands
+until that evidence exists.
+
+## Stage 1 - consolidated offline blocker review; original run remains stopped
+
+The [single authoritative matrix](reports/stage1-blocker-review.json) and
+[review package](reports/stage1-blocker-review.md) distinguish implemented components,
+source/policy decisions and missing regional evidence. Current NO-GO supersedes every
+historical preparation GO. The 44 failures, eight quarantines, original deadlines,
+scientific state and budget remain untouched; no original service is operated.
+
+ADR-0036/S1-SOURCE-2 proposes exact inactive wording for a qualified Argovis-delivered
+population. Strict A stays active. Optional empty-delivery receipts and explicit
+whole-profile source-loss exclusions each need separate review, deployment evidence
+and bounded authorization. Offline proposal tests cannot close missing source science.
+F01-2 remains unchanged, with authentic descending/present-core-null limitations
+visible and repeated-pressure/error evidence retaining its synthetic/model scope.
+
+ADR-0037 optimizes bounded canonical encoding and publication certification while
+charging every actual conversion. The [regional-plan model](reports/stage1-regional-capacity-model.json)
+measures one 10 GiB run under a 1 GiB worker cgroup with all 1,260 roots, uneven
+retained growth, month-moving revisions, no-op deliveries and bounded recovery/rebuild.
+Results describe its labelled synthetic envelope, never the unknown regional population.
+Superseded and timed-out experiments are retained separately and are not passes.
+
+ADR-0038 provides a separately reviewable migration-0007 terminalizer with exact
+identity/deadline/manifests, closed-state retry and stop-only cleanup. Disposable
+connection-loss rehearsal retains protected records and one frozen partial result.
+The original procedure has not run. Its approval would close an incomplete record,
+not authorize another attempt. Fresh final-tree verification and source-pinned model
+evidence are linked by the consolidated generator; earlier reports below are historical.
+Actual-head CI, full isolated acceptance/replay and Stage 2 remain outstanding.
+
+The first final-tree verification failed: its shared SQL seed's ten-minute
+controller lease expired after a long independent processor probe, and a Beat
+teardown exceeded a five-second harness bound while the capacity model ran in
+parallel. Those artifacts remain archived as failures. Each independent SQL case
+now receives a fresh disposable seed lease; expiry assertions, production leases,
+work deadlines and budgets remain unchanged. The final heavy verification runs
+separately from the model, and only its actual results can support closure.
+
+## Stage 1 - offline resource diagnostics and source-policy review
+
+Following the owner/Astra NO-GO, the stopped acceptance project is not restarted
+or modified. The [offline remediation review](docs/stage1-offline-remediation.md)
+pins official API/translator sources and distinguishes source facts from unknown
+deployment behavior. The documented implementation starts at HTTP 404 and can
+drop empty-data documents before inventory projection. No body was persisted for
+the 44 historical pre-inventory failures; none becomes verified empty coverage.
+An offline witness using the pinned translator demonstrates discarded core or
+BGC inputs despite unique returned pressures. The warning quarantines remain.
+
+S1-DIAG-1/ADR-0034 adds bounded, sanitized number/profile/chunk/run diagnostics and
+frozen reporting, with portable migration 0008 tested only on disposable databases.
+Within a process, repeated spill restores verify SHA-256 and reuse an already
+certified canonical representation; every actual encoding remains charged and a
+new process certifies again. No run counter, cap or old deadline is reset.
+A five-slice growing-slot publication probe uses labelled 501-level authentic
+derivatives and real restricted PostgreSQL/MinIO. Its persisted measurements and
+explicit aggregate-exhaustion model are component evidence, not proof of complete
+Jan–Mar publication capacity or whole-pipeline memory.
+
+The [terminalization procedure](docs/stage1-terminalization-review.md) is a
+separate review-only proposal. A disposable synthetic-state rehearsal preserves
+completed science/catalogue/deadlines and freezes one partial report on repeat
+finalization, without ingestion. It does not authorize operating the original
+database. Fresh verification is recorded at its own source digest; older forensic
+and component evidence retains its stated scope. All three regional blockers,
+unfrozen original-run evidence and actual-head CI remain outstanding. The old live
+command remains withdrawn and Stage 2 remains blocked.
+
+## Stage 1 - coverage-failure investigation; live NO-GO
+
+Following Astra's NO-GO, fresh restricted-repository reads and checksum-verified
+sanitized MinIO landings account for every failed selection and quarantine in
+[the coverage review](reports/stage1-coverage-failure-review.md). All 44 HTTP 404s
+are inventory_before (23 January 1–8 tiles, 21 January 8–15 tiles), attempt 1;
+none establishes empty coverage. Four warned profiles carry degenerate_levels;
+the pinned translator discards degenerate input before returning merged science.
+Their unique returned pressures do not justify a warning waiver.
+
+The canonical-work ledger exactly balances 10,721,657,712 bytes against the
+10 GiB run limit. Only 15,760,528 bytes remain, below the 16 MiB reservation.
+All 18 candidates from the four limit chunks map offline below individual/chunk
+limits. The first failed in publication, the next three in validation without
+canonical reservations. Splitting cannot replenish a run-wide budget; no bound,
+accounting policy or quarantine treatment is changed. Scoped resource diagnostics
+and bounded publication-capacity evidence remain prerequisites for another attempt.
+
+Fresh forensic assertions, source checksums, warning witnesses, phase events and
+every failed time/tile selection are persisted separately from historical tests.
+Scientific and exact active-generation manifest hashes match before/after review:
+819 profiles, 572,347 levels, 67 active partitions. Only existing isolated DB/MinIO
+were briefly started for offline reads and stopped. No worker, supervisor, live
+call, credential/private-original access, original deadline reset, cancellation,
+finalization, new session or owner retry preparation occurred. The old command
+stays withdrawn. Original-run terminal/frozen evidence, 404 coverage resolution,
+warning safety and canonical capacity remain blockers; full acceptance and actual-head
+CI are outstanding. The gate now leads with current NO-GO and clearly labels
+historical component closure evidence. Stage 2 remains blocked.
+
+## Stage 1 - owner execution interrupted; acceptance incomplete
+
+The owner ran prepared session `6f3e7301f9789059` and interrupted the silent
+wrapper after approximately 80 minutes. Read-only persisted inspection found
+120 complete, 44 HTTP-404-failed and 8 quarantined leaves out of 1,260, with
+819 profiles/572,347 levels/67 active generations committed. The provisional
+[run report](reports/stage1-acceptance-live-interrupted.json) proves incomplete
+coverage. No replay or success result is claimed. The run remains open with its
+original six-hour deadline; stopping processes does not infer operator cancellation.
+
+Stop leftover project-labelled controller/client/service containers, retain data,
+and record [interruption evidence](reports/stage1-acceptance-interruption-evidence.json).
+Correct the wrapper to show safe persisted progress counters, reap an interrupted
+client, ignore repeated Ctrl+C during cleanup, stop one-off clients and services,
+record cleanup outcome and exit 130 without a traceback. Offline tests cover these
+paths and credential/output guards. No live worker is restarted, no credential or
+private original is inspected, and no source/retention/resource bound is relaxed.
+The prior prepared source seal remains unchanged; its retry command is withdrawn
+pending review of failed/quarantined coverage and the corrected wrapper. Full
+acceptance and actual-head CI remain outstanding; Stage 2 stays blocked.
+
+## Stage 1 - isolated acceptance preparation after Astra GO
+
+The owner supplied Astra's GO for preparation only on 2026-10-07. The isolated
+preparation proof and reviewable owner command are documented in
+[acceptance preparation](docs/stage1-acceptance-preparation.md) and persisted in
+[preparation evidence](reports/stage1-acceptance-preparation.json). Each session
+has a separate physical PostgreSQL database/server, MinIO bucket/server, Redis
+server/database/prefix, ingestion queue, internal network, Compose project and
+three persistent volumes, with no shared development volumes or exposed ports.
+An existing empty private control bucket verifies actual scoped IAM denial.
+The restricted-login database proof verifies migration 0007, the disposable
+acceptance marker and zero ingestion runs/profiles/measurement levels. A broker
+smoke task is acknowledged; disabled live admission is refused. All prepared
+services are stopped and their disposable data retained for review.
+
+Preparation uses only immutable cached local images, offline dependencies and
+live-disabled workers. No Argovis credential or private capture original is
+accessed; no upstream call, regional ingestion, scheduler, destructive retention,
+cloud resource, commit/push/PR or Stage 2 work occurs. Local disposable service
+credentials remain in ignored restricted files. A separately opted-in owner
+command transfers the upstream credential through stdin only, enforces a sealed
+source digest, and later requires complete regional live and captured replay
+evidence; preparing that command does not authorize running it.
+
+Fresh preparation checks are separate from the reviewed 372-test implementation
+snapshot: guard/orchestration tests, offline unit suite, lint/format/type checks,
+real isolated service initialization/proof and redacted secret scans. The earlier
+fault/memory/integration evidence remains historical at its stated component
+scope. Actual-head CI and full acceptance remain outstanding. F01-2's waived
+authentic descending/core-null limitations remain visible. Stage 2 stays blocked.
+
+## Stage 1 - contract accepted; implementation in progress
+
+The owner supplied Astra's GO for stage1-v2 and explicitly authorized Stage 1
+implementation. Work remains in `/home/floatchat/FloatChat-stage1`, baseline `619411a`,
+branch `codex/stage-1`. The preserved Windows checkout is untouched. Docker was resumed
+by the owner; integration verification uses fresh UUID-named containers without external
+network access, host ports, existing database volumes or production migrations.
+
+- [x] Owner-confirmed Astra contract GO, 86 unique acceptance requirements.
+- [x] Exact decimal/JSON rules, scientific/QC mapping, time/geometry/identity/revision policies.
+- [x] Additive portable PostgreSQL migrations with restricted ingestion procedures,
+  fencing, atomic level replacement/catalogue activation and late-conflict quarantine.
+- [x] Offline PostgreSQL constraint/publication/recovery and MinIO read-back tests.
+- [x] Internal catalogue coverage selection with retained/empty/source-absence distinctions.
+- [x] Bounded pinned-address HTTP adapter, durable request reservations and sanitized raw
+  landing; component checks include process-loss budgets and corrupt landing rejection.
+- [x] Durable controller/supervisor tick logic; worker and controller heartbeats are separate.
+- [x] Private disk spool and streamed Parquet writer; full retained snapshot membership
+  survives an eligible correction while the rolling cutoff advances.
+- [x] Truthfully attributed official published examples and labelled synthetic derivatives.
+- [x] Implement a separately opt-in, small raw fixture recorder with private originals,
+  matching inventory/profile/metadata, SHA-256, sanitization and secret-scan gating.
+- [x] Connect ticket-based worker execution, synchronous ingest CLI, independent supervisor
+  command and a UTC Beat class with a PostgreSQL singleton lock. Celery autoretry is off;
+  messages carry opaque IDs and workers require a <=1 GiB cgroup.
+- [x] Connect affected-slot streaming, transactional month partitions, canonical reservations,
+  persisted payload/profile/level accounting and full/eligible membership comparisons.
+- [x] Execute a combined restricted-login PostgreSQL/MinIO worker proof in network-isolated
+  disposable containers: publication, identical replay, retained empty refresh, shortened
+  level replacement, conflict quarantine and immutable reports after later revisions.
+- [x] Test the tiny capture recorder offline with synthetic responses: private originals,
+  credential sanitization, checksum/provenance and scan-before-copy rejection.
+- [x] Inspect only the owner's sanitized recorded bundle
+  `6a8ffa52f6db4954b974c449e68c54bc`; verify eight checksummed raw responses, matching
+  inventory/metadata, source revision components and 515 mapped levels from two profiles.
+  Persist actual representation coverage and F01 gaps; add offline authentic-fixture tests.
+- [x] Add real offline Redis/Celery prefork/supervisor fault evidence for worker/controller
+  loss, recovery, acknowledgement/redelivery, cancellation, deadlines, two-worker capacity,
+  manual/scheduled overlap and actual Beat singleton/lock-loss/replacement behavior.
+  Disposable lease acceleration is explicit; this is component evidence, not the full gate.
+- [x] Correct Beat startup lifecycle: the temporary lazy banner scheduler opens no database
+  or lock; only the running scheduler acquires it. Add regression coverage and rerun proofs.
+- [x] Implement spill-backed 100,000-row Parquet groups with Zstd level 3, bounded read-back
+  and a 100,001-level maximum-header memory probe under a 896 MiB cgroup, no swap/OOM,
+  measured RSS below 1 GiB. Persist writer options, typed pandas deep memory/index and ratio.
+- [x] Freeze full reporting metrics at finalization: provenance, availability, timings,
+  retry/quarantine reasons, coverage/gaps, generation IDs and scientific replacement deltas.
+  Reproduce JSON/Markdown after later revisions; unknown source counts remain unknown.
+- [x] Add credential-free numeric HTTP status/profile/request-role recorder diagnostics,
+  bounded optional 429 Retry-After and hostile offline redaction tests. Autoretry stays off.
+- [x] Audit successful owner bundle `10b19b21ac4d4d8ba69a4fc95e87de3c` with persisted
+  raw/inventory/metadata and hash assertions. `13857_068` supplies 103 D-mode pressure/
+  temperature levels with adjusted QC 2 and absent salinity. Expected R-mode is not observed;
+  no mode is relabelled and derived nulls are not treated as supplied source value nulls.
+- [x] Update complete authentic corpus coverage: two bundles, 12 responses, three profiles,
+  618 captured levels at that earlier point. Persist six gaps and 86-case fixture traceability.
+  Prior full-suite evidence is archived with its source/time, not claimed as rerun.
+- [x] Record the owner's safe `5903649_077D` diagnostic: HTTP 404 at `inventory_before`.
+  No complete fixture bundle or representation evidence resulted. Withdraw the documented
+  filename candidate and its retry command; do not infer a credential failure from 404.
+- [x] At the owner's request, prepare a separate one-request inventory-discovery script
+  for a fixed 5-degree Indian Ocean square and seven-day window. Offline synthetic tests
+  cover fixed documented parameters, 20-document and payload bounds, zero retries,
+  safe failure diagnostics and scan-before-copy. The owner-run command is in the gate
+  report; no agent live call occurs and discovery evidence cannot pass F01.
+- [x] Inspect only sanitized discovery `e5b3f14e549d49e69ed77fde03d40d8c`;
+  verify checksum/provenance and persist raw inventory-mode assertions for `6990616_100`
+  (core R) and `2904014_040` (core A), both ascending. These are candidate evidence,
+  not complete scientific captures; all six F01 gaps remain. Propose one bounded
+  owner-run capture for `6990616_100` based on its current inventory declaration.
+- [x] Audit successful sanitized capture `25f21e056e7c4db7bc1e21b0a28ea45f` and add
+  persisted authentic assertions: `6990616_100` proves 43 original pressure/temperature/
+  salinity levels in R-mode with QC 1. Matching inventory and metadata/checksums verify.
+  Exactly the core R-mode gap closes; adjusted/error/null/repeated-pressure representations
+  are absent. Corpus now has three bundles, 16 responses, four profiles and 661 levels.
+- [x] Record the owner's `2904014_040` capture rejection, `unknown_data_field`.
+  Its previously sanitized inventory contains `chla_fluorescence` and
+  `chla_fluorescence_qc`, outside the pinned 2.36.2 field contract. Add explicit inventory
+  compatibility flags and a labelled synthetic shape regression. Withdraw the candidate
+  and retry command; no failed private response is inspected and no scientific gap closes.
+- [x] Audit owner capture `9efe8f4e713c44a1a2964407e52b9a45`: matching inventory/profile/
+  metadata and supplemented provenance verify `2904014_040`, 501 A-mode adjusted core
+  values/QC (pressure QC 1; temperature/salinity QC 1/4). Exact fluorescence fields remain
+  non-core raw values/QC/attributes. This supersedes the earlier candidate withdrawal.
+  Its 1002 null cells belong only to nitrate and nitrate QC, not core measurements.
+  Four bundles now contain 20 responses, five distinct profiles and 1162 level occurrences.
+- [x] Apply the owner's F01-2/ADR-0033 amendment: retain authentic R/A/D and ascending;
+  waive further descending/core-null discovery while retaining both as unobserved authentic
+  coverage limitations. Add labelled admitted-fixture derivatives with exact basis checksums
+  and mutations. Fresh persisted test results, not waiver text, determine component closure.
+- [x] Verify labelled descending and R/A present-core-null parser/canonical/Parquet tests,
+  plus restricted PostgreSQL publication and A/D natural-key enforcement. Basis checksums,
+  attribution, source pins and exact mutations are persisted separately from authentic data.
+  Retain 21 focused unit and three focused database passes as component evidence.
+- [x] Independently rerun migration/HTTP/replay regressions: five selected database tests
+  passed. Production 429/503→200, terminal 401/403, four-503 exhaustion, finished timings,
+  counters and frozen reporting passed. Actual split predecessor replay used 466 nodes,
+  458 leaves, upstream/credential access denied, identical science and exact active IDs;
+  1375 recorded-origin attempts and 4582 audit rows are explained separately.
+- [x] Implement amended F01 fixture gate checks requiring remaining authentic evidence
+  AND fresh passed derivative/model/storage cases. All five authentic samples are ascending,
+  three D-mode, one R-mode and one A-mode, with QC 1/2/4. Under the owner's supplied Astra
+  F01-2 amendment, descending and source core-value null remain authentic coverage gaps
+  but require labelled derivative tests rather than further live recording.
+  Repeated pressure and supplied errors have separate labelled synthetic obligations;
+  their absence is not concealed as authentic coverage. Historical six/five-gap counts
+  above describe the earlier contract, not the current F01 minimum.
+  S1-G04 closure depends on fresh derivative/database/Parquet evidence and the remaining
+  authentic minimum. No agent live call or full acceptance preparation is authorized here.
+  The owner keeps
+  `ARGOVIS_API_KEY` in a private WSL terminal; this agent has not inspected it.
+  The completed small captures are audited in the gate report. Published examples
+  and synthetic component inputs do not pass F01 or prove complete regional coverage.
+- [x] Adopt narrowly pinned source supplement and F01 evidence split in contract, PRD,
+  build prompts and ADR-0030–0032, preserving data=all and unknown-field rejection.
+- [x] Add portable migration 0007 for real HTTP-failure dispositions and durable validated
+  predecessor split-tree bindings; wire actual CLI replay to the cloned topology.
+- [x] Add exact-field/legacy-rejection/alignment/unknown-field recorder regressions and
+  labelled authentic-derived repeated-pressure and normalized-error Parquet tests.
+- [x] Verify production HTTP retry/status/report persistence and actual temporal/spatial
+  CLI replay in disposable PostgreSQL/MinIO: 466 nodes, 458 leaves, upstream denied,
+  unchanged science/active generations and increased persisted attempts/audits.
+- [x] Rebuild verification and gate generation from persisted check/JUnit/corpus evidence,
+  distinguishing historical proofs, authentic gaps and labelled synthetic obligations.
+  Current full-suite/migration/error-storage/broker/memory/scan outcomes are reported in
+  the generated verification and gate documents; no successful outcome is inferred
+  before its evidence exists. Ubuntu restart was owner-approved after WSL timeouts;
+  saved changes survived and Docker Ubuntu integration is restored.
+- [ ] Execute the full 86-case acceptance matrix and required CI on the actual PR head.
+- [ ] Separately authorize and run isolated Jan-Mar 2025 live acceptance/captured-input replay.
+- [ ] Astra reviews implemented evidence before Stage 2.
+
+Current check results are generated from logs and JUnit in
+[the partial verification report](reports/stage1-verification.md). Component test counts
+are not completed acceptance-case counts. No full Stage 1 implementation GO, actual
+agent-executed Argovis call, production migration, cloud resource, destructive retention or
+publication of this branch is claimed. The owner executed the bounded capture separately.
+The local changes remain uncommitted. The generated current gate determines readiness
+specifically for isolated acceptance preparation from fresh evidence. Stop for owner/Astra
+implementation review; full Stage 1 acceptance and Stage 2 remain outstanding. This turn
+does not prepare or execute historical acceptance.
+
+### Historical contract amendment record, before owner-confirmed GO
+
+Authorized scope remains CONTRACT HARDENING ONLY. Work uses the sanitized WSL2 checkout
+`/home/floatchat/FloatChat-stage1`, baseline `619411a`, branch `codex/stage-1`.
+The preserved Windows project is untouched and was not used, merged or published.
+
+Astra's stage1-v1 review remains NO-GO. It accepted most earlier corrections but identified
+five material lifecycle/numeric blockers. This revision supersedes that unapproved candidate.
+
+- [x] Read and map all five follow-up blockers while retaining the original review cross-check.
+- [x] Separate full retained stored-snapshot reconciliation from fixed-T run eligibility.
+- [x] Distinguish verified empty initial fetch, empty refresh over retained science and
+  accepted last-profile ownership correction, including selector/receipt outcomes.
+- [x] Define publishing -> quarantined after rollback, fenced evidence commit and
+  unpublished intent abandonment with preserved references.
+- [x] Define recovery ownership for every nonterminal phase; distinguish worker/controller
+  loss from cancellation/deadline fencing and retain already complete chunks.
+- [x] Define overlap_skip persistence/no-run semantics, manual exit 6 and unchanged watermark.
+- [x] Bound exact numeric tokens/exponents/canonical bytes; define binary64 rounding,
+  overflow/nonzero-underflow quarantine and exact quoted/bare nonfinite outcomes/hashes.
+- [x] Expand future acceptance plan to 86 cases, including split P09a/P09b/P09c,
+  T06/P11, C05-C11, D05-D06 and N01-N08.
+- [x] Align PRD/build prompts and append ADR-0025 through ADR-0029.
+- [ ] Astra accepts stage1-v2 after re-review.
+- [ ] Separate owner instruction authorizes Stage 1 implementation.
+- [ ] Implement and execute offline acceptance cases/required CI.
+- [ ] Separately opt in to isolated Jan-Mar 2025 WSL2 live acceptance and captured-input
+  replay using owner-provided Argovis credentials, then generate persisted evidence.
+- [ ] Astra reviews implemented results before Stage 2.
+
+Contract-review report: all five supplied blockers now have explicit outcomes, legal
+transitions and linked objective test assertions in [the contract](docs/stage1-contract.md).
+Retained old dates survive snapshot rebuilding; source absence cannot erase science.
+Late conflicts quarantine legally; process loss can recover but closing fences prevent
+late publication. Numeric handling cannot depend on parser defaults or unbounded expansion.
+The original temporal/isolation/scientific/publication/security/local-service decisions
+remain; Stage 2+ features, destructive retention and cloud provisioning remain deferred.
+
+Validation for this revision: 18 documentation consistency checks passed, including
+86 unique acceptance IDs, all five follow-up blockers, the original eight review
+sections/twelve test areas, legal late-quarantine transition, recovery for all five
+nonterminal phases, removal of the three conflicting v1 rules, authority/ADR/count
+alignment, unchanged Stage 2+ scope, table widths and Markdown delimiters.
+Seven local Markdown links resolved; git diff --check passed. Exactly the five
+requested Markdown files remain changed; baseline/branch are unchanged.
+Stage1-v1's earlier 65-case/14-check document validation was not an Astra approval and
+is not reported as validation of this revision. No production code, migration, scheduler,
+fixture, credential, cloud resource or live upstream data call is created here.
+No runtime acceptance or CI result is claimed. Stop for Astra contract re-review.
+
+---
+
 ## Stage 0 - corrective branch verified locally; review gate remains
 
 Owner confirmed revocation.
@@ -17,7 +398,7 @@ Owner confirmed revocation.
 - [x] Verify main CI and strict required GitHub Actions checks, two reviews, administrator enforcement and force-push/deletion prohibitions.
 - [x] Record final evidence and old-clone recovery in the Stage 0 gate report.
 
-Stage 1 has not started. No cloud infrastructure, production credentials, real LLM calls or required Argovis access were introduced.
+At that Stage 0 gate, Stage 1 implementation had not started. No cloud infrastructure, production credentials, real LLM calls or required Argovis access were introduced.
 
 The preceding checklist records the original foundation execution. Astra subsequently identified
 four defects in readiness cancellation, metadata permissions, hook interpreter selection and
