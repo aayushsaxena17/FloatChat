@@ -2,7 +2,13 @@
 name = "floatchat-core"
 version = "0.0.0"
 requires-python = ">=3.12,<3.13"
-dependencies = ["pydantic-settings==2.13.1"]
+dependencies = [
+  "pydantic-settings==2.13.1",
+  "psycopg[binary]==3.3.3",
+  "boto3==1.42.70",
+  "pyarrow==23.0.1",
+  "pandas==2.3.3",
+]
 
 [build-system]
 requires = ["hatchling==1.29.0"]
