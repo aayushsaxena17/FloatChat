@@ -21,8 +21,19 @@
   processor/reporting changes, contract/PRD/build-prompt text updated.
 - [x] Offline suite 424 passed; previously failing DB/processor integration tests pass,
   including 404-receipt, mixed-triple, exclusion and combined-warning scenarios.
-- [ ] Full suite, commits, fresh isolated preparation, live acceptance and captured
-  replay, memory evidence, push and actual-head CI, gate report.
+- [x] Full stage1 suite 445 passed/1 opt-in skip; committed on `codex/stage-1` and
+  pushed for actual-head CI evidence (advisor-agreed push, not a gate decision).
+- [x] First CI run: secrets, web and docker passed. Three wrapper tests assumed the WSL
+  path, the writer memory probe used an 896 MiB container (OOM on the hosted runner;
+  locally 929 MiB RSS at the edge) and Stage 0 integration failed because a fresh dev
+  database lacked `floatchat_app` before migrating. All three fixed; local
+  `make integration` passes. The probe now uses the contract's 1 GiB (ADR-0042).
+- [x] First stage1-v3 live run (session c9af101ab1d458b9) interrupted after 14 minutes
+  as a measurement: S1-SOURCE-2 receipts completed empty chunks, ~4.3 MB canonical per
+  profile, 319 MiB worker anonymous peak, but ~10.5 h projected and 20 s idle-read
+  transport failures. ADR-0043: 12 h run bound and 60 s idle read (migration 0010).
+- [ ] Re-verify, fresh preparation, live acceptance and captured replay, CI on the
+  final head, gate report.
 
 ## Stage 1 - owner authorization for completion (ADR-0039), 2026-10-07
 

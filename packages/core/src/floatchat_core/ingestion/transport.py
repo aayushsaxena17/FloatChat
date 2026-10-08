@@ -295,7 +295,8 @@ def fetch(
             if not enabled():
                 raise Rejection("live_ingestion_disabled")
             assert connection.sock is not None
-            connection.sock.settimeout(min(20, absolute - time.monotonic()))
+            # ADR-0043: monthly inventories can take >20 s to first byte upstream.
+            connection.sock.settimeout(min(60, absolute - time.monotonic()))
             connection.request(
                 "GET",
                 path + "?" + urlencode(parameters),

@@ -632,3 +632,27 @@ pipeline anonymous RSS peak below 1 GiB. The kernel's page-cache-inclusive
 file cache is charged to the cgroup and can touch the limit without memory pressure.
 The earlier capacity model (peak counter 1024.6 MiB, pipeline RSS 455.1 MiB, no OOM)
 is reported under this criterion with both numbers shown.
+
+## ADR-0043 - Run wall-time 12 h and 60 s idle read (stage1-v3 runtime amendment)
+
+Decision under ADR-0039, advisor (Fable) agreed 2026-10-08. ADR-0041 kept the six-hour
+run limit as the binding guard and called its time projection unverified. The first
+stage1-v3 live run measured it (`reports/stage1-live-throughput-c9af101a.json`,
+interrupted after 14 minutes, measurement only):
+
+- About 4.3 MB canonical work per profile (plan v2 works; 5,845 profiles need about
+  25 GB, inside the 40 GiB cap), processed at about 0.9 MB/s by one worker: roughly
+  5-7 s per profile including fetch and publication, about 10.5 hours for the region.
+- Six inventory-before attempts failed as `upstream_transport_failure` after about 21 s:
+  full-month inventory queries can take Argovis more than 20 s to the first byte, so
+  the 20 s idle-read bound tripped while the 120 s attempt bound had room.
+- One worker's anonymous memory peaked at 319 MiB with zero OOM events
+  (`reports/stage1-live-memory-c9af101a.json`).
+
+Decisions: the idle-read timeout becomes 60 s inside the unchanged 120 s attempt bound
+(a correctness fix for monthly inventories), and the hard run wall-time bound becomes
+12 hours (CLI, runtime, migration 0010 table constraint and `admit_run`). One live
+worker and one credentialed request in flight stay; two workers in one 1 GiB cgroup
+were rejected (would halve the per-worker bound), and two separate worker containers
+were deferred as riskier orchestration on a 3 GB host. The 60-second final evidence
+reserve, retry counts and every other bound are unchanged.

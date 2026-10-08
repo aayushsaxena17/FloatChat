@@ -382,6 +382,7 @@ def postgres():
         execute((ROOT / "infra/migrations/versions/0007_http_replay.sql").read_text())
         execute((ROOT / "infra/migrations/versions/0008_resource_evidence.sql").read_text())
         execute((ROOT / "infra/migrations/versions/0009_stage1_v3.sql").read_text())
+        execute((ROOT / "infra/migrations/versions/0010_stage1_v3_runtime.sql").read_text())
         execute(SEED)
         execute.container_name = name
         yield execute
@@ -588,14 +589,14 @@ def test_B09_actual_alembic_repeat_and_refused_downgrade(postgres):
         assert result.returncode == 0, result.stderr.decode()
     assert (
         postgres("SELECT version_num FROM alembic_version", database="migration_probe")
-        == "0009_stage1_v3"
+        == "0010_stage1_v3_runtime"
     )
     result = subprocess.run([*command, "downgrade", "base"], capture_output=True, timeout=60)
     assert result.returncode != 0
     assert b"Downgrade refused" in result.stderr
     assert (
         postgres("SELECT version_num FROM alembic_version", database="migration_probe")
-        == "0009_stage1_v3"
+        == "0010_stage1_v3_runtime"
     )
 
 
@@ -1176,6 +1177,29 @@ def test_stage1_v3_monthly_plan_v2_and_rejects_weekly_v1_shape(postgres):
     # A root that does not match the monthly population fails admission planning.
     postgres(
         admission + f"SELECT app.persist_plan({target},1,{_literal(_plan_rows(weekly))});",
+        expected=3,
+    )
+
+
+@pytest.mark.integration
+def test_stage1_v3_twelve_hour_run_bound(postgres):
+    def admit(seconds):
+        return (
+            f"BEGIN; SET ROLE floatchat_ingestor; SELECT app.admit_run('{ENV}','{uuid.uuid4()}',"
+            f"'acceptance',false,'2025-01-01','2025-01-02',{seconds},'{GEOMETRY_SHA256}',"
+            f"{_literal(policy_versions())},'{{}}');"
+        )
+
+    lines = postgres(
+        admit(43200) + "SELECT extract(epoch FROM max(deadline-created_at_actual_utc))::integer "
+        "FROM app.ingestion_run; ROLLBACK;"
+    ).splitlines()
+    assert lines[-1] == "43200"
+    postgres(admit(43201), expected=3)
+    postgres(
+        f"BEGIN; UPDATE app.ingestion_run SET deadline=created_at_actual_utc+interval '13 hours',"
+        f"work_deadline=created_at_actual_utc+interval '13 hours'-interval '60 seconds' "
+        f"WHERE id='{RUN}';",
         expected=3,
     )
 

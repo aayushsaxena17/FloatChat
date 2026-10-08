@@ -1,25 +1,10 @@
 {
   "actual_head_CI": "pending",
-  "all_preparation_test_projects_stopped": true,
-  "bucket": "floatchat-s1-acceptance-6f3e7301f9789059",
-  "database": "floatchat_s1_6f3e7301f9789059",
-  "decision": "GO_prepared_for_owner_review_only",
-  "environment_file_sha256": "f494aa4ddc86c2b1dfac690464ccab4034a636a47f28246edd6108f9e16de0da",
-  "environment_id": "97d22e9f-c65d-4b45-a322-c3194867e3d7",
-  "expected_evidence": [
-    "reports/stage1-acceptance-live.json",
-    "reports/stage1-acceptance-replay.json",
-    "reports/stage1-acceptance-owner-result.json"
-  ],
-  "fresh_preparation_checks": "reports/stage1-acceptance-preparation-checks.json",
+  "bucket": "floatchat-s1-acceptance-c9af101ab1d458b9",
+  "database": "floatchat_s1_c9af101ab1d458b9",
+  "environment_file_sha256": "37f6427cb32d57b961efe667b68337e69e0f0c2b0e2189c0cb686d65e39755a9",
+  "environment_id": "cadb919c-4f1a-49a5-8f15-7bad5710a3e9",
   "full_acceptance": "pending_owner_opt_in",
-  "full_acceptance_gate": "pending_live_evidence_review_and_actual_head_CI",
-  "historical_component_limits": [
-    "G01 accelerated leases and explicit redelivery at component scope",
-    "G02 writer/read-back memory; whole-pipeline memory unproved",
-    "F01-2 authentic descending/core-null remain unobserved",
-    "86 end-to-end cases remain pending final acceptance review"
-  ],
   "images": {
     "API": "sha256:7055829eacc85bbc99fbbaefb735bd3ce8a916c93d4aec115ccf12ded1eccd2a",
     "DB": "sha256:d84da980fdcc9c281fffd62c626f72da7f8c78a239694bb63c60679541024d1b",
@@ -31,10 +16,8 @@
     "2025-04-01T00:00:00Z"
   ],
   "isolation": {
-    "actual_project_networks": [
-      "floatchat-s1-acceptance-6f3e7301f9789059_default"
-    ],
     "development_volume_identities": [
+      "39760844b96a4ab14113cfc53281165a18e4a312753c1dd56f777b746a442ff8",
       "floatchat-dev_minio_data",
       "floatchat-dev_postgres_data",
       "floatchat-dev_redis_data",
@@ -44,10 +27,10 @@
     ],
     "host_port_bindings": [],
     "live_network_created": false,
-    "network": "floatchat-s1-acceptance-6f3e7301f9789059_default",
+    "network": "floatchat-s1-acceptance-c9af101ab1d458b9_default",
     "network_internal": true,
-    "other_volume_count": 37,
-    "project": "floatchat-s1-acceptance-6f3e7301f9789059",
+    "other_volume_count": 47,
+    "project": "floatchat-s1-acceptance-c9af101ab1d458b9",
     "services": [
       "db",
       "minio",
@@ -57,46 +40,44 @@
     ],
     "shared_development_volumes": [],
     "volumes": [
-      "floatchat-s1-acceptance-6f3e7301f9789059_minio_data",
-      "floatchat-s1-acceptance-6f3e7301f9789059_postgres_data",
-      "floatchat-s1-acceptance-6f3e7301f9789059_redis_data"
+      "floatchat-s1-acceptance-c9af101ab1d458b9_minio_data",
+      "floatchat-s1-acceptance-c9af101ab1d458b9_postgres_data",
+      "floatchat-s1-acceptance-c9af101ab1d458b9_redis_data"
     ]
   },
   "live_executed": false,
-  "live_request_id": "305b9b3b-5f3a-4fb0-a470-90e58b2f76c4",
-  "owner_command_review_only": "cd /home/floatchat/FloatChat-stage1 && /opt/floatchat-tools/uv/bin/uv run --all-packages --frozen --offline python scripts/stage1_acceptance.py execute --session 6f3e7301f9789059 --live-opt-in",
-  "prepared_at_utc": "2026-10-07T00:37:05.050942+00:00",
-  "prior_reviewed_implementation_source_sha256": "690d7778a7516b1e136fd4203dc201caae402b6bbf6dd7d7ca29166b9aeebc84",
-  "project": "floatchat-s1-acceptance-6f3e7301f9789059",
-  "queue": "floatchat-s1-acceptance-6f3e7301f9789059.ingestion",
+  "live_request_id": "f39e4f3e-e1bb-480a-bc2a-0a71d7a2315a",
+  "prepared_at_utc": "2026-10-08T06:07:14.619337+00:00",
+  "project": "floatchat-s1-acceptance-c9af101ab1d458b9",
+  "queue": "floatchat-s1-acceptance-c9af101ab1d458b9.ingestion",
   "redis_database": 13,
-  "redis_prefix": "floatchat-s1-acceptance-6f3e7301f9789059:",
+  "redis_prefix": "floatchat-s1-acceptance-c9af101ab1d458b9:",
   "reference_time_utc": "2025-04-01T00:00:00Z",
-  "replay_request_id": "9010a5b2-b747-448b-9110-e0d2317a7815",
+  "replay_request_id": "785d2c63-a4cc-4f5e-a39b-ce60ff9936be",
   "runtime_proof": {
     "bucket_readback_sha256": "33109011aed2654347cf7d82a9505f20085775fe5816cb1e71ba07d8419fc9b3",
     "bucket_scoped_identity": true,
-    "denied_control_bucket": "floatchat-s1-acceptance-6f3e7301f9789059-control",
+    "denied_control_bucket": "floatchat-s1-acceptance-c9af101ab1d458b9-control",
     "environment": {
-      "bucket": "floatchat-s1-acceptance-6f3e7301f9789059",
-      "compose_project": "floatchat-s1-acceptance-6f3e7301f9789059",
+      "bucket": "floatchat-s1-acceptance-c9af101ab1d458b9",
+      "compose_project": "floatchat-s1-acceptance-c9af101ab1d458b9",
       "disposable": true,
-      "id": "97d22e9f-c65d-4b45-a322-c3194867e3d7",
+      "id": "cadb919c-4f1a-49a5-8f15-7bad5710a3e9",
       "mode": "acceptance",
-      "name": "floatchat-s1-acceptance-6f3e7301f9789059",
-      "queue_namespace": "floatchat-s1-acceptance-6f3e7301f9789059.ingestion"
+      "name": "floatchat-s1-acceptance-c9af101ab1d458b9",
+      "queue_namespace": "floatchat-s1-acceptance-c9af101ab1d458b9.ingestion"
     },
     "identity": {
-      "database": "floatchat_s1_6f3e7301f9789059",
+      "database": "floatchat_s1_c9af101ab1d458b9",
       "login": "acceptance_ingestion",
       "role": "floatchat_ingestor"
     },
     "kind": "offline_acceptance_isolation_proof",
     "live_disabled_admission_refused": true,
-    "migration": "0007_http_replay",
-    "queue": "floatchat-s1-acceptance-6f3e7301f9789059.ingestion",
+    "migration": "0009_stage1_v3",
+    "queue": "floatchat-s1-acceptance-c9af101ab1d458b9.ingestion",
     "redis_database": 13,
-    "redis_prefix": "floatchat-s1-acceptance-6f3e7301f9789059:",
+    "redis_prefix": "floatchat-s1-acceptance-c9af101ab1d458b9:",
     "run_created": false,
     "science_counts": {
       "levels": 0,
@@ -107,6 +88,6 @@
   },
   "scope": "offline preparation only; no ingestion or upstream calls",
   "services_stopped": true,
-  "session": "6f3e7301f9789059",
-  "source_sha256": "12cbb73e8bb70f28190d29a2afb5aa521aebda510bc06807d8917dede78eba3c"
+  "session": "c9af101ab1d458b9",
+  "source_sha256": "738074699fd9ba82a7e233debc0e43d395bcdf5bac26e97695e0997ef6fb6ce4"
 }
