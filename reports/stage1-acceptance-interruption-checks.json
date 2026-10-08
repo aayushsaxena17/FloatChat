@@ -1,0 +1,56 @@
+{
+  "verified_at_utc": "2026-10-07T08:35:34.015874+00:00",
+  "source_sha256": "a131d23a9baf2e1c9d3b60584d0581d69335b1c85a29a4868c9cdd7c339e6722",
+  "source_unchanged": true,
+  "checks": {
+    "python_lint": {
+      "exit_code": 0,
+      "seconds": 0.11487746700004209,
+      "log": "reports/stage1-acceptance-interruption-python_lint.log"
+    },
+    "python_format": {
+      "exit_code": 0,
+      "seconds": 0.11672400101087987,
+      "log": "reports/stage1-acceptance-interruption-python_format.log"
+    },
+    "python_types": {
+      "exit_code": 0,
+      "seconds": 0.8673756019998109,
+      "log": "reports/stage1-acceptance-interruption-python_types.log"
+    },
+    "offline_unit": {
+      "exit_code": 0,
+      "seconds": 18.279363616995397,
+      "log": "reports/stage1-acceptance-interruption-offline_unit.log"
+    },
+    "secrets_current": {
+      "exit_code": 0,
+      "seconds": 1.418980015994748,
+      "log": "reports/stage1-acceptance-interruption-secrets_current.log"
+    },
+    "secrets_history": {
+      "exit_code": 0,
+      "seconds": 1.2680040350096533,
+      "log": "reports/stage1-acceptance-interruption-secrets_history.log"
+    },
+    "diff_whitespace": {
+      "exit_code": 0,
+      "seconds": 0.03351922900765203,
+      "log": "reports/stage1-acceptance-interruption-diff_whitespace.log"
+    }
+  },
+  "unit_suite": {
+    "tests": 354,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "readonly_real_progress_evidence": "reports/stage1-acceptance-progress-check.json",
+  "no_live_worker_restarted": true,
+  "no_credentials_or_private_originals_accessed": true,
+  "full_acceptance": "incomplete",
+  "actual_head_CI": "pending",
+  "stage2": "blocked",
+  "previous_seal_unchanged": true,
+  "scope": "offline wrapper fix and read-only inspection; no HTTP/source-policy/retention/budget changes"
+}

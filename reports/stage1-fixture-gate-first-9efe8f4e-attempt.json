@@ -1,0 +1,3121 @@
+{
+  "status": "NO_GO_fixture_verification_failed",
+  "verification_scope": "Fixture-gate update only; full-suite proofs are historical",
+  "verified_at_actual_utc": "2026-10-06T19:03:08.496668+00:00",
+  "source_tree_sha256": "77a7784eb8c546a6bd5bda1ee166cd4178452817207c50f1f8491b7f722b252c",
+  "source_unchanged_during_checks": true,
+  "contract": "stage1-v2",
+  "contract_gate": "owner_confirmed_Astra_GO",
+  "checks": {
+    "python_lint": {
+      "exit_code": 1,
+      "seconds": 0.1161544789938489,
+      "evidence": "reports/stage1-fixture-gate-python_lint.log"
+    },
+    "python_format": {
+      "exit_code": 0,
+      "seconds": 0.09868172999995295,
+      "evidence": "reports/stage1-fixture-gate-python_format.log"
+    },
+    "python_types": {
+      "exit_code": 0,
+      "seconds": 0.7681916970032034,
+      "evidence": "reports/stage1-fixture-gate-python_types.log"
+    },
+    "fixture_assertions": {
+      "exit_code": 0,
+      "seconds": 4.3325561250021565,
+      "evidence": "reports/stage1-fixture-gate-fixture_assertions.log"
+    },
+    "new_bundle_audit": {
+      "exit_code": 0,
+      "seconds": 0.2163078309968114,
+      "evidence": "reports/stage1-fixture-gate-new_bundle_audit.log"
+    },
+    "corpus_audit": {
+      "exit_code": 0,
+      "seconds": 0.3163133400012157,
+      "evidence": "reports/stage1-fixture-gate-corpus_audit.log"
+    },
+    "discovery_audit": {
+      "exit_code": 0,
+      "seconds": 0.11569223499827785,
+      "evidence": "reports/stage1-fixture-gate-discovery_audit.log"
+    },
+    "secrets_recorded_corpus": {
+      "exit_code": 0,
+      "seconds": 0.5193351829948369,
+      "evidence": "reports/stage1-fixture-gate-secrets_recorded_corpus.log"
+    },
+    "secrets_current": {
+      "exit_code": 0,
+      "seconds": 0.8191859159996966,
+      "evidence": "reports/stage1-fixture-gate-secrets_current.log"
+    },
+    "secrets_history": {
+      "exit_code": 0,
+      "seconds": 1.524133607003023,
+      "evidence": "reports/stage1-fixture-gate-secrets_history.log"
+    },
+    "diff_whitespace": {
+      "exit_code": 0,
+      "seconds": 0.00868533700122498,
+      "evidence": "reports/stage1-fixture-gate-diff_whitespace.log"
+    }
+  },
+  "pytest_suites": {
+    "fixture_assertions": {
+      "tests": 79,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "acceptance_case_count": 86,
+  "acceptance": {
+    "T01": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_T01_T03_immutable_time_month_window"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "T02": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_T02_timestamp_precision_offsets"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "T03": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_T01_T03_immutable_time_month_window",
+        "test_T03_parser_half_open_arguments_and_excludes_reference_override"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "T04": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_T04_acceptance_marker_required",
+        "test_T04_immutable_reference_environment_deadline"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "T05": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_T05_plan_and_adaptive_split_cover",
+        "test_T05_initial_plan_rejects_omitted_and_duplicated_tiles"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "T06": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_T06_F02_spilled_snapshot_preserves_older_retained_observations"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "G01": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_G01_region[20--60-True]",
+        "test_G01_region[120-30-True]",
+        "test_G01_region[70-10-True]",
+        "test_G01_region[19-10-False]",
+        "test_G01_region[70-31-False]",
+        "test_G01_invalid_coordinates[181-0]",
+        "test_G01_invalid_coordinates[0-91]",
+        "test_G01_invalid_coordinates[NaN-0]",
+        "test_G01_invalid_coordinates[0-Infinity]"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "G02": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_G02_unique_tile_ownership"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "G03": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_G03_S03_exact_supplement_raw_preservation_and_version_pin"
+      ],
+      "prior_component_tests": [
+        "test_G03_P01_split_space_time_union_and_missing_child_gap",
+        "test_G03_documented_request",
+        "test_G03_S03_exact_supplement_raw_preservation_and_version_pin"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "G04": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_G04_G05_inventory_not_fake_empty"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "G05": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_G04_G05_inventory_not_fake_empty"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "I01": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_I01_S03_S04_reject_entire_profile[short-mismatched_array_lengths]",
+        "test_I01_S03_S04_reject_entire_profile[empty-invalid_array_length]",
+        "test_I01_S03_S04_reject_entire_profile[duplicate_name-invalid_data_info]",
+        "test_I01_S03_S04_reject_entire_profile[unknown_mode-unknown_data_mode]",
+        "test_I01_S03_S04_reject_entire_profile[unknown_unit-unknown_unit]",
+        "test_I01_S03_S04_reject_entire_profile[missing_metadata-unresolved_metadata]",
+        "test_I01_S03_S04_reject_entire_profile[missing_direction_no_id-invalid_direction]",
+        "test_I01_S03_S04_reject_entire_profile[unknown_field-unsupported_profile_schema]",
+        "test_I01_S03_S04_reject_entire_profile[negative_cycle-invalid_cycle]",
+        "test_I01_S03_S04_reject_entire_profile[string_numeric-invalid_scientific_numeric_string]",
+        "test_I01_I04_directions_fallback_pressure_indices",
+        "test_I01_I04_database_identity_unique"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "I02": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_I02_chunk_internal_natural_alias_conflict",
+        "test_I02_R01_retrieval_and_format_not_scientific"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "I03": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_I03_stable_alias_no_extra_science",
+        "test_I03_id_and_key_resolve_different_rows",
+        "test_I03_spool_rejects_two_stable_ids_for_one_natural_identity"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "I04": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_F01_I04_S05_labelled_repeated_pressure_derivative_preserves_ordinals"
+      ],
+      "prior_component_tests": [
+        "test_F01_I04_S05_labelled_repeated_pressure_derivative_preserves_ordinals",
+        "test_I04_same_stable_id_direction_conflict",
+        "test_I01_I04_directions_fallback_pressure_indices",
+        "test_I01_I04_database_identity_unique",
+        "test_F01_I04_S05_labelled_authentic_pressure_derivative_storage"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "I05": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_I05_partition_fk_and_numeric_constraints"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "I06": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_I06_provenance_restrict_and_testonly_cascade"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "R01": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_I02_R01_retrieval_and_format_not_scientific",
+        "test_R01_R06_revision_vectors[None-None-True-noop]",
+        "test_R01_R06_revision_vectors[None-None-False-revision_conflict]",
+        "test_R01_R06_revision_vectors[incoming2-stored2-True-noop]",
+        "test_R01_R06_revision_vectors[incoming3-stored3-False-revision_conflict]",
+        "test_R01_R06_revision_vectors[incoming4-stored4-False-newer]",
+        "test_R01_R06_revision_vectors[incoming5-stored5-True-revision_only]",
+        "test_R01_R06_revision_vectors[incoming6-stored6-False-stale_skip]",
+        "test_R01_R06_revision_vectors[incoming7-stored7-True-stale_skip]",
+        "test_R01_R06_revision_vectors[incoming8-stored8-True-unordered_noop]",
+        "test_R01_R06_revision_vectors[incoming9-stored9-False-revision_conflict]",
+        "test_R01_R06_revision_vectors[incoming10-None-True-unordered_noop]",
+        "test_R01_R06_revision_vectors[incoming11-None-False-revision_conflict]"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "R02": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_P01_P05_R02_B03_F02_F03_F04_F06_F07_combined_processor_publication_replay",
+        "test_R02_R06_publication_replaces_entire_shortened_set"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "R03": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "R04": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "R05": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "R06": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_R01_R06_revision_vectors[None-None-True-noop]",
+        "test_R01_R06_revision_vectors[None-None-False-revision_conflict]",
+        "test_R01_R06_revision_vectors[incoming2-stored2-True-noop]",
+        "test_R01_R06_revision_vectors[incoming3-stored3-False-revision_conflict]",
+        "test_R01_R06_revision_vectors[incoming4-stored4-False-newer]",
+        "test_R01_R06_revision_vectors[incoming5-stored5-True-revision_only]",
+        "test_R01_R06_revision_vectors[incoming6-stored6-False-stale_skip]",
+        "test_R01_R06_revision_vectors[incoming7-stored7-True-stale_skip]",
+        "test_R01_R06_revision_vectors[incoming8-stored8-True-unordered_noop]",
+        "test_R01_R06_revision_vectors[incoming9-stored9-False-revision_conflict]",
+        "test_R01_R06_revision_vectors[incoming10-None-True-unordered_noop]",
+        "test_R01_R06_revision_vectors[incoming11-None-False-revision_conflict]",
+        "test_R02_R06_publication_replaces_entire_shortened_set"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "R07": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "R08": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_R08_stable_time_correction_vs_fallback_correction"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "S01": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_F01_S01_inventory_discovery_verifies_R_A_candidates_not_scientific_coverage",
+        "test_F01_S01_S03_S04_authentic_13857_is_D_QC2_missing_salinity_not_R",
+        "test_F01_S01_S03_S04_authentic_6990616_R_original_values_QC_and_hashes",
+        "test_F01_S01_S03_S04_authentic_2904014_A_adjusted_values_QC_and_provenance",
+        "test_F01_S01_authentic_noncore_nulls_do_not_close_core_null_gap",
+        "test_F01_S01_S02_authentic_fluorescence_supplement_keeps_raw_values_QC_attributes",
+        "test_F01_S01_labelled_normalized_errors_parquet_not_Argovis_wire"
+      ],
+      "prior_component_tests": [
+        "test_F01_S01_labelled_normalized_errors_parquet_not_Argovis_wire",
+        "test_S01_modes_qc_units_and_absent_variant",
+        "test_F01_S01_inventory_discovery_verifies_R_A_candidates_not_scientific_coverage",
+        "test_F01_S01_S03_S04_authentic_13857_is_D_QC2_missing_salinity_not_R",
+        "test_F01_S01_S03_S04_authentic_6990616_R_original_values_QC_and_hashes",
+        "test_F01_S01_normalized_error_storage_not_Argovis_parser_support"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "S02": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_F01_S02_synthetic_shape_from_inventory_rejects_undocumented_fields",
+        "test_F01_S01_S02_authentic_fluorescence_supplement_keeps_raw_values_QC_attributes"
+      ],
+      "prior_component_tests": [
+        "test_S02_null_fill_uncertainty",
+        "test_F01_S02_synthetic_shape_from_inventory_rejects_undocumented_fields"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "S03": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_F01_S01_S03_S04_authentic_13857_is_D_QC2_missing_salinity_not_R",
+        "test_F01_S01_S03_S04_authentic_6990616_R_original_values_QC_and_hashes",
+        "test_F01_S01_S03_S04_authentic_2904014_A_adjusted_values_QC_and_provenance",
+        "test_F01_B05_S03_recorder_sanitizes_and_scans_before_fixture_copy[False]",
+        "test_F01_B05_S03_recorder_sanitizes_and_scans_before_fixture_copy[True]",
+        "test_G03_S03_exact_supplement_raw_preservation_and_version_pin",
+        "test_S03_supplement_has_no_wildcard_or_alias[chla_fluorescence_argoqc]",
+        "test_S03_supplement_has_no_wildcard_or_alias[chla_fluorescence_std]",
+        "test_S03_supplement_has_no_wildcard_or_alias[chla_fluorescence_qc_argoqc]",
+        "test_S03_supplement_has_no_wildcard_or_alias[unrecognized]",
+        "test_S03_supplement_structure_and_alignment[short]",
+        "test_S03_supplement_structure_and_alignment[empty]",
+        "test_S03_supplement_structure_and_alignment[object]",
+        "test_S03_supplement_structure_and_alignment[attributes]"
+      ],
+      "prior_component_tests": [
+        "test_F01_B05_S03_recorder_sanitizes_and_scans_before_fixture_copy[False]",
+        "test_F01_B05_S03_recorder_sanitizes_and_scans_before_fixture_copy[True]",
+        "test_I01_S03_S04_reject_entire_profile[short-mismatched_array_lengths]",
+        "test_I01_S03_S04_reject_entire_profile[empty-invalid_array_length]",
+        "test_I01_S03_S04_reject_entire_profile[duplicate_name-invalid_data_info]",
+        "test_I01_S03_S04_reject_entire_profile[unknown_mode-unknown_data_mode]",
+        "test_I01_S03_S04_reject_entire_profile[unknown_unit-unknown_unit]",
+        "test_I01_S03_S04_reject_entire_profile[missing_metadata-unresolved_metadata]",
+        "test_I01_S03_S04_reject_entire_profile[missing_direction_no_id-invalid_direction]",
+        "test_I01_S03_S04_reject_entire_profile[unknown_field-unsupported_profile_schema]",
+        "test_I01_S03_S04_reject_entire_profile[negative_cycle-invalid_cycle]",
+        "test_I01_S03_S04_reject_entire_profile[string_numeric-invalid_scientific_numeric_string]",
+        "test_F01_S01_S03_S04_authentic_13857_is_D_QC2_missing_salinity_not_R",
+        "test_F01_S01_S03_S04_authentic_6990616_R_original_values_QC_and_hashes",
+        "test_G03_S03_exact_supplement_raw_preservation_and_version_pin",
+        "test_S03_supplement_has_no_wildcard_or_alias[chla_fluorescence_argoqc]",
+        "test_S03_supplement_has_no_wildcard_or_alias[chla_fluorescence_std]",
+        "test_S03_supplement_has_no_wildcard_or_alias[chla_fluorescence_qc_argoqc]",
+        "test_S03_supplement_has_no_wildcard_or_alias[unrecognized]",
+        "test_S03_supplement_structure_and_alignment[short]",
+        "test_S03_supplement_structure_and_alignment[empty]",
+        "test_S03_supplement_structure_and_alignment[object]",
+        "test_S03_supplement_structure_and_alignment[attributes]"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "S04": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_F01_S01_S03_S04_authentic_13857_is_D_QC2_missing_salinity_not_R",
+        "test_F01_S01_S03_S04_authentic_6990616_R_original_values_QC_and_hashes",
+        "test_F01_S01_S03_S04_authentic_2904014_A_adjusted_values_QC_and_provenance"
+      ],
+      "prior_component_tests": [
+        "test_I01_S03_S04_reject_entire_profile[short-mismatched_array_lengths]",
+        "test_I01_S03_S04_reject_entire_profile[empty-invalid_array_length]",
+        "test_I01_S03_S04_reject_entire_profile[duplicate_name-invalid_data_info]",
+        "test_I01_S03_S04_reject_entire_profile[unknown_mode-unknown_data_mode]",
+        "test_I01_S03_S04_reject_entire_profile[unknown_unit-unknown_unit]",
+        "test_I01_S03_S04_reject_entire_profile[missing_metadata-unresolved_metadata]",
+        "test_I01_S03_S04_reject_entire_profile[missing_direction_no_id-invalid_direction]",
+        "test_I01_S03_S04_reject_entire_profile[unknown_field-unsupported_profile_schema]",
+        "test_I01_S03_S04_reject_entire_profile[negative_cycle-invalid_cycle]",
+        "test_I01_S03_S04_reject_entire_profile[string_numeric-invalid_scientific_numeric_string]",
+        "test_F01_S01_S03_S04_authentic_13857_is_D_QC2_missing_salinity_not_R",
+        "test_F01_S01_S03_S04_authentic_6990616_R_original_values_QC_and_hashes"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "S05": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_F01_I04_S05_labelled_repeated_pressure_derivative_preserves_ordinals"
+      ],
+      "prior_component_tests": [
+        "test_F01_I04_S05_labelled_repeated_pressure_derivative_preserves_ordinals",
+        "test_F01_I04_S05_labelled_authentic_pressure_derivative_storage"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "S06": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "P01": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_G03_P01_split_space_time_union_and_missing_child_gap",
+        "test_P01_month_slot_never_manufactures_time_coverage",
+        "test_P01_verified_temporary_and_final_order",
+        "test_P01_P05_R02_B03_F02_F03_F04_F06_F07_combined_processor_publication_replay",
+        "test_P01_B07_restricted_repository_and_catalogue_snapshot"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "P02": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_P02_corrupt_bytes_fail_before_catalogue[tmp/]",
+        "test_P02_corrupt_bytes_fail_before_catalogue[normalised/]",
+        "test_P02_immutable_existing_key_not_overwritten",
+        "test_P02_P03_P04_real_minio_conditional_publication_and_corrupt_final"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "P03": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_P03_F03_full_snapshot_scientific_verification",
+        "test_P03_corrupted_science_rejected[pressure-999.0-snapshot_numeric_mismatch]",
+        "test_P03_corrupted_science_rejected[profile_hash-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-snapshot_scientific_hash_mismatch]",
+        "test_P03_corrupted_science_rejected[level_index-5-snapshot_profile_inconsistency]",
+        "test_P03_corrupted_science_rejected[temperature_qc-9-snapshot_level_mismatch]",
+        "test_P02_P03_P04_real_minio_conditional_publication_and_corrupt_final"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "P04": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_P02_P03_P04_real_minio_conditional_publication_and_corrupt_final"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "P05": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_P01_P05_R02_B03_F02_F03_F04_F06_F07_combined_processor_publication_replay"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "P06": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_P06_nonselectable_catalogue[change0]",
+        "test_P06_nonselectable_catalogue[change1]",
+        "test_P06_nonselectable_catalogue[change2]",
+        "test_P06_nonselectable_catalogue[change3]",
+        "test_P06_nonselectable_catalogue[change4]",
+        "test_P06_nonselectable_catalogue[change5]",
+        "test_P06_nonselectable_catalogue[change6]",
+        "test_P06_nonselectable_catalogue[change7]",
+        "test_P06_nonselectable_catalogue[change8]",
+        "test_P06_P07_atomic_publication_and_complete_retry",
+        "test_P06_failed_publication_rolls_back_all_science"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "P07": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_P06_P07_atomic_publication_and_complete_retry",
+        "test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "P08": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "P09a": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_P09a_verified_empty_selection_has_receipts_no_gap",
+        "test_P09a_empty_initial_fetch_has_receipt_and_no_partition"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "P09b": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_P09b_retained_generation_and_source_absence_annotation",
+        "test_P09b_empty_refresh_retains_active_generation"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "P09c": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_P09c_prior_receipts_prove_fetch_but_old_empty_cannot_hide_new_membership",
+        "test_P09c_corrected_empty_domain_proof_and_historical_fetch_are_separate",
+        "test_P09c_spilled_ownership_correction_leaves_empty_old_slot",
+        "test_P09c_last_profile_correction_deactivates_old_slot"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "P10": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_P10_selector_unavailable_budget_and_no_stale_substitute"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "P11": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_P11_legal_late_quarantine_intent_disposition",
+        "test_P11_late_conflict_preserves_winner_and_abandons_loser"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "C01": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_C01_legal_late_quarantine_and_terminal",
+        "test_C01_C05_claim_fence_and_recovery"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "C02": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_C02_aggregate_and_exit[states0-complete-0]",
+        "test_C02_aggregate_and_exit[states1-partial-3]",
+        "test_C02_aggregate_and_exit[states2-partial-3]",
+        "test_C02_aggregate_and_exit[states3-quarantined-4]",
+        "test_C02_aggregate_and_exit[states4-failed-5]",
+        "test_C02_aggregate_and_exit[states5-failed-5]"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "C03": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "C04": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_C04_complete_delivery_reads_completion_before_key_or_ticket"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "C05": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_C05_worker_death_resumes_exact_phase_with_new_fence[fetching]",
+        "test_C05_worker_death_resumes_exact_phase_with_new_fence[landed]",
+        "test_C05_worker_death_resumes_exact_phase_with_new_fence[validating]",
+        "test_C05_worker_death_resumes_exact_phase_with_new_fence[publishing]",
+        "test_C05_canonical_reservations_survive_process_loss_without_reset",
+        "test_C01_C05_claim_fence_and_recovery",
+        "test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "C06": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_C06_controller_death_invalidates_old_claims_without_new_plan",
+        "test_C06_same_controller_instance_after_lease_expiry_adopts_new_epoch",
+        "test_C06_controller_adoption_fences_old_workers",
+        "test_C06_worker_heartbeat_does_not_keep_dead_controller_alive",
+        "test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "C07": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_C07_C08_closing_preserves_committed_chunks_and_fails_every_unstarted_chunk[operator_cancelled]",
+        "test_C07_C08_closing_preserves_committed_chunks_and_fails_every_unstarted_chunk[deadline_expired]",
+        "test_C07_cancellation_before_plan_is_failed_not_verified_empty_coverage",
+        "test_C07_cancellation_finalizes_and_fences",
+        "test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "C08": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_C07_C08_closing_preserves_committed_chunks_and_fails_every_unstarted_chunk[operator_cancelled]",
+        "test_C07_C08_closing_preserves_committed_chunks_and_fails_every_unstarted_chunk[deadline_expired]",
+        "test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "C09": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_C09_cancel_after_all_commits_reduces_to_complete"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "C10": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_B04_C10_partial_bytes_count_and_verified_landing_reuses_without_http",
+        "test_C10_corrupt_landing_fails_instead_of_refetching_or_empty_success",
+        "test_C10_dispatch_carries_only_durable_ids_and_no_broker_retry"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "C11": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_C11_takeover_budget_exhaustion_terminates_all_remaining_work[worker]",
+        "test_C11_takeover_budget_exhaustion_terminates_all_remaining_work[controller]",
+        "test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "B01": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_F01_B01_discovery_invalid_or_excess_inventory_never_copied[rows0]",
+        "test_F01_B01_discovery_invalid_or_excess_inventory_never_copied[rows1]",
+        "test_F01_B01_discovery_invalid_or_excess_inventory_never_copied[rows2]",
+        "test_F01_B01_discovery_invalid_or_excess_inventory_never_copied[rows3]",
+        "test_F01_B01_discovery_invalid_or_excess_inventory_never_copied[rows4]",
+        "test_B01_discovery_compressed_total_rejected_before_copy"
+      ],
+      "prior_component_tests": [
+        "test_F01_B01_discovery_invalid_or_excess_inventory_never_copied[rows0]",
+        "test_F01_B01_discovery_invalid_or_excess_inventory_never_copied[rows1]",
+        "test_F01_B01_discovery_invalid_or_excess_inventory_never_copied[rows2]",
+        "test_F01_B01_discovery_invalid_or_excess_inventory_never_copied[rows3]",
+        "test_F01_B01_discovery_invalid_or_excess_inventory_never_copied[rows4]",
+        "test_B01_discovery_compressed_total_rejected_before_copy",
+        "test_B01_structural_bounds",
+        "test_B01_N08_spool_canonical_limit_checked_before_disk_insertion",
+        "test_F06_B01_spilled_100000_row_groups_zstd3_under_one_gib"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "B02": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_B02_gzip_stream_limits_count_unsuccessful_bytes",
+        "test_B02_truncated_or_ambiguous_transport[[]-headers0-truncated_http_body]",
+        "test_B02_truncated_or_ambiguous_transport[[]-headers1-ambiguous_http_framing]",
+        "test_B02_truncated_or_ambiguous_transport[[]-headers2-ambiguous_http_framing]",
+        "test_B02_truncated_or_ambiguous_transport[[]-headers3-invalid_content_length]",
+        "test_B02_truncated_or_ambiguous_transport[[]-headers4-unsupported_content_encoding]",
+        "test_B02_truncated_or_ambiguous_transport[\\x1f\\x8b\\x08\\x00\\x0b@\\xc5j\\x02\\xff\\x8b\\x8e\\x05\\x00)\\xbbL\\r\\x02\\x00\\x00-headers5-truncated_gzip]",
+        "test_B02_truncated_or_ambiguous_transport[\\x1f\\x8b\\x08\\x00\\x0b@\\xc5j\\x02\\xff\\x8b\\x8e\\x05\\x00)\\xbbL\\r\\x02\\x00\\x00\\x00extra-headers6-gzip_trailing_data]",
+        "test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "B03": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_B03_durable_request_budget_shared_across_worker_claims",
+        "test_B03_nonretryable_status_never_multiplies_attempts[401]",
+        "test_B03_nonretryable_status_never_multiplies_attempts[403]",
+        "test_B03_nonretryable_status_never_multiplies_attempts[404]",
+        "test_B03_nonretryable_status_never_multiplies_attempts[422]",
+        "test_B03_retry_policy_and_safe_exception",
+        "test_B03_D01_tasks_have_no_automatic_retry_and_utc_schedule",
+        "test_P01_P05_R02_B03_F02_F03_F04_F06_F07_combined_processor_publication_replay",
+        "test_F02_F03_B03_persisted_retry_status_reason_and_timing_metrics",
+        "test_B03_persisted_retry_exhaustion"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "B04": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_B04_C10_partial_bytes_count_and_verified_landing_reuses_without_http",
+        "test_B04_B05_raw_urls_and_fields_never_retain_credential",
+        "test_B04_endpoint_allowlist[http://argovis-api.colorado.edu/argo]",
+        "test_B04_endpoint_allowlist[https://argovis-api.colorado.edu.evil.test/argo]",
+        "test_B04_endpoint_allowlist[https://sentinel@argovis-api.colorado.edu/argo]",
+        "test_B04_endpoint_allowlist[https://argovis-api.colorado.edu:444/argo]",
+        "test_B04_endpoint_allowlist[https://argovis-api.colorado.edu/argo?key=sentinel]",
+        "test_B04_endpoint_allowlist[https://argovis-api.colorado.edu/argo#x]",
+        "test_B04_endpoint_allowlist[https://argovis-api.colorado.edu/arbitrary]",
+        "test_B04_dns_mixed_answer_rejected[127.0.0.1]",
+        "test_B04_dns_mixed_answer_rejected[10.0.0.1]",
+        "test_B04_dns_mixed_answer_rejected[169.254.169.254]",
+        "test_B04_dns_mixed_answer_rejected[::1]",
+        "test_B04_dns_mixed_answer_rejected[fc00::1]"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "B05": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_F01_B05_discovery_opt_in_precedes_credential_access",
+        "test_F01_B05_discovery_one_documented_request_scan_before_copy[0]",
+        "test_F01_B05_discovery_one_documented_request_scan_before_copy[1]",
+        "test_F01_B05_discovery_one_documented_request_scan_before_copy[20]",
+        "test_F01_B05_discovery_scan_failure_never_copied",
+        "test_B05_discovery_http_diagnostic_no_retry_or_sensitive_rendering[404]",
+        "test_B05_discovery_http_diagnostic_no_retry_or_sensitive_rendering[429]",
+        "test_B05_discovery_http_diagnostic_no_retry_or_sensitive_rendering[503]",
+        "test_B05_discovery_other_exception_stays_generic",
+        "test_B05_discovery_invalid_retry_after_omitted[301]",
+        "test_B05_discovery_invalid_retry_after_omitted[-1]",
+        "test_B05_discovery_invalid_retry_after_omitted[999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999]",
+        "test_B05_discovery_invalid_retry_after_omitted[NaN]",
+        "test_B05_discovery_invalid_retry_after_omitted[Authorization: synthetic-discovery-sentinel]",
+        "test_B05_discovery_invalid_retry_after_omitted[https://unexpected.invalid/?key=synthetic-discovery-sentinel]",
+        "test_B05_discovery_missing_variable_name_only",
+        "test_F01_B05_recorder_opt_in_precedes_credential_access",
+        "test_F01_B05_S03_recorder_sanitizes_and_scans_before_fixture_copy[False]",
+        "test_F01_B05_S03_recorder_sanitizes_and_scans_before_fixture_copy[True]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[401-inventory_before]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[401-profile]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[401-inventory_after]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[401-metadata]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[403-inventory_before]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[403-profile]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[403-inventory_after]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[403-metadata]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[404-inventory_before]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[404-profile]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[404-inventory_after]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[404-metadata]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[429-inventory_before]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[429-profile]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[429-inventory_after]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[429-metadata]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[503-inventory_before]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[503-profile]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[503-inventory_after]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[503-metadata]",
+        "test_B05_capture_invalid_retry_after_is_omitted[301]",
+        "test_B05_capture_invalid_retry_after_is_omitted[-1]",
+        "test_B05_capture_invalid_retry_after_is_omitted[999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999]",
+        "test_B05_capture_invalid_retry_after_is_omitted[NaN]",
+        "test_B05_capture_invalid_retry_after_is_omitted[Authorization: synthetic-recorder-sentinel]",
+        "test_B05_capture_invalid_retry_after_is_omitted[https://unexpected.invalid/?key=synthetic-recorder-sentinel]",
+        "test_B05_capture_other_exception_stays_generic"
+      ],
+      "prior_component_tests": [
+        "test_F01_B05_recorder_opt_in_precedes_credential_access",
+        "test_F01_B05_S03_recorder_sanitizes_and_scans_before_fixture_copy[False]",
+        "test_F01_B05_S03_recorder_sanitizes_and_scans_before_fixture_copy[True]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[401-inventory_before]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[401-profile]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[401-inventory_after]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[401-metadata]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[403-inventory_before]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[403-profile]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[403-inventory_after]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[403-metadata]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[404-inventory_before]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[404-profile]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[404-inventory_after]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[404-metadata]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[429-inventory_before]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[429-profile]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[429-inventory_after]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[429-metadata]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[503-inventory_before]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[503-profile]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[503-inventory_after]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[503-metadata]",
+        "test_B05_capture_invalid_retry_after_is_omitted[301]",
+        "test_B05_capture_invalid_retry_after_is_omitted[-1]",
+        "test_B05_capture_invalid_retry_after_is_omitted[999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999]",
+        "test_B05_capture_invalid_retry_after_is_omitted[NaN]",
+        "test_B05_capture_invalid_retry_after_is_omitted[Authorization: synthetic-recorder-sentinel]",
+        "test_B05_capture_invalid_retry_after_is_omitted[https://unexpected.invalid/?key=synthetic-recorder-sentinel]",
+        "test_B05_capture_other_exception_stays_generic",
+        "test_F01_B05_discovery_opt_in_precedes_credential_access",
+        "test_F01_B05_discovery_one_documented_request_scan_before_copy[0]",
+        "test_F01_B05_discovery_one_documented_request_scan_before_copy[1]",
+        "test_F01_B05_discovery_one_documented_request_scan_before_copy[20]",
+        "test_F01_B05_discovery_scan_failure_never_copied",
+        "test_B05_discovery_http_diagnostic_no_retry_or_sensitive_rendering[404]",
+        "test_B05_discovery_http_diagnostic_no_retry_or_sensitive_rendering[429]",
+        "test_B05_discovery_http_diagnostic_no_retry_or_sensitive_rendering[503]",
+        "test_B05_discovery_other_exception_stays_generic",
+        "test_B05_discovery_invalid_retry_after_omitted[301]",
+        "test_B05_discovery_invalid_retry_after_omitted[-1]",
+        "test_B05_discovery_invalid_retry_after_omitted[999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999]",
+        "test_B05_discovery_invalid_retry_after_omitted[NaN]",
+        "test_B05_discovery_invalid_retry_after_omitted[Authorization: synthetic-discovery-sentinel]",
+        "test_B05_discovery_invalid_retry_after_omitted[https://unexpected.invalid/?key=synthetic-discovery-sentinel]",
+        "test_B05_discovery_missing_variable_name_only",
+        "test_B05_raw_response_representation_never_exposes_bytes_or_headers",
+        "test_B05_revision_url_sanitization",
+        "test_B04_B05_raw_urls_and_fields_never_retain_credential",
+        "test_B05_unexpected_credential_content_rejected_without_rendering[<lambda>0]",
+        "test_B05_unexpected_credential_content_rejected_without_rendering[<lambda>1]",
+        "test_B05_unexpected_credential_content_rejected_without_rendering[<lambda>2]",
+        "test_B05_worker_boundary_redacts_nested_exception"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "B06": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "B07": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_B07_unbounded_worker_is_rejected",
+        "test_B07_repeat_bootstrap_cannot_regrant_scientific_writes",
+        "test_B07_worker_has_no_unrestricted_dml_or_ddl",
+        "test_B07_ingestor_cannot_write_scientific_targets_or_extensions",
+        "test_P01_B07_restricted_repository_and_catalogue_snapshot"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "B08": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_B08_generated_object_keys_only[../evil]",
+        "test_B08_generated_object_keys_only[/raw/evil]",
+        "test_B08_generated_object_keys_only[raw/sha256/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.json/evil]",
+        "test_B08_generated_object_keys_only[tmp/a/b]",
+        "test_B08_generated_object_keys_only[normalised/sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.parquet]",
+        "test_B08_private_spool_never_overwrites_existing_file"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "B09": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_B09_additive_migration_and_extensions",
+        "test_B09_actual_alembic_repeat_and_refused_downgrade",
+        "test_B09_month_creation_and_failed_publication_roll_back_together"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "D01": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_D01_Beat_lazy_banner_has_no_configuration_lock_or_dispatch",
+        "test_B03_D01_tasks_have_no_automatic_retry_and_utc_schedule",
+        "test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "D02": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_D02_live_disabled_reserves_no_attempt_and_forwards_no_credential",
+        "test_D02_disabled_scheduler_does_not_load_configuration_or_credential"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "D03": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_D03_overlap_bounded_catchup"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "D04": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "D05": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_D05_D06_admission_overlap_and_redelivery_without_new_run",
+        "test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "D06": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_D05_D06_admission_overlap_and_redelivery_without_new_run",
+        "test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "F01": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_F01_S01_inventory_discovery_verifies_R_A_candidates_not_scientific_coverage",
+        "test_F01_S02_synthetic_shape_from_inventory_rejects_undocumented_fields",
+        "test_F01_inventory_discovery_replaced_payload_fails_checksum",
+        "test_F01_inventory_discovery_unapproved_endpoint_rejected",
+        "test_F01_inventory_discovery_rejects_external_directory_without_reading",
+        "test_F01_S01_S03_S04_authentic_13857_is_D_QC2_missing_salinity_not_R",
+        "test_F01_S01_S03_S04_authentic_6990616_R_original_values_QC_and_hashes",
+        "test_F01_complete_authentic_corpus_R_A_observed_two_authentic_gaps_remain",
+        "test_F01_S01_S03_S04_authentic_2904014_A_adjusted_values_QC_and_provenance",
+        "test_F01_S01_authentic_noncore_nulls_do_not_close_core_null_gap",
+        "test_F01_S01_S02_authentic_fluorescence_supplement_keeps_raw_values_QC_attributes",
+        "test_F01_missing_QC_or_variable_does_not_prove_source_value_null",
+        "test_F01_authentic_sanitized_inventory_metadata_hashes_and_coverage",
+        "test_F01_audit_refuses_non_recorded_directory",
+        "test_F01_replaced_payload_fails_checksum",
+        "test_F01_B05_discovery_opt_in_precedes_credential_access",
+        "test_F01_B05_discovery_one_documented_request_scan_before_copy[0]",
+        "test_F01_B05_discovery_one_documented_request_scan_before_copy[1]",
+        "test_F01_B05_discovery_one_documented_request_scan_before_copy[20]",
+        "test_F01_B01_discovery_invalid_or_excess_inventory_never_copied[rows0]",
+        "test_F01_B01_discovery_invalid_or_excess_inventory_never_copied[rows1]",
+        "test_F01_B01_discovery_invalid_or_excess_inventory_never_copied[rows2]",
+        "test_F01_B01_discovery_invalid_or_excess_inventory_never_copied[rows3]",
+        "test_F01_B01_discovery_invalid_or_excess_inventory_never_copied[rows4]",
+        "test_F01_B05_discovery_scan_failure_never_copied",
+        "test_F01_B05_recorder_opt_in_precedes_credential_access",
+        "test_F01_B05_S03_recorder_sanitizes_and_scans_before_fixture_copy[False]",
+        "test_F01_B05_S03_recorder_sanitizes_and_scans_before_fixture_copy[True]",
+        "test_F01_rejected_scan_never_copies_fixture",
+        "test_F01_I04_S05_labelled_repeated_pressure_derivative_preserves_ordinals",
+        "test_F01_S01_labelled_normalized_errors_parquet_not_Argovis_wire"
+      ],
+      "prior_component_tests": [
+        "test_F01_B05_recorder_opt_in_precedes_credential_access",
+        "test_F01_B05_S03_recorder_sanitizes_and_scans_before_fixture_copy[False]",
+        "test_F01_B05_S03_recorder_sanitizes_and_scans_before_fixture_copy[True]",
+        "test_F01_rejected_scan_never_copies_fixture",
+        "test_F01_B05_discovery_opt_in_precedes_credential_access",
+        "test_F01_B05_discovery_one_documented_request_scan_before_copy[0]",
+        "test_F01_B05_discovery_one_documented_request_scan_before_copy[1]",
+        "test_F01_B05_discovery_one_documented_request_scan_before_copy[20]",
+        "test_F01_B01_discovery_invalid_or_excess_inventory_never_copied[rows0]",
+        "test_F01_B01_discovery_invalid_or_excess_inventory_never_copied[rows1]",
+        "test_F01_B01_discovery_invalid_or_excess_inventory_never_copied[rows2]",
+        "test_F01_B01_discovery_invalid_or_excess_inventory_never_copied[rows3]",
+        "test_F01_B01_discovery_invalid_or_excess_inventory_never_copied[rows4]",
+        "test_F01_B05_discovery_scan_failure_never_copied",
+        "test_F01_I04_S05_labelled_repeated_pressure_derivative_preserves_ordinals",
+        "test_F01_S01_labelled_normalized_errors_parquet_not_Argovis_wire",
+        "test_F01_S01_inventory_discovery_verifies_R_A_candidates_not_scientific_coverage",
+        "test_F01_S02_synthetic_shape_from_inventory_rejects_undocumented_fields",
+        "test_F01_inventory_discovery_replaced_payload_fails_checksum",
+        "test_F01_inventory_discovery_unapproved_endpoint_rejected",
+        "test_F01_inventory_discovery_rejects_external_directory_without_reading",
+        "test_F01_S01_S03_S04_authentic_13857_is_D_QC2_missing_salinity_not_R",
+        "test_F01_S01_S03_S04_authentic_6990616_R_original_values_QC_and_hashes",
+        "test_F01_complete_authentic_corpus_R_closes_one_gap_three_authentic_gaps_remain",
+        "test_F01_missing_QC_or_variable_does_not_prove_source_value_null",
+        "test_F01_authentic_sanitized_inventory_metadata_hashes_and_coverage",
+        "test_F01_audit_refuses_non_recorded_directory",
+        "test_F01_replaced_payload_fails_checksum",
+        "test_F01_I04_S05_labelled_authentic_pressure_derivative_storage",
+        "test_F01_S01_normalized_error_storage_not_Argovis_parser_support"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080",
+      "recorded_input_evidence": "reports/stage1-fixture-corpus-coverage.json",
+      "remaining_representation_gaps": [
+        "direction_D",
+        "source_core_measurement_null"
+      ],
+      "minimum_recorded_corpus_satisfied": false,
+      "authentic_A_evidence": "reports/stage1-fixture-9efe8f4e-coverage.json",
+      "synthetic_obligations": {
+        "basis_bundle": "tests/fixtures/argovis/recorded/25f21e056e7c4db7bc1e21b0a28ea45f",
+        "repeated_pressure_tests": "tests/stage1/test_fixture_derivatives.py F01/I04/S05",
+        "error_model_parquet_tests": "tests/stage1/test_fixture_derivatives.py F01/S01",
+        "error_storage_tests": "tests/stage1/test_database.py F01/S01",
+        "test_outcomes": "Read persisted JUnit/verification; this corpus audit does not execute tests"
+      }
+    },
+    "F02": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_T06_F02_spilled_snapshot_preserves_older_retained_observations",
+        "test_F02_duplicate_occurrences_keep_indices_and_do_not_duplicate_science",
+        "test_F02_retry_ledger_replaces_obsolete_ordinals_and_counts",
+        "test_P01_P05_R02_B03_F02_F03_F04_F06_F07_combined_processor_publication_replay",
+        "test_F02_F03_B03_persisted_retry_status_reason_and_timing_metrics"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "F03": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_P03_F03_full_snapshot_scientific_verification",
+        "test_P01_P05_R02_B03_F02_F03_F04_F06_F07_combined_processor_publication_replay",
+        "test_F02_F03_B03_persisted_retry_status_reason_and_timing_metrics"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "F04": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_F04_replay_incompatible_predecessor_rejected_before_admission[change0]",
+        "test_F04_replay_incompatible_predecessor_rejected_before_admission[change1]",
+        "test_F04_replay_incompatible_predecessor_rejected_before_admission[change2]",
+        "test_F04_replay_incompatible_predecessor_rejected_before_admission[change3]",
+        "test_F04_replay_incompatible_predecessor_rejected_before_admission[change4]",
+        "test_F04_replay_incompatible_predecessor_rejected_before_admission[change5]",
+        "test_F04_replay_incompatible_predecessor_rejected_before_admission[change6]",
+        "test_F04_replay_incompatible_predecessor_rejected_before_admission[change7]",
+        "test_F04_replay_incompatible_predecessor_rejected_before_admission[change8]",
+        "test_P01_P05_R02_B03_F02_F03_F04_F06_F07_combined_processor_publication_replay"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "F05": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "F06": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_F06_repeatable_whole_frame_measurement_and_empty_ratio",
+        "test_P01_P05_R02_B03_F02_F03_F04_F06_F07_combined_processor_publication_replay",
+        "test_F06_B01_spilled_100000_row_groups_zstd3_under_one_gib"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "F07": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_P01_P05_R02_B03_F02_F03_F04_F06_F07_combined_processor_publication_replay"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "N01": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_N01_N04_rejections[1e100000000-numeric_exponent_limit]",
+        "test_N01_N04_rejections[1e401-numeric_exponent_limit]",
+        "test_N01_N04_rejections[1e-401-numeric_exponent_limit]",
+        "test_N01_N04_rejections[0.1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111-numeric_token_limit]",
+        "test_N01_N04_rejections[1e309-float64_overflow]",
+        "test_N01_N04_rejections[1e400-float64_overflow]",
+        "test_N01_N04_rejections[1e-400-float64_underflow]",
+        "test_N01_N04_rejections[-1e-400-float64_underflow]",
+        "test_N01_at_limit_before_decimal",
+        "test_N01_raw_sanitization_preserves_written_numeric_token_bounds"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "N02": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_N02_normalized_output_preflight"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "N03": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_N03_N05_independent_binary64_oracles[5e-324-0000000000000001-flags0]",
+        "test_N03_N05_independent_binary64_oracles[0.1-3fb999999999999a-flags1]",
+        "test_N03_N05_independent_binary64_oracles[1.00000000000000011102230246251565404236316680908203125-3ff0000000000000-flags2]",
+        "test_N03_N05_independent_binary64_oracles[1.00000000000000011102230246251565404236316680908203126-3ff0000000000001-flags3]",
+        "test_N03_N05_independent_binary64_oracles[1.00000000000000011102230246251565404236316680908203124-3ff0000000000000-flags4]",
+        "test_N03_N05_independent_binary64_oracles[1.7976931348623157e308-7fefffffffffffff-flags5]"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "N04": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_N04_signed_zero[-0]",
+        "test_N04_signed_zero[0e400]",
+        "test_N04_signed_zero[-0.000]",
+        "test_N04_signed_zero[0]",
+        "test_N01_N04_rejections[1e100000000-numeric_exponent_limit]",
+        "test_N01_N04_rejections[1e401-numeric_exponent_limit]",
+        "test_N01_N04_rejections[1e-401-numeric_exponent_limit]",
+        "test_N01_N04_rejections[0.1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111-numeric_token_limit]",
+        "test_N01_N04_rejections[1e309-float64_overflow]",
+        "test_N01_N04_rejections[1e400-float64_overflow]",
+        "test_N01_N04_rejections[1e-400-float64_underflow]",
+        "test_N01_N04_rejections[-1e-400-float64_underflow]"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "N05": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_N05_equivalent_numeric_tokens[1]",
+        "test_N05_equivalent_numeric_tokens[1.0]",
+        "test_N05_equivalent_numeric_tokens[1e0]",
+        "test_N05_equivalent_numeric_tokens[1.000000]",
+        "test_N05_equivalent_numeric_tokens[10e-1]",
+        "test_N03_N05_independent_binary64_oracles[5e-324-0000000000000001-flags0]",
+        "test_N03_N05_independent_binary64_oracles[0.1-3fb999999999999a-flags1]",
+        "test_N03_N05_independent_binary64_oracles[1.00000000000000011102230246251565404236316680908203125-3ff0000000000000-flags2]",
+        "test_N03_N05_independent_binary64_oracles[1.00000000000000011102230246251565404236316680908203126-3ff0000000000001-flags3]",
+        "test_N03_N05_independent_binary64_oracles[1.00000000000000011102230246251565404236316680908203124-3ff0000000000000-flags4]",
+        "test_N03_N05_independent_binary64_oracles[1.7976931348623157e308-7fefffffffffffff-flags5]",
+        "test_N05_same_float_distinct_exact_hashes"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "N06": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_N06_nonfinite_only_in_measurements[NaN-nan]",
+        "test_N06_nonfinite_only_in_measurements[Infinity-positive_infinity]",
+        "test_N06_nonfinite_only_in_measurements[+Infinity-positive_infinity]",
+        "test_N06_nonfinite_only_in_measurements[-Infinity-negative_infinity]"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "N07": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_N07_strict_json[NaN]",
+        "test_N07_strict_json[Infinity]",
+        "test_N07_strict_json[+Infinity]",
+        "test_N07_strict_json[-Infinity]",
+        "test_N07_strict_json[[01]]",
+        "test_N07_strict_json[[+1]]",
+        "test_N07_strict_json[[.1]]",
+        "test_N07_strict_json[[1.]]",
+        "test_N07_strict_json[{\"a\":1,\"a\":2}]",
+        "test_N07_quoted_nonstandard[inf]",
+        "test_N07_quoted_nonstandard[nan]",
+        "test_N07_quoted_nonstandard[+NaN]",
+        "test_N07_quoted_nonstandard[ NaN]",
+        "test_N07_quoted_nonstandard[Infinity ]",
+        "test_N07_quoted_nonstandard[1]",
+        "test_N07_quoted_nonstandard[1e0]"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "N08": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [
+        "test_N08_canonical_bounds_and_recovery_counter[profile_limit]",
+        "test_N08_canonical_bounds_and_recovery_counter[chunk_limit]",
+        "test_N08_canonical_bounds_and_recovery_counter[run_limit]",
+        "test_B01_N08_spool_canonical_limit_checked_before_disk_insertion"
+      ],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    },
+    "X01": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [],
+      "prior_component_tests": [],
+      "prior_evidence_source_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080"
+    }
+  },
+  "fixtures": {
+    "kind": "persisted_authentic_sanitized_fixture_corpus_audit",
+    "contract": "stage1-v2",
+    "minimum_basis": "docs/stage1-contract.md section 11 and F01",
+    "F01_evidence_policy": {
+      "data_mode_A": "authentic complete profile, matching inventory and metadata",
+      "direction_D": "authentic complete profile and source direction",
+      "source_core_measurement_null": "authentic null in a present core value column",
+      "repeated_nonnull_pressure": "labelled derivative; preservation, ordinal and diagnostics tests",
+      "supplied_measurement_error": "labelled normalized-model/storage tests; no authentic parser claim"
+    },
+    "bundle_audits": [
+      {
+        "kind": "persisted_sanitized_fixture_audit",
+        "bundle": "tests/fixtures/argovis/recorded/10b19b21ac4d4d8ba69a4fc95e87de3c",
+        "manifest_sha256": "d65c72afd189be392d4c3335ca88803cffa291fb904e2d6ae8daaff1ed3a2e2f",
+        "versions": {
+          "geometry": "indian-ocean-v1",
+          "mapping": "argovis-core-v1",
+          "hash": "scientific-json-v2",
+          "specification": "2.36.2",
+          "specification_sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
+          "qc": "core-good-v1"
+        },
+        "attribution": {
+          "provider": "International Argo Program and national contributors, via Argovis",
+          "argo_doi": "https://doi.org/10.17882/42182",
+          "terms_and_acknowledgement": "https://argo.ucsd.edu/data/acknowledging-argo/",
+          "argovis_contract_citation": "https://zenodo.org/records/15708506"
+        },
+        "verified_responses": [
+          {
+            "path": "01-inventory_before.json",
+            "role": "inventory_before",
+            "sha256": "e6589dcd9d225505641d25ae8d90e12ed5f14557361748dc2dc495d1d795b155",
+            "bytes": 680,
+            "retrieved_at_utc": "2026-10-06T12:10:06.092106+00:00"
+          },
+          {
+            "path": "02-profile.json",
+            "role": "profile",
+            "sha256": "bb8ead610998ce3d2f0c760bc85b0a7af404ecb344b7b2083ef0a0a6b18033f6",
+            "bytes": 2744,
+            "retrieved_at_utc": "2026-10-06T12:10:07.115649+00:00"
+          },
+          {
+            "path": "03-inventory_after.json",
+            "role": "inventory_after",
+            "sha256": "e6589dcd9d225505641d25ae8d90e12ed5f14557361748dc2dc495d1d795b155",
+            "bytes": 680,
+            "retrieved_at_utc": "2026-10-06T12:10:08.177631+00:00"
+          },
+          {
+            "path": "04-metadata.json",
+            "role": "metadata",
+            "sha256": "4470deb86c71c588a137297aafcd969a2c87626d73cb2e72b0f6d61db9b219e9",
+            "bytes": 347,
+            "retrieved_at_utc": "2026-10-06T12:10:09.178500+00:00"
+          }
+        ],
+        "profiles": [
+          {
+            "source_profile_id": "13857_068",
+            "identity": "id:13857_068",
+            "levels": 103,
+            "scientific_sha256": "13656548049786e4452cd06e65b95fc274a6268a3e486af572b184645edeb3c2",
+            "direction": "A",
+            "observed_at_utc": "1999-08-05T19:03:42.002000+00:00",
+            "in_indian_ocean_geometry": false,
+            "source_revision_components": 1,
+            "source_columns": [
+              "pressure",
+              "pressure_argoqc",
+              "temperature",
+              "temperature_argoqc"
+            ],
+            "source_null_cells_by_column": {},
+            "supplementary_noncore_columns": {},
+            "source_null_cells": 0,
+            "source_core_null_cells": 0,
+            "source_core_value_null_cells": 0,
+            "source_core_qc_null_cells": 0,
+            "repeated_nonnull_pressure": false,
+            "variables": {
+              "pressure": {
+                "modes": [
+                  "D"
+                ],
+                "source_column_present": true,
+                "raw_data_keys_modes": [
+                  "D"
+                ],
+                "available": {
+                  "original": 0,
+                  "_adjusted": 103,
+                  "_qc": 0,
+                  "_adjusted_qc": 103,
+                  "_error": 0,
+                  "_original_error": 0
+                },
+                "qc_values": [
+                  "2"
+                ]
+              },
+              "temperature": {
+                "modes": [
+                  "D"
+                ],
+                "source_column_present": true,
+                "raw_data_keys_modes": [
+                  "D"
+                ],
+                "available": {
+                  "original": 0,
+                  "_adjusted": 103,
+                  "_qc": 0,
+                  "_adjusted_qc": 103,
+                  "_error": 0,
+                  "_original_error": 0
+                },
+                "qc_values": [
+                  "2"
+                ]
+              },
+              "salinity": {
+                "modes": [],
+                "source_column_present": false,
+                "raw_data_keys_modes": [],
+                "available": {
+                  "original": 0,
+                  "_adjusted": 0,
+                  "_qc": 0,
+                  "_adjusted_qc": 0,
+                  "_error": 0,
+                  "_original_error": 0
+                },
+                "qc_values": []
+              }
+            }
+          }
+        ],
+        "representation_gaps": [
+          "data_mode_R",
+          "data_mode_A",
+          "direction_D",
+          "source_core_measurement_null"
+        ],
+        "F01_representative_corpus": "pending",
+        "regional_completeness": "not_proven_by_profile_id_samples",
+        "live_regional_acceptance": "not_executed",
+        "private_originals": "not_accessed"
+      },
+      {
+        "kind": "persisted_sanitized_fixture_audit",
+        "bundle": "tests/fixtures/argovis/recorded/25f21e056e7c4db7bc1e21b0a28ea45f",
+        "manifest_sha256": "7127115c0b866861e11f1ab34c3cda5c0d4633e885fa6687ba5d6d4112414dc6",
+        "versions": {
+          "geometry": "indian-ocean-v1",
+          "mapping": "argovis-core-v1",
+          "hash": "scientific-json-v2",
+          "specification": "2.36.2",
+          "specification_sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
+          "qc": "core-good-v1"
+        },
+        "attribution": {
+          "provider": "International Argo Program and national contributors, via Argovis",
+          "argo_doi": "https://doi.org/10.17882/42182",
+          "terms_and_acknowledgement": "https://argo.ucsd.edu/data/acknowledging-argo/",
+          "argovis_contract_citation": "https://zenodo.org/records/15708506"
+        },
+        "verified_responses": [
+          {
+            "path": "01-inventory_before.json",
+            "role": "inventory_before",
+            "sha256": "132a783e69d3ab0108ae4af6a28c250879c8047679982575708e5df7a756d2a9",
+            "bytes": 741,
+            "retrieved_at_utc": "2026-10-06T13:21:14.238833+00:00"
+          },
+          {
+            "path": "02-profile.json",
+            "role": "profile",
+            "sha256": "0abfe6dc9a9bd3418d549842b1c2d7d8d4859f3b3922532dcaf09f6c6d65fbf2",
+            "bytes": 2097,
+            "retrieved_at_utc": "2026-10-06T13:21:15.247007+00:00"
+          },
+          {
+            "path": "03-inventory_after.json",
+            "role": "inventory_after",
+            "sha256": "132a783e69d3ab0108ae4af6a28c250879c8047679982575708e5df7a756d2a9",
+            "bytes": 741,
+            "retrieved_at_utc": "2026-10-06T13:21:16.277323+00:00"
+          },
+          {
+            "path": "04-metadata.json",
+            "role": "metadata",
+            "sha256": "96734e1c036ec56842faea6fc55d656f3dc2c40ec8c7f5b823fdc4a18e220c10",
+            "bytes": 352,
+            "retrieved_at_utc": "2026-10-06T13:21:17.262506+00:00"
+          }
+        ],
+        "profiles": [
+          {
+            "source_profile_id": "6990616_100",
+            "identity": "id:6990616_100",
+            "levels": 43,
+            "scientific_sha256": "eb5f397e8626fa8146fc41faed6d39ce49c233059dfeb3c77a95c833db5f7eb7",
+            "direction": "A",
+            "observed_at_utc": "2026-10-02T13:58:36.999000+00:00",
+            "in_indian_ocean_geometry": true,
+            "source_revision_components": 1,
+            "source_columns": [
+              "pressure",
+              "pressure_argoqc",
+              "salinity",
+              "salinity_argoqc",
+              "temperature",
+              "temperature_argoqc"
+            ],
+            "source_null_cells_by_column": {},
+            "supplementary_noncore_columns": {},
+            "source_null_cells": 0,
+            "source_core_null_cells": 0,
+            "source_core_value_null_cells": 0,
+            "source_core_qc_null_cells": 0,
+            "repeated_nonnull_pressure": false,
+            "variables": {
+              "pressure": {
+                "modes": [
+                  "R"
+                ],
+                "source_column_present": true,
+                "raw_data_keys_modes": [
+                  "R"
+                ],
+                "available": {
+                  "original": 43,
+                  "_adjusted": 0,
+                  "_qc": 43,
+                  "_adjusted_qc": 0,
+                  "_error": 0,
+                  "_original_error": 0
+                },
+                "qc_values": [
+                  "1"
+                ]
+              },
+              "temperature": {
+                "modes": [
+                  "R"
+                ],
+                "source_column_present": true,
+                "raw_data_keys_modes": [
+                  "R"
+                ],
+                "available": {
+                  "original": 43,
+                  "_adjusted": 0,
+                  "_qc": 43,
+                  "_adjusted_qc": 0,
+                  "_error": 0,
+                  "_original_error": 0
+                },
+                "qc_values": [
+                  "1"
+                ]
+              },
+              "salinity": {
+                "modes": [
+                  "R"
+                ],
+                "source_column_present": true,
+                "raw_data_keys_modes": [
+                  "R"
+                ],
+                "available": {
+                  "original": 43,
+                  "_adjusted": 0,
+                  "_qc": 43,
+                  "_adjusted_qc": 0,
+                  "_error": 0,
+                  "_original_error": 0
+                },
+                "qc_values": [
+                  "1"
+                ]
+              }
+            }
+          }
+        ],
+        "representation_gaps": [
+          "data_mode_A",
+          "data_mode_D",
+          "direction_D",
+          "source_core_measurement_null"
+        ],
+        "F01_representative_corpus": "pending",
+        "regional_completeness": "not_proven_by_profile_id_samples",
+        "live_regional_acceptance": "not_executed",
+        "private_originals": "not_accessed"
+      },
+      {
+        "kind": "persisted_sanitized_fixture_audit",
+        "bundle": "tests/fixtures/argovis/recorded/6a8ffa52f6db4954b974c449e68c54bc",
+        "manifest_sha256": "9b13d730d21c309edfb7edc72e7f325e8ae8285ba8c5ba16c872e7f1340f261c",
+        "versions": {
+          "geometry": "indian-ocean-v1",
+          "mapping": "argovis-core-v1",
+          "hash": "scientific-json-v2",
+          "specification": "2.36.2",
+          "specification_sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
+          "qc": "core-good-v1"
+        },
+        "attribution": {
+          "provider": "International Argo Program and national contributors, via Argovis",
+          "argo_doi": "https://doi.org/10.17882/42182",
+          "terms_and_acknowledgement": "https://argo.ucsd.edu/data/acknowledging-argo/",
+          "argovis_contract_citation": "https://zenodo.org/records/15708506"
+        },
+        "verified_responses": [
+          {
+            "path": "01-inventory_before.json",
+            "role": "inventory_before",
+            "sha256": "c1b79ee839135292e2de68fbdbab8cfa4101265594faededb52eebaff8bd5a36",
+            "bytes": 866,
+            "retrieved_at_utc": "2026-10-06T08:33:01.744852+00:00"
+          },
+          {
+            "path": "02-profile.json",
+            "role": "profile",
+            "sha256": "c650083aa1a3119ddc3d334581e3c4a0a7d80a18f6b768fd6ef3d76b2585a4ed",
+            "bytes": 3323,
+            "retrieved_at_utc": "2026-10-06T08:33:02.844597+00:00"
+          },
+          {
+            "path": "03-inventory_after.json",
+            "role": "inventory_after",
+            "sha256": "c1b79ee839135292e2de68fbdbab8cfa4101265594faededb52eebaff8bd5a36",
+            "bytes": 866,
+            "retrieved_at_utc": "2026-10-06T08:33:03.885848+00:00"
+          },
+          {
+            "path": "04-metadata.json",
+            "role": "metadata",
+            "sha256": "8c707f40b8f74c5d9aa03d743b2ae523b2c92af51d08decdb4c229c605e1ea29",
+            "bytes": 360,
+            "retrieved_at_utc": "2026-10-06T08:33:04.875670+00:00"
+          },
+          {
+            "path": "05-inventory_before.json",
+            "role": "inventory_before",
+            "sha256": "f839f589fe11fdbd2dfa2fef03f33605e62875ac6f41fddc5854c22061589e87",
+            "bytes": 1093,
+            "retrieved_at_utc": "2026-10-06T08:33:05.933356+00:00"
+          },
+          {
+            "path": "06-profile.json",
+            "role": "profile",
+            "sha256": "6b18c1dc8e626657fc3b3311d4fdd0520a2e3c16979c236cc3130361ef434a37",
+            "bytes": 23800,
+            "retrieved_at_utc": "2026-10-06T08:33:07.231318+00:00"
+          },
+          {
+            "path": "07-inventory_after.json",
+            "role": "inventory_after",
+            "sha256": "f839f589fe11fdbd2dfa2fef03f33605e62875ac6f41fddc5854c22061589e87",
+            "bytes": 1093,
+            "retrieved_at_utc": "2026-10-06T08:33:08.284355+00:00"
+          },
+          {
+            "path": "08-metadata.json",
+            "role": "metadata",
+            "sha256": "6e879d4c5e868ede2af4868b82e2766bf73b2f8a21f69ee08dad09f39afdd4a5",
+            "bytes": 350,
+            "retrieved_at_utc": "2026-10-06T08:33:09.385385+00:00"
+          }
+        ],
+        "profiles": [
+          {
+            "source_profile_id": "1901094_109",
+            "identity": "id:1901094_109",
+            "levels": 92,
+            "scientific_sha256": "4720d3534449499d5fc67703e9c04a719c63b776600aab98d1111bbd42e8e0d4",
+            "direction": "A",
+            "observed_at_utc": "2011-05-31T04:48:00.000000+00:00",
+            "in_indian_ocean_geometry": false,
+            "source_revision_components": 1,
+            "source_columns": [
+              "pressure",
+              "pressure_argoqc",
+              "salinity",
+              "salinity_argoqc",
+              "temperature",
+              "temperature_argoqc"
+            ],
+            "source_null_cells_by_column": {},
+            "supplementary_noncore_columns": {},
+            "source_null_cells": 0,
+            "source_core_null_cells": 0,
+            "source_core_value_null_cells": 0,
+            "source_core_qc_null_cells": 0,
+            "repeated_nonnull_pressure": false,
+            "variables": {
+              "pressure": {
+                "modes": [
+                  "D"
+                ],
+                "source_column_present": true,
+                "raw_data_keys_modes": [
+                  "D"
+                ],
+                "available": {
+                  "original": 0,
+                  "_adjusted": 92,
+                  "_qc": 0,
+                  "_adjusted_qc": 92,
+                  "_error": 0,
+                  "_original_error": 0
+                },
+                "qc_values": [
+                  "1"
+                ]
+              },
+              "temperature": {
+                "modes": [
+                  "D"
+                ],
+                "source_column_present": true,
+                "raw_data_keys_modes": [
+                  "D"
+                ],
+                "available": {
+                  "original": 0,
+                  "_adjusted": 92,
+                  "_qc": 0,
+                  "_adjusted_qc": 92,
+                  "_error": 0,
+                  "_original_error": 0
+                },
+                "qc_values": [
+                  "1"
+                ]
+              },
+              "salinity": {
+                "modes": [
+                  "D"
+                ],
+                "source_column_present": true,
+                "raw_data_keys_modes": [
+                  "D"
+                ],
+                "available": {
+                  "original": 0,
+                  "_adjusted": 92,
+                  "_qc": 0,
+                  "_adjusted_qc": 92,
+                  "_error": 0,
+                  "_original_error": 0
+                },
+                "qc_values": [
+                  "1"
+                ]
+              }
+            }
+          },
+          {
+            "source_profile_id": "4901283_003",
+            "identity": "id:4901283_003",
+            "levels": 423,
+            "scientific_sha256": "e0e9bb008a98fec66e47ffdffd987d2548ff94de6d456a608aced14e65474782",
+            "direction": "A",
+            "observed_at_utc": "2011-05-02T08:26:28.000000+00:00",
+            "in_indian_ocean_geometry": false,
+            "source_revision_components": 2,
+            "source_columns": [
+              "doxy",
+              "doxy_argoqc",
+              "pressure",
+              "pressure_argoqc",
+              "salinity",
+              "salinity_argoqc",
+              "salinity_sfile",
+              "salinity_sfile_argoqc",
+              "temperature",
+              "temperature_argoqc",
+              "temperature_sfile",
+              "temperature_sfile_argoqc"
+            ],
+            "source_null_cells_by_column": {
+              "doxy": 423
+            },
+            "supplementary_noncore_columns": {},
+            "source_null_cells": 423,
+            "source_core_null_cells": 0,
+            "source_core_value_null_cells": 0,
+            "source_core_qc_null_cells": 0,
+            "repeated_nonnull_pressure": false,
+            "variables": {
+              "pressure": {
+                "modes": [
+                  "D"
+                ],
+                "source_column_present": true,
+                "raw_data_keys_modes": [
+                  "D"
+                ],
+                "available": {
+                  "original": 0,
+                  "_adjusted": 423,
+                  "_qc": 0,
+                  "_adjusted_qc": 423,
+                  "_error": 0,
+                  "_original_error": 0
+                },
+                "qc_values": [
+                  "1"
+                ]
+              },
+              "temperature": {
+                "modes": [
+                  "D"
+                ],
+                "source_column_present": true,
+                "raw_data_keys_modes": [
+                  "D"
+                ],
+                "available": {
+                  "original": 0,
+                  "_adjusted": 423,
+                  "_qc": 0,
+                  "_adjusted_qc": 423,
+                  "_error": 0,
+                  "_original_error": 0
+                },
+                "qc_values": [
+                  "1"
+                ]
+              },
+              "salinity": {
+                "modes": [
+                  "D"
+                ],
+                "source_column_present": true,
+                "raw_data_keys_modes": [
+                  "D"
+                ],
+                "available": {
+                  "original": 0,
+                  "_adjusted": 423,
+                  "_qc": 0,
+                  "_adjusted_qc": 423,
+                  "_error": 0,
+                  "_original_error": 0
+                },
+                "qc_values": [
+                  "1"
+                ]
+              }
+            }
+          }
+        ],
+        "representation_gaps": [
+          "data_mode_R",
+          "data_mode_A",
+          "direction_D",
+          "source_core_measurement_null"
+        ],
+        "F01_representative_corpus": "pending",
+        "regional_completeness": "not_proven_by_profile_id_samples",
+        "live_regional_acceptance": "not_executed",
+        "private_originals": "not_accessed"
+      },
+      {
+        "kind": "persisted_sanitized_fixture_audit",
+        "bundle": "tests/fixtures/argovis/recorded/9efe8f4e713c44a1a2964407e52b9a45",
+        "manifest_sha256": "f42b03e44588560ba43151428405eb4b40324a6d26dc3111406a41c56d0ff540",
+        "versions": {
+          "geometry": "indian-ocean-v1",
+          "mapping": "argovis-core-v1",
+          "hash": "scientific-json-v2",
+          "specification": "2.36.2",
+          "specification_sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
+          "qc": "core-good-v1",
+          "source_contract": "argovis-core-2.36.2+ifremer-fluorescence-v1",
+          "translator_revision": "cbf2bb48ed5d95532c18bb2cd5217e44618356cf",
+          "translator_sha256": "279af8ef7b2adabad38d94ca71de02d86dd11efe28e3c1f174f874b7ed73224f"
+        },
+        "attribution": {
+          "provider": "International Argo Program and national contributors, via Argovis",
+          "argo_doi": "https://doi.org/10.17882/42182",
+          "terms_and_acknowledgement": "https://argo.ucsd.edu/data/acknowledging-argo/",
+          "argovis_contract_citation": "https://zenodo.org/records/15708506"
+        },
+        "verified_responses": [
+          {
+            "path": "01-inventory_before.json",
+            "role": "inventory_before",
+            "sha256": "a6fb76a248f7a8dd9e7d50d5e0123959a8fa918debcf7542750f197cbebd277c",
+            "bytes": 1541,
+            "retrieved_at_utc": "2026-10-06T18:56:04.327159+00:00"
+          },
+          {
+            "path": "02-profile.json",
+            "role": "profile",
+            "sha256": "c51989d8f3285a976e64e55fd7dde0c8d95a6a4306bb27607980e2b8d1c8ba4f",
+            "bytes": 65715,
+            "retrieved_at_utc": "2026-10-06T18:56:06.056977+00:00"
+          },
+          {
+            "path": "03-inventory_after.json",
+            "role": "inventory_after",
+            "sha256": "a6fb76a248f7a8dd9e7d50d5e0123959a8fa918debcf7542750f197cbebd277c",
+            "bytes": 1541,
+            "retrieved_at_utc": "2026-10-06T18:56:07.289300+00:00"
+          },
+          {
+            "path": "04-metadata.json",
+            "role": "metadata",
+            "sha256": "0b108edd5db80012cfc7b7860719f81ca43b72d937fa16ac61887b2a9bb5474a",
+            "bytes": 375,
+            "retrieved_at_utc": "2026-10-06T18:56:08.378266+00:00"
+          }
+        ],
+        "profiles": [
+          {
+            "source_profile_id": "2904014_040",
+            "identity": "id:2904014_040",
+            "levels": 501,
+            "scientific_sha256": "a57bfef74f81d4d1344b9002aa14040969af2a75f65de50fdc4b21a87b4bbda3",
+            "direction": "A",
+            "observed_at_utc": "2026-10-04T03:18:17.000000+00:00",
+            "in_indian_ocean_geometry": true,
+            "source_revision_components": 2,
+            "source_columns": [
+              "bbp700",
+              "bbp700_argoqc",
+              "cdom",
+              "cdom_argoqc",
+              "chla",
+              "chla_argoqc",
+              "chla_fluorescence",
+              "chla_fluorescence_qc",
+              "doxy",
+              "doxy_argoqc",
+              "nitrate",
+              "nitrate_argoqc",
+              "ph_in_situ_total",
+              "ph_in_situ_total_argoqc",
+              "pressure",
+              "pressure_argoqc",
+              "salinity",
+              "salinity_argoqc",
+              "salinity_sfile",
+              "salinity_sfile_argoqc",
+              "temperature",
+              "temperature_argoqc",
+              "temperature_sfile",
+              "temperature_sfile_argoqc"
+            ],
+            "source_null_cells_by_column": {
+              "nitrate": 501,
+              "nitrate_argoqc": 501
+            },
+            "supplementary_noncore_columns": {
+              "chla_fluorescence": {
+                "levels": 501,
+                "null_cells": 0,
+                "source_attributes": {
+                  "units": "ru",
+                  "data_keys_mode": "A"
+                },
+                "disposition": "immutable_raw_only_no_canonical_chlorophyll_mapping"
+              },
+              "chla_fluorescence_qc": {
+                "levels": 501,
+                "null_cells": 0,
+                "source_attributes": {
+                  "units": null,
+                  "data_keys_mode": null
+                },
+                "disposition": "immutable_raw_only_no_canonical_chlorophyll_mapping"
+              }
+            },
+            "source_null_cells": 1002,
+            "source_core_null_cells": 0,
+            "source_core_value_null_cells": 0,
+            "source_core_qc_null_cells": 0,
+            "repeated_nonnull_pressure": false,
+            "variables": {
+              "pressure": {
+                "modes": [
+                  "A"
+                ],
+                "source_column_present": true,
+                "raw_data_keys_modes": [
+                  "A"
+                ],
+                "available": {
+                  "original": 0,
+                  "_adjusted": 501,
+                  "_qc": 0,
+                  "_adjusted_qc": 501,
+                  "_error": 0,
+                  "_original_error": 0
+                },
+                "qc_values": [
+                  "1"
+                ]
+              },
+              "temperature": {
+                "modes": [
+                  "A"
+                ],
+                "source_column_present": true,
+                "raw_data_keys_modes": [
+                  "A"
+                ],
+                "available": {
+                  "original": 0,
+                  "_adjusted": 501,
+                  "_qc": 0,
+                  "_adjusted_qc": 501,
+                  "_error": 0,
+                  "_original_error": 0
+                },
+                "qc_values": [
+                  "1",
+                  "4"
+                ]
+              },
+              "salinity": {
+                "modes": [
+                  "A"
+                ],
+                "source_column_present": true,
+                "raw_data_keys_modes": [
+                  "A"
+                ],
+                "available": {
+                  "original": 0,
+                  "_adjusted": 501,
+                  "_qc": 0,
+                  "_adjusted_qc": 501,
+                  "_error": 0,
+                  "_original_error": 0
+                },
+                "qc_values": [
+                  "1",
+                  "4"
+                ]
+              }
+            }
+          }
+        ],
+        "representation_gaps": [
+          "data_mode_R",
+          "data_mode_D",
+          "direction_D",
+          "source_core_measurement_null"
+        ],
+        "F01_representative_corpus": "pending",
+        "regional_completeness": "not_proven_by_profile_id_samples",
+        "live_regional_acceptance": "not_executed",
+        "private_originals": "not_accessed"
+      }
+    ],
+    "profiles": [
+      {
+        "bundle": "tests/fixtures/argovis/recorded/10b19b21ac4d4d8ba69a4fc95e87de3c",
+        "manifest_sha256": "d65c72afd189be392d4c3335ca88803cffa291fb904e2d6ae8daaff1ed3a2e2f",
+        "source_profile_id": "13857_068",
+        "identity": "id:13857_068",
+        "levels": 103,
+        "scientific_sha256": "13656548049786e4452cd06e65b95fc274a6268a3e486af572b184645edeb3c2",
+        "direction": "A",
+        "observed_at_utc": "1999-08-05T19:03:42.002000+00:00",
+        "in_indian_ocean_geometry": false,
+        "source_revision_components": 1,
+        "source_columns": [
+          "pressure",
+          "pressure_argoqc",
+          "temperature",
+          "temperature_argoqc"
+        ],
+        "source_null_cells_by_column": {},
+        "supplementary_noncore_columns": {},
+        "source_null_cells": 0,
+        "source_core_null_cells": 0,
+        "source_core_value_null_cells": 0,
+        "source_core_qc_null_cells": 0,
+        "repeated_nonnull_pressure": false,
+        "variables": {
+          "pressure": {
+            "modes": [
+              "D"
+            ],
+            "source_column_present": true,
+            "raw_data_keys_modes": [
+              "D"
+            ],
+            "available": {
+              "original": 0,
+              "_adjusted": 103,
+              "_qc": 0,
+              "_adjusted_qc": 103,
+              "_error": 0,
+              "_original_error": 0
+            },
+            "qc_values": [
+              "2"
+            ]
+          },
+          "temperature": {
+            "modes": [
+              "D"
+            ],
+            "source_column_present": true,
+            "raw_data_keys_modes": [
+              "D"
+            ],
+            "available": {
+              "original": 0,
+              "_adjusted": 103,
+              "_qc": 0,
+              "_adjusted_qc": 103,
+              "_error": 0,
+              "_original_error": 0
+            },
+            "qc_values": [
+              "2"
+            ]
+          },
+          "salinity": {
+            "modes": [],
+            "source_column_present": false,
+            "raw_data_keys_modes": [],
+            "available": {
+              "original": 0,
+              "_adjusted": 0,
+              "_qc": 0,
+              "_adjusted_qc": 0,
+              "_error": 0,
+              "_original_error": 0
+            },
+            "qc_values": []
+          }
+        }
+      },
+      {
+        "bundle": "tests/fixtures/argovis/recorded/25f21e056e7c4db7bc1e21b0a28ea45f",
+        "manifest_sha256": "7127115c0b866861e11f1ab34c3cda5c0d4633e885fa6687ba5d6d4112414dc6",
+        "source_profile_id": "6990616_100",
+        "identity": "id:6990616_100",
+        "levels": 43,
+        "scientific_sha256": "eb5f397e8626fa8146fc41faed6d39ce49c233059dfeb3c77a95c833db5f7eb7",
+        "direction": "A",
+        "observed_at_utc": "2026-10-02T13:58:36.999000+00:00",
+        "in_indian_ocean_geometry": true,
+        "source_revision_components": 1,
+        "source_columns": [
+          "pressure",
+          "pressure_argoqc",
+          "salinity",
+          "salinity_argoqc",
+          "temperature",
+          "temperature_argoqc"
+        ],
+        "source_null_cells_by_column": {},
+        "supplementary_noncore_columns": {},
+        "source_null_cells": 0,
+        "source_core_null_cells": 0,
+        "source_core_value_null_cells": 0,
+        "source_core_qc_null_cells": 0,
+        "repeated_nonnull_pressure": false,
+        "variables": {
+          "pressure": {
+            "modes": [
+              "R"
+            ],
+            "source_column_present": true,
+            "raw_data_keys_modes": [
+              "R"
+            ],
+            "available": {
+              "original": 43,
+              "_adjusted": 0,
+              "_qc": 43,
+              "_adjusted_qc": 0,
+              "_error": 0,
+              "_original_error": 0
+            },
+            "qc_values": [
+              "1"
+            ]
+          },
+          "temperature": {
+            "modes": [
+              "R"
+            ],
+            "source_column_present": true,
+            "raw_data_keys_modes": [
+              "R"
+            ],
+            "available": {
+              "original": 43,
+              "_adjusted": 0,
+              "_qc": 43,
+              "_adjusted_qc": 0,
+              "_error": 0,
+              "_original_error": 0
+            },
+            "qc_values": [
+              "1"
+            ]
+          },
+          "salinity": {
+            "modes": [
+              "R"
+            ],
+            "source_column_present": true,
+            "raw_data_keys_modes": [
+              "R"
+            ],
+            "available": {
+              "original": 43,
+              "_adjusted": 0,
+              "_qc": 43,
+              "_adjusted_qc": 0,
+              "_error": 0,
+              "_original_error": 0
+            },
+            "qc_values": [
+              "1"
+            ]
+          }
+        }
+      },
+      {
+        "bundle": "tests/fixtures/argovis/recorded/6a8ffa52f6db4954b974c449e68c54bc",
+        "manifest_sha256": "9b13d730d21c309edfb7edc72e7f325e8ae8285ba8c5ba16c872e7f1340f261c",
+        "source_profile_id": "1901094_109",
+        "identity": "id:1901094_109",
+        "levels": 92,
+        "scientific_sha256": "4720d3534449499d5fc67703e9c04a719c63b776600aab98d1111bbd42e8e0d4",
+        "direction": "A",
+        "observed_at_utc": "2011-05-31T04:48:00.000000+00:00",
+        "in_indian_ocean_geometry": false,
+        "source_revision_components": 1,
+        "source_columns": [
+          "pressure",
+          "pressure_argoqc",
+          "salinity",
+          "salinity_argoqc",
+          "temperature",
+          "temperature_argoqc"
+        ],
+        "source_null_cells_by_column": {},
+        "supplementary_noncore_columns": {},
+        "source_null_cells": 0,
+        "source_core_null_cells": 0,
+        "source_core_value_null_cells": 0,
+        "source_core_qc_null_cells": 0,
+        "repeated_nonnull_pressure": false,
+        "variables": {
+          "pressure": {
+            "modes": [
+              "D"
+            ],
+            "source_column_present": true,
+            "raw_data_keys_modes": [
+              "D"
+            ],
+            "available": {
+              "original": 0,
+              "_adjusted": 92,
+              "_qc": 0,
+              "_adjusted_qc": 92,
+              "_error": 0,
+              "_original_error": 0
+            },
+            "qc_values": [
+              "1"
+            ]
+          },
+          "temperature": {
+            "modes": [
+              "D"
+            ],
+            "source_column_present": true,
+            "raw_data_keys_modes": [
+              "D"
+            ],
+            "available": {
+              "original": 0,
+              "_adjusted": 92,
+              "_qc": 0,
+              "_adjusted_qc": 92,
+              "_error": 0,
+              "_original_error": 0
+            },
+            "qc_values": [
+              "1"
+            ]
+          },
+          "salinity": {
+            "modes": [
+              "D"
+            ],
+            "source_column_present": true,
+            "raw_data_keys_modes": [
+              "D"
+            ],
+            "available": {
+              "original": 0,
+              "_adjusted": 92,
+              "_qc": 0,
+              "_adjusted_qc": 92,
+              "_error": 0,
+              "_original_error": 0
+            },
+            "qc_values": [
+              "1"
+            ]
+          }
+        }
+      },
+      {
+        "bundle": "tests/fixtures/argovis/recorded/6a8ffa52f6db4954b974c449e68c54bc",
+        "manifest_sha256": "9b13d730d21c309edfb7edc72e7f325e8ae8285ba8c5ba16c872e7f1340f261c",
+        "source_profile_id": "4901283_003",
+        "identity": "id:4901283_003",
+        "levels": 423,
+        "scientific_sha256": "e0e9bb008a98fec66e47ffdffd987d2548ff94de6d456a608aced14e65474782",
+        "direction": "A",
+        "observed_at_utc": "2011-05-02T08:26:28.000000+00:00",
+        "in_indian_ocean_geometry": false,
+        "source_revision_components": 2,
+        "source_columns": [
+          "doxy",
+          "doxy_argoqc",
+          "pressure",
+          "pressure_argoqc",
+          "salinity",
+          "salinity_argoqc",
+          "salinity_sfile",
+          "salinity_sfile_argoqc",
+          "temperature",
+          "temperature_argoqc",
+          "temperature_sfile",
+          "temperature_sfile_argoqc"
+        ],
+        "source_null_cells_by_column": {
+          "doxy": 423
+        },
+        "supplementary_noncore_columns": {},
+        "source_null_cells": 423,
+        "source_core_null_cells": 0,
+        "source_core_value_null_cells": 0,
+        "source_core_qc_null_cells": 0,
+        "repeated_nonnull_pressure": false,
+        "variables": {
+          "pressure": {
+            "modes": [
+              "D"
+            ],
+            "source_column_present": true,
+            "raw_data_keys_modes": [
+              "D"
+            ],
+            "available": {
+              "original": 0,
+              "_adjusted": 423,
+              "_qc": 0,
+              "_adjusted_qc": 423,
+              "_error": 0,
+              "_original_error": 0
+            },
+            "qc_values": [
+              "1"
+            ]
+          },
+          "temperature": {
+            "modes": [
+              "D"
+            ],
+            "source_column_present": true,
+            "raw_data_keys_modes": [
+              "D"
+            ],
+            "available": {
+              "original": 0,
+              "_adjusted": 423,
+              "_qc": 0,
+              "_adjusted_qc": 423,
+              "_error": 0,
+              "_original_error": 0
+            },
+            "qc_values": [
+              "1"
+            ]
+          },
+          "salinity": {
+            "modes": [
+              "D"
+            ],
+            "source_column_present": true,
+            "raw_data_keys_modes": [
+              "D"
+            ],
+            "available": {
+              "original": 0,
+              "_adjusted": 423,
+              "_qc": 0,
+              "_adjusted_qc": 423,
+              "_error": 0,
+              "_original_error": 0
+            },
+            "qc_values": [
+              "1"
+            ]
+          }
+        }
+      },
+      {
+        "bundle": "tests/fixtures/argovis/recorded/9efe8f4e713c44a1a2964407e52b9a45",
+        "manifest_sha256": "f42b03e44588560ba43151428405eb4b40324a6d26dc3111406a41c56d0ff540",
+        "source_profile_id": "2904014_040",
+        "identity": "id:2904014_040",
+        "levels": 501,
+        "scientific_sha256": "a57bfef74f81d4d1344b9002aa14040969af2a75f65de50fdc4b21a87b4bbda3",
+        "direction": "A",
+        "observed_at_utc": "2026-10-04T03:18:17.000000+00:00",
+        "in_indian_ocean_geometry": true,
+        "source_revision_components": 2,
+        "source_columns": [
+          "bbp700",
+          "bbp700_argoqc",
+          "cdom",
+          "cdom_argoqc",
+          "chla",
+          "chla_argoqc",
+          "chla_fluorescence",
+          "chla_fluorescence_qc",
+          "doxy",
+          "doxy_argoqc",
+          "nitrate",
+          "nitrate_argoqc",
+          "ph_in_situ_total",
+          "ph_in_situ_total_argoqc",
+          "pressure",
+          "pressure_argoqc",
+          "salinity",
+          "salinity_argoqc",
+          "salinity_sfile",
+          "salinity_sfile_argoqc",
+          "temperature",
+          "temperature_argoqc",
+          "temperature_sfile",
+          "temperature_sfile_argoqc"
+        ],
+        "source_null_cells_by_column": {
+          "nitrate": 501,
+          "nitrate_argoqc": 501
+        },
+        "supplementary_noncore_columns": {
+          "chla_fluorescence": {
+            "levels": 501,
+            "null_cells": 0,
+            "source_attributes": {
+              "units": "ru",
+              "data_keys_mode": "A"
+            },
+            "disposition": "immutable_raw_only_no_canonical_chlorophyll_mapping"
+          },
+          "chla_fluorescence_qc": {
+            "levels": 501,
+            "null_cells": 0,
+            "source_attributes": {
+              "units": null,
+              "data_keys_mode": null
+            },
+            "disposition": "immutable_raw_only_no_canonical_chlorophyll_mapping"
+          }
+        },
+        "source_null_cells": 1002,
+        "source_core_null_cells": 0,
+        "source_core_value_null_cells": 0,
+        "source_core_qc_null_cells": 0,
+        "repeated_nonnull_pressure": false,
+        "variables": {
+          "pressure": {
+            "modes": [
+              "A"
+            ],
+            "source_column_present": true,
+            "raw_data_keys_modes": [
+              "A"
+            ],
+            "available": {
+              "original": 0,
+              "_adjusted": 501,
+              "_qc": 0,
+              "_adjusted_qc": 501,
+              "_error": 0,
+              "_original_error": 0
+            },
+            "qc_values": [
+              "1"
+            ]
+          },
+          "temperature": {
+            "modes": [
+              "A"
+            ],
+            "source_column_present": true,
+            "raw_data_keys_modes": [
+              "A"
+            ],
+            "available": {
+              "original": 0,
+              "_adjusted": 501,
+              "_qc": 0,
+              "_adjusted_qc": 501,
+              "_error": 0,
+              "_original_error": 0
+            },
+            "qc_values": [
+              "1",
+              "4"
+            ]
+          },
+          "salinity": {
+            "modes": [
+              "A"
+            ],
+            "source_column_present": true,
+            "raw_data_keys_modes": [
+              "A"
+            ],
+            "available": {
+              "original": 0,
+              "_adjusted": 501,
+              "_qc": 0,
+              "_adjusted_qc": 501,
+              "_error": 0,
+              "_original_error": 0
+            },
+            "qc_values": [
+              "1",
+              "4"
+            ]
+          }
+        }
+      }
+    ],
+    "response_count": 20,
+    "distinct_profile_count": 5,
+    "captured_level_occurrences": 1162,
+    "coverage_matrix": {
+      "data_mode_R": {
+        "status": "observed",
+        "witnesses": [
+          {
+            "bundle": "tests/fixtures/argovis/recorded/25f21e056e7c4db7bc1e21b0a28ea45f",
+            "source_profile_id": "6990616_100",
+            "scientific_sha256": "eb5f397e8626fa8146fc41faed6d39ce49c233059dfeb3c77a95c833db5f7eb7"
+          }
+        ]
+      },
+      "data_mode_A": {
+        "status": "observed",
+        "witnesses": [
+          {
+            "bundle": "tests/fixtures/argovis/recorded/9efe8f4e713c44a1a2964407e52b9a45",
+            "source_profile_id": "2904014_040",
+            "scientific_sha256": "a57bfef74f81d4d1344b9002aa14040969af2a75f65de50fdc4b21a87b4bbda3"
+          }
+        ]
+      },
+      "data_mode_D": {
+        "status": "observed",
+        "witnesses": [
+          {
+            "bundle": "tests/fixtures/argovis/recorded/10b19b21ac4d4d8ba69a4fc95e87de3c",
+            "source_profile_id": "13857_068",
+            "scientific_sha256": "13656548049786e4452cd06e65b95fc274a6268a3e486af572b184645edeb3c2"
+          },
+          {
+            "bundle": "tests/fixtures/argovis/recorded/6a8ffa52f6db4954b974c449e68c54bc",
+            "source_profile_id": "1901094_109",
+            "scientific_sha256": "4720d3534449499d5fc67703e9c04a719c63b776600aab98d1111bbd42e8e0d4"
+          },
+          {
+            "bundle": "tests/fixtures/argovis/recorded/6a8ffa52f6db4954b974c449e68c54bc",
+            "source_profile_id": "4901283_003",
+            "scientific_sha256": "e0e9bb008a98fec66e47ffdffd987d2548ff94de6d456a608aced14e65474782"
+          }
+        ]
+      },
+      "direction_A": {
+        "status": "observed",
+        "witnesses": [
+          {
+            "bundle": "tests/fixtures/argovis/recorded/10b19b21ac4d4d8ba69a4fc95e87de3c",
+            "source_profile_id": "13857_068",
+            "scientific_sha256": "13656548049786e4452cd06e65b95fc274a6268a3e486af572b184645edeb3c2"
+          },
+          {
+            "bundle": "tests/fixtures/argovis/recorded/25f21e056e7c4db7bc1e21b0a28ea45f",
+            "source_profile_id": "6990616_100",
+            "scientific_sha256": "eb5f397e8626fa8146fc41faed6d39ce49c233059dfeb3c77a95c833db5f7eb7"
+          },
+          {
+            "bundle": "tests/fixtures/argovis/recorded/6a8ffa52f6db4954b974c449e68c54bc",
+            "source_profile_id": "1901094_109",
+            "scientific_sha256": "4720d3534449499d5fc67703e9c04a719c63b776600aab98d1111bbd42e8e0d4"
+          },
+          {
+            "bundle": "tests/fixtures/argovis/recorded/6a8ffa52f6db4954b974c449e68c54bc",
+            "source_profile_id": "4901283_003",
+            "scientific_sha256": "e0e9bb008a98fec66e47ffdffd987d2548ff94de6d456a608aced14e65474782"
+          },
+          {
+            "bundle": "tests/fixtures/argovis/recorded/9efe8f4e713c44a1a2964407e52b9a45",
+            "source_profile_id": "2904014_040",
+            "scientific_sha256": "a57bfef74f81d4d1344b9002aa14040969af2a75f65de50fdc4b21a87b4bbda3"
+          }
+        ]
+      },
+      "direction_D": {
+        "status": "missing",
+        "witnesses": []
+      },
+      "source_core_measurement_null": {
+        "status": "missing",
+        "witnesses": []
+      },
+      "supplied_measurement_error": {
+        "status": "authentic_not_required",
+        "witnesses": []
+      },
+      "repeated_nonnull_pressure": {
+        "status": "authentic_not_required",
+        "witnesses": []
+      },
+      "supplied_core_qc": {
+        "status": "observed",
+        "witnesses": [
+          {
+            "bundle": "tests/fixtures/argovis/recorded/10b19b21ac4d4d8ba69a4fc95e87de3c",
+            "source_profile_id": "13857_068",
+            "scientific_sha256": "13656548049786e4452cd06e65b95fc274a6268a3e486af572b184645edeb3c2"
+          },
+          {
+            "bundle": "tests/fixtures/argovis/recorded/25f21e056e7c4db7bc1e21b0a28ea45f",
+            "source_profile_id": "6990616_100",
+            "scientific_sha256": "eb5f397e8626fa8146fc41faed6d39ce49c233059dfeb3c77a95c833db5f7eb7"
+          },
+          {
+            "bundle": "tests/fixtures/argovis/recorded/6a8ffa52f6db4954b974c449e68c54bc",
+            "source_profile_id": "1901094_109",
+            "scientific_sha256": "4720d3534449499d5fc67703e9c04a719c63b776600aab98d1111bbd42e8e0d4"
+          },
+          {
+            "bundle": "tests/fixtures/argovis/recorded/6a8ffa52f6db4954b974c449e68c54bc",
+            "source_profile_id": "4901283_003",
+            "scientific_sha256": "e0e9bb008a98fec66e47ffdffd987d2548ff94de6d456a608aced14e65474782"
+          },
+          {
+            "bundle": "tests/fixtures/argovis/recorded/9efe8f4e713c44a1a2964407e52b9a45",
+            "source_profile_id": "2904014_040",
+            "scientific_sha256": "a57bfef74f81d4d1344b9002aa14040969af2a75f65de50fdc4b21a87b4bbda3"
+          }
+        ]
+      },
+      "source_revision_metadata": {
+        "status": "observed",
+        "witnesses": [
+          {
+            "bundle": "tests/fixtures/argovis/recorded/10b19b21ac4d4d8ba69a4fc95e87de3c",
+            "source_profile_id": "13857_068",
+            "scientific_sha256": "13656548049786e4452cd06e65b95fc274a6268a3e486af572b184645edeb3c2"
+          },
+          {
+            "bundle": "tests/fixtures/argovis/recorded/25f21e056e7c4db7bc1e21b0a28ea45f",
+            "source_profile_id": "6990616_100",
+            "scientific_sha256": "eb5f397e8626fa8146fc41faed6d39ce49c233059dfeb3c77a95c833db5f7eb7"
+          },
+          {
+            "bundle": "tests/fixtures/argovis/recorded/6a8ffa52f6db4954b974c449e68c54bc",
+            "source_profile_id": "1901094_109",
+            "scientific_sha256": "4720d3534449499d5fc67703e9c04a719c63b776600aab98d1111bbd42e8e0d4"
+          },
+          {
+            "bundle": "tests/fixtures/argovis/recorded/6a8ffa52f6db4954b974c449e68c54bc",
+            "source_profile_id": "4901283_003",
+            "scientific_sha256": "e0e9bb008a98fec66e47ffdffd987d2548ff94de6d456a608aced14e65474782"
+          },
+          {
+            "bundle": "tests/fixtures/argovis/recorded/9efe8f4e713c44a1a2964407e52b9a45",
+            "source_profile_id": "2904014_040",
+            "scientific_sha256": "a57bfef74f81d4d1344b9002aa14040969af2a75f65de50fdc4b21a87b4bbda3"
+          }
+        ]
+      }
+    },
+    "inventory_candidate_discovery": [
+      {
+        "kind": "persisted_sanitized_inventory_discovery_audit",
+        "bundle": "tests/fixtures/argovis/discovery/e5b3f14e549d49e69ed77fde03d40d8c",
+        "manifest_sha256": "817569c15a627122db86e23ee1dba8dbbfc426a8c94bd0b65cadcedbf1ed8eab",
+        "response_sha256": "d4ce241fdca004776130aefbcfd1e0bc9208c3de3228d7966102349381976022",
+        "verified_response_bytes": 2281,
+        "received_compressed_bytes": 2286,
+        "retrieved_at_utc": "2026-10-06T13:00:14.602107+00:00",
+        "endpoint": "https://argovis-api.colorado.edu/argo",
+        "request_parameters": {
+          "startDate": "2026-09-28T00:00:00Z",
+          "endDate": "2026-10-05T00:00:00Z",
+          "polygon": "[[65,-5],[70,-5],[70,0],[65,0],[65,-5]]"
+        },
+        "specification": {
+          "release": "2.36.2",
+          "sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
+          "url": "https://github.com/argovis/argovis_api/blob/2.36.2/core-spec.json"
+        },
+        "bounds": {
+          "requests": 1,
+          "concurrency": 1,
+          "automatic_retries": 0,
+          "compressed_bytes": 1048576,
+          "decompressed_bytes": 8388608,
+          "inventory_documents": 20,
+          "http_seconds": 120,
+          "scanner_seconds": 60,
+          "owner_command_seconds": 300
+        },
+        "attribution": {
+          "provider": "International Argo Program and national contributors, via Argovis",
+          "argo_doi": "https://doi.org/10.17882/42182",
+          "terms_and_acknowledgement": "https://argo.ucsd.edu/data/acknowledging-argo/",
+          "argovis_contract_citation": "https://zenodo.org/records/15708506"
+        },
+        "candidates": [
+          {
+            "source_profile_id": "2904014_040",
+            "inventory_core_data_keys_modes": {
+              "pressure": "A",
+              "salinity": "A",
+              "temperature": "A"
+            },
+            "inventory_direction": "A",
+            "observed_at_utc": "2026-10-04T03:18:17+00:00",
+            "longitude_latitude": [
+              66.0029,
+              -1.3711
+            ],
+            "metadata_pointers": [
+              "2904014_m1"
+            ],
+            "unsupported_inventory_columns": [
+              "chla_fluorescence",
+              "chla_fluorescence_qc"
+            ],
+            "inventory_schema_compatible": false,
+            "supplemented_source_contract": "argovis-core-2.36.2+ifremer-fluorescence-v1",
+            "supplemented_source_contract_compatible": true,
+            "measurement_levels": "not_fetched",
+            "complete_capture": false
+          },
+          {
+            "source_profile_id": "6990616_100",
+            "inventory_core_data_keys_modes": {
+              "pressure": "R",
+              "salinity": "R",
+              "temperature": "R"
+            },
+            "inventory_direction": "A",
+            "observed_at_utc": "2026-10-02T13:58:36.999000+00:00",
+            "longitude_latitude": [
+              68.3,
+              -4.15
+            ],
+            "metadata_pointers": [
+              "6990616_m0"
+            ],
+            "unsupported_inventory_columns": [],
+            "inventory_schema_compatible": true,
+            "supplemented_source_contract": "argovis-core-2.36.2+ifremer-fluorescence-v1",
+            "supplemented_source_contract_compatible": true,
+            "measurement_levels": "not_fetched",
+            "complete_capture": false
+          }
+        ],
+        "F01_representations_closed": [],
+        "F01_scope": "Inventory modes are candidate evidence only; complete matching inventory/profile/metadata capture and scientific assertions are still required",
+        "regional_completeness": "not_proven_by_inventory_discovery",
+        "private_originals": "not_accessed"
+      }
+    ],
+    "inventory_candidate_scope": "Excluded from coverage_matrix witnesses, scientific profiles, level counts and minimum F01 satisfaction",
+    "representation_gaps": [
+      "direction_D",
+      "source_core_measurement_null"
+    ],
+    "minimum_F01_satisfied": false,
+    "minimum_F01_scope": "Authentic portion only; labelled derivative/model/storage obligations require persisted test results, and regional acceptance remains separate",
+    "synthetic_obligations": {
+      "basis_bundle": "tests/fixtures/argovis/recorded/25f21e056e7c4db7bc1e21b0a28ea45f",
+      "repeated_pressure_tests": "tests/stage1/test_fixture_derivatives.py F01/I04/S05",
+      "error_model_parquet_tests": "tests/stage1/test_fixture_derivatives.py F01/S01",
+      "error_storage_tests": "tests/stage1/test_database.py F01/S01",
+      "test_outcomes": "Read persisted JUnit/verification; this corpus audit does not execute tests"
+    },
+    "F01_representative_corpus": "pending",
+    "revision_evidence_scope": "Source revision vectors observed; no same-profile revision transition or metadata absence is inferred",
+    "missingness_scope": "Source value nulls exclude missing QC, absent variables and mapped counterpart nulls",
+    "regional_completeness": "not_proven_by_profile_id_samples",
+    "live_regional_acceptance": "not_executed",
+    "private_originals": "not_accessed"
+  },
+  "previous_full_verification": {
+    "path": "reports/stage1-full-verification-aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080.json",
+    "source_tree_sha256": "aef6312f84a150ea9451fd1566cdb4cd0d851d867ae351330c5c23d87e993080",
+    "verified_at_actual_utc": "2026-10-06T18:51:16.522436+00:00",
+    "scope": "Historical; not rerun after fixture-only changes",
+    "passing_checks": 18,
+    "check_count": 18,
+    "python_tests": 362
+  },
+  "production_regressions": {
+    "http_request_owner": [
+      {
+        "run_id": "83bac0d7-3d39-405f-8852-07f8667dd390",
+        "chunk_id": "0cd5ba5e-f3b6-417c-acd2-f8053479f84b",
+        "statuses": [
+          429,
+          503,
+          200
+        ],
+        "dispositions": [
+          "http_failure",
+          "http_failure",
+          "verified_raw"
+        ],
+        "http_retries": 2,
+        "attempts": 3,
+        "timings_finished": true,
+        "frozen_resource_counters": {
+          "http_attempts": 3,
+          "received_bytes": 2,
+          "canonical_bytes": 0,
+          "controller_claims": 1,
+          "accepted_new_profiles": 0,
+          "accepted_insert_replacement_levels": 0
+        },
+        "state_reasons": [
+          {
+            "events": 1,
+            "reason": "component_request_probe_complete",
+            "new_state": "failed"
+          },
+          {
+            "events": 1,
+            "reason": "run_reduction",
+            "new_state": "failed"
+          },
+          {
+            "events": 1,
+            "reason": "child_phase",
+            "new_state": "fetching"
+          },
+          {
+            "events": 1,
+            "reason": "offline_http_probe",
+            "new_state": "fetching"
+          },
+          {
+            "events": 1,
+            "reason": "processing_claim",
+            "new_state": "planned"
+          },
+          {
+            "events": 1,
+            "reason": "run_admitted_reference_captured",
+            "new_state": null
+          }
+        ],
+        "scientific_no_change": true,
+        "scope": "Real repository/MinIO, mocked HTTP; request-only component"
+      },
+      {
+        "run_id": "4a0c5971-3d82-49c2-8056-791e700d94bc",
+        "chunk_id": "4d0aa71a-e375-4867-ad57-8a4c52919351",
+        "statuses": [
+          401
+        ],
+        "dispositions": [
+          "http_failure"
+        ],
+        "http_retries": 0,
+        "attempts": 1,
+        "timings_finished": true,
+        "frozen_resource_counters": {
+          "http_attempts": 1,
+          "received_bytes": 0,
+          "canonical_bytes": 0,
+          "controller_claims": 1,
+          "accepted_new_profiles": 0,
+          "accepted_insert_replacement_levels": 0
+        },
+        "state_reasons": [
+          {
+            "events": 1,
+            "reason": "http_retry_exhausted",
+            "new_state": "failed"
+          },
+          {
+            "events": 1,
+            "reason": "run_reduction",
+            "new_state": "failed"
+          },
+          {
+            "events": 1,
+            "reason": "child_phase",
+            "new_state": "fetching"
+          },
+          {
+            "events": 1,
+            "reason": "offline_http_probe",
+            "new_state": "fetching"
+          },
+          {
+            "events": 1,
+            "reason": "processing_claim",
+            "new_state": "planned"
+          },
+          {
+            "events": 1,
+            "reason": "run_admitted_reference_captured",
+            "new_state": null
+          }
+        ],
+        "scientific_no_change": true,
+        "scope": "Real repository/MinIO, mocked HTTP; request-only component"
+      },
+      {
+        "run_id": "59502a17-6a30-4e71-8335-00c30ab37e83",
+        "chunk_id": "53128086-1b40-4e10-a43b-3b1cadfd826f",
+        "statuses": [
+          403
+        ],
+        "dispositions": [
+          "http_failure"
+        ],
+        "http_retries": 0,
+        "attempts": 1,
+        "timings_finished": true,
+        "frozen_resource_counters": {
+          "http_attempts": 1,
+          "received_bytes": 0,
+          "canonical_bytes": 0,
+          "controller_claims": 1,
+          "accepted_new_profiles": 0,
+          "accepted_insert_replacement_levels": 0
+        },
+        "state_reasons": [
+          {
+            "events": 1,
+            "reason": "http_retry_exhausted",
+            "new_state": "failed"
+          },
+          {
+            "events": 1,
+            "reason": "run_reduction",
+            "new_state": "failed"
+          },
+          {
+            "events": 1,
+            "reason": "child_phase",
+            "new_state": "fetching"
+          },
+          {
+            "events": 1,
+            "reason": "offline_http_probe",
+            "new_state": "fetching"
+          },
+          {
+            "events": 1,
+            "reason": "processing_claim",
+            "new_state": "planned"
+          },
+          {
+            "events": 1,
+            "reason": "run_admitted_reference_captured",
+            "new_state": null
+          }
+        ],
+        "scientific_no_change": true,
+        "scope": "Real repository/MinIO, mocked HTTP; request-only component"
+      },
+      {
+        "run_id": "abad8970-7e2b-4300-a846-c0c1209592c2",
+        "chunk_id": "3ae02eef-ff67-4bb0-9551-0266042e3148",
+        "statuses": [
+          503,
+          503,
+          503,
+          503
+        ],
+        "dispositions": [
+          "http_failure",
+          "http_failure",
+          "http_failure",
+          "http_failure"
+        ],
+        "http_retries": 3,
+        "attempts": 4,
+        "timings_finished": true,
+        "frozen_resource_counters": {
+          "http_attempts": 4,
+          "received_bytes": 0,
+          "canonical_bytes": 0,
+          "controller_claims": 1,
+          "accepted_new_profiles": 0,
+          "accepted_insert_replacement_levels": 0
+        },
+        "state_reasons": [
+          {
+            "events": 1,
+            "reason": "http_retry_exhausted",
+            "new_state": "failed"
+          },
+          {
+            "events": 1,
+            "reason": "run_reduction",
+            "new_state": "failed"
+          },
+          {
+            "events": 1,
+            "reason": "child_phase",
+            "new_state": "fetching"
+          },
+          {
+            "events": 1,
+            "reason": "offline_http_probe",
+            "new_state": "fetching"
+          },
+          {
+            "events": 1,
+            "reason": "processing_claim",
+            "new_state": "planned"
+          },
+          {
+            "events": 1,
+            "reason": "run_admitted_reference_captured",
+            "new_state": null
+          }
+        ],
+        "scientific_no_change": true,
+        "scope": "Real repository/MinIO, mocked HTTP; request-only component"
+      }
+    ],
+    "split_replay": {
+      "predecessor_run_id": "db525016-5f69-4dca-9e19-aec0df5ecadd",
+      "replay_run_id": "0f67e183-be1d-48d4-8cc7-a5d6f9355c5d",
+      "actual_cli_exit": 0,
+      "input_kind": "replay",
+      "upstream_denied": true,
+      "temporal_split": true,
+      "spatial_split": true,
+      "topology_identical": true,
+      "plan_nodes": 466,
+      "completed_leaves": 458,
+      "scientific_no_change": true,
+      "active_partition_no_change": true,
+      "audit_attempts_increased": true,
+      "before": {
+        "runs": 11,
+        "floats": 1,
+        "attempts": 1403,
+        "profiles": 2,
+        "audit_rows": 4682,
+        "reconciliation": {
+          "full_stored": {
+            "profiles": 2,
+            "manifest_sha256": "f8324d15c2d42835b634b6ac7452482fd76eac4dc67e16538d85b5e33c49b6aa",
+            "measurement_levels": 4
+          },
+          "full_snapshot": {
+            "profiles": 2,
+            "manifest_sha256": "f8324d15c2d42835b634b6ac7452482fd76eac4dc67e16538d85b5e33c49b6aa",
+            "measurement_levels": 4
+          },
+          "run_eligible_stored": {
+            "profiles": 2,
+            "manifest_sha256": "f8324d15c2d42835b634b6ac7452482fd76eac4dc67e16538d85b5e33c49b6aa",
+            "measurement_levels": 4
+          },
+          "run_eligible_snapshot": {
+            "profiles": 2,
+            "manifest_sha256": "f8324d15c2d42835b634b6ac7452482fd76eac4dc67e16538d85b5e33c49b6aa",
+            "measurement_levels": 4
+          }
+        },
+        "active_partitions": 1,
+        "measurement_levels": 4,
+        "profile_manifest_sha256": "f8324d15c2d42835b634b6ac7452482fd76eac4dc67e16538d85b5e33c49b6aa",
+        "active_generation_sha256": "81d61f29747a9ee5ce2c2b22a0265d2e40882ee191289359dacab2b2b6321e4c"
+      },
+      "after": {
+        "runs": 11,
+        "floats": 1,
+        "attempts": 2778,
+        "profiles": 2,
+        "audit_rows": 9264,
+        "active_partitions": 1,
+        "measurement_levels": 4,
+        "profile_manifest_sha256": "f8324d15c2d42835b634b6ac7452482fd76eac4dc67e16538d85b5e33c49b6aa",
+        "active_generation_sha256": "81d61f29747a9ee5ce2c2b22a0265d2e40882ee191289359dacab2b2b6321e4c"
+      },
+      "scope": "Synthetic complete plan, not live regional acceptance"
+    }
+  },
+  "production_regressions_scope": "historical_full_suite",
+  "gate_findings": {
+    "S1-G01": {
+      "status": "offline_fault_evidence_verified",
+      "evidence": "reports/stage1-broker-evidence.json",
+      "scope": "Real prefork workers, supervisor, Redis and Beat; process loss, acknowledgement, cancellation, deadline, admission overlap and singleton lock",
+      "verification_scope": "historical_full_suite"
+    },
+    "S1-G02": {
+      "status": "offline_format_memory_evidence_verified",
+      "evidence": "reports/stage1-parquet-resource.json",
+      "scope": "Writer/read-back memory only; no whole-pipeline memory certification",
+      "verification_scope": "historical_full_suite"
+    },
+    "S1-G03": {
+      "status": "offline_persisted_metrics_verified",
+      "evidence": [
+        "reports/stage1-ingestion-example.json",
+        "reports/stage1-http-retry-evidence.json"
+      ],
+      "verification_scope": "historical_full_suite"
+    },
+    "S1-G04": {
+      "priority": "P1",
+      "status": "open_authentic_representation_gaps",
+      "remaining_representation_gaps": [
+        "direction_D",
+        "source_core_measurement_null"
+      ],
+      "evidence": "reports/stage1-fixture-corpus-coverage.json",
+      "candidate_capture": "2904014_040_complete_A_mode_not_descending_or_core_null",
+      "next_candidate": null,
+      "disposition": "stop; separately authorize bounded discovery; no invented IDs"
+    }
+  },
+  "source_supplement": {
+    "source_contract": "argovis-core-2.36.2+ifremer-fluorescence-v1",
+    "base_openapi_release": "2.36.2",
+    "base_specification_sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
+    "translator_repository": "https://github.com/argovis/ifremer-sync",
+    "translator_revision": "cbf2bb48ed5d95532c18bb2cd5217e44618356cf",
+    "translator_path": "util/helpers.py",
+    "translator_sha256": "279af8ef7b2adabad38d94ca71de02d86dd11efe28e3c1f174f874b7ed73224f",
+    "translator_source": "https://github.com/argovis/ifremer-sync/blob/cbf2bb48ed5d95532c18bb2cd5217e44618356cf/util/helpers.py",
+    "exact_additional_noncore_names": [
+      "chla_fluorescence",
+      "chla_fluorescence_qc"
+    ],
+    "interpretation": "Distinct from chla/chla_argoqc. Preserve immutable raw values, QC and source attributes; validate scalar columns and common level alignment; perform no canonical chlorophyll mapping. No wildcard or suffix expansion is granted.",
+    "openapi_scope": "Explicit translator-backed supplement; these names are absent from the pinned OpenAPI enumeration.",
+    "request_policy": "data=all; all other unsupported names continue to fail closed",
+    "approval_basis": "Owner-supplied Astra implementation review: S1-G04 resolution B"
+  },
+  "uncommitted_work": true,
+  "gate_report": "docs/stage1-gate.md",
+  "live_acceptance": "not_executed; F01 blocks acceptance preparation",
+  "private_originals": "not_accessed",
+  "credential_access": "none",
+  "CI": "not_run_on_remote_head"
+}

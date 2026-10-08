@@ -1,0 +1,72 @@
+{
+  "actual_head_CI": "pending",
+  "checks": {
+    "diff_whitespace": {
+      "exit_code": 0,
+      "log": "reports/stage1-acceptance-diff_whitespace.log",
+      "seconds": 0.03406554399407469
+    },
+    "offline_unit": {
+      "exit_code": 0,
+      "log": "reports/stage1-acceptance-offline_unit.log",
+      "seconds": 12.87598115298897
+    },
+    "python_format": {
+      "exit_code": 0,
+      "log": "reports/stage1-acceptance-python_format.log",
+      "seconds": 0.06584126700181514
+    },
+    "python_lint": {
+      "exit_code": 0,
+      "log": "reports/stage1-acceptance-python_lint.log",
+      "seconds": 0.06525455298833549
+    },
+    "python_types": {
+      "exit_code": 0,
+      "log": "reports/stage1-acceptance-python_types.log",
+      "seconds": 0.36644412600435317
+    },
+    "secrets_current": {
+      "exit_code": 0,
+      "log": "reports/stage1-acceptance-secrets_current.log",
+      "seconds": 0.9733154340065084
+    },
+    "secrets_history": {
+      "exit_code": 0,
+      "log": "reports/stage1-acceptance-secrets_history.log",
+      "seconds": 1.2700752039963845
+    }
+  },
+  "final_artifact_checks": {
+    "current_source_matches_preparation": true,
+    "final_diff_check": {
+      "exit_code": 0
+    },
+    "nothing_staged": true,
+    "secret_scan_all_reports": {
+      "exit_code": 0,
+      "log": "reports/stage1-acceptance-final-report-scan.log"
+    },
+    "secrets_current_after_gate_generation": {
+      "exit_code": 0,
+      "log": "reports/stage1-acceptance-final-current-scan.log"
+    }
+  },
+  "historical_integration_evidence": [
+    "reports/stage1-http-retry-evidence.json",
+    "reports/stage1-broker-evidence.json",
+    "reports/stage1-parquet-resource.json"
+  ],
+  "integration_fault_and_memory_suites_rerun_this_turn": false,
+  "live_executed": false,
+  "reviewed_implementation_source_sha256": "690d7778a7516b1e136fd4203dc201caae402b6bbf6dd7d7ca29166b9aeebc84",
+  "source_sha256": "12cbb73e8bb70f28190d29a2afb5aa521aebda510bc06807d8917dede78eba3c",
+  "source_unchanged": true,
+  "unit_suite": {
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 348
+  },
+  "verified_at_utc": "2026-10-07T00:36:45.572702+00:00"
+}

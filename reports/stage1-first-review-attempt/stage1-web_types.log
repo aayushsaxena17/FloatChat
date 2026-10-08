@@ -1,0 +1,8 @@
+
+> floatchat@ typecheck /home/floatchat/FloatChat-stage1
+> pnpm --filter @floatchat/web typecheck
+
+
+> @floatchat/web@0.0.0 typecheck /home/floatchat/FloatChat-stage1/apps/web
+> tsc --noEmit
+

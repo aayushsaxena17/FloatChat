@@ -1,0 +1,61 @@
+{
+  "verified_at_utc": "2026-10-07T09:28:36.903362+00:00",
+  "source_tree_sha256": "54875b78c7b3f79dd15d0d71bce684020f351d994082f30dc3b89f5434a16c2f",
+  "source_unchanged_during_checks": true,
+  "checks": {
+    "python_lint": {
+      "exit_code": 0,
+      "duration_seconds": 0.167,
+      "log": "reports/stage1-coverage-review-python_lint.log"
+    },
+    "python_format": {
+      "exit_code": 0,
+      "duration_seconds": 0.117,
+      "log": "reports/stage1-coverage-review-python_format.log"
+    },
+    "python_types": {
+      "exit_code": 0,
+      "duration_seconds": 1.369,
+      "log": "reports/stage1-coverage-review-python_types.log"
+    },
+    "offline_unit": {
+      "exit_code": 0,
+      "duration_seconds": 17.976,
+      "log": "reports/stage1-coverage-review-offline_unit.log"
+    },
+    "secrets_current": {
+      "exit_code": 0,
+      "duration_seconds": 1.473,
+      "log": "reports/stage1-coverage-review-secrets_current.log"
+    },
+    "secrets_history": {
+      "exit_code": 0,
+      "duration_seconds": 1.368,
+      "log": "reports/stage1-coverage-review-secrets_history.log"
+    },
+    "secrets_reports": {
+      "exit_code": 0,
+      "duration_seconds": 1.279,
+      "log": "reports/stage1-coverage-review-secrets_reports.log"
+    },
+    "diff_whitespace": {
+      "exit_code": 0,
+      "duration_seconds": 0.017,
+      "log": "reports/stage1-coverage-review-diff_whitespace.log"
+    }
+  },
+  "offline_unit_suite": {
+    "tests": 354,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "fresh_forensic_assertions": "reports/stage1-coverage-failure-assertions.json",
+  "historical_integration_broker_memory_not_rerun": true,
+  "all_session_containers_stopped": true,
+  "original_source_seal_unchanged_and_retry_withdrawn": true,
+  "gate_current_NO_GO": true,
+  "credential_or_private_original_access": false,
+  "upstream_calls": 0,
+  "nothing_staged": true
+}

@@ -1,0 +1,88 @@
+{
+  "kind": "persisted_sanitized_inventory_discovery_audit",
+  "bundle": "tests/fixtures/argovis/discovery/e5b3f14e549d49e69ed77fde03d40d8c",
+  "manifest_sha256": "817569c15a627122db86e23ee1dba8dbbfc426a8c94bd0b65cadcedbf1ed8eab",
+  "response_sha256": "d4ce241fdca004776130aefbcfd1e0bc9208c3de3228d7966102349381976022",
+  "verified_response_bytes": 2281,
+  "received_compressed_bytes": 2286,
+  "retrieved_at_utc": "2026-10-06T13:00:14.602107+00:00",
+  "endpoint": "https://argovis-api.colorado.edu/argo",
+  "request_parameters": {
+    "startDate": "2026-09-28T00:00:00Z",
+    "endDate": "2026-10-05T00:00:00Z",
+    "polygon": "[[65,-5],[70,-5],[70,0],[65,0],[65,-5]]"
+  },
+  "specification": {
+    "release": "2.36.2",
+    "sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
+    "url": "https://github.com/argovis/argovis_api/blob/2.36.2/core-spec.json"
+  },
+  "bounds": {
+    "requests": 1,
+    "concurrency": 1,
+    "automatic_retries": 0,
+    "compressed_bytes": 1048576,
+    "decompressed_bytes": 8388608,
+    "inventory_documents": 20,
+    "http_seconds": 120,
+    "scanner_seconds": 60,
+    "owner_command_seconds": 300
+  },
+  "attribution": {
+    "provider": "International Argo Program and national contributors, via Argovis",
+    "argo_doi": "https://doi.org/10.17882/42182",
+    "terms_and_acknowledgement": "https://argo.ucsd.edu/data/acknowledging-argo/",
+    "argovis_contract_citation": "https://zenodo.org/records/15708506"
+  },
+  "candidates": [
+    {
+      "source_profile_id": "2904014_040",
+      "inventory_core_data_keys_modes": {
+        "pressure": "A",
+        "salinity": "A",
+        "temperature": "A"
+      },
+      "inventory_direction": "A",
+      "observed_at_utc": "2026-10-04T03:18:17+00:00",
+      "longitude_latitude": [
+        66.0029,
+        -1.3711
+      ],
+      "metadata_pointers": [
+        "2904014_m1"
+      ],
+      "unsupported_inventory_columns": [
+        "chla_fluorescence",
+        "chla_fluorescence_qc"
+      ],
+      "inventory_schema_compatible": false,
+      "measurement_levels": "not_fetched",
+      "complete_capture": false
+    },
+    {
+      "source_profile_id": "6990616_100",
+      "inventory_core_data_keys_modes": {
+        "pressure": "R",
+        "salinity": "R",
+        "temperature": "R"
+      },
+      "inventory_direction": "A",
+      "observed_at_utc": "2026-10-02T13:58:36.999000+00:00",
+      "longitude_latitude": [
+        68.3,
+        -4.15
+      ],
+      "metadata_pointers": [
+        "6990616_m0"
+      ],
+      "unsupported_inventory_columns": [],
+      "inventory_schema_compatible": true,
+      "measurement_levels": "not_fetched",
+      "complete_capture": false
+    }
+  ],
+  "F01_representations_closed": [],
+  "F01_scope": "Inventory modes are candidate evidence only; complete matching inventory/profile/metadata capture and scientific assertions are still required",
+  "regional_completeness": "not_proven_by_inventory_discovery",
+  "private_originals": "not_accessed"
+}

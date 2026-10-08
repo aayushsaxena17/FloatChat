@@ -1,0 +1,19 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_one_run_actual_1260_root_capacity_and_pipeline_memory __________
+tests/stage1/test_regional_capacity.py:115: in test_one_run_actual_1260_root_capacity_and_pipeline_memory
+    timeout=3600,
+E   AssertionError: Traceback (most recent call last):
+E       File "/test/tests/stage1/regional_capacity_probe.py", line 375, in <module>
+E         "planned_incoming_occurrences": incoming,
+E     ^^
+E       File "/test/tests/stage1/regional_capacity_probe.py", line 263, in main
+E         ),
+E            
+E     AssertionError
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['docker', 'run', '--pull=never', '--name', 'floatchat-stage1-regional-worker-92960896949e4047aa...ng,\n^^\n  File "/test/tests/stage1/regional_capacity_probe.py", line 263, in main\n    ),\n       \nAssertionError\n').returncode
+=========================== short test summary info ============================
+FAILED tests/stage1/test_regional_capacity.py::test_one_run_actual_1260_root_capacity_and_pipeline_memory
+1 failed in 1135.24s (0:18:55)

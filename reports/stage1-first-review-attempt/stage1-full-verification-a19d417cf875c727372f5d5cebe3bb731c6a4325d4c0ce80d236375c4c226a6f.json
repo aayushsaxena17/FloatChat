@@ -1,0 +1,1056 @@
+{
+  "status": "NO_GO_partial_stage1_implementation",
+  "verified_at_actual_utc": "2026-10-06T11:57:00.719909+00:00",
+  "source_tree_sha256": "a19d417cf875c727372f5d5cebe3bb731c6a4325d4c0ce80d236375c4c226a6f",
+  "source_unchanged_during_checks": true,
+  "source_tree_scope": "Tracked/unignored files; generated reports excluded.",
+  "contract": "stage1-v2",
+  "contract_gate": "owner_confirmed_Astra_GO",
+  "checks": {
+    "python_lint": {
+      "exit_code": 0,
+      "seconds": 0.0334918930020649,
+      "evidence": "reports/stage1-python_lint.log"
+    },
+    "python_format": {
+      "exit_code": 0,
+      "seconds": 0.03302075299870921,
+      "evidence": "reports/stage1-python_format.log"
+    },
+    "python_types": {
+      "exit_code": 0,
+      "seconds": 0.8669190199943841,
+      "evidence": "reports/stage1-python_types.log"
+    },
+    "unit": {
+      "exit_code": 0,
+      "seconds": 13.676161325995054,
+      "evidence": "reports/stage1-unit.log"
+    },
+    "database": {
+      "exit_code": 0,
+      "seconds": 39.57414976399741,
+      "evidence": "reports/stage1-database.log"
+    },
+    "object_store": {
+      "exit_code": 0,
+      "seconds": 3.854826045993832,
+      "evidence": "reports/stage1-object_store.log"
+    },
+    "resource": {
+      "exit_code": 0,
+      "seconds": 182.6555816830005,
+      "evidence": "reports/stage1-resource.log"
+    },
+    "broker": {
+      "exit_code": 0,
+      "seconds": 295.3897508259979,
+      "evidence": "reports/stage1-broker.log"
+    },
+    "fixture_audit": {
+      "exit_code": 0,
+      "seconds": 0.428499499001191,
+      "evidence": "reports/stage1-fixture_audit.log"
+    },
+    "secrets_recorded_bundle": {
+      "exit_code": 0,
+      "seconds": 0.6697950919988216,
+      "evidence": "reports/stage1-secrets_recorded_bundle.log"
+    },
+    "web_lint": {
+      "exit_code": 0,
+      "seconds": 3.0246828829986043,
+      "evidence": "reports/stage1-web_lint.log"
+    },
+    "web_format": {
+      "exit_code": 0,
+      "seconds": 0.9682718490003026,
+      "evidence": "reports/stage1-web_format.log"
+    },
+    "web_types": {
+      "exit_code": 0,
+      "seconds": 1.8757680380003876,
+      "evidence": "reports/stage1-web_types.log"
+    },
+    "web_tests": {
+      "exit_code": 0,
+      "seconds": 2.372786072002782,
+      "evidence": "reports/stage1-web_tests.log"
+    },
+    "web_build": {
+      "exit_code": 0,
+      "seconds": 3.375404658007028,
+      "evidence": "reports/stage1-web_build.log"
+    },
+    "secrets_current": {
+      "exit_code": 0,
+      "seconds": 0.8171362089997274,
+      "evidence": "reports/stage1-secrets_current.log"
+    },
+    "secrets_history": {
+      "exit_code": 0,
+      "seconds": 1.570981093995215,
+      "evidence": "reports/stage1-secrets_history.log"
+    },
+    "diff_whitespace": {
+      "exit_code": 0,
+      "seconds": 0.017562939996423665,
+      "evidence": "reports/stage1-diff_whitespace.log"
+    }
+  },
+  "pytest_suites": {
+    "unit": {
+      "tests": 273,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "database": {
+      "tests": 32,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "object_store": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "resource": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "broker": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "acceptance_case_count": 86,
+  "acceptance": {
+    "T01": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_T01_T03_immutable_time_month_window"
+      ]
+    },
+    "T02": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_T02_timestamp_precision_offsets"
+      ]
+    },
+    "T03": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_T01_T03_immutable_time_month_window",
+        "test_T03_parser_half_open_arguments_and_excludes_reference_override"
+      ]
+    },
+    "T04": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_T04_acceptance_marker_required",
+        "test_T04_immutable_reference_environment_deadline"
+      ]
+    },
+    "T05": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_T05_plan_and_adaptive_split_cover",
+        "test_T05_initial_plan_rejects_omitted_and_duplicated_tiles"
+      ]
+    },
+    "T06": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_T06_F02_spilled_snapshot_preserves_older_retained_observations"
+      ]
+    },
+    "G01": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_G01_region[20--60-True]",
+        "test_G01_region[120-30-True]",
+        "test_G01_region[70-10-True]",
+        "test_G01_region[19-10-False]",
+        "test_G01_region[70-31-False]",
+        "test_G01_invalid_coordinates[181-0]",
+        "test_G01_invalid_coordinates[0-91]",
+        "test_G01_invalid_coordinates[NaN-0]",
+        "test_G01_invalid_coordinates[0-Infinity]"
+      ]
+    },
+    "G02": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_G02_unique_tile_ownership"
+      ]
+    },
+    "G03": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_G03_P01_split_space_time_union_and_missing_child_gap",
+        "test_G03_documented_request"
+      ]
+    },
+    "G04": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_G04_G05_inventory_not_fake_empty"
+      ]
+    },
+    "G05": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_G04_G05_inventory_not_fake_empty"
+      ]
+    },
+    "I01": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_I01_S03_S04_reject_entire_profile[short-mismatched_array_lengths]",
+        "test_I01_S03_S04_reject_entire_profile[empty-invalid_array_length]",
+        "test_I01_S03_S04_reject_entire_profile[duplicate_name-invalid_data_info]",
+        "test_I01_S03_S04_reject_entire_profile[unknown_mode-unknown_data_mode]",
+        "test_I01_S03_S04_reject_entire_profile[unknown_unit-unknown_unit]",
+        "test_I01_S03_S04_reject_entire_profile[missing_metadata-unresolved_metadata]",
+        "test_I01_S03_S04_reject_entire_profile[missing_direction_no_id-invalid_direction]",
+        "test_I01_S03_S04_reject_entire_profile[unknown_field-unsupported_profile_schema]",
+        "test_I01_S03_S04_reject_entire_profile[negative_cycle-invalid_cycle]",
+        "test_I01_S03_S04_reject_entire_profile[string_numeric-invalid_scientific_numeric_string]",
+        "test_I01_I04_directions_fallback_pressure_indices",
+        "test_I01_I04_database_identity_unique"
+      ]
+    },
+    "I02": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_I02_chunk_internal_natural_alias_conflict",
+        "test_I02_R01_retrieval_and_format_not_scientific"
+      ]
+    },
+    "I03": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_I03_stable_alias_no_extra_science",
+        "test_I03_id_and_key_resolve_different_rows",
+        "test_I03_spool_rejects_two_stable_ids_for_one_natural_identity"
+      ]
+    },
+    "I04": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_I04_same_stable_id_direction_conflict",
+        "test_I01_I04_directions_fallback_pressure_indices",
+        "test_I01_I04_database_identity_unique"
+      ]
+    },
+    "I05": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_I05_partition_fk_and_numeric_constraints"
+      ]
+    },
+    "I06": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_I06_provenance_restrict_and_testonly_cascade"
+      ]
+    },
+    "R01": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_I02_R01_retrieval_and_format_not_scientific",
+        "test_R01_R06_revision_vectors[None-None-True-noop]",
+        "test_R01_R06_revision_vectors[None-None-False-revision_conflict]",
+        "test_R01_R06_revision_vectors[incoming2-stored2-True-noop]",
+        "test_R01_R06_revision_vectors[incoming3-stored3-False-revision_conflict]",
+        "test_R01_R06_revision_vectors[incoming4-stored4-False-newer]",
+        "test_R01_R06_revision_vectors[incoming5-stored5-True-revision_only]",
+        "test_R01_R06_revision_vectors[incoming6-stored6-False-stale_skip]",
+        "test_R01_R06_revision_vectors[incoming7-stored7-True-stale_skip]",
+        "test_R01_R06_revision_vectors[incoming8-stored8-True-unordered_noop]",
+        "test_R01_R06_revision_vectors[incoming9-stored9-False-revision_conflict]",
+        "test_R01_R06_revision_vectors[incoming10-None-True-unordered_noop]",
+        "test_R01_R06_revision_vectors[incoming11-None-False-revision_conflict]"
+      ]
+    },
+    "R02": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_P01_P05_R02_F02_F03_F06_F07_combined_processor_publication_replay_replacement",
+        "test_R02_R06_publication_replaces_entire_shortened_set"
+      ]
+    },
+    "R03": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": []
+    },
+    "R04": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": []
+    },
+    "R05": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": []
+    },
+    "R06": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_R01_R06_revision_vectors[None-None-True-noop]",
+        "test_R01_R06_revision_vectors[None-None-False-revision_conflict]",
+        "test_R01_R06_revision_vectors[incoming2-stored2-True-noop]",
+        "test_R01_R06_revision_vectors[incoming3-stored3-False-revision_conflict]",
+        "test_R01_R06_revision_vectors[incoming4-stored4-False-newer]",
+        "test_R01_R06_revision_vectors[incoming5-stored5-True-revision_only]",
+        "test_R01_R06_revision_vectors[incoming6-stored6-False-stale_skip]",
+        "test_R01_R06_revision_vectors[incoming7-stored7-True-stale_skip]",
+        "test_R01_R06_revision_vectors[incoming8-stored8-True-unordered_noop]",
+        "test_R01_R06_revision_vectors[incoming9-stored9-False-revision_conflict]",
+        "test_R01_R06_revision_vectors[incoming10-None-True-unordered_noop]",
+        "test_R01_R06_revision_vectors[incoming11-None-False-revision_conflict]",
+        "test_R02_R06_publication_replaces_entire_shortened_set"
+      ]
+    },
+    "R07": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": []
+    },
+    "R08": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_R08_stable_time_correction_vs_fallback_correction"
+      ]
+    },
+    "S01": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_S01_modes_qc_units_and_absent_variant"
+      ]
+    },
+    "S02": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_S02_null_fill_uncertainty"
+      ]
+    },
+    "S03": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_I01_S03_S04_reject_entire_profile[short-mismatched_array_lengths]",
+        "test_I01_S03_S04_reject_entire_profile[empty-invalid_array_length]",
+        "test_I01_S03_S04_reject_entire_profile[duplicate_name-invalid_data_info]",
+        "test_I01_S03_S04_reject_entire_profile[unknown_mode-unknown_data_mode]",
+        "test_I01_S03_S04_reject_entire_profile[unknown_unit-unknown_unit]",
+        "test_I01_S03_S04_reject_entire_profile[missing_metadata-unresolved_metadata]",
+        "test_I01_S03_S04_reject_entire_profile[missing_direction_no_id-invalid_direction]",
+        "test_I01_S03_S04_reject_entire_profile[unknown_field-unsupported_profile_schema]",
+        "test_I01_S03_S04_reject_entire_profile[negative_cycle-invalid_cycle]",
+        "test_I01_S03_S04_reject_entire_profile[string_numeric-invalid_scientific_numeric_string]"
+      ]
+    },
+    "S04": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_I01_S03_S04_reject_entire_profile[short-mismatched_array_lengths]",
+        "test_I01_S03_S04_reject_entire_profile[empty-invalid_array_length]",
+        "test_I01_S03_S04_reject_entire_profile[duplicate_name-invalid_data_info]",
+        "test_I01_S03_S04_reject_entire_profile[unknown_mode-unknown_data_mode]",
+        "test_I01_S03_S04_reject_entire_profile[unknown_unit-unknown_unit]",
+        "test_I01_S03_S04_reject_entire_profile[missing_metadata-unresolved_metadata]",
+        "test_I01_S03_S04_reject_entire_profile[missing_direction_no_id-invalid_direction]",
+        "test_I01_S03_S04_reject_entire_profile[unknown_field-unsupported_profile_schema]",
+        "test_I01_S03_S04_reject_entire_profile[negative_cycle-invalid_cycle]",
+        "test_I01_S03_S04_reject_entire_profile[string_numeric-invalid_scientific_numeric_string]"
+      ]
+    },
+    "S05": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": []
+    },
+    "S06": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": []
+    },
+    "P01": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_G03_P01_split_space_time_union_and_missing_child_gap",
+        "test_P01_month_slot_never_manufactures_time_coverage",
+        "test_P01_verified_temporary_and_final_order",
+        "test_P01_P05_R02_F02_F03_F06_F07_combined_processor_publication_replay_replacement",
+        "test_P01_B07_restricted_repository_and_catalogue_snapshot"
+      ]
+    },
+    "P02": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_P02_corrupt_bytes_fail_before_catalogue[tmp/]",
+        "test_P02_corrupt_bytes_fail_before_catalogue[normalised/]",
+        "test_P02_immutable_existing_key_not_overwritten",
+        "test_P02_P03_P04_real_minio_conditional_publication_and_corrupt_final"
+      ]
+    },
+    "P03": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_P03_F03_full_snapshot_scientific_verification",
+        "test_P03_corrupted_science_rejected[pressure-999.0-snapshot_numeric_mismatch]",
+        "test_P03_corrupted_science_rejected[profile_hash-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-snapshot_scientific_hash_mismatch]",
+        "test_P03_corrupted_science_rejected[level_index-5-snapshot_profile_inconsistency]",
+        "test_P03_corrupted_science_rejected[temperature_qc-9-snapshot_level_mismatch]",
+        "test_P02_P03_P04_real_minio_conditional_publication_and_corrupt_final"
+      ]
+    },
+    "P04": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_P02_P03_P04_real_minio_conditional_publication_and_corrupt_final"
+      ]
+    },
+    "P05": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_P01_P05_R02_F02_F03_F06_F07_combined_processor_publication_replay_replacement"
+      ]
+    },
+    "P06": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_P06_nonselectable_catalogue[change0]",
+        "test_P06_nonselectable_catalogue[change1]",
+        "test_P06_nonselectable_catalogue[change2]",
+        "test_P06_nonselectable_catalogue[change3]",
+        "test_P06_nonselectable_catalogue[change4]",
+        "test_P06_nonselectable_catalogue[change5]",
+        "test_P06_nonselectable_catalogue[change6]",
+        "test_P06_nonselectable_catalogue[change7]",
+        "test_P06_nonselectable_catalogue[change8]",
+        "test_P06_P07_atomic_publication_and_complete_retry",
+        "test_P06_failed_publication_rolls_back_all_science"
+      ]
+    },
+    "P07": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_P06_P07_atomic_publication_and_complete_retry",
+        "test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults"
+      ],
+      "persisted_process_evidence": [
+        {
+          "path": "reports/stage1-broker-evidence.json",
+          "case": "P07_C11_commit_before_lost_ack_redelivery",
+          "scope": "Offline component fault; seeded plans and accelerated leases"
+        }
+      ]
+    },
+    "P08": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": []
+    },
+    "P09a": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_P09a_verified_empty_selection_has_receipts_no_gap",
+        "test_P09a_empty_initial_fetch_has_receipt_and_no_partition"
+      ]
+    },
+    "P09b": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_P09b_retained_generation_and_source_absence_annotation",
+        "test_P09b_empty_refresh_retains_active_generation"
+      ]
+    },
+    "P09c": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_P09c_prior_receipts_prove_fetch_but_old_empty_cannot_hide_new_membership",
+        "test_P09c_corrected_empty_domain_proof_and_historical_fetch_are_separate",
+        "test_P09c_spilled_ownership_correction_leaves_empty_old_slot",
+        "test_P09c_last_profile_correction_deactivates_old_slot"
+      ]
+    },
+    "P10": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_P10_selector_unavailable_budget_and_no_stale_substitute"
+      ]
+    },
+    "P11": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_P11_legal_late_quarantine_intent_disposition",
+        "test_P11_late_conflict_preserves_winner_and_abandons_loser"
+      ]
+    },
+    "C01": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_C01_legal_late_quarantine_and_terminal",
+        "test_C01_C05_claim_fence_and_recovery"
+      ]
+    },
+    "C02": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_C02_aggregate_and_exit[states0-complete-0]",
+        "test_C02_aggregate_and_exit[states1-partial-3]",
+        "test_C02_aggregate_and_exit[states2-partial-3]",
+        "test_C02_aggregate_and_exit[states3-quarantined-4]",
+        "test_C02_aggregate_and_exit[states4-failed-5]",
+        "test_C02_aggregate_and_exit[states5-failed-5]"
+      ]
+    },
+    "C03": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": []
+    },
+    "C04": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_C04_complete_delivery_reads_completion_before_key_or_ticket"
+      ]
+    },
+    "C05": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_C05_worker_death_resumes_exact_phase_with_new_fence[fetching]",
+        "test_C05_worker_death_resumes_exact_phase_with_new_fence[landed]",
+        "test_C05_worker_death_resumes_exact_phase_with_new_fence[validating]",
+        "test_C05_worker_death_resumes_exact_phase_with_new_fence[publishing]",
+        "test_C05_canonical_reservations_survive_process_loss_without_reset",
+        "test_C01_C05_claim_fence_and_recovery",
+        "test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults"
+      ],
+      "persisted_process_evidence": [
+        {
+          "path": "reports/stage1-broker-evidence.json",
+          "case": "C05_worker_loss_fetching",
+          "scope": "Offline component fault; seeded plans and accelerated leases"
+        },
+        {
+          "path": "reports/stage1-broker-evidence.json",
+          "case": "C05_worker_loss_landed",
+          "scope": "Offline component fault; seeded plans and accelerated leases"
+        },
+        {
+          "path": "reports/stage1-broker-evidence.json",
+          "case": "C05_worker_loss_validating",
+          "scope": "Offline component fault; seeded plans and accelerated leases"
+        },
+        {
+          "path": "reports/stage1-broker-evidence.json",
+          "case": "C05_worker_loss_publishing",
+          "scope": "Offline component fault; seeded plans and accelerated leases"
+        },
+        {
+          "path": "reports/stage1-broker-evidence.json",
+          "case": "C05_worker_loss_before_commit",
+          "scope": "Offline component fault; seeded plans and accelerated leases"
+        }
+      ]
+    },
+    "C06": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_C06_controller_death_invalidates_old_claims_without_new_plan",
+        "test_C06_same_controller_instance_after_lease_expiry_adopts_new_epoch",
+        "test_C06_controller_adoption_fences_old_workers",
+        "test_C06_worker_heartbeat_does_not_keep_dead_controller_alive",
+        "test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults"
+      ],
+      "persisted_process_evidence": [
+        {
+          "path": "reports/stage1-broker-evidence.json",
+          "case": "C06_controller_process_loss",
+          "scope": "Offline component fault; seeded plans and accelerated leases"
+        }
+      ]
+    },
+    "C07": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_C07_C08_closing_preserves_committed_chunks_and_fails_every_unstarted_chunk[operator_cancelled]",
+        "test_C07_C08_closing_preserves_committed_chunks_and_fails_every_unstarted_chunk[deadline_expired]",
+        "test_C07_cancellation_before_plan_is_failed_not_verified_empty_coverage",
+        "test_C07_cancellation_finalizes_and_fences",
+        "test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults"
+      ],
+      "persisted_process_evidence": [
+        {
+          "path": "reports/stage1-broker-evidence.json",
+          "case": "C07_operator_cancelled",
+          "scope": "Offline component fault; seeded plans and accelerated leases"
+        }
+      ]
+    },
+    "C08": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_C07_C08_closing_preserves_committed_chunks_and_fails_every_unstarted_chunk[operator_cancelled]",
+        "test_C07_C08_closing_preserves_committed_chunks_and_fails_every_unstarted_chunk[deadline_expired]",
+        "test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults"
+      ],
+      "persisted_process_evidence": [
+        {
+          "path": "reports/stage1-broker-evidence.json",
+          "case": "C08_real_deadline_expiry",
+          "scope": "Offline component fault; seeded plans and accelerated leases"
+        }
+      ]
+    },
+    "C09": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_C09_cancel_after_all_commits_reduces_to_complete"
+      ]
+    },
+    "C10": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_B04_C10_partial_bytes_count_and_verified_landing_reuses_without_http",
+        "test_C10_corrupt_landing_fails_instead_of_refetching_or_empty_success",
+        "test_C10_dispatch_carries_only_durable_ids_and_no_broker_retry"
+      ]
+    },
+    "C11": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_C11_takeover_budget_exhaustion_terminates_all_remaining_work[worker]",
+        "test_C11_takeover_budget_exhaustion_terminates_all_remaining_work[controller]",
+        "test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults"
+      ],
+      "persisted_process_evidence": [
+        {
+          "path": "reports/stage1-broker-evidence.json",
+          "case": "P07_C11_commit_before_lost_ack_redelivery",
+          "scope": "Offline component fault; seeded plans and accelerated leases"
+        }
+      ]
+    },
+    "B01": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_B01_structural_bounds",
+        "test_B01_N08_spool_canonical_limit_checked_before_disk_insertion",
+        "test_F06_B01_spilled_100000_row_groups_zstd3_under_one_gib"
+      ],
+      "persisted_resource_evidence": "reports/stage1-parquet-resource.json"
+    },
+    "B02": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_B02_gzip_stream_limits_count_unsuccessful_bytes",
+        "test_B02_truncated_or_ambiguous_transport[[]-headers0-truncated_http_body]",
+        "test_B02_truncated_or_ambiguous_transport[[]-headers1-ambiguous_http_framing]",
+        "test_B02_truncated_or_ambiguous_transport[[]-headers2-ambiguous_http_framing]",
+        "test_B02_truncated_or_ambiguous_transport[[]-headers3-invalid_content_length]",
+        "test_B02_truncated_or_ambiguous_transport[[]-headers4-unsupported_content_encoding]",
+        "test_B02_truncated_or_ambiguous_transport[\\x1f\\x8b\\x08\\x00\\xcb\\xdf\\xc4j\\x02\\xff\\x8b\\x8e\\x05\\x00)\\xbbL\\r\\x02\\x00\\x00-headers5-truncated_gzip]",
+        "test_B02_truncated_or_ambiguous_transport[\\x1f\\x8b\\x08\\x00\\xcb\\xdf\\xc4j\\x02\\xff\\x8b\\x8e\\x05\\x00)\\xbbL\\r\\x02\\x00\\x00\\x00extra-headers6-gzip_trailing_data]",
+        "test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults"
+      ],
+      "persisted_process_evidence": [
+        {
+          "path": "reports/stage1-broker-evidence.json",
+          "case": "B02_two_real_workers_third_chunk_waits",
+          "scope": "Offline component fault; seeded plans and accelerated leases"
+        }
+      ]
+    },
+    "B03": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_B03_durable_request_budget_shared_across_worker_claims",
+        "test_B03_nonretryable_status_never_multiplies_attempts[401]",
+        "test_B03_nonretryable_status_never_multiplies_attempts[403]",
+        "test_B03_nonretryable_status_never_multiplies_attempts[404]",
+        "test_B03_nonretryable_status_never_multiplies_attempts[422]",
+        "test_B03_retry_policy_and_safe_exception",
+        "test_B03_D01_tasks_have_no_automatic_retry_and_utc_schedule",
+        "test_F02_F03_B03_persisted_retry_status_reason_and_timing_metrics",
+        "test_B03_persisted_retry_exhaustion"
+      ]
+    },
+    "B04": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_B04_C10_partial_bytes_count_and_verified_landing_reuses_without_http",
+        "test_B04_B05_raw_urls_and_fields_never_retain_credential",
+        "test_B04_endpoint_allowlist[http://argovis-api.colorado.edu/argo]",
+        "test_B04_endpoint_allowlist[https://argovis-api.colorado.edu.evil.test/argo]",
+        "test_B04_endpoint_allowlist[https://sentinel@argovis-api.colorado.edu/argo]",
+        "test_B04_endpoint_allowlist[https://argovis-api.colorado.edu:444/argo]",
+        "test_B04_endpoint_allowlist[https://argovis-api.colorado.edu/argo?key=sentinel]",
+        "test_B04_endpoint_allowlist[https://argovis-api.colorado.edu/argo#x]",
+        "test_B04_endpoint_allowlist[https://argovis-api.colorado.edu/arbitrary]",
+        "test_B04_dns_mixed_answer_rejected[127.0.0.1]",
+        "test_B04_dns_mixed_answer_rejected[10.0.0.1]",
+        "test_B04_dns_mixed_answer_rejected[169.254.169.254]",
+        "test_B04_dns_mixed_answer_rejected[::1]",
+        "test_B04_dns_mixed_answer_rejected[fc00::1]"
+      ]
+    },
+    "B05": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_F01_B05_recorder_opt_in_precedes_credential_access",
+        "test_F01_B05_recorder_sanitizes_and_scans_before_fixture_copy",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[401-inventory_before]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[401-profile]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[401-inventory_after]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[401-metadata]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[403-inventory_before]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[403-profile]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[403-inventory_after]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[403-metadata]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[404-inventory_before]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[404-profile]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[404-inventory_after]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[404-metadata]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[429-inventory_before]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[429-profile]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[429-inventory_after]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[429-metadata]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[503-inventory_before]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[503-profile]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[503-inventory_after]",
+        "test_B05_capture_http_diagnostic_allowlist_no_retry[503-metadata]",
+        "test_B05_capture_invalid_retry_after_is_omitted[301]",
+        "test_B05_capture_invalid_retry_after_is_omitted[-1]",
+        "test_B05_capture_invalid_retry_after_is_omitted[999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999]",
+        "test_B05_capture_invalid_retry_after_is_omitted[NaN]",
+        "test_B05_capture_invalid_retry_after_is_omitted[Authorization: synthetic-recorder-sentinel]",
+        "test_B05_capture_invalid_retry_after_is_omitted[https://unexpected.invalid/?key=synthetic-recorder-sentinel]",
+        "test_B05_capture_other_exception_stays_generic",
+        "test_B05_raw_response_representation_never_exposes_bytes_or_headers",
+        "test_B05_revision_url_sanitization",
+        "test_B04_B05_raw_urls_and_fields_never_retain_credential",
+        "test_B05_unexpected_credential_content_rejected_without_rendering[<lambda>0]",
+        "test_B05_unexpected_credential_content_rejected_without_rendering[<lambda>1]",
+        "test_B05_unexpected_credential_content_rejected_without_rendering[<lambda>2]",
+        "test_B05_worker_boundary_redacts_nested_exception"
+      ]
+    },
+    "B06": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": []
+    },
+    "B07": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_B07_unbounded_worker_is_rejected",
+        "test_B07_repeat_bootstrap_cannot_regrant_scientific_writes",
+        "test_B07_worker_has_no_unrestricted_dml_or_ddl",
+        "test_B07_ingestor_cannot_write_scientific_targets_or_extensions",
+        "test_P01_B07_restricted_repository_and_catalogue_snapshot"
+      ]
+    },
+    "B08": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_B08_generated_object_keys_only[../evil]",
+        "test_B08_generated_object_keys_only[/raw/evil]",
+        "test_B08_generated_object_keys_only[raw/sha256/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.json/evil]",
+        "test_B08_generated_object_keys_only[tmp/a/b]",
+        "test_B08_generated_object_keys_only[normalised/sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.parquet]",
+        "test_B08_private_spool_never_overwrites_existing_file"
+      ]
+    },
+    "B09": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_B09_additive_migration_and_extensions",
+        "test_B09_actual_alembic_repeat_and_refused_downgrade",
+        "test_B09_month_creation_and_failed_publication_roll_back_together"
+      ]
+    },
+    "D01": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_D01_Beat_lazy_banner_has_no_configuration_lock_or_dispatch",
+        "test_B03_D01_tasks_have_no_automatic_retry_and_utc_schedule",
+        "test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults"
+      ],
+      "persisted_process_evidence": [
+        {
+          "path": "reports/stage1-broker-evidence.json",
+          "case": "D01_acceptance_Beat_refused",
+          "scope": "Offline component fault; seeded plans and accelerated leases"
+        },
+        {
+          "path": "reports/stage1-broker-evidence.json",
+          "case": "D01_real_Beat_singleton_lock_loss_and_replacement",
+          "scope": "Offline component fault; seeded plans and accelerated leases"
+        }
+      ]
+    },
+    "D02": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_D02_live_disabled_reserves_no_attempt_and_forwards_no_credential",
+        "test_D02_disabled_scheduler_does_not_load_configuration_or_credential"
+      ]
+    },
+    "D03": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_D03_overlap_bounded_catchup"
+      ]
+    },
+    "D04": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": []
+    },
+    "D05": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_D05_D06_admission_overlap_and_redelivery_without_new_run",
+        "test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults"
+      ],
+      "persisted_process_evidence": [
+        {
+          "path": "reports/stage1-broker-evidence.json",
+          "case": "D05_D06_real_manual_and_scheduled_overlap",
+          "scope": "Offline component fault; seeded plans and accelerated leases"
+        }
+      ]
+    },
+    "D06": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_D05_D06_admission_overlap_and_redelivery_without_new_run",
+        "test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults"
+      ],
+      "persisted_process_evidence": [
+        {
+          "path": "reports/stage1-broker-evidence.json",
+          "case": "D05_D06_real_manual_and_scheduled_overlap",
+          "scope": "Offline component fault; seeded plans and accelerated leases"
+        }
+      ]
+    },
+    "F01": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_F01_B05_recorder_opt_in_precedes_credential_access",
+        "test_F01_B05_recorder_sanitizes_and_scans_before_fixture_copy",
+        "test_F01_rejected_scan_never_copies_fixture",
+        "test_F01_authentic_sanitized_inventory_metadata_hashes_and_coverage",
+        "test_F01_audit_refuses_non_recorded_directory",
+        "test_F01_replaced_payload_fails_checksum"
+      ],
+      "recorded_input_evidence": "reports/stage1-fixture-coverage.json",
+      "remaining_representation_gaps": [
+        "data_mode_R",
+        "data_mode_A",
+        "direction_D",
+        "repeated_nonnull_pressure",
+        "supplied_measurement_error",
+        "source_core_measurement_null"
+      ]
+    },
+    "F02": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_T06_F02_spilled_snapshot_preserves_older_retained_observations",
+        "test_F02_duplicate_occurrences_keep_indices_and_do_not_duplicate_science",
+        "test_F02_retry_ledger_replaces_obsolete_ordinals_and_counts",
+        "test_P01_P05_R02_F02_F03_F06_F07_combined_processor_publication_replay_replacement",
+        "test_F02_F03_B03_persisted_retry_status_reason_and_timing_metrics"
+      ],
+      "persisted_report_evidence": "reports/stage1-ingestion-example.json"
+    },
+    "F03": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_P03_F03_full_snapshot_scientific_verification",
+        "test_P01_P05_R02_F02_F03_F06_F07_combined_processor_publication_replay_replacement",
+        "test_F02_F03_B03_persisted_retry_status_reason_and_timing_metrics"
+      ],
+      "persisted_report_evidence": "reports/stage1-ingestion-example.json"
+    },
+    "F04": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": []
+    },
+    "F05": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": []
+    },
+    "F06": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_F06_repeatable_whole_frame_measurement_and_empty_ratio",
+        "test_P01_P05_R02_F02_F03_F06_F07_combined_processor_publication_replay_replacement",
+        "test_F06_B01_spilled_100000_row_groups_zstd3_under_one_gib"
+      ],
+      "persisted_resource_evidence": "reports/stage1-parquet-resource.json"
+    },
+    "F07": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_P01_P05_R02_F02_F03_F06_F07_combined_processor_publication_replay_replacement"
+      ],
+      "persisted_report_evidence": "reports/stage1-ingestion-example.json"
+    },
+    "N01": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_N01_N04_rejections[1e100000000-numeric_exponent_limit]",
+        "test_N01_N04_rejections[1e401-numeric_exponent_limit]",
+        "test_N01_N04_rejections[1e-401-numeric_exponent_limit]",
+        "test_N01_N04_rejections[0.1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111-numeric_token_limit]",
+        "test_N01_N04_rejections[1e309-float64_overflow]",
+        "test_N01_N04_rejections[1e400-float64_overflow]",
+        "test_N01_N04_rejections[1e-400-float64_underflow]",
+        "test_N01_N04_rejections[-1e-400-float64_underflow]",
+        "test_N01_at_limit_before_decimal",
+        "test_N01_raw_sanitization_preserves_written_numeric_token_bounds"
+      ]
+    },
+    "N02": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_N02_normalized_output_preflight"
+      ]
+    },
+    "N03": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_N03_N05_independent_binary64_oracles[5e-324-0000000000000001-flags0]",
+        "test_N03_N05_independent_binary64_oracles[0.1-3fb999999999999a-flags1]",
+        "test_N03_N05_independent_binary64_oracles[1.00000000000000011102230246251565404236316680908203125-3ff0000000000000-flags2]",
+        "test_N03_N05_independent_binary64_oracles[1.00000000000000011102230246251565404236316680908203126-3ff0000000000001-flags3]",
+        "test_N03_N05_independent_binary64_oracles[1.00000000000000011102230246251565404236316680908203124-3ff0000000000000-flags4]",
+        "test_N03_N05_independent_binary64_oracles[1.7976931348623157e308-7fefffffffffffff-flags5]"
+      ]
+    },
+    "N04": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_N04_signed_zero[-0]",
+        "test_N04_signed_zero[0e400]",
+        "test_N04_signed_zero[-0.000]",
+        "test_N04_signed_zero[0]",
+        "test_N01_N04_rejections[1e100000000-numeric_exponent_limit]",
+        "test_N01_N04_rejections[1e401-numeric_exponent_limit]",
+        "test_N01_N04_rejections[1e-401-numeric_exponent_limit]",
+        "test_N01_N04_rejections[0.1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111-numeric_token_limit]",
+        "test_N01_N04_rejections[1e309-float64_overflow]",
+        "test_N01_N04_rejections[1e400-float64_overflow]",
+        "test_N01_N04_rejections[1e-400-float64_underflow]",
+        "test_N01_N04_rejections[-1e-400-float64_underflow]"
+      ]
+    },
+    "N05": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_N05_equivalent_numeric_tokens[1]",
+        "test_N05_equivalent_numeric_tokens[1.0]",
+        "test_N05_equivalent_numeric_tokens[1e0]",
+        "test_N05_equivalent_numeric_tokens[1.000000]",
+        "test_N05_equivalent_numeric_tokens[10e-1]",
+        "test_N03_N05_independent_binary64_oracles[5e-324-0000000000000001-flags0]",
+        "test_N03_N05_independent_binary64_oracles[0.1-3fb999999999999a-flags1]",
+        "test_N03_N05_independent_binary64_oracles[1.00000000000000011102230246251565404236316680908203125-3ff0000000000000-flags2]",
+        "test_N03_N05_independent_binary64_oracles[1.00000000000000011102230246251565404236316680908203126-3ff0000000000001-flags3]",
+        "test_N03_N05_independent_binary64_oracles[1.00000000000000011102230246251565404236316680908203124-3ff0000000000000-flags4]",
+        "test_N03_N05_independent_binary64_oracles[1.7976931348623157e308-7fefffffffffffff-flags5]",
+        "test_N05_same_float_distinct_exact_hashes"
+      ]
+    },
+    "N06": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_N06_nonfinite_only_in_measurements[NaN-nan]",
+        "test_N06_nonfinite_only_in_measurements[Infinity-positive_infinity]",
+        "test_N06_nonfinite_only_in_measurements[+Infinity-positive_infinity]",
+        "test_N06_nonfinite_only_in_measurements[-Infinity-negative_infinity]"
+      ]
+    },
+    "N07": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_N07_strict_json[NaN]",
+        "test_N07_strict_json[Infinity]",
+        "test_N07_strict_json[+Infinity]",
+        "test_N07_strict_json[-Infinity]",
+        "test_N07_strict_json[[01]]",
+        "test_N07_strict_json[[+1]]",
+        "test_N07_strict_json[[.1]]",
+        "test_N07_strict_json[[1.]]",
+        "test_N07_strict_json[{\"a\":1,\"a\":2}]",
+        "test_N07_quoted_nonstandard[inf]",
+        "test_N07_quoted_nonstandard[nan]",
+        "test_N07_quoted_nonstandard[+NaN]",
+        "test_N07_quoted_nonstandard[ NaN]",
+        "test_N07_quoted_nonstandard[Infinity ]",
+        "test_N07_quoted_nonstandard[1]",
+        "test_N07_quoted_nonstandard[1e0]"
+      ]
+    },
+    "N08": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": [
+        "test_N08_canonical_bounds_and_recovery_counter[profile_limit]",
+        "test_N08_canonical_bounds_and_recovery_counter[chunk_limit]",
+        "test_N08_canonical_bounds_and_recovery_counter[run_limit]",
+        "test_B01_N08_spool_canonical_limit_checked_before_disk_insertion"
+      ]
+    },
+    "X01": {
+      "status": "pending_end_to_end_acceptance",
+      "component_tests": []
+    }
+  },
+  "base_commit": "619411aedc9cee1037c98b4e7714dfb64f5590ca",
+  "uncommitted_work": true,
+  "specification": {
+    "version": "2.36.2",
+    "byte_sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
+    "path": "docs/upstream/argovis-2.36.2.json"
+  },
+  "fixtures": "Owner-recorded sanitized bundle independently audited offline; 8 responses, 2 profiles, 515 levels; incomplete representative corpus, F01 pending.",
+  "fixture_coverage_evidence": "reports/stage1-fixture-coverage.json",
+  "live_capture": "owner_completed_bounded_capture_private_originals_not_accessed",
+  "live_acceptance": "pending_gate_isolation_and_separate_opt_in",
+  "CI": "not_run_on_remote_head",
+  "ingestion_evidence_report": {
+    "json": "reports/stage1-ingestion-example.json",
+    "markdown": "reports/stage1-ingestion-example.md",
+    "scope": "Frozen component-run evidence; explicit regional gaps; not live acceptance"
+  },
+  "gate_findings": {
+    "S1-G01": {
+      "status": "offline_fault_evidence_verified",
+      "evidence": "reports/stage1-broker-evidence.json",
+      "scope": "Real prefork workers, supervisor, Redis and Beat; process loss, acknowledgement, cancellation, deadline, admission overlap and singleton lock"
+    },
+    "S1-G02": {
+      "status": "offline_format_memory_evidence_verified",
+      "evidence": "reports/stage1-parquet-resource.json"
+    },
+    "S1-G03": {
+      "status": "offline_persisted_metrics_verified",
+      "evidence": "reports/stage1-ingestion-example.json"
+    },
+    "S1-G04": {
+      "status": "open_authentic_representation_gaps",
+      "evidence": "reports/stage1-fixture-coverage.json"
+    }
+  },
+  "gate_report": "docs/stage1-gate.md",
+  "limitations": [
+    "Offline process/memory/report proofs use component plans and synthetic derivatives, not a full-region dataset or exhaustive end-to-end certification. Disposable leases are accelerated explicitly; actual process kills and deadlines are real.",
+    "S1-G04 P1: Authentic owner captures verify two ascending D-mode profiles; R/A core modes, descending, repeated pressure, supplied errors and source core nulls remain unrepresented. Owner's additional capture returned a generic HTTP failure; its numeric status is unknown. Safe diagnostic retry awaits owner execution. No agent upstream calls or credential access occurred.",
+    "No ingestion login/credential or existing environment was provisioned. All migration/object integration tests use disposable isolated containers.",
+    "86 end-to-end case IDs are requirements, not the number of passed component tests."
+  ]
+}
