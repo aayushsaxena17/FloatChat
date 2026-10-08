@@ -4,6 +4,7 @@ import copy
 import hashlib
 import json
 import tempfile
+import time
 import uuid
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -15,7 +16,7 @@ from floatchat_workers.ingestion import process_ticket
 from psycopg.types.json import Jsonb
 
 
-def verify_capacity(repository, environment):
+def verify_capacity(repository, environment, store=None):
     basis = Path("/test/tests/fixtures/argovis/recorded/9efe8f4e713c44a1a2964407e52b9a45")
     profile_bytes = (basis / "02-profile.json").read_bytes()
     metadata_bytes = (basis / "04-metadata.json").read_bytes()
@@ -29,8 +30,9 @@ def verify_capacity(repository, environment):
         )
         for i in range(5)
     ]
-    # Five month-bounded slices grow one retained snapshot: 8 -> 16 -> ... -> 40
-    # profiles, each with the source's complete 501-level A-mode column set.
+    # Five month-bounded slices fill one slot with five parts of 8 profiles each (stage1-v4:
+    # a chunk publishes only its own profiles); the active objects hold 8 -> 16 -> ... -> 40
+    # profiles in total, each with the source's complete 501-level A-mode column set.
     with tempfile.TemporaryDirectory() as temporary:
         root = Path(temporary)
         responses = []
@@ -122,7 +124,7 @@ def verify_capacity(repository, environment):
             authority = repository.claim(run, chunk, epoch)
             assert authority is not None
             ticket = repository.ticket(authority)
-            assert process_ticket(str(run), str(chunk), str(ticket)) == "complete"
+            assert process_ticket(str(run), str(chunk), str(ticket), "execute") == "complete"
             with repository.transaction(readonly_snapshot=True) as cursor:
                 cursor.execute(
                     "SELECT sum(profile_count) AS profiles,sum(row_count) AS levels "
@@ -144,10 +146,31 @@ def verify_capacity(repository, environment):
         report = persisted_report(repository, run)
         assert report["final_evidence_frozen"] and not report["coverage"]["proved_complete"]
         assert report["full_snapshot_balanced"] and report["run_eligible_balanced"]
+        assert report["active_part_count"] == 5 and report["active_snapshot_count"] == 0
         assert (
             report["persisted_metrics"]["resource_counters"]["canonical_bytes"]
             < 10 * 1024**3 - 16 * 1024**2
         )
+        compaction = None
+        if store is not None:
+            # The compact job merges the five parts into one snapshot of the whole slot.
+            with repository.transaction(readonly_snapshot=True) as cursor:
+                cursor.execute("SELECT DISTINCT logical_key FROM app.committed_active_partitions")
+                (slot,) = [row["logical_key"] for row in cursor.fetchall()]
+            started = time.monotonic()
+            assert repository.compact(environment, slot, store, time.monotonic() + 300) == (
+                "compacted"
+            )
+            with repository.transaction(readonly_snapshot=True) as cursor:
+                cursor.execute(
+                    "SELECT kind,profile_count,row_count FROM app.committed_active_partitions"
+                )
+                (merged,) = [dict(row) for row in cursor.fetchall()]
+            assert merged == {"kind": "snapshot", "profile_count": 40, "row_count": 40 * 501}
+            assert repository.compact(environment, slot, store, time.monotonic() + 30) == (
+                "unchanged"
+            )
+            compaction = {**merged, "seconds": round(time.monotonic() - started, 3)}
         with repository.transaction(readonly_snapshot=True) as cursor:
             cursor.execute(
                 "SELECT sum(w.actual_bytes) AS bytes,count(*) AS operations "
@@ -209,7 +232,9 @@ def verify_capacity(repository, environment):
         assert exhausted_authority is not None
         exhausted_ticket = repository.ticket(exhausted_authority)
         assert (
-            process_ticket(str(exhausted_run), str(exhausted_chunk), str(exhausted_ticket))
+            process_ticket(
+                str(exhausted_run), str(exhausted_chunk), str(exhausted_ticket), "execute"
+            )
             == "quarantined"
         )
         assert repository.finalize(exhausted_run) == "quarantined"
@@ -246,6 +271,8 @@ def verify_capacity(repository, environment):
             "final_evidence_frozen": True,
             "regional_coverage_proved": False,
             "live_calls": 0,
+            "parts_before_compaction": report["active_part_count"],
+            "compaction": compaction,
             # Match the CLI's persisted-report export for UUIDs, datetimes and
             # PostgreSQL numeric aggregates; scientific counters stay numeric.
             "report": json.loads(json.dumps(report, default=str)),
@@ -259,7 +286,7 @@ def verify_capacity(repository, environment):
                 "final_evidence_frozen": exhausted_report["final_evidence_frozen"],
                 "unchanged_bytes": 42933912432,
             },
-            "scope": "Five growing month/tile snapshots, real restricted PostgreSQL and MinIO "
-            "temporary/final verification and commits; not Jan–Mar regional capacity "
-            "or whole-pipeline memory proof.",
+            "scope": "Five parts of one month/tile slot compacted into one snapshot, real "
+            "restricted PostgreSQL and MinIO verification and commits; not Jan–Mar regional "
+            "capacity or whole-pipeline memory proof.",
         }

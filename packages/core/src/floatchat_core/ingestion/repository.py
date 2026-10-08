@@ -1,11 +1,14 @@
 """Restricted PostgreSQL access; no application-side target-table DML or DDL."""
 
+import hashlib
+import io
 import json
+import tempfile
 import time
 import uuid
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
@@ -13,6 +16,8 @@ from typing import Any
 from urllib.parse import urlsplit
 
 import psycopg
+import pyarrow as pa
+import pyarrow.parquet as pq
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
@@ -20,8 +25,14 @@ from .argovis import Profile, policy_versions
 from .coverage import Receipt, resolve
 from .identity import StoredIdentity
 from .numeric import CanonicalBudget, Rejection, ScientificNumber
-from .objects import CatalogueRecord, CatalogueSnapshot
-from .parquet import SCHEMA_VERSION
+from .objects import (
+    MAX_OBJECT_BYTES,
+    CatalogueRecord,
+    CatalogueSnapshot,
+    ObjectStore,
+    publish_verified,
+)
+from .parquet import SCHEMA_VERSION, write_snapshot
 from .planning import (
     GEOMETRY_SHA256,
     RUN_POLICY,
@@ -33,8 +44,14 @@ from .planning import (
     timestamp,
 )
 from .revisions import Revision
-from .spool import restore_profile, revision_json
-from .workflow import StoredScience, copy_rows
+from .spool import merge_parts, parse_revision
+from .workflow import (
+    MEASUREMENT_COLUMNS,
+    StoredScience,
+    StoredState,
+    evidence_json,
+    snapshot_certificate,
+)
 
 SAFE_DATABASE_CATEGORIES = frozenset(
     {
@@ -74,6 +91,23 @@ SAFE_DATABASE_CATEGORIES = frozenset(
         "staging_resource_limit",
         "invalid_replay_predecessor",
         "invalid_replay_plan",
+        "candidate_outside_eligibility",
+        "duplicate_publication_slot",
+        "invalid_audit_sample",
+        "invalid_level_count",
+        "invalid_level_index",
+        "invalid_metadata_cache_entry",
+        "invalid_publication_evidence",
+        "invalid_recorded_origin",
+        "invalid_ticket_kind",
+        "invalid_ticket_worker",
+        "landing_retry_exhausted",
+        "level_set_mismatch",
+        "measurement_content_mismatch",
+        "measurement_count_limit",
+        "missing_coverage_receipt",
+        "profile_count_limit",
+        "unverified_final_object",
     }
 )
 
@@ -88,6 +122,15 @@ class Authority:
     @property
     def arguments(self) -> tuple[Any, ...]:
         return self.run, self.chunk, self.epoch, self.fence
+
+
+@dataclass(frozen=True)
+class SlotState:
+    """Catalogue version of a slot and, when requested, its stored population now."""
+
+    version: int
+    members: int | None = None
+    selected: int | None = None
 
 
 class Repository:
@@ -230,9 +273,11 @@ class Repository:
                 raise Rejection("unknown_chunk")
             return dict(row)
 
-    def ticket(self, authority: Authority) -> uuid.UUID:
+    def ticket(self, authority: Authority, kind: str = "process") -> uuid.UUID:
         with self.transaction() as cursor:
-            cursor.execute("SELECT app.processing_ticket(%s,%s,%s,%s) AS id", authority.arguments)
+            cursor.execute(
+                "SELECT app.processing_ticket(%s,%s,%s,%s,%s) AS id", (*authority.arguments, kind)
+            )
             return cursor.fetchone()["id"]  # type: ignore[no-any-return]
 
     def start_worker(self, run: uuid.UUID, chunk: uuid.UUID, ticket: uuid.UUID) -> Authority | None:
@@ -342,6 +387,12 @@ class Repository:
     def controller_heartbeat(self, run: uuid.UUID, epoch: int) -> None:
         with self.transaction() as cursor:
             cursor.execute("SELECT app.controller_heartbeat(%s,%s)", (run, epoch))
+
+    def extend_unstarted_leases(self, run: uuid.UUID, epoch: int) -> int:
+        """Keep the lease of chunks whose ticket nobody has started (migration 0012)."""
+        with self.transaction() as cursor:
+            cursor.execute("SELECT app.extend_unstarted_leases(%s,%s) AS n", (run, epoch))
+            return int(cursor.fetchone()["n"])
 
     def heartbeat(self, authority: Authority) -> None:
         with self.transaction() as cursor:
@@ -531,35 +582,54 @@ class Repository:
                 (*authority.arguments, state, reason, Jsonb(evidence or {})),
             )
 
-    def stage(self, authority: Authority, candidates: Iterable[dict[str, Any]]) -> None:
-        with self.transaction() as cursor:
-            cursor.execute("SELECT app.clear_staging(%s,%s,%s,%s)", authority.arguments)
-            copy_rows(self.connection, authority.run, authority.chunk, authority.fence, candidates)
-
-    def stage_file(self, authority: Authority, path: Path) -> None:
+    def stage_candidates(self, authority: Authority, candidates: Iterable[dict[str, Any]]) -> None:
+        """Replace this fence's staged candidates: slim rows, levels travel in stage_levels."""
         with self.transaction() as cursor:
             cursor.execute("SELECT app.clear_staging(%s,%s,%s,%s)", authority.arguments)
             with cursor.copy(
                 "COPY app.ingestion_staging(run_id,chunk_id,fence,occurrence_index,candidate) "
                 "FROM STDIN"
             ) as copy:
-                with path.open("rb") as source:
-                    count = 0
-                    while data := source.readline(64 * 1024**2 + 128):
-                        if (
-                            len(data) > 64 * 1024**2 + 16
-                            or not data.endswith(b"\n")
-                            or count >= 2000
-                        ):
-                            raise Rejection("staging_resource_limit")
-                        index, content = data.split(b"\t", 1)
-                        ordinal = int(index)
-                        if not 0 <= ordinal < 2000:
-                            raise Rejection("invalid_occurrence_index")
-                        copy.write_row(
-                            (*authority.arguments[:2], authority.fence, ordinal, content.decode())
-                        )
-                        count += 1
+                for index, candidate in enumerate(candidates):
+                    if index >= 2000:
+                        raise Rejection("profile_count_limit")
+                    occurrence = candidate.get("occurrence_index", index)
+                    if type(occurrence) is not int or not 0 <= occurrence < 2000:
+                        raise Rejection("invalid_occurrence_index")
+                    data = json.dumps(candidate, allow_nan=False)
+                    if len(data) > 64 * 1024**2:
+                        raise Rejection("staging_resource_limit")
+                    copy.write_row((*authority.arguments[:2], authority.fence, occurrence, data))
+
+    def stage_levels(self, authority: Authority, tables: "pa.Table | Iterable[pa.Table]") -> None:
+        """Binary COPY of typed level rows into app.measurement_staging, one transaction.
+
+        Tables carry occurrence_index, level_index and the 36 value columns (extra
+        columns are ignored). Call after stage_candidates, which clears earlier rows.
+        """
+        columns = ("occurrence_index", "level_index", *(name for name, _ in MEASUREMENT_COLUMNS))
+        types = ["uuid", "uuid", "int8", "int4", "int4", *(kind for _, kind in MEASUREMENT_COLUMNS)]
+        if isinstance(tables, pa.Table):
+            tables = (tables,)
+        total = 0
+        with self.transaction() as cursor:
+            with cursor.copy(
+                "COPY app.measurement_staging(run_id,chunk_id,fence,"
+                + ",".join(columns)
+                + ") FROM STDIN WITH (FORMAT BINARY)"
+            ) as copy:
+                copy.set_types(types)
+                for table in tables:
+                    if not set(columns) <= set(table.schema.names):
+                        raise Rejection("invalid_level_table")
+                    total += table.num_rows
+                    if total > 2_000_000:
+                        raise Rejection("chunk_scientific_resource_limit")
+                    fixed = (authority.run, authority.chunk, authority.fence)
+                    for row in zip(
+                        *(table.column(name).to_pylist() for name in columns), strict=True
+                    ):
+                        copy.write_row((*fixed, *row))
 
     @staticmethod
     def identity_row(row: dict[str, Any]) -> StoredIdentity:
@@ -606,69 +676,93 @@ class Repository:
                 raise Rejection("identity_registry_limit")
             return tuple(self.identity_row(dict(row)) for row in rows)
 
-    def load_science(self, identifier: uuid.UUID, budget: CanonicalBudget) -> Profile:
+    def identities_batch(
+        self, profiles: Sequence[Profile]
+    ) -> dict[str, tuple[StoredIdentity, ...]]:
+        """Stored identities matching each profile (stable id or platform/cycle/direction).
+
+        One query for the whole chunk; per profile the rows are the same ones identities()
+        returns, in id order, keyed by Profile.identity.
+        """
+        if not profiles:
+            return {}
+        stable = sorted({p.source_profile_id for p in profiles if p.source_profile_id is not None})
+        keys = sorted({(p.platform, p.cycle, p.direction) for p in profiles if p.cycle is not None})
         with self.transaction(readonly_snapshot=True) as cursor:
             cursor.execute(
-                "SELECT p.*,f.platform_number FROM app.argo_profile p JOIN app.argo_float f "
-                "ON f.id=p.float_id WHERE p.id=%s",
-                (identifier,),
+                "SELECT p.id,p.source_profile_id,p.cycle_number,p.direction,p.fallback_complete,"
+                "p.identity_observed_at,p.observation_segment,f.platform_number "
+                "FROM app.argo_profile p "
+                "JOIN app.argo_float f ON f.id=p.float_id WHERE p.source='argovis' AND "
+                "(p.source_profile_id=ANY(%s) OR (f.platform_number,p.cycle_number,p.direction) "
+                "IN (SELECT * FROM unnest(%s::text[],%s::bigint[],%s::text[]))) "
+                "ORDER BY p.id LIMIT 100001",
+                (stable, [k[0] for k in keys], [k[1] for k in keys], [k[2] for k in keys]),
             )
-            row = cursor.fetchone()
-            if row is None:
-                raise Rejection("publication_base_changed")
+            rows = cursor.fetchall()
+        if len(rows) > 100000:
+            raise Rejection("identity_registry_limit")
+        found = [self.identity_row(dict(row)) for row in rows]
+        by_stable: dict[str, list[StoredIdentity]] = {}
+        by_key: dict[tuple[str, int | None, str], list[StoredIdentity]] = {}
+        for identity in found:
+            if identity.source_profile_id is not None:
+                by_stable.setdefault(identity.source_profile_id, []).append(identity)
+            by_key.setdefault((identity.platform, identity.cycle, identity.direction), []).append(
+                identity
+            )
+        result: dict[str, tuple[StoredIdentity, ...]] = {}
+        for profile in profiles:
+            matched: dict[uuid.UUID, StoredIdentity] = {}
+            if profile.source_profile_id is not None:
+                for identity in by_stable.get(profile.source_profile_id, ()):
+                    matched[identity.id] = identity
+            if profile.cycle is not None:
+                for identity in by_key.get(
+                    (profile.platform, profile.cycle, profile.direction), ()
+                ):
+                    matched[identity.id] = identity
+            result[profile.identity] = tuple(matched[key] for key in sorted(matched))
+        return result
+
+    def science_hashes(self, ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, StoredState]:
+        """Hash, source revision and position of stored profiles; no levels, no canonical."""
+        if not ids:
+            return {}
+        with self.transaction(readonly_snapshot=True) as cursor:
             cursor.execute(
-                "SELECT * FROM app.core_measurement WHERE profile_id=%s AND observation_month=%s "
-                "ORDER BY level_index LIMIT 10001",
-                (identifier, row["observation_month"]),
+                "SELECT p.id,p.content_hash,p.source_revision,p.observed_at,"
+                "p.scientific_content#>>'{longitude,exact}' AS longitude,"
+                "p.scientific_content#>>'{latitude,exact}' AS latitude "
+                "FROM app.argo_profile p WHERE p.id=ANY(%s)",
+                (list(ids),),
             )
-            levels = cursor.fetchall()
-        return self.science_row(dict(row), levels, budget)
+            rows = cursor.fetchall()
+        return {
+            row["id"]: StoredState(
+                row["content_hash"],
+                parse_revision(row["source_revision"]),
+                row["observed_at"],
+                None if row["longitude"] is None else Decimal(row["longitude"]),
+                None if row["latitude"] is None else Decimal(row["latitude"]),
+            )
+            for row in rows
+        }
 
-    @staticmethod
-    def science_row(row: dict[str, Any], levels: list[Any], budget: CanonicalBudget) -> Profile:
-        canonical, digest = budget.encode(row["scientific_content"])
-        if (
-            digest != row["content_hash"]
-            or len(levels) != row["level_count"]
-            or len(levels) > 10000
-        ):
-            raise Rejection("stored_scientific_hash_mismatch")
-        profile = restore_profile(
-            canonical,
-            digest,
-            row["source_profile_id"],
-            revision_json(
-                None
-                if row["source_revision"] is None
-                else Revision(
-                    row["source_revision"]["kind"],
-                    tuple(
-                        sorted(
-                            (key, timestamp(value))
-                            for key, value in row["source_revision"]["components"].items()
-                        )
-                    ),
-                )
-            ),
-            verify_encoding=False,
-        )
-        for index, (level, expected) in enumerate(zip(levels, profile.levels, strict=True)):
-            actual = {
-                key: value
-                for key, value in level.items()
-                if key not in ("observation_month", "profile_id", "canonical_level")
-            }
-            if (
-                actual != expected
-                or level["canonical_level"] != row["scientific_content"]["levels"][index]
-            ):
-                raise Rejection("stored_level_set_mismatch")
-        return profile
+    def slot_state(
+        self,
+        authority: Authority,
+        slots: Sequence[str],
+        piece: Any,
+        *,
+        counts: Iterable[str] = (),
+    ) -> dict[str, SlotState]:
+        """Versions of the slots (the publication bases) and, for `counts`, the stored
+        population now: all profiles of the slot and those inside the chunk selection.
 
-    @contextmanager
-    def retained_snapshot(
-        self, authority: Authority, slots: tuple[str, ...], budget_repository: "Repository"
-    ) -> Iterator[tuple[dict[str, int], Iterator[StoredScience]]]:
+        One consistent snapshot. The counts predict the receipt dispositions SQL rechecks;
+        they are valid only while the slot version is unchanged, which commit verifies.
+        """
         with self.transaction(readonly_snapshot=True) as cursor:
             cursor.execute(
                 "SELECT logical_key,slot_version FROM app.logical_partition_slot "
@@ -676,32 +770,42 @@ class Repository:
                 "AND logical_key=ANY(%s)",
                 (authority.run, list(slots)),
             )
-            bases = {row["logical_key"]: row["slot_version"] for row in cursor.fetchall()}
-            with self.connection.cursor(name="retained_" + uuid.uuid4().hex) as stream:
-                stream.itersize = 1
-                stream.execute(
-                    "SELECT p.*,f.platform_number FROM app.argo_profile p JOIN app.argo_float f "
-                    "ON f.id=p.float_id WHERE app.owner_slot(p.observed_at,"
+            result = {
+                row["logical_key"]: SlotState(row["slot_version"]) for row in cursor.fetchall()
+            }
+            if set(slots) - result.keys():
+                raise Rejection("publication_base_changed")
+            tile = piece.tile
+            for slot in counts:
+                cursor.execute(
+                    "SELECT count(*) AS members,count(*) FILTER (WHERE "
+                    "p.observed_at>=%s AND p.observed_at<%s "
+                    "AND (p.scientific_content#>>'{longitude,exact}')::numeric>=%s "
+                    "AND ((p.scientific_content#>>'{longitude,exact}')::numeric<%s OR "
+                    "(%s=120 AND (p.scientific_content#>>'{longitude,exact}')::numeric=120)) "
+                    "AND (p.scientific_content#>>'{latitude,exact}')::numeric>=%s "
+                    "AND ((p.scientific_content#>>'{latitude,exact}')::numeric<%s OR "
+                    "(%s=30 AND (p.scientific_content#>>'{latitude,exact}')::numeric=30))"
+                    ") AS selected FROM app.argo_profile p WHERE app.owner_slot(p.observed_at,"
                     "(p.scientific_content->'longitude'->>'exact')::numeric,"
-                    "(p.scientific_content->'latitude'->>'exact')::numeric)=ANY(%s) ORDER BY p.id",
-                    (list(slots),),
+                    "(p.scientific_content->'latitude'->>'exact')::numeric)=%s",
+                    (
+                        piece.interval.start,
+                        piece.interval.end,
+                        tile.west,
+                        tile.west + tile.width,
+                        tile.west + tile.width,
+                        tile.south,
+                        tile.south + tile.height,
+                        tile.south + tile.height,
+                        slot,
+                    ),
                 )
-
-                def rows() -> Iterator[StoredScience]:
-                    for row in stream:
-                        cursor.execute(
-                            "SELECT * FROM app.core_measurement WHERE profile_id=%s "
-                            "AND observation_month=%s ORDER BY level_index LIMIT 10001",
-                            (row["id"], row["observation_month"]),
-                        )
-                        levels = cursor.fetchall()
-                        with budget_repository.canonical_budget(authority) as budget:
-                            yield StoredScience(
-                                self.identity_row(dict(row)),
-                                self.science_row(dict(row), levels, budget),
-                            )
-
-                yield bases, rows()
+                row = cursor.fetchone()
+                result[slot] = replace(
+                    result[slot], members=int(row["members"]), selected=int(row["selected"])
+                )
+        return result
 
     def ensure_slot(self, authority: Authority, month: datetime, tile: Tile) -> str:
         with self.transaction() as cursor:
@@ -731,38 +835,6 @@ class Repository:
                 "SELECT app.record_profile_outcomes(%s,%s,%s,%s,%s)",
                 (*authority.arguments, Jsonb(outcomes)),
             )
-
-    def slot_members(
-        self, authority: Authority, slot: str, piece: Any
-    ) -> tuple[list[dict[str, Any]], int]:
-        with self.transaction(readonly_snapshot=True) as cursor:
-            cursor.execute(
-                "SELECT id,content_hash,level_count,observed_at,"
-                "(scientific_content->'longitude'->>'exact')::numeric AS lon,"
-                "(scientific_content->'latitude'->>'exact')::numeric AS lat "
-                "FROM app.argo_profile WHERE app.owner_slot(observed_at,"
-                "(scientific_content->'longitude'->>'exact')::numeric,"
-                "(scientific_content->'latitude'->>'exact')::numeric)=%s "
-                "ORDER BY id LIMIT 100001",
-                (slot,),
-            )
-            rows = cursor.fetchall()
-            if len(rows) > 100000:
-                raise Rejection("snapshot_profile_limit")
-            members = [
-                {
-                    "profile_id": str(row["id"]),
-                    "hash": row["content_hash"],
-                    "levels": row["level_count"],
-                }
-                for row in rows
-            ]
-            selected = sum(
-                piece.interval.contains(row["observed_at"])
-                and piece.tile.owns(row["lon"], row["lat"])
-                for row in rows
-            )
-            return members, selected
 
     def accounting(self, authority: Authority, evidence: dict[str, Any]) -> None:
         with self.transaction() as cursor:
@@ -795,6 +867,104 @@ class Repository:
                 "SELECT app.commit_publication(%s,%s,%s,%s,%s,%s,%s)",
                 (*authority.arguments, intent, Jsonb(generations), Jsonb(receipts)),
             )
+
+    def compact(
+        self, environment: uuid.UUID, logical_key: str, store: ObjectStore, deadline: float
+    ) -> str:
+        """Merge the active parts of one slot into a snapshot and supersede them.
+
+        Reads the active objects, keeps the rows whose (profile_id, hash) is in the slot
+        manifest, writes and verifies one snapshot, then app.compact_slot swaps them in a
+        single transaction that also proves the manifest and the active set are unchanged.
+        Returns "compacted", or "unchanged" when the slot has no part to merge. Raises
+        publication_base_changed if a commit touched the slot meanwhile (retry later).
+        """
+        with self.transaction(readonly_snapshot=True) as cursor:
+            cursor.execute(
+                "SELECT slot_version,membership_manifest FROM app.logical_partition_slot "
+                "WHERE environment_id=%s AND logical_key=%s",
+                (environment, logical_key),
+            )
+            slot = cursor.fetchone()
+            if slot is None:
+                raise Rejection("publication_base_changed")
+            cursor.execute(
+                "SELECT id,kind,object_key,sha256,bytes FROM app.committed_active_partitions "
+                "WHERE environment_id=%s AND logical_key=%s ORDER BY generation",
+                (environment, logical_key),
+            )
+            objects = [dict(row) for row in cursor.fetchall()]
+        if not any(item["kind"] == "part" for item in objects):
+            return "unchanged"
+        manifest = slot["membership_manifest"]
+        generation: dict[str, Any] = {
+            "id": str(uuid.uuid4()),
+            "kind": "snapshot",
+            "logical_key": logical_key,
+            "base_version": slot["slot_version"],
+            "membership_manifest": manifest,
+            "supersedes": [str(item["id"]) for item in objects],
+        }
+        if manifest:
+            if sum(item["bytes"] for item in objects) > MAX_OBJECT_BYTES:
+                raise Rejection("object_size_limit")
+            tables = []
+            for item in objects:
+                data = store.read(item["object_key"], item["bytes"], deadline)
+                if len(data) != item["bytes"] or hashlib.sha256(data).hexdigest() != item["sha256"]:
+                    raise Rejection("object_checksum_mismatch")
+                try:
+                    tables.append(pq.read_table(io.BytesIO(data)))
+                except (OSError, ValueError, pa.ArrowException):
+                    raise Rejection("invalid_parquet") from None
+            with tempfile.TemporaryDirectory(prefix="compact-") as directory:
+                path = Path(directory) / "snapshot.parquet"
+                verified = write_snapshot(
+                    path,
+                    merge_parts(tables, manifest),
+                    deadline=deadline,
+                    max_bytes=MAX_OBJECT_BYTES,
+                )
+                payload = path.read_bytes()
+            written = publish_verified(
+                store,
+                payload,
+                uuid.uuid4(),
+                snapshot_certificate(verified, payload, deadline=deadline),
+                deadline=deadline,
+            )
+            generation.update(
+                object_key=written.key,
+                sha256=written.sha256,
+                bytes=written.byte_count,
+                row_count=verified["rows"],
+                profile_count=verified["profiles"],
+                schema_sha256=verified["schema_sha256"],
+                verification_evidence=evidence_json(verified),
+                verified_at=datetime.now(UTC).isoformat(),
+            )
+        with self.transaction() as cursor:
+            cursor.execute(
+                "SELECT app.compact_slot(%s,%s,%s)", (environment, logical_key, Jsonb(generation))
+            )
+        return "compacted"
+
+    def compactable_slots(self, environment: uuid.UUID, *, min_parts: int = 2) -> list[str]:
+        """Slots with at least `min_parts` active parts: the work list of the compact job."""
+        with self.transaction(readonly_snapshot=True) as cursor:
+            cursor.execute(
+                "SELECT logical_key FROM app.committed_active_partitions "
+                "WHERE environment_id=%s AND kind='part' GROUP BY logical_key "
+                "HAVING count(*)>=%s ORDER BY logical_key",
+                (environment, min_parts),
+            )
+            return [row["logical_key"] for row in cursor.fetchall()]
+
+    def audit_levels(self, chunk: uuid.UUID, sample: int = 20) -> dict[str, Any]:
+        """Sampled check of stored typed levels against canonical content (raises on mismatch)."""
+        with self.transaction(readonly_snapshot=True) as cursor:
+            cursor.execute("SELECT app.audit_levels(%s,%s) AS evidence", (chunk, sample))
+            return dict(cursor.fetchone()["evidence"])
 
     def finalize(self, run: uuid.UUID, reason: str | None = None) -> str:
         with self.transaction() as cursor:
@@ -830,7 +1000,7 @@ class Repository:
                     {
                         key: value
                         for key, value in level.items()
-                        if key not in ("observation_month", "profile_id", "canonical_level")
+                        if key not in ("observation_month", "profile_id")
                     }
                     for level in cursor.fetchall()
                 )
@@ -921,7 +1091,7 @@ class Repository:
             versions = {row["logical_key"]: row["slot_version"] for row in cursor.fetchall()}
             cursor.execute(
                 "SELECT * FROM app.committed_active_partitions WHERE environment_id=%s "
-                "ORDER BY logical_key",
+                "ORDER BY logical_key,generation",
                 (environment,),
             )
             records = tuple(
@@ -939,6 +1109,8 @@ class Repository:
                     row["object_key"],
                     row["sha256"],
                     row["bytes"],
+                    row["kind"],
+                    row["part_ordinal"],
                 )
                 for row in cursor.fetchall()
             )
@@ -985,6 +1157,15 @@ class Repository:
                 )
                 return int(cursor.fetchone()["n"])
 
-            return resolve(
+            result = resolve(
                 interval, records, versions, receipts, members, tiles=tiles, deadline=deadline
+            )
+            # Manifests only for the slots the selection returns; readers filter part rows by them.
+            cursor.execute(
+                "SELECT logical_key,membership_manifest FROM app.logical_partition_slot "
+                "WHERE environment_id=%s AND logical_key=ANY(%s)",
+                (environment, sorted({record.logical_key for record in result.records})),
+            )
+            return replace(
+                result, manifests={row["logical_key"]: row["membership_manifest"] for row in cursor}
             )

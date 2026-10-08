@@ -6,6 +6,7 @@ import time
 import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
+from functools import partial
 from pathlib import Path
 from typing import Any
 
@@ -13,13 +14,14 @@ from .argovis import VARIABLES, bounded_text, integer, map_profile, request_para
 from .json_stream import documents
 from .numeric import Rejection, scientific_number
 from .objects import ObjectStore, publish_verified
-from .parquet import PublicationSnapshotVerifier, write_snapshot
+from .parquet import write_snapshot
 from .planning import Interval, PlannedChunk, RunPolicy, Tile, in_region, month_start, timestamp
-from .repository import Authority, Repository
+from .repository import Authority, Repository, SlotState
 from .revisions import compare
 from .source import Source
 from .spool import ProfileSpool, revision_json
 from .states import TERMINAL
+from .workflow import evidence_json, snapshot_certificate
 
 SPLITTABLE = frozenset(
     {
@@ -45,6 +47,7 @@ FAILURES = frozenset(
         "database_deadline",
         "snapshot_deadline",
         "object_deadline",
+        "object_stat_failure",
         "live_ingestion_disabled",
         "publication_budget_exhausted",
         "private_spool_size_limit",
@@ -252,8 +255,9 @@ class Processor:
             ):
                 for identity in self.repository.identities(value):
                     if identity.source_profile_id == value.source_profile_id:
-                        with self.budget_repository.canonical_budget(self.authority) as budget:
-                            previous = self.repository.load_science(identity.id, budget)
+                        previous = self.repository.science_hashes([identity.id]).get(identity.id)
+                        if previous is None:
+                            raise Rejection("publication_base_changed")
                         if compare(
                             value.content_hash,
                             value.revision,
@@ -417,20 +421,10 @@ class Processor:
         for attempt in range(4):
             self.inventory_accounting()
             self.canonical_input = 0
-            with ProfileSpool(
-                self.private / (uuid.uuid4().hex + ".sqlite"),
-                budget_factory=lambda: self.budget_repository.canonical_budget(self.authority),
-            ) as spool:
+            with ProfileSpool() as spool:
                 self.map(spool)
-
-                def old(identifier: uuid.UUID) -> Any:
-                    with self.budget_repository.canonical_budget(self.authority) as budget:
-                        return self.repository.load_science(identifier, budget)
-
                 try:
-                    spool.prepare(
-                        lambda p: (), identity_lookup=self.repository.identities, load_science=old
-                    )
+                    spool.prepare(self.repository.identities_batch, self.repository.science_hashes)
                 except Rejection:
                     for index, key, result, levels in spool.outcomes:
                         self.outcomes[index].update(identity=key, outcome=result, levels=levels)
@@ -455,19 +449,27 @@ class Processor:
                     self.repository.ensure_slot(
                         self.authority, timestamp(pieces[2] + "-01T00:00:00Z"), Tile(west, south)
                     )
-                with self.repository.retained_snapshot(
-                    self.authority, tuple(sorted(spool.changed_slots)), self.budget_repository
-                ) as (bases, rows):
-                    spool.retain(rows)
+                # Bases (slot versions) and the stored counts the receipts need, in one
+                # snapshot. Commit rejects publication_base_changed if any slot moved.
+                states = self.repository.slot_state(
+                    self.authority,
+                    sorted(spool.changed_slots | {own}),
+                    self.plan,
+                    counts=self.counted(spool, own),
+                )
+                bases = {slot: states[slot].version for slot in spool.changed_slots}
                 intent = uuid.uuid4()
                 generations = []
                 keys = []
                 publications = []
+                budget_factory = partial(self.budget_repository.canonical_budget, self.authority)
                 for slot in sorted(spool.changed_slots):
+                    # A part holds only this chunk's accepted profiles of the slot.
                     membership = spool.membership(slot)
                     generation = {
                         "id": str(uuid.uuid4()),
                         "logical_key": slot,
+                        "kind": "part",
                         "base_version": bases[slot],
                         "membership_manifest": membership,
                     }
@@ -477,54 +479,51 @@ class Processor:
                             file,
                             spool.profiles(slot),
                             deadline=self.deadline,
-                            budget_factory=lambda: self.budget_repository.canonical_budget(
-                                self.authority
-                            ),
+                            budget_factory=budget_factory,
                         )
-                        digest = hashlib.sha256(file.read_bytes()).hexdigest()
+                        payload = file.read_bytes()
+                        digest = hashlib.sha256(payload).hexdigest()
                         final = f"normalised/sha256/{digest}.parquet"
                         temporary = f"tmp/{intent.hex}/{uuid.uuid4().hex}"
                         keys.extend([final, temporary])
                         generation.update(
                             object_key=final,
                             sha256=digest,
-                            bytes=file.stat().st_size,
+                            bytes=len(payload),
                             row_count=verified["rows"],
                             profile_count=verified["profiles"],
                             schema_sha256=verified["schema_sha256"],
-                            verification_evidence=verified,
+                            verification_evidence=evidence_json(verified),
                             verified_at=datetime.now(UTC).isoformat(),
                         )
                         publications.append(
                             (
                                 file,
                                 temporary,
-                                PublicationSnapshotVerifier(
-                                    digest,
-                                    file.stat().st_size,
+                                snapshot_certificate(
                                     verified,
+                                    payload,
                                     deadline=self.deadline,
-                                    budget_factory=lambda: self.budget_repository.canonical_budget(
-                                        self.authority
-                                    ),
+                                    budget_factory=budget_factory,
                                 ),
                             )
                         )
+                        del payload
                     generations.append(generation)
                 self.repository.prepare_intent(self.authority, intent, keys, bases, {})
-                for file, temporary, verify_publication in publications:
+                for file, temporary, certificate in publications:
                     publish_verified(
                         self.store,
                         file.read_bytes(),
                         intent,
-                        verify_publication,
+                        certificate,
                         deadline=self.deadline,
                         temporary_key=temporary,
                     )
-                receipts = self.receipts(spool, own)
-                staged = self.private / (uuid.uuid4().hex + ".ndjson")
-                spool.write_candidates(staged)
-                self.repository.stage_file(self.authority, staged)
+                    file.unlink()
+                receipts = self.receipts(spool, own, states)
+                self.repository.stage_candidates(self.authority, spool.candidates())
+                self.repository.stage_levels(self.authority, spool.level_tables())
                 self.pulse()
                 try:
                     self.repository.commit(self.authority, intent, generations, receipts)
@@ -534,21 +533,60 @@ class Processor:
                         raise
         raise Rejection("publication_budget_exhausted")
 
-    def receipts(self, spool: ProfileSpool, own: str) -> list[dict[str, Any]]:
+    def selected(
+        self, observed: datetime, longitude: Decimal | None, latitude: Decimal | None
+    ) -> bool:
+        """Inside this chunk's exact requested interval and tile (not its whole slot)."""
+        return (
+            longitude is not None
+            and latitude is not None
+            and self.plan.interval.contains(observed)
+            and self.plan.tile.owns(longitude, latitude)
+        )
+
+    def arrivals(self, spool: ProfileSpool, slot: str) -> tuple[int, int]:
+        """Profiles this chunk puts into the slot, and how many of them are in the selection."""
+        profiles = [profile for _, profile in spool.profiles(slot)]
+        return len(profiles), sum(
+            self.selected(
+                timestamp(p.observed_at),
+                Decimal(p.longitude.exact or "NaN"),
+                Decimal(p.latitude.exact or "NaN"),
+            )
+            for p in profiles
+        )
+
+    def counted(self, spool: ProfileSpool, own: str) -> list[str]:
+        """Slots whose receipt needs the stored population: the chunk adds nothing in the
+        selection (selected after unknown) or nothing at all to a changed slot (can it be
+        empty?). Slots the chunk fills need no read: they are certainly populated."""
         result = []
         for slot in sorted(spool.changed_slots | {own}):
-            if slot in spool.changed_slots:
-                full = spool.membership(slot)
-                selected = sum(
-                    1
-                    for _, p in spool.profiles(slot)
-                    if self.plan.interval.contains(timestamp(p.observed_at))
-                    and self.plan.tile.owns(
-                        Decimal(p.longitude.exact or "NaN"), Decimal(p.latitude.exact or "NaN")
-                    )
-                )
+            arrived, arrived_selected = self.arrivals(spool, slot)
+            if not arrived_selected or (slot in spool.changed_slots and not arrived):
+                result.append(slot)
+        return result
+
+    def receipts(
+        self, spool: ProfileSpool, own: str, states: dict[str, SlotState]
+    ) -> list[dict[str, Any]]:
+        result = []
+        for slot in sorted(spool.changed_slots | {own}):
+            state = states[slot]
+            arrived, arrived_selected = self.arrivals(spool, slot)
+            departed = spool.departed(slot)
+            # Population after commit = stored now - what this chunk replaces or moves
+            # out + what it adds. Counts are read only when the answer is not certain.
+            if state.members is None or state.selected is None:
+                members = None if arrived == 0 else arrived
+                selected = None if arrived_selected == 0 else arrived_selected
             else:
-                full, selected = self.repository.slot_members(self.authority, slot, self.plan)
+                members = state.members - len(departed) + arrived
+                selected = (
+                    state.selected
+                    - sum(self.selected(s.observed_at, s.longitude, s.latitude) for s in departed)
+                    + arrived_selected
+                )
             fetch = (
                 "profiles_returned"
                 if self.observed_profiles
@@ -558,23 +596,25 @@ class Processor:
             )
             stored = (
                 "empty_stored_domain"
-                if slot in spool.changed_slots and not full
+                if slot in spool.changed_slots and members == 0
                 else "active_generation"
                 if selected
                 else "empty_stored_selection"
             )
-            result.append(
-                {
-                    "id": str(uuid.uuid4()),
-                    "logical_key": slot,
-                    "fetch_disposition": fetch,
-                    "stored_disposition": stored,
-                    "evidence": {
-                        "raw_roles": self.raw_ids,
-                        "full_membership": full,
-                        "selected_profiles": selected,
-                        "run_reference_time_utc": self.policy.reference.isoformat(),
-                    },
-                }
-            )
+            receipt: dict[str, Any] = {
+                "id": str(uuid.uuid4()),
+                "logical_key": slot,
+                "fetch_disposition": fetch,
+                "stored_disposition": stored,
+                "evidence": {
+                    "raw_roles": self.raw_ids,
+                    "run_reference_time_utc": self.policy.reference.isoformat(),
+                    # SQL adds full_membership: the slot manifest after this commit.
+                    **({} if selected is None else {"selected_profiles": selected}),
+                },
+            }
+            if slot not in spool.changed_slots:
+                # Receipt-only slot: commit proves the counts above still describe it.
+                receipt["base_version"] = state.version
+            result.append(receipt)
         return result

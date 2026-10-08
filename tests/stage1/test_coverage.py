@@ -1,9 +1,17 @@
+import hashlib
 import time
 import uuid
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 
+import pytest
 from floatchat_core.ingestion.coverage import Receipt, covers, resolve
-from floatchat_core.ingestion.objects import CatalogueRecord
+from floatchat_core.ingestion.numeric import Rejection
+from floatchat_core.ingestion.objects import (
+    CatalogueRecord,
+    CatalogueSnapshot,
+    select_active_partitions,
+)
 from floatchat_core.ingestion.planning import Interval, Tile
 
 TILE = Tile(70, 10)
@@ -139,3 +147,110 @@ def test_P09c_corrected_empty_domain_proof_and_historical_fetch_are_separate():
     )
     assert not result.records and not result.gaps
     assert result.empty_evidence == (f"{correction.identifier}@{correction.committed_at}",)
+
+
+def stored_object(payload, *, kind, generation, environment, version=2):
+    digest = hashlib.sha256(payload).hexdigest()
+    return CatalogueRecord(
+        uuid.uuid4(),
+        environment,
+        SLOT,
+        generation,
+        version,
+        "active",
+        True,
+        True,
+        "indian-ocean-v1",
+        "core-parquet-v1",
+        f"normalised/sha256/{digest}.parquet",
+        digest,
+        len(payload),
+        kind,
+        generation,
+    )
+
+
+def test_P08_a_slot_with_a_snapshot_and_later_parts_selects_every_object():
+    environment = uuid.uuid4()
+    snapshot = stored_object(b"snapshot", kind="snapshot", generation=3, environment=environment)
+    part = stored_object(b"part-4", kind="part", generation=4, environment=environment)
+    later = stored_object(b"part-5", kind="part", generation=5, environment=environment)
+    result = resolve(
+        INTERVAL,
+        (snapshot, part, later),
+        {SLOT: 2},
+        (receipt(version=2, empty=False),),
+        lambda interval, slot: 7,
+        tiles=(TILE,),
+        deadline=time.monotonic() + 1,
+    )
+    assert result.records == (snapshot, part, later) and not result.gaps
+    with pytest.raises(Rejection, match="duplicate_active_catalogue_slot"):
+        resolve(
+            INTERVAL,
+            (snapshot, replace(snapshot, partition_id=uuid.uuid4())),
+            {SLOT: 2},
+            (),
+            lambda interval, slot: 1,
+            tiles=(TILE,),
+            deadline=time.monotonic() + 1,
+        )
+    with pytest.raises(Rejection, match="duplicate_active_catalogue_slot"):
+        resolve(
+            INTERVAL,
+            (part, part),
+            {SLOT: 2},
+            (),
+            lambda interval, slot: 1,
+            tiles=(TILE,),
+            deadline=time.monotonic() + 1,
+        )
+
+
+class Objects:
+    def __init__(self, **objects):
+        self.objects = objects
+
+    def read(self, key, max_bytes, deadline):
+        if key not in self.objects:
+            raise Rejection("object_missing")
+        return self.objects[key][:max_bytes]
+
+
+def test_P08_selector_returns_parts_with_manifest_and_never_a_partial_slot():
+    environment = uuid.uuid4()
+    snapshot = stored_object(b"snapshot", kind="snapshot", generation=3, environment=environment)
+    part = stored_object(b"part-4", kind="part", generation=4, environment=environment)
+    manifest = [{"profile_id": str(uuid.uuid4()), "hash": "a" * 64, "levels": 3}]
+    catalogue = CatalogueSnapshot(
+        (snapshot, part), {SLOT: 2}, (), manifests={SLOT: manifest, "other": []}
+    )
+    store = Objects(**{snapshot.key: b"snapshot", part.key: b"part-4"})
+    result = select_active_partitions(
+        catalogue, store, environment, "indian-ocean-v1", "core-parquet-v1"
+    )
+    assert result.partitions == (snapshot, part) and not result.gaps
+    assert result.manifests == {SLOT: manifest}
+    # One unreadable part makes the whole slot a gap: no partial substitute is returned.
+    store = Objects(**{snapshot.key: b"snapshot", part.key: b"corrupted"})
+    result = select_active_partitions(
+        catalogue, store, environment, "indian-ocean-v1", "core-parquet-v1"
+    )
+    assert not result.partitions and result.gaps == (SLOT + ":object_unavailable",)
+    assert result.manifests == {}
+    # The read budget covers all objects of the slot together.
+    store = Objects(**{snapshot.key: b"snapshot", part.key: b"part-4"})
+    result = select_active_partitions(
+        catalogue, store, environment, "indian-ocean-v1", "core-parquet-v1", max_read_bytes=10
+    )
+    assert not result.partitions and result.gaps == (SLOT + ":verification_budget",)
+    # Two snapshots in one slot are a corrupt catalogue.
+    again = replace(snapshot, partition_id=uuid.uuid4())
+    with pytest.raises(Rejection, match="duplicate_active_catalogue_slot"):
+        select_active_partitions(
+            CatalogueSnapshot((snapshot, again), {SLOT: 2}, ()),
+            store,
+            environment,
+            "indian-ocean-v1",
+            "core-parquet-v1",
+        )

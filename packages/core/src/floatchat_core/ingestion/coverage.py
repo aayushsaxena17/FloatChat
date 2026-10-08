@@ -91,10 +91,17 @@ def resolve(
         )
     ):
         raise Rejection("invalid_selector_tiles")
-    active = {record.logical_key: record for record in records}
-    if len(active) != len(records):
+    # stage1-v4: a slot may have several active parts and one snapshot; a repeated partition
+    # id or a second snapshot in one slot is still a corrupt catalogue.
+    active: dict[str, list[CatalogueRecord]] = {}
+    if len({record.partition_id for record in records}) != len(records):
         raise Rejection("duplicate_active_catalogue_slot")
-    selected = []
+    for record in records:
+        group = active.setdefault(record.logical_key, [])
+        if record.kind == "snapshot" and any(other.kind == "snapshot" for other in group):
+            raise Rejection("duplicate_active_catalogue_slot")
+        group.append(record)
+    selected: list[CatalogueRecord] = []
     gaps = []
     empties: list[str] = []
     absences: list[str] = []
@@ -118,7 +125,7 @@ def resolve(
                 if slot not in active:
                     gaps.append(slot + ":missing_active_generation")
                 else:
-                    selected.append(active[slot])
+                    selected.extend(active[slot])
                 absences.extend(
                     f"{receipt.identifier}@{receipt.committed_at}"
                     for receipt in current

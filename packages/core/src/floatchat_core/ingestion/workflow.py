@@ -1,39 +1,83 @@
-"""Deterministic publication candidates and full retained snapshot preview."""
+"""Candidate rows and level tables for slim staging; owner slots of profiles.
 
-import json
+stage1-v4: a chunk stages one slim row per candidate (identity fields, hash, revision,
+canonical text, level count) and its levels as typed columns for binary COPY. The
+canonical content is no longer repeated as a float array inside the candidate, and no
+retained population is previewed: SQL rechecks identities, revisions and manifests.
+"""
+
+import hashlib
 import uuid
-from collections.abc import Iterable
+from collections.abc import Callable
+from contextlib import AbstractContextManager, nullcontext
 from dataclasses import dataclass
+from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
+import pyarrow as pa
+
 from .argovis import Profile
-from .identity import StoredIdentity, resolve_identity
-from .numeric import Rejection
+from .identity import StoredIdentity
+from .numeric import CanonicalBudget, Rejection
+from .parquet import PublicationSnapshotVerifier
 from .planning import GEOMETRY_VERSION, Tile, month_start, timestamp
-from .revisions import compare
+from .revisions import Revision
+
+_PARAMETERS = ("pressure", "temperature", "salinity")
+# Value columns of app.measurement_staging in table order (= app.core_measurement without
+# profile_id, observation_month, level_index), with the PostgreSQL base type of each.
+# Migration 0013 declares exactly these names; tests/stage1/test_spool.py checks the match.
+MEASUREMENT_COLUMNS: tuple[tuple[str, str], ...] = (
+    *((p + s, "float8") for p in _PARAMETERS for s in ("", "_adjusted")),
+    *((p + s, "float8") for p in _PARAMETERS for s in ("_error", "_original_error")),
+    *((p + s, "text") for p in _PARAMETERS for s in ("_qc", "_adjusted_qc")),
+    *((p + "_unit", "text") for p in _PARAMETERS),
+    *((p + "_data_mode", "text") for p in _PARAMETERS),
+    *((p + "_unit_source", "text") for p in _PARAMETERS),
+    *((p + s, "text") for p in _PARAMETERS for s in ("_qc_source", "_adjusted_qc_source")),
+    *((p + "_flags", "jsonb") for p in _PARAMETERS),
+)
+_ARROW = {
+    "float8": pa.float64(),
+    "text": pa.string(),
+    "jsonb": pa.list_(pa.string()),
+}
+STAGING_SCHEMA = pa.schema(
+    [
+        pa.field("occurrence_index", pa.int32(), nullable=False),
+        pa.field("level_index", pa.int32(), nullable=False),
+        *(pa.field(name, _ARROW[kind]) for name, kind in MEASUREMENT_COLUMNS),
+    ]
+)
 
 
-def owner_slot(profile: Profile) -> str:
-    longitude, latitude = (
-        Decimal(profile.longitude.exact or "NaN"),
-        Decimal(profile.latitude.exact or "NaN"),
-    )
+def slot_key(observed: datetime, longitude: Decimal, latitude: Decimal) -> str:
+    """The `app.owner_slot` expression: UTC month x 10-degree tile of the exact position."""
     if not (20 <= longitude <= 120 and -60 <= latitude <= 30):
         raise Rejection("candidate_outside_region")
     west = 110 if longitude == 120 else int((longitude - 20) // 10) * 10 + 20
     south = 20 if latitude == 30 else int((latitude + 60) // 10) * 10 - 60
     tile = Tile(west, south)
-    month = month_start(timestamp(profile.observed_at)).strftime("%Y-%m")
+    month = month_start(observed).strftime("%Y-%m")
     return (
         f"argovis/core/{month}/{tile.west}:{tile.south}/{GEOMETRY_VERSION}/"
         "argovis-core-v1/scientific-json-v2"
     )
 
 
+def owner_slot(profile: Profile) -> str:
+    return slot_key(
+        timestamp(profile.observed_at),
+        Decimal(profile.longitude.exact or "NaN"),
+        Decimal(profile.latitude.exact or "NaN"),
+    )
+
+
 def staged_candidate(
     profile: Profile, proposed_id: uuid.UUID, raw_manifest_id: uuid.UUID
 ) -> dict[str, Any]:
+    """Slim staging row: identity, hash, revision, canonical text and level count."""
     revision = (
         None
         if profile.revision is None
@@ -56,8 +100,22 @@ def staged_candidate(
         "content_hash": profile.content_hash,
         "revision": revision,
         "raw_manifest_id": str(raw_manifest_id),
-        "levels": list(profile.levels),
+        "level_count": len(profile.levels),
     }
+
+
+def staging_table(profile: Profile, occurrence_index: int) -> pa.Table:
+    """The typed level rows of one candidate, columns exactly STAGING_SCHEMA."""
+    levels = profile.levels
+    columns = [
+        pa.array([occurrence_index] * len(levels), pa.int32()),
+        pa.array([level["level_index"] for level in levels], pa.int32()),
+        *(
+            pa.array([level[name] for level in levels], _ARROW[kind])
+            for name, kind in MEASUREMENT_COLUMNS
+        ),
+    ]
+    return pa.Table.from_arrays(columns, schema=STAGING_SCHEMA)
 
 
 @dataclass(frozen=True)
@@ -67,111 +125,47 @@ class StoredScience:
 
 
 @dataclass(frozen=True)
-class Preview:
-    candidates: tuple[dict[str, Any], ...]
-    scientific_profiles: dict[uuid.UUID, Profile]
-    changed_slots: frozenset[str]
-    outcomes: tuple[tuple[str, str], ...]
+class StoredState:
+    """What a revision comparison and a slot count need about a stored profile.
 
-    def membership(self, slot: str) -> list[dict[str, Any]]:
-        return [
-            {
-                "profile_id": str(identifier),
-                "hash": profile.content_hash,
-                "levels": len(profile.levels),
-            }
-            for identifier, profile in sorted(self.scientific_profiles.items())
-            if owner_slot(profile) == slot
-        ]
-
-
-def preview(
-    incoming: tuple[tuple[Profile, uuid.UUID], ...], stored: tuple[StoredScience, ...]
-) -> Preview:
-    """Stored must include affected slots' full science, not an eligibility projection.
-
-    The SQL procedure rechecks identities, revisions, manifests and slot versions;
-    this preview never confers publication authority.
+    No levels and no canonical bytes: the hash, the source revision and the position
+    that decides the owner slot. Loaded in one batched query per chunk.
     """
-    identities = [row.identity for row in stored]
-    scientific = {row.identity.id: row.profile for row in stored}
-    candidates: list[dict[str, Any]] = []
-    changed: set[str] = set()
-    outcomes: list[tuple[str, str]] = []
-    seen: dict[str, Profile] = {}
-    for profile, raw_id in incoming:
-        prior = seen.get(profile.identity)
-        if prior is not None:
-            if prior.content_hash != profile.content_hash or prior.revision != profile.revision:
-                raise Rejection("conflicting_duplicate_profile")
-            outcomes.append((profile.identity, "identical_duplicate"))
-            continue
-        seen[profile.identity] = profile
-        identity = resolve_identity(profile, tuple(identities))
-        identifier = identity.stored_id or uuid.uuid4()
-        previous = scientific.get(identifier)
-        outcome = compare(
-            profile.content_hash,
-            profile.revision,
-            None if previous is None else previous.content_hash,
-            None if previous is None else previous.revision,
-        )
-        if outcome == "revision_conflict":
-            raise Rejection("revision_conflict")
-        if identity.stored_id is None:
-            identities.append(
-                StoredIdentity(
-                    identifier,
-                    profile.platform,
-                    profile.source_profile_id,
-                    profile.cycle,
-                    profile.direction,
-                    profile.natural_key,
-                )
-            )
-        elif identity.action == "attach_stable_alias":
-            identities = [
-                StoredIdentity(
-                    row.id,
-                    row.platform,
-                    profile.source_profile_id,
-                    row.cycle,
-                    row.direction,
-                    row.natural_key,
-                )
-                if row.id == identifier
-                else row
-                for row in identities
-            ]
-        candidates.append(staged_candidate(profile, identifier, raw_id))
-        outcomes.append((profile.identity, outcome))
-        if outcome in ("insert", "newer"):
-            if previous is not None:
-                changed.add(owner_slot(previous))
-            changed.add(owner_slot(profile))
-            scientific[identifier] = profile
-    return Preview(tuple(candidates), scientific, frozenset(changed), tuple(outcomes))
+
+    content_hash: str
+    revision: Revision | None
+    observed_at: datetime
+    longitude: Decimal | None
+    latitude: Decimal | None
+
+    @property
+    def slot(self) -> str:
+        if self.longitude is None or self.latitude is None:
+            raise Rejection("candidate_outside_region")
+        return slot_key(self.observed_at, self.longitude, self.latitude)
 
 
-def copy_rows(
-    connection: Any,
-    run_id: uuid.UUID,
-    chunk_id: uuid.UUID,
-    fence: int,
-    candidates: Iterable[dict[str, Any]],
-) -> None:
-    """Client COPY only, with fixed migration-owned table/column identifiers."""
-    with connection.cursor() as cursor:
-        with cursor.copy(
-            "COPY app.ingestion_staging(run_id,chunk_id,fence,occurrence_index,candidate) "
-            "FROM STDIN"
-        ) as copy:
-            for index, candidate in enumerate(candidates):
-                if index >= 2000:
-                    raise Rejection("profile_count_limit")
-                occurrence = candidate.get("occurrence_index", index)
-                if type(occurrence) is not int or not 0 <= occurrence < 2000:
-                    raise Rejection("invalid_occurrence_index")
-                copy.write_row(
-                    (run_id, chunk_id, fence, occurrence, json.dumps(candidate, allow_nan=False))
-                )
+def evidence_json(verified: dict[str, Any]) -> dict[str, Any]:
+    """The writer's evidence without its in-process certificate object."""
+    return {key: value for key, value in verified.items() if key != "certificate"}
+
+
+def snapshot_certificate(
+    verified: dict[str, Any],
+    payload: bytes,
+    *,
+    deadline: float,
+    budget_factory: Callable[[], AbstractContextManager[CanonicalBudget]] | None = None,
+) -> PublicationSnapshotVerifier:
+    """The certificate write_snapshot issued for these exact bytes, else a fresh one that
+    verifies the first payload fully (the pre-v4 writer returned no certificate)."""
+    issued = verified.get("certificate")
+    if isinstance(issued, PublicationSnapshotVerifier):
+        return issued
+    return PublicationSnapshotVerifier(
+        hashlib.sha256(payload).hexdigest(),
+        len(payload),
+        verified,
+        deadline=deadline,
+        budget_factory=budget_factory or (lambda: nullcontext(CanonicalBudget())),
+    )
