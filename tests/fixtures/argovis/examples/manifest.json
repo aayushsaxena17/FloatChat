@@ -1,0 +1,31 @@
+{
+  "status": "published_examples_not_live_raw_capture",
+  "source_url": "https://github.com/argovis/demo_notebooks/blob/3e3307c878a61483cc6c31010dd857f7f7d5251c/introduction/Argovis_JSON.ipynb",
+  "source_commit": "3e3307c878a61483cc6c31010dd857f7f7d5251c",
+  "notebook_sha256": "7d39ef05eb301ef739c35d40185096b489551e56014f6d6adb18f381c0118e26",
+  "upstream_capture_time": null,
+  "original_http_response_sha256": null,
+  "specification": "2.36.2",
+  "mapping": "argovis-core-v1",
+  "attribution": "Argovis Collaboration; Argo GDAC dataset DOI 10.17882/42182",
+  "sanitization": "Only listed public display outputs extracted; no code/config/headers.",
+  "limitation": "Arrays refer to 4901283_003; inventory/metadata to 1901094_109. Do not combine them as matching recorded responses. F01 pending.",
+  "files": {
+    "published_inventory_profile.json": {
+      "sha256": "b3cbb889b8964092237e979dc596764bc4608dee85752f8408645168f58085f9",
+      "bytes": 1438
+    },
+    "published_metadata.json": {
+      "sha256": "dc27b4118f5d990b4cb15778f854b4b5296342cf8f9ab5822a0dc46e8dd3764c",
+      "bytes": 458
+    },
+    "published_temperature_pressure_arrays.json": {
+      "sha256": "65547ba1ab538995d28fd1581ec214410b0bd25f467708fdfcdddf93be7ecabd",
+      "bytes": 8640
+    },
+    "published_data_info.json": {
+      "sha256": "c2f9fdb7f6c2851398002c77e07dc99a1843c099e25fed445837b45e142946ac",
+      "bytes": 184
+    }
+  }
+}
