@@ -4,20 +4,37 @@ import json
 import re
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Any
+from functools import cache
+from operator import itemgetter
+from typing import TYPE_CHECKING, Any, NamedTuple
 from urllib.parse import urlsplit, urlunsplit
 
 from .numeric import HASH_VERSION, CanonicalBudget, Rejection, ScientificNumber, scientific_number
 from .planning import GEOMETRY_VERSION, Interval, PlannedChunk, in_region, timestamp
 from .revisions import Revision
 
+if TYPE_CHECKING:
+    import pyarrow as pa
+
 MAPPING_VERSION = "argovis-core-v1"
 LEGACY_SOURCE_CONTRACT = "argovis-core-2.36.2-v1"
 SOURCE_CONTRACT = "argovis-core-2.36.2+ifremer-fluorescence-v1"
+GDAC_SOURCE_CONTRACT = "gdac-core-v1"
 TRANSLATOR_REVISION = "cbf2bb48ed5d95532c18bb2cd5217e44618356cf"
 TRANSLATOR_SHA256 = "279af8ef7b2adabad38d94ca71de02d86dd11efe28e3c1f174f874b7ed73224f"
 ADDITIONAL_NONCORE = frozenset({"chla_fluorescence", "chla_fluorescence_qc"})
 VARIABLES = ("pressure", "temperature", "salinity")
+PLAUSIBLE = {"pressure": (-5, 12000), "temperature": (-5, 50), "salinity": (0, 50)}
+LEVEL_SUFFIXES = (
+    "",
+    "_adjusted",
+    "_error",
+    "_original_error",
+    "_qc",
+    "_adjusted_qc",
+    "_qc_source",
+    "_adjusted_qc_source",
+)
 UNITS = {
     "pressure": ({"dbar", "decibar"}, "dbar"),
     "temperature": ({"degree_C", "degrees C", "degree_Celsius"}, "degree_C"),
@@ -190,7 +207,7 @@ class Profile:
 def _data_columns(
     document: dict[str, Any], *, source_contract: str = SOURCE_CONTRACT
 ) -> tuple[dict[str, list[Any]], dict[str, Any], int]:
-    if source_contract not in (SOURCE_CONTRACT, LEGACY_SOURCE_CONTRACT):
+    if source_contract not in (SOURCE_CONTRACT, LEGACY_SOURCE_CONTRACT, GDAC_SOURCE_CONTRACT):
         raise Rejection("unsupported_source_contract")
     info, data = document["data_info"], document["data"]
     if not (
@@ -236,6 +253,175 @@ def _data_columns(
             raise Rejection("unknown_data_field")
     assert length is not None
     return columns, metadata, length
+
+
+class _Column(NamedTuple):
+    """Level-invariant facts about one core variable, fixed once per profile."""
+
+    error: str | None
+    array: list[Any] | None
+    qc_array: list[Any] | None
+    unit_ok: bool
+    selected: str
+    selected_qc: str
+    selected_qc_source: str
+    flags_key: str
+    low: float
+    high: float
+    track: bool
+
+
+def _variables(
+    columns: dict[str, list[Any]], column_meta: dict[str, Any]
+) -> tuple[dict[str, Any], list[_Column]]:
+    """Per-variable constants and the level template.
+
+    The template carries the final key order: None-filled value and QC slots and the
+    level-invariant unit and mode entries. A pending metadata rejection is recorded, not
+    raised, so map_profile raises it at the same point of the first level as before.
+    """
+    template: dict[str, Any] = {"level_index": None}
+    result: list[_Column] = []
+    for variable in VARIABLES:
+        attr = column_meta.get(variable, {})
+        unit, mode = attr.get("units"), attr.get("data_keys_mode")
+        present = variable in columns
+        error = None
+        if (unit is not None and not isinstance(unit, str)) or (
+            mode is not None and not isinstance(mode, str)
+        ):
+            error = "invalid_variable_metadata"
+        elif not present and variable + "_argoqc" in columns:
+            error = "qc_without_variable"
+        elif present and mode not in ("R", "A", "D"):
+            error = "unknown_data_mode"
+        units, canonical_unit = UNITS[variable]
+        unit_ok = error != "invalid_variable_metadata" and unit in units
+        for suffix in LEVEL_SUFFIXES:
+            template[variable + suffix] = None
+        template[variable + "_unit"] = canonical_unit if unit_ok else None
+        template[variable + "_unit_source"] = unit
+        template[variable + "_data_mode"] = mode
+        template[variable + "_flags"] = None
+        adjusted = mode in ("A", "D")
+        selected_qc = variable + ("_adjusted_qc" if adjusted else "_qc")
+        low, high = PLAUSIBLE[variable]
+        result.append(
+            _Column(
+                error,
+                columns.get(variable),
+                columns.get(variable + "_argoqc"),
+                unit_ok,
+                variable + ("_adjusted" if adjusted else ""),
+                selected_qc,
+                selected_qc + "_source",
+                variable + "_flags",
+                low,
+                high,
+                variable == "pressure",
+            )
+        )
+    return template, result
+
+
+def _levels(
+    columns: dict[str, list[Any]], column_meta: dict[str, Any], count: int
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Level rows and their canonical content, in the key order of the stage1-v3 mapper."""
+    template, variables = _variables(columns, column_meta)
+    no_number = scientific_number(None)
+    null_entry = (no_number.value, no_number.canonical(), no_number.flags)
+    no_qc = qc(None)
+    # Per-profile memo of pure per-token results. scientific_number depends on the numeric
+    # value alone. qc renders a non-integral Decimal's own text (1.5 versus 1.50), so
+    # Decimal QC tokens are keyed by that text rather than by value.
+    numbers: dict[Decimal, tuple[float | None, dict[str, Any], tuple[str, ...]]] = {}
+    qc_texts: dict[str, tuple[str | None, str | None, tuple[str, ...]]] = {}
+    qc_decimals: dict[str, tuple[str | None, str | None, tuple[str, ...]]] = {}
+    levels: list[dict[str, Any]] = []
+    canonical_levels: list[dict[str, Any]] = []
+    previous_pressure: float | None = None
+    seen_pressure: set[float] = set()
+    for index in range(count):
+        row = template.copy()
+        row["level_index"] = index
+        content = template.copy()
+        content["level_index"] = index
+        # Checks keep their original order: a pending metadata rejection surfaces only
+        # after the earlier variables passed this level.
+        for (
+            error,
+            array,
+            qc_array,
+            unit_ok,
+            selected,
+            selected_qc,
+            selected_qc_source,
+            flags_key,
+            low,
+            high,
+            track,
+        ) in variables:
+            if error is not None:
+                raise Rejection(error)
+            if array is None:
+                row[flags_key] = content[flags_key] = ["variable_absent"]
+                continue
+            token = array[index]
+            if token.__class__ is Decimal:
+                try:
+                    entry = numbers.get(token)
+                except TypeError:
+                    entry = None  # Signaling NaN is unhashable; scientific_number rejects it.
+                if entry is None:
+                    number = scientific_number(token)
+                    entry = numbers[token] = (number.value, number.canonical(), number.flags)
+            elif token is None:
+                entry = null_entry
+            else:
+                number = scientific_number(token)
+                entry = (number.value, number.canonical(), number.flags)
+            value = entry[0]
+            if value is not None and not unit_ok:
+                raise Rejection("unknown_unit")
+            row[selected] = value
+            content[selected] = entry[1]
+            if qc_array is None:
+                q = no_qc
+            else:
+                token = qc_array[index]
+                if token.__class__ is Decimal:
+                    text = str(token)
+                    hit = qc_decimals.get(text)
+                    if hit is None:
+                        hit = qc_decimals[text] = qc(token)
+                    q = hit
+                elif token.__class__ is str:
+                    hit = qc_texts.get(token)
+                    if hit is None:
+                        hit = qc_texts[token] = qc(token)
+                    q = hit
+                elif token is None:
+                    q = no_qc
+                else:
+                    q = qc(token)
+            row[selected_qc] = content[selected_qc] = q[0]
+            row[selected_qc_source] = content[selected_qc_source] = q[1]
+            flags = [*entry[2], *q[2]]
+            if value is not None:
+                if not low <= value <= high:
+                    flags.append("outside_plausibility_range")
+                if track:
+                    if value in seen_pressure:
+                        flags.append("repeated_pressure")
+                    if previous_pressure is not None and value < previous_pressure:
+                        flags.append("nonmonotonic_pressure")
+                    previous_pressure = value
+                    seen_pressure.add(value)
+            row[flags_key] = content[flags_key] = flags
+        levels.append(row)
+        canonical_levels.append(content)
+    return levels, canonical_levels
 
 
 def map_profile(
@@ -286,77 +472,10 @@ def map_profile(
     lon, lat = (scientific_number(x, coordinate=True) for x in coordinates)
     in_region(coordinates[0], coordinates[1])  # Validate legal WGS84 even for filtered profiles.
     columns, column_meta, count = _data_columns(document, source_contract=source_contract)
-    levels: list[dict[str, Any]] = []
-    canonical_levels: list[dict[str, Any]] = []
-    previous_pressure: float | None = None
-    seen_pressure: set[float] = set()
-    for index in range(count):
-        row: dict[str, Any] = {"level_index": index}
-        content: dict[str, Any] = {"level_index": index}
-        for variable in VARIABLES:
-            attr = column_meta.get(variable, {})
-            unit, mode = attr.get("units"), attr.get("data_keys_mode")
-            if (unit is not None and not isinstance(unit, str)) or (
-                mode is not None and not isinstance(mode, str)
-            ):
-                raise Rejection("invalid_variable_metadata")
-            present = variable in columns
-            if not present and variable + "_argoqc" in columns:
-                raise Rejection("qc_without_variable")
-            if present and mode not in ("R", "A", "D"):
-                raise Rejection("unknown_data_mode")
-            number = scientific_number(columns[variable][index] if present else None)
-            if number.value is not None and unit not in UNITS[variable][0]:
-                raise Rejection("unknown_unit")
-            for suffix in (
-                "",
-                "_adjusted",
-                "_error",
-                "_original_error",
-                "_qc",
-                "_adjusted_qc",
-                "_qc_source",
-                "_adjusted_qc_source",
-            ):
-                row[variable + suffix] = None
-                content[variable + suffix] = None
-            selected = variable + ("_adjusted" if mode in ("A", "D") else "")
-            if present:
-                row[selected] = number.value
-                content[selected] = number.canonical()
-                qc_array = columns.get(variable + "_argoqc")
-                q = qc(None if qc_array is None else qc_array[index])
-                selected_qc = variable + ("_adjusted_qc" if mode in ("A", "D") else "_qc")
-                row[selected_qc], row[selected_qc + "_source"] = q[:2]
-                content[selected_qc], content[selected_qc + "_source"] = q[:2]
-                flags = list(number.flags + q[2])
-            else:
-                flags = ["variable_absent"]
-            if number.value is not None:
-                low, high = {"pressure": (-5, 12000), "temperature": (-5, 50), "salinity": (0, 50)}[
-                    variable
-                ]
-                if not low <= number.value <= high:
-                    flags.append("outside_plausibility_range")
-                if variable == "pressure":
-                    if number.value in seen_pressure:
-                        flags.append("repeated_pressure")
-                    if previous_pressure is not None and number.value < previous_pressure:
-                        flags.append("nonmonotonic_pressure")
-                    previous_pressure = number.value
-                    seen_pressure.add(number.value)
-            for suffix, value in (
-                ("_unit", UNITS[variable][1] if unit in UNITS[variable][0] else None),
-                ("_unit_source", unit),
-                ("_data_mode", mode),
-                ("_flags", flags),
-            ):
-                row[variable + suffix] = value
-                content[variable + suffix] = value
-        levels.append(row)
-        canonical_levels.append(content)
+    levels, canonical_levels = _levels(columns, column_meta, count)
+    gdac = source_contract == GDAC_SOURCE_CONTRACT
     canonical = {
-        "source": "argovis",
+        "source": "gdac" if gdac else "argovis",
         "platform": platform,
         "cycle": cycle,
         "direction": direction,
@@ -368,7 +487,7 @@ def map_profile(
         "sampling": document.get("vertical_sampling_scheme"),
         "levels": canonical_levels,
         "hash_version": HASH_VERSION,
-        "mapping_version": MAPPING_VERSION,
+        "mapping_version": GDAC_SOURCE_CONTRACT if gdac else MAPPING_VERSION,
     }
     canonical_bytes, digest = budget.encode(canonical)
     return Profile(
@@ -384,6 +503,63 @@ def map_profile(
         canonical_bytes,
         digest,
         len(set(columns) - {v + s for v in VARIABLES for s in ("", "_argoqc")}),
+    )
+
+
+LEVEL_PREFIX = '{"level_index":'
+PROFILE_COLUMNS = frozenset({"profile_id", "source_profile_id", "profile_hash", "profile_content"})
+
+
+@cache
+def _level_schema() -> Any:
+    import pyarrow as pa
+
+    from .parquet import schema  # parquet imports this module, so load it on first use
+
+    full = schema()
+    return pa.schema(
+        [field for field in full if field.name not in PROFILE_COLUMNS], metadata=full.metadata
+    )
+
+
+def _level_texts(profile: Profile) -> list[str]:
+    """Canonical JSON of every level, cut from the profile's canonical bytes.
+
+    A level is the only object whose first key is level_index, and a quote inside a JSON
+    string is always escaped, so the marker occurs only between two levels. The cut is
+    checked against the level count and indexes; any mismatch re-parses the profile and
+    encodes each level as parquet.rows() does.
+    """
+    text = profile.canonical_bytes.decode()
+    opening = text.find('"levels":[')
+    closing = text.find('],"longitude":', opening)
+    if opening >= 0 and closing > opening:
+        region = text[opening + len('"levels":[') : closing]
+        if region.startswith(LEVEL_PREFIX) and region.endswith("}"):
+            parts = region[len(LEVEL_PREFIX) : -1].split("}," + LEVEL_PREFIX)
+            if len(parts) == len(profile.levels) and all(
+                part.startswith(f"{index},") for index, part in enumerate(parts)
+            ):
+                return [LEVEL_PREFIX + part + "}" for part in parts]
+    return [
+        json.dumps(level, sort_keys=True, separators=(",", ":"))
+        for level in json.loads(profile.canonical_bytes)["levels"]
+    ]
+
+
+def level_table(profile: Profile) -> "pa.Table":
+    """The profile's levels as Parquet rows without the per-profile columns."""
+    import pyarrow as pa
+
+    schema = _level_schema()
+    names = [field.name for field in schema if field.name != "canonical_level"]
+    # One C-level pass per level, then a transpose, instead of a Python loop per column.
+    per_level = map(itemgetter(*names), profile.levels)
+    transposed = list(zip(*per_level, strict=True)) or [()] * len(names)
+    columns = dict(zip(names, transposed, strict=True))
+    columns["canonical_level"] = _level_texts(profile)
+    return pa.Table.from_arrays(
+        [pa.array(columns[field.name], type=field.type) for field in schema], schema=schema
     )
 
 
@@ -429,6 +605,15 @@ def verify_inventory(before: Any, data: Any, after: Any, interval: Interval) -> 
 
 
 def policy_versions(source_contract: str = SOURCE_CONTRACT) -> dict[str, str]:
+    if source_contract == GDAC_SOURCE_CONTRACT:
+        return {
+            "geometry": GEOMETRY_VERSION,
+            "mapping": GDAC_SOURCE_CONTRACT,
+            "hash": HASH_VERSION,
+            "specification": "gdac-netcdf",
+            "qc": "core-good-v1",
+            "source_contract": GDAC_SOURCE_CONTRACT,
+        }
     if source_contract not in (SOURCE_CONTRACT, LEGACY_SOURCE_CONTRACT):
         raise Rejection("unsupported_source_contract")
     result = {
