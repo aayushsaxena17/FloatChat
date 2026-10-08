@@ -361,7 +361,17 @@ class Processor:
             return self.terminal(error)
 
     def reload_landing(self) -> None:
-        """Recover the verified landing of this chunk without any upstream request."""
+        """Recover this chunk's verified landing without any upstream request.
+
+        The source is constructed with require_existing for chunks at or past
+        `landed`, so every obtain() below resolves the chunk's own persisted
+        manifests (a metadata cache hit still records a per-chunk manifest). The
+        inventory triple was verified by the process that recorded `landed`; that
+        persisted transition, not this reload, is the evidence.
+        """
+        state = self.repository.chunk(self.authority.chunk)["state"]
+        if state not in ("landed", "validating", "publishing"):
+            raise Rejection("landing_unavailable")
         for role in ("inventory_before", "profile", "inventory_after"):
             self.raw_paths[role] = self.landing(
                 "/argo", request_parameters(self.plan, inventory=role != "profile"), role
@@ -371,7 +381,11 @@ class Processor:
             self.metadata(document)
 
     def terminal(self, error: Rejection) -> str:
-        """Record a rejection as split/failed/quarantined; fencing errors propagate."""
+        """Record a rejection as split/failed/quarantined; fencing errors propagate.
+
+        Shared by land() and process(): a SPLITTABLE category splits the plan slot,
+        which is only valid while no publication intent exists for the chunk.
+        """
         if error.category in ("publication_fenced", "run_fenced", "work_deadline"):
             raise error
         self.accounting()

@@ -58,7 +58,9 @@ controller (supervise) ──plans chunks, issues tickets──▶ app.processin
   (origin `cache`), so replay identity is unchanged.
 - **Process pool.** `--workers M` processes (default `min(4, cpu)`), each claims one
   `process` ticket at a time and runs `Processor.process()`; `maxtasksperchild=1`
-  bounds memory; `RLIMIT_AS` per process replaces the cgroup check.
+  bounds memory; the worker accepts either a cgroup `memory.max` of at most 1 GiB or
+  sets `RLIMIT_DATA` (not `RLIMIT_AS`, which breaks pyarrow's allocator) to
+  `INGESTION_WORKER_MEMORY_BYTES`.
 - **Transform.** Decode the landed payload once; map with the fast mapper; encode
   canonical bytes once and hash once; keep candidates in memory (chunk cap 256 MiB);
   resolve identities with one batched query per chunk; build the Parquet part from
@@ -91,16 +93,17 @@ has not landed yet.
 | A | fast exact decode, sanitize, encoder | `numeric.py`, `raw.py`, `json_stream.py`, `tests/stage1/test_numeric.py`, `test_json_stream.py`, `test_raw.py`, `scripts/stage1_perf_experiments.py` |
 | B | fast mapper | `argovis.py`, `tests/stage1/test_wire.py`, `tests/stage1/test_mapper_fast.py` (new) |
 | C | Parquet write-once, Arrow verification, checksum upload | `parquet.py`, `objects.py`, `minio.py`, `tests/stage1/test_parquet.py`, `test_objects.py`, `test_minio.py`, `tests/stage1/minio_probe.py` |
-| D | queue, controller, worker processes, CLI, migration 0012 | `workers/src/floatchat_workers/*`, `controller.py`, `states.py`, `infra/migrations/versions/0012_work_queue.sql`, `tests/stage1/test_controller.py`, `test_broker.py`, `test_worker_cli.py`, `tests/stage1/broker_*.py`, `tests/test_worker.py` |
+| D | queue, controller, worker processes, CLI, `process_ticket`, migration 0012 | `workers/src/floatchat_workers/*` (including `ingestion.py`'s `process_ticket`), `controller.py`, `states.py`, `infra/migrations/versions/0012_work_queue.sql`, `tests/stage1/test_controller.py`, `test_broker.py`, `test_worker_cli.py`, `tests/stage1/broker_*.py`, `tests/test_worker.py`. D never edits `processor.py`: its contract is `Processor(repository, budget_repository, store, source, authority, private, deadline=...)` with `land() -> str` and `process() -> str`. |
 | E | threaded transport, governor, metadata cache, validate-once landing | `transport.py`, `landing.py`, `source.py`, `tests/stage1/test_landing.py`, `test_capture.py`, `test_replay_policy.py`, `tests/stage1/request_owner_probe.py` |
 | F | publication v4: candidates, parts, slim staging, commit, selector, compaction, migration 0013 | `processor.py` (process/publish path only), `spool.py`, `workflow.py`, `repository.py`, `coverage.py`, `reporting.py`, `catalogue.py`, `infra/migrations/versions/0013_publication_v4.sql`, `tests/stage1/test_database.py`, `test_spool.py`, `test_coverage.py`, `test_publication_scale.py`, `test_publication_certificate.py`, `test_resources.py`, `tests/stage1/processor_probe.py`, `capacity_probe.py`, `repository_probe.py` |
-| G | GDAC source, migration 0014, deps, fixtures | `packages/core/src/floatchat_core/ingestion/gdac.py` (new), `infra/migrations/versions/0014_gdac_source.sql`, `tests/fixtures/gdac/**`, `tests/stage1/test_gdac.py` (new), `pyproject.toml`, `packages/core/pyproject.toml`, `uv.lock`, `scripts/gdac_fixtures.py` (new) |
+| G | GDAC source, migration 0014, fixtures | `packages/core/src/floatchat_core/ingestion/gdac.py` (new), `infra/migrations/versions/0014_gdac_source.sql`, `tests/fixtures/gdac/**`, `tests/stage1/test_gdac.py` (new), `scripts/gdac_fixtures.py` (new). `netCDF4` and `numpy` are already in the lock file; nobody runs `uv add`. |
 | H | acceptance tooling and compose for the new workers | `scripts/stage1_acceptance*.py`, `infra/docker-compose*.yml`, `infra/docker/*`, `tests/stage1/test_acceptance_preparation.py`, `tests/test_compose.py`, `Makefile` |
 | I | ADRs, contract, PROGRESS | `DECISIONS.md`, `docs/stage1-contract.md`, `PROGRESS.md`, `FLOATCHAT_BUILD_PROMPTS.md` |
 | J | benchmark tests and reports | `tests/stage1/test_chunk_scale.py` (new), `scripts/stage1_perf_profile.py`, `scripts/stage1_perf_model.py`, `reports/stage1-v4-bench-*.json` |
 
 Paths without a directory are under `packages/core/src/floatchat_core/ingestion/`.
-Integrator (main session): `processor.py` `land()`, wiring between packages, commits.
+Integrator (main session): `processor.py` `land()`/`reload_landing()`, the shared
+`Repository` method stubs listed in §4.6, wiring between packages, commits.
 
 ## 4. Interfaces (fixed)
 
@@ -180,7 +183,14 @@ Integrator (main session): `processor.py` `land()`, wiring between packages, com
   `(164993423, slot_index)` through `Repository.upstream_slot(authority, deadline, slot)`.
 - Metadata cache in `RequestOwner.obtain(role="metadata")`: hit when the cache row's
   `retrieved_at` is within 30 days before the run's `run_reference_time_utc` and the
-  object verifies; miss fetches and upserts. `validate_raw` runs once per landing.
+  object verifies; miss fetches and upserts. A hit still records a per-chunk attempt
+  (`recorded_reserve(..., origin="cache")`) and `finish_attempt(verified_raw, manifest)`
+  pointing at the cached object, so `verified_landing(chunk, key)` finds it on reload
+  and replay identity is unchanged. The 30-day bound is a policy choice without a
+  measurement behind it: metadata rarely changes and the reference-time bound keeps a
+  run reproducible; the ADR records it as "chosen pending measurement". `validate_raw`
+  runs once per landing. Uses `Repository.metadata_cache_get/put` and
+  `Repository.upstream_slot(authority, deadline, slot)` (already present).
 
 ### 4.6 Publication v4 (F)
 
@@ -198,7 +208,14 @@ Integrator (main session): `processor.py` `land()`, wiring between packages, com
   `revision_json` for callers; `ProfileSpool` no longer uses SQLite or re-encodes).
 - `Repository.stage_levels(authority, table: pyarrow.Table)` (binary COPY),
   `Repository.identities_batch(profiles) -> dict`, `Repository.commit(...)` unchanged
-  signature, `Repository.compact(...)`.
+  signature, `Repository.compact(...)`. The integrator already added, and F keeps
+  verbatim: `claim_ticket(kind, worker) -> dict | None` (calls `app.claim_ticket`),
+  `metadata_cache_get(environment, pointer) -> dict | None`,
+  `metadata_cache_put(environment, pointer, raw_manifest, run, retrieved_at)` (calls
+  `app.metadata_cache_put`), and `upstream_slot(authority, deadline, slot=1)`.
+  D's migration 0012 defines `app.claim_ticket(text,text)` returning a
+  `processing_ticket` row (NULL id when empty) and `app.metadata_cache_put(uuid,text,
+  uuid,uuid,timestamptz)` upserting the cache row.
 - `objects.select_active_partitions` returns parts and snapshots; `Selection` gains
   `manifests: dict[slot, list]`.
 - `Processor.process()` body: map -> candidates -> parts -> publish -> stage -> commit.
@@ -207,13 +224,16 @@ Integrator (main session): `processor.py` `land()`, wiring between packages, com
 
 - `gdac.py`: `GDAC_HOST = "data-argo.ifremer.fr"`, `index_entries(raw_index_bytes,
   interval, tile) -> list`, `daily_file_keys(interval) -> list[str]`,
-  `profiles_from_netcdf(path, tile, interval) -> Iterator[dict]` yielding documents in
-  the Argovis wire shape (`_id = "gdac:<platform>_<cycle><direction>"`, `metadata`
-  pointer synthesized, `data_info`/`data` columns PRES/TEMP/PSAL with `_argoqc`),
-  so `map_profile(..., source_contract="gdac-core-v1")` reuses the mapper with
-  `source: "gdac"`, `mapping_version: "gdac-core-v1"`, `hash_version:
-  "scientific-json-v2"`. Exact text: `numpy.format_float_positional(value,
-  unique=True, trim="-")` of the stored dtype. Fill values -> `argo_fill`.
+  `profiles_from_netcdf(path, tile, interval) -> Iterator[dict]` yielding one
+  document per profile, and `gdac_map_profile(document, budget) -> Profile` that
+  builds the canonical dict itself (same structure as `argovis-core-v1`: identical
+  level keys, `ScientificNumber.canonical()`, `qc()` tokens, flags, units, data
+  modes) with `source: "gdac"`, `mapping_version: "gdac-core-v1"`, `hash_version:
+  "scientific-json-v2"`, reusing `scientific_number`, `qc`, `UNITS`, `VARIABLES`
+  from `argovis.py`/`numeric.py` without editing them. Exact text:
+  `numpy.format_float_positional(value, unique=True, trim="-")` of the stored dtype.
+  Fill values -> `argo_fill`. Identity: `source_profile_id =
+  "gdac:<platform>_<cycle><direction>"`, revision from `DATE_UPDATE`.
 - Migration 0014: `source` CHECKs on `argo_float`, `argo_profile`, and object key
   regexes accept `gdac`; `raw_manifest.object_key` accepts `.nc`.
 - Dependencies: add `netCDF4` and `numpy` to `packages/core` (only package G runs
@@ -232,9 +252,11 @@ Integrator (main session): `processor.py` `land()`, wiring between packages, com
    Argovis key, or `.env.txt`.
 2. No `docker` commands and no `-m integration` tests until the integrator says the
    live run has finished. Run only the test files you own plus
-   `tests/stage1/test_byte_identity.py`, with `nice -n 19 .venv/bin/python -m pytest
-   <files> -m "not integration" -q -p no:cacheprovider`. Before each run, check
-   `free -m`; if "available" is below 900 MB, wait and retry.
+   `tests/stage1/test_byte_identity.py`, always through the shared lock so one test
+   process runs at a time on this host:
+   `flock /tmp/claude-1000/perf-test.lock nice -n 19 .venv/bin/python -m pytest
+   <files> -m "not integration" -q -p no:cacheprovider`. Benchmarks and mypy use the
+   same lock.
 3. Do not run `git commit`, `git stash`, `git checkout` or `uv add` (G excepted for
    `uv add`). Edit only owned files. `ruff format` and `ruff check` only owned files.
    Keep mypy strict clean for owned package/worker modules

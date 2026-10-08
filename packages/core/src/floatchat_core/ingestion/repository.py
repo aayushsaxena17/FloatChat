@@ -436,13 +436,17 @@ class Repository:
             )
 
     @contextmanager
-    def upstream_slot(self, authority: Authority, deadline: float) -> Iterator[None]:
-        """Session lock outlives lease expiry; only one actual HTTP request at once.
+    def upstream_slot(self, authority: Authority, deadline: float, slot: int = 1) -> Iterator[None]:
+        """Session lock outlives lease expiry; one actual HTTP request per slot at once.
 
-        All admitted runs share the single physical environment. A crashed client
-        loses this session lock on disconnect; a live old HTTP call retains it.
-        Do not keep an open PostgreSQL transaction over network I/O.
+        Slot 1 is the stage1-v3 single credentialed request; stage1-v4 acquire
+        threads hold slots 1..N (ingestion_environment.upstream_slots). All admitted
+        runs share the single physical environment. A crashed client loses this
+        session lock on disconnect; a live old HTTP call retains it. Do not keep an
+        open PostgreSQL transaction over network I/O.
         """
+        if not 1 <= slot <= 64:
+            raise Rejection("invalid_upstream_slot")
         locked = False
         try:
             while not locked:
@@ -450,7 +454,7 @@ class Repository:
                     raise Rejection("upstream_slot_deadline")
                 self.heartbeat(authority)
                 with self.transaction() as cursor:
-                    cursor.execute("SELECT pg_try_advisory_lock(164993423,1) AS locked")
+                    cursor.execute("SELECT pg_try_advisory_lock(164993423,%s) AS locked", (slot,))
                     locked = bool(cursor.fetchone()["locked"])
                 if not locked:
                     time.sleep(min(1, max(0, deadline - time.monotonic())))
@@ -458,7 +462,42 @@ class Repository:
         finally:
             if locked:
                 with self.transaction() as cursor:
-                    cursor.execute("SELECT pg_advisory_unlock(164993423,1)")
+                    cursor.execute("SELECT pg_advisory_unlock(164993423,%s)", (slot,))
+
+    # stage1-v4 queue and cache access (SQL in migration 0012, package D).
+    def claim_ticket(self, kind: str, worker: str) -> dict[str, Any] | None:
+        """Claim one unstarted ticket of `kind` with SKIP LOCKED; None when the queue is empty."""
+        if kind not in ("acquire", "process"):
+            raise Rejection("invalid_ticket_kind")
+        with self.transaction() as cursor:
+            cursor.execute("SELECT * FROM app.claim_ticket(%s,%s)", (kind, worker))
+            row = cursor.fetchone()
+            return None if row is None or row.get("id") is None else dict(row)
+
+    def metadata_cache_get(self, environment: uuid.UUID, pointer: str) -> dict[str, Any] | None:
+        with self.transaction(readonly_snapshot=True) as cursor:
+            cursor.execute(
+                "SELECT c.*,m.object_key,m.sha256,m.bytes,m.versions,m.http_status "
+                "FROM app.float_metadata_cache c JOIN app.raw_manifest m ON m.id=c.raw_manifest_id "
+                "WHERE c.environment_id=%s AND c.pointer=%s",
+                (environment, pointer),
+            )
+            row = cursor.fetchone()
+            return None if row is None else dict(row)
+
+    def metadata_cache_put(
+        self,
+        environment: uuid.UUID,
+        pointer: str,
+        raw_manifest: uuid.UUID,
+        run: uuid.UUID,
+        retrieved_at: datetime,
+    ) -> None:
+        with self.transaction() as cursor:
+            cursor.execute(
+                "SELECT app.metadata_cache_put(%s,%s,%s,%s,%s)",
+                (environment, pointer, raw_manifest, run, retrieved_at),
+            )
 
     def verified_landing(self, authority: Authority, key: str) -> dict[str, Any] | None:
         with self.transaction(readonly_snapshot=True) as cursor:

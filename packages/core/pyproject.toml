@@ -8,6 +8,8 @@ dependencies = [
   "boto3==1.42.70",
   "pyarrow==23.0.1",
   "pandas==2.3.3",
+  "netcdf4>=1.7",
+  "numpy>=2",
 ]
 
 [build-system]
