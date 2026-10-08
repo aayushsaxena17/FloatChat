@@ -2037,11 +2037,13 @@ def test_v4_commit_reserve_is_enforced_after_the_final_authority_check(
     profile, candidate = _candidate(wire, linked_metadata)
     setup, _, generations, receipts = _publishing(profile, candidate)
     # Less than the one-second final reserve remains, but the work deadline has not passed.
+    # CHECK work_deadline = deadline - 60 s holds, so both move together from one instant.
     result = postgres(
         setup
         + "ALTER TABLE app.ingestion_run DISABLE TRIGGER ingestion_run_immutable;"
-        + "UPDATE app.ingestion_run SET "
-        + "work_deadline=clock_timestamp()+interval '990 milliseconds' "
+        + "UPDATE app.ingestion_run SET work_deadline=w.at,"
+        + "deadline=w.at+interval '60 seconds' "
+        + "FROM (SELECT clock_timestamp()+interval '990 milliseconds' AS at) w "
         + f"WHERE id='{RUN}';"
         + _attempt(generations, receipts)
         + "SELECT pg_temp.attempt(); ROLLBACK;"

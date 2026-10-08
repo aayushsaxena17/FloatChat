@@ -65,7 +65,11 @@ def claim_attempts(count):
 
 
 def put(at, pointer="float-1"):
-    return f"SELECT app.metadata_cache_put('{ENV}','{pointer}','{RAW}','{RUN}','{at}');"
+    """A DO block, not SELECT: a void result would print an empty line into the output."""
+    return (
+        f"DO $$ BEGIN PERFORM app.metadata_cache_put('{ENV}','{pointer}','{RAW}','{RUN}','{at}'); "
+        "END $$;"
+    )
 
 
 # Schema --------------------------------------------------------------------------------
@@ -352,15 +356,15 @@ def test_extend_unstarted_leases_covers_a_claimed_ticket_nobody_started_and_the_
     result = postgres(f"""BEGIN;
       {CLAIM}
       CREATE TEMP TABLE acquired AS SELECT {ticket("acquire")} AS id;
-      SELECT app.claim_ticket('acquire','a');
+      SELECT 'claim|'||(app.claim_ticket('acquire','a')).claimed_by;
       SELECT 'start|'||{yes("app.start_worker((SELECT id FROM acquired))")};
-      SELECT {ticket("process")};
+      CREATE TEMP TABLE handover AS SELECT {ticket("process")} AS id;
       {SHORT_LEASE}
       SELECT 'count|'||{EXTEND};
       SELECT 'after|'||{lease_extended()};
       ROLLBACK;""")
     # The acquire ticket is started, the same-fence process ticket is waiting: still extended.
-    assert result.splitlines()[-3:] == ["start|yes", "count|1", "after|yes"]
+    assert result.splitlines()[-4:] == ["claim|a", "start|yes", "count|1", "after|yes"]
 
 
 @pytest.mark.integration
@@ -573,7 +577,7 @@ def test_metadata_cache_put_refuses_a_manifest_of_another_run_or_environment(pos
 def test_metadata_cache_references_are_restrictive(postgres):
     assert (
         postgres(
-            "SELECT string_agg(confrelid::regclass::text||'|'||confdeltype,',' ORDER BY "
+            "SELECT string_agg(confrelid::regclass::text||'|'||confdeltype::text,',' ORDER BY "
             "confrelid::regclass::text) FROM pg_constraint "
             "WHERE conrelid='app.float_metadata_cache'::regclass AND contype='f'"
         )

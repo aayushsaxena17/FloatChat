@@ -7,11 +7,13 @@ import tempfile
 import time
 import uuid
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from pathlib import Path
 
 from floatchat_core.ingestion.argovis import policy_versions, request_parameters
 from floatchat_core.ingestion.planning import Interval, PlannedChunk, Tile, timestamp
 from floatchat_core.ingestion.reporting import persisted_report
+from floatchat_core.ingestion.workflow import slot_key
 from floatchat_workers.ingestion import process_ticket
 from psycopg.types.json import Jsonb
 
@@ -23,6 +25,9 @@ def verify_capacity(repository, environment, store=None):
     authentic = json.loads(profile_bytes)[0]
     assert authentic["_id"] == "2904014_040"
     start, end = timestamp("2025-01-01T00:00:00Z"), timestamp("2025-02-01T00:00:00Z")
+    # Every synthetic profile sits at (85, -25) in January: one slot, tile 80:-30. The
+    # environment also holds the slot the earlier component probe compacted (tile 70:10).
+    slot = slot_key(start, Decimal(85), Decimal(-25))
     pieces = [
         PlannedChunk(
             Interval(start + timedelta(days=7 * i), min(start + timedelta(days=7 * (i + 1)), end)),
@@ -146,11 +151,14 @@ def verify_capacity(repository, environment, store=None):
         report = persisted_report(repository, run)
         assert report["final_evidence_frozen"] and not report["coverage"]["proved_complete"]
         assert report["full_snapshot_balanced"] and report["run_eligible_balanced"]
-        assert report["active_part_count"] == 5 and report["active_snapshot_count"] == 0, (
-            report["active_part_count"],
-            report["active_snapshot_count"],
-            report["active_partitions"],
-        )
+        # The report lists every active object of the environment: count this slot's own, and
+        # check that the earlier component slot still holds exactly its one snapshot.
+        mine = [row for row in report["active_partitions"] if row["logical_key"] == slot]
+        earlier = [row for row in report["active_partitions"] if row["logical_key"] != slot]
+        assert [row["kind"] for row in mine] == ["part"] * 5, report["active_partitions"]
+        assert [row["kind"] for row in earlier] == ["snapshot"], report["active_partitions"]
+        assert earlier[0]["logical_key"].split("/")[3] == "70:10", earlier
+        assert report["active_part_count"] == 5 and report["active_snapshot_count"] == 1
         assert (
             report["persisted_metrics"]["resource_counters"]["canonical_bytes"]
             < 10 * 1024**3 - 16 * 1024**2
@@ -158,16 +166,15 @@ def verify_capacity(repository, environment, store=None):
         compaction = None
         if store is not None:
             # The compact job merges the five parts into one snapshot of the whole slot.
-            with repository.transaction(readonly_snapshot=True) as cursor:
-                cursor.execute("SELECT DISTINCT logical_key FROM app.committed_active_partitions")
-                (slot,) = [row["logical_key"] for row in cursor.fetchall()]
             started = time.monotonic()
             assert repository.compact(environment, slot, store, time.monotonic() + 300) == (
                 "compacted"
             )
             with repository.transaction(readonly_snapshot=True) as cursor:
                 cursor.execute(
-                    "SELECT kind,profile_count,row_count FROM app.committed_active_partitions"
+                    "SELECT kind,profile_count,row_count FROM app.committed_active_partitions "
+                    "WHERE logical_key=%s",
+                    (slot,),
                 )
                 (merged,) = [dict(row) for row in cursor.fetchall()]
             assert merged == {"kind": "snapshot", "profile_count": 40, "row_count": 40 * 501}
