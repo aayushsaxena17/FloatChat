@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
+from floatchat_core.ingestion import transport as transport_module
 from floatchat_core.ingestion.landing import RequestOwner
 from floatchat_core.ingestion.numeric import Rejection
 from floatchat_core.ingestion.repository import Authority
@@ -73,6 +74,12 @@ class Repository:
 @pytest.fixture(autouse=True)
 def private_originals(tmp_path, monkeypatch):
     monkeypatch.setattr(tempfile, "mkdtemp", lambda **kwargs: str(tmp_path))
+
+
+@pytest.fixture(autouse=True)
+def immediate_retries(monkeypatch):
+    # Retry ownership/persistence tests; the backoff policy is pinned in test_wire.
+    monkeypatch.setattr(transport_module, "RETRY_MAXIMA", {1: 0.0, 2: 0.0, 3: 0.0})
 
 
 def owner(repository, store, transport, *, enabled=lambda: True):

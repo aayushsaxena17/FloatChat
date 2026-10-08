@@ -1,9 +1,9 @@
 {
   "actual_head_CI": "pending",
-  "bucket": "floatchat-s1-acceptance-5f59c62f122295a7",
-  "database": "floatchat_s1_5f59c62f122295a7",
-  "environment_file_sha256": "a496bd0594ce1f1271894c908beac631c79f038a9c8104ad9beb8737e6b328eb",
-  "environment_id": "0e7337ae-1356-4f8c-8aed-18e8b3f95658",
+  "bucket": "floatchat-s1-acceptance-8e8da1d40a8ba7f9",
+  "database": "floatchat_s1_8e8da1d40a8ba7f9",
+  "environment_file_sha256": "6ba839c8ec941f8417645c345800c901690aa3e1b983a2f5986cfda3757469f2",
+  "environment_id": "b7309792-2021-47b1-8a34-a65c6ac3f697",
   "full_acceptance": "pending_owner_opt_in",
   "images": {
     "API": "sha256:7055829eacc85bbc99fbbaefb735bd3ce8a916c93d4aec115ccf12ded1eccd2a",
@@ -27,10 +27,10 @@
     ],
     "host_port_bindings": [],
     "live_network_created": false,
-    "network": "floatchat-s1-acceptance-5f59c62f122295a7_default",
+    "network": "floatchat-s1-acceptance-8e8da1d40a8ba7f9_default",
     "network_internal": true,
-    "other_volume_count": 56,
-    "project": "floatchat-s1-acceptance-5f59c62f122295a7",
+    "other_volume_count": 61,
+    "project": "floatchat-s1-acceptance-8e8da1d40a8ba7f9",
     "services": [
       "db",
       "minio",
@@ -40,44 +40,44 @@
     ],
     "shared_development_volumes": [],
     "volumes": [
-      "floatchat-s1-acceptance-5f59c62f122295a7_minio_data",
-      "floatchat-s1-acceptance-5f59c62f122295a7_postgres_data",
-      "floatchat-s1-acceptance-5f59c62f122295a7_redis_data"
+      "floatchat-s1-acceptance-8e8da1d40a8ba7f9_minio_data",
+      "floatchat-s1-acceptance-8e8da1d40a8ba7f9_postgres_data",
+      "floatchat-s1-acceptance-8e8da1d40a8ba7f9_redis_data"
     ]
   },
   "live_executed": false,
-  "live_request_id": "c9eaab5f-63f2-4835-aa73-20a923660968",
-  "prepared_at_utc": "2026-10-08T09:50:37.286613+00:00",
-  "project": "floatchat-s1-acceptance-5f59c62f122295a7",
-  "queue": "floatchat-s1-acceptance-5f59c62f122295a7.ingestion",
+  "live_request_id": "77a25100-8072-495c-aa08-d9fe0ef1d133",
+  "prepared_at_utc": "2026-10-08T10:59:02.321530+00:00",
+  "project": "floatchat-s1-acceptance-8e8da1d40a8ba7f9",
+  "queue": "floatchat-s1-acceptance-8e8da1d40a8ba7f9.ingestion",
   "redis_database": 13,
-  "redis_prefix": "floatchat-s1-acceptance-5f59c62f122295a7:",
+  "redis_prefix": "floatchat-s1-acceptance-8e8da1d40a8ba7f9:",
   "reference_time_utc": "2025-04-01T00:00:00Z",
-  "replay_request_id": "41aeb8cf-4c0b-48d6-99ba-b38920cfdb91",
+  "replay_request_id": "e9ba519c-0565-483e-94cb-5ce6fb4f596e",
   "runtime_proof": {
     "bucket_readback_sha256": "33109011aed2654347cf7d82a9505f20085775fe5816cb1e71ba07d8419fc9b3",
     "bucket_scoped_identity": true,
-    "denied_control_bucket": "floatchat-s1-acceptance-5f59c62f122295a7-control",
+    "denied_control_bucket": "floatchat-s1-acceptance-8e8da1d40a8ba7f9-control",
     "environment": {
-      "bucket": "floatchat-s1-acceptance-5f59c62f122295a7",
-      "compose_project": "floatchat-s1-acceptance-5f59c62f122295a7",
+      "bucket": "floatchat-s1-acceptance-8e8da1d40a8ba7f9",
+      "compose_project": "floatchat-s1-acceptance-8e8da1d40a8ba7f9",
       "disposable": true,
-      "id": "0e7337ae-1356-4f8c-8aed-18e8b3f95658",
+      "id": "b7309792-2021-47b1-8a34-a65c6ac3f697",
       "mode": "acceptance",
-      "name": "floatchat-s1-acceptance-5f59c62f122295a7",
-      "queue_namespace": "floatchat-s1-acceptance-5f59c62f122295a7.ingestion"
+      "name": "floatchat-s1-acceptance-8e8da1d40a8ba7f9",
+      "queue_namespace": "floatchat-s1-acceptance-8e8da1d40a8ba7f9.ingestion"
     },
     "identity": {
-      "database": "floatchat_s1_5f59c62f122295a7",
+      "database": "floatchat_s1_8e8da1d40a8ba7f9",
       "login": "acceptance_ingestion",
       "role": "floatchat_ingestor"
     },
     "kind": "offline_acceptance_isolation_proof",
     "live_disabled_admission_refused": true,
-    "migration": "0010_stage1_v3_runtime",
-    "queue": "floatchat-s1-acceptance-5f59c62f122295a7.ingestion",
+    "migration": "0011_set_based_publication",
+    "queue": "floatchat-s1-acceptance-8e8da1d40a8ba7f9.ingestion",
     "redis_database": 13,
-    "redis_prefix": "floatchat-s1-acceptance-5f59c62f122295a7:",
+    "redis_prefix": "floatchat-s1-acceptance-8e8da1d40a8ba7f9:",
     "run_created": false,
     "science_counts": {
       "levels": 0,
@@ -88,6 +88,6 @@
   },
   "scope": "offline preparation only; no ingestion or upstream calls",
   "services_stopped": true,
-  "session": "5f59c62f122295a7",
-  "source_sha256": "e55bfa6029bcf2e9a3761c9170f371110621e1e241afefcca836f07f01071346"
+  "session": "8e8da1d40a8ba7f9",
+  "source_sha256": "f688190ed1850f56b66dba46bd41bc77f76f8a1452eee32141c6ed41b7932b36"
 }

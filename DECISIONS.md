@@ -685,3 +685,24 @@ same pattern. Evaluating it once per level through `LATERAL` brought the commit 
 Rejected: raising the 60 s transaction bound (keeps the run row locked and the
 controller heartbeat failing), splitting on a level budget (reintroduces retained
 re-certification and refetches) and reverting to weekly slices (13x amplification).
+
+## ADR-0045 - Retry window sized to upstream slow episodes
+
+Advisor (Fable) agreed 2026-10-08. The fourth live run (session 8e8da1d40a8ba7f9) failed
+one leaf with `upstream_transport_failure`: all four `inventory_after` attempts for
+January 110E/-50S timed out at the 60 s idle read between 11:14 and 11:18 UTC
+(`reports/stage1-live-transport-8e8da1d4.json`). A bounded probe during the episode
+took 80.2 s for that month inventory; uncached month and week inventories took 1.2-1.6 s
+afterwards. The slowness was a server episode of at least 15 minutes, not request
+size, so splitting would not help. The 2/4/8 s backoff let four attempts span only
+about four minutes.
+
+Decisions: backoff maxima become 60/180/300 s with equal jitter (half the maximum plus
+a random half), a contract wording change from full jitter, so four attempts span
+about 9-16 minutes; Retry-After still wins when longer and stays capped at 300 s; four
+attempts per logical request are unchanged. The idle read becomes 110 s inside the
+unchanged 120 s attempt bound; the first-byte latency distribution during episodes is
+unmeasured, so the backoff, not this value, carries the robustness. Waits heartbeat
+every 10 s, so the 10-minute chunk lease holds. With one worker an episode now stalls
+the run instead of failing it; the 12-hour bound and the stall alarm cover that.
+Credentialed probes are not run while an acceptance run is live.

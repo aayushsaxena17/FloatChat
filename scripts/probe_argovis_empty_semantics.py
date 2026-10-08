@@ -65,7 +65,7 @@ def raw_request(
             connection.connect()
         with operation_deadline(deadline):
             assert connection.sock is not None
-            connection.sock.settimeout(20)
+            connection.sock.settimeout(115)
             connection.request(
                 "GET",
                 "/argo?" + urlencode(parameters),
