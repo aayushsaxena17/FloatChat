@@ -152,13 +152,16 @@ def verify_capacity(repository, environment, store=None):
         assert report["final_evidence_frozen"] and not report["coverage"]["proved_complete"]
         assert report["full_snapshot_balanced"] and report["run_eligible_balanced"]
         # The report lists every active object of the environment: count this slot's own, and
-        # check that the earlier component slot still holds exactly its one snapshot.
+        # check that the earlier component slot still holds its one snapshot plus any parts
+        # published after it (ADR-0046's missing_basin chunk adds one).
         mine = [row for row in report["active_partitions"] if row["logical_key"] == slot]
         earlier = [row for row in report["active_partitions"] if row["logical_key"] != slot]
         assert [row["kind"] for row in mine] == ["part"] * 5, report["active_partitions"]
-        assert [row["kind"] for row in earlier] == ["snapshot"], report["active_partitions"]
-        assert earlier[0]["logical_key"].split("/")[3] == "70:10", earlier
-        assert report["active_part_count"] == 5 and report["active_snapshot_count"] == 1
+        assert [row["kind"] for row in earlier].count("snapshot") == 1, report["active_partitions"]
+        assert {row["logical_key"].split("/")[3] for row in earlier} == {"70:10"}, earlier
+        earlier_parts = sum(row["kind"] == "part" for row in earlier)
+        assert report["active_part_count"] == 5 + earlier_parts
+        assert report["active_snapshot_count"] == 1
         assert (
             report["persisted_metrics"]["resource_counters"]["canonical_bytes"]
             < 10 * 1024**3 - 16 * 1024**2
