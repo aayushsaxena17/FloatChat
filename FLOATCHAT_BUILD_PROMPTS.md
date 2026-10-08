@@ -120,8 +120,9 @@ Scope
 3. Scaffold the layout in PRD §31 with a uv workspace (Python 3.12) and a pnpm
    workspace (web).
 4. Add infra/docker-compose.dev.yml with: PostgreSQL with PostGIS and pgvector,
-   Redis, MinIO, the API (FastAPI hello world), one Celery worker, and the web
-   app (Vite).
+   Redis, MinIO, the API (FastAPI hello world), one Celery worker (removed in
+   stage1-v4, ADR-0047: Stage 1 workers claim work from a PostgreSQL queue), and
+   the web app (Vite).
 5. API: /v1/health/live and /v1/health/ready. Ready checks the database,
    Redis and object storage.
 6. Alembic set up with an initial migration that enables the postgis and
@@ -214,9 +215,11 @@ Scope
    Process loss recovers every nonterminal phase in the same run and budgets;
    cancellation/deadline revoke authority, preserve complete chunks and fence
    late publication. overlap_skip is an admission event/no new run, manual exit 6.
-8. One UTC Beat scheduler at 02:00, live disabled by default, 14-day overlap,
-   bounded 31-day catch-up and lease/fencing protection. No destructive rolling
-   retention, orphan deletion, dashboard refresh or semantic re-embedding.
+8. One UTC scheduler at 02:00 (stage1-v4, ADR-0047: the `floatchat schedule`
+   command run by a timer replaces Celery Beat), live disabled by default,
+   14-day overlap, bounded 31-day catch-up and lease/fencing protection. No
+   destructive rolling retention, orphan deletion, dashboard refresh or semantic
+   re-embedding.
 9. Reproducible machine-readable/Markdown reports from persisted evidence:
    payload/profile/level equations, exclusions, duplicate/quarantine/revision
    outcomes (stage1-v3: S1-SOURCE-2 receipts and `excluded_source_loss` ledger, ADR-0040),
@@ -249,7 +252,9 @@ Acceptance
 - Identical captured input changes no scientific entities/level sets or active
   partition generations; run/attempt/audit rows may increase. A second live
   download is a refresh and may legitimately contain newer source revisions.
-- Stage 0 local PostgreSQL/PostGIS/pgvector, MinIO, Redis and Celery remain.
+- Stage 0 local PostgreSQL/PostGIS/pgvector, MinIO and Redis remain; stage1-v4
+  (ADR-0047) removes Celery and moves Stage 1 work to a PostgreSQL queue, and
+  Redis stays only for the API.
   Supabase/Azure/other cloud provisioning waits for deployment planning.
 - Produce the persisted-evidence gate report and stop for advisor implementation
   review (ADR-0039; formerly Astra) before Stage 2. Never claim live acceptance if credentials/data are unavailable.

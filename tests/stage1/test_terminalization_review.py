@@ -13,7 +13,14 @@ from pathlib import Path
 
 import pytest
 import test_database
-from test_database import CHUNK, ENV, MEASUREMENT, PARTITION, PROFILE, RUN, SCIENCE
+from test_database import CHUNK, ENV, PARTITION, PROFILE, RUN, SCIENCE
+
+# The 0007-era schema still carries core_measurement.canonical_level (dropped by 0013).
+MEASUREMENT = f"""
+INSERT INTO app.core_measurement(observation_month,profile_id,level_index,pressure,
+  pressure_unit,pressure_data_mode,pressure_flags,temperature_flags,salinity_flags,canonical_level)
+VALUES('2025-01-01','{PROFILE}',0,1,'dbar','R','[]','[]','[]','{{}}');
+"""
 
 disposable_postgres = test_database.postgres
 

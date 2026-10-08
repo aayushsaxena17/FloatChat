@@ -8,7 +8,7 @@ the Astra gate with advisor review, and ADR-0040 activated the
 [S1-SOURCE-2 proposal](stage1-source-policy-proposal.md) as **stage1-v3** (see §1).
 The [consolidated blocker matrix](../reports/stage1-blocker-review.json) controls
 current implementation readiness; historical preparation GO is withdrawn.
-Contract version: stage1-v3 amends stage1-v2 (§1); stage1-v2 superseded the unapproved stage1-v1 candidate. Prepared against fresh sanitized Stage 0 commit
+Contract version: stage1-v4 amends stage1-v3 (§1); stage1-v3 amends stage1-v2 (§1); stage1-v2 superseded the unapproved stage1-v1 candidate. Prepared against fresh sanitized Stage 0 commit
 `619411a` on `codex/stage-1`, in `/home/floatchat/FloatChat-stage1`.
 
 ## 1. Authority, boundary and review evidence
@@ -49,6 +49,20 @@ It is effective only for runs admitted with the stage1-v3 run policy
 (`RUN_POLICY.source_policy = "S1-SOURCE-2"`); earlier runs and their recorded 44 failures
 and 8 quarantines keep stage1-v2 unchanged. Advisor review replaces the Astra gate (ADR-0039).
 Where a rule below differs, the text marked stage1-v3 applies to stage1-v3 runs.
+
+**Amendment stage1-v4 (ADR-0047 through ADR-0053).** stage1-v4 is stage1-v3 plus a new
+execution model, verification method, catalogue model and source: the PostgreSQL work queue with
+acquire and process pools (ADR-0047), adaptive upstream concurrency (ADR-0048), the float-metadata
+cache (ADR-0049), verification by hash (ADR-0050), per-chunk publication parts (ADR-0051), the GDAC
+NetCDF source (ADR-0052) and the fast decoder, encoder and mapper (ADR-0053). Scientific rules,
+canonical bytes, content hashes, mapper rejection categories and the S1-SOURCE-2 policy are
+unchanged (ADR-0050 and ADR-0051 add object-store and database failure categories);
+`tests/stage1/test_byte_identity.py` proves this against goldens recorded at `90e1e67` (ADR-0053).
+It applies to every run executed by the stage1-v4 software; recorded stage1-v2 and stage1-v3
+runs, reports and evidence keep the meaning stated for them, and existing generations are
+snapshots (migration 0013 default). Where a rule below differs, the text marked stage1-v4 applies.
+The "Not verified" paragraphs of ADR-0047 through ADR-0052 list what has not yet run against a live
+PostgreSQL, MinIO or upstream host.
 
 ## 2. Time and environment contract
 
@@ -187,6 +201,15 @@ the documented array response represents the full requested selection: Argovis d
 not provide a transactional snapshot guarantee here. Record inventory hashes and
 this limitation; do not claim a global historical census. Syntactically valid
 data missing an inventoried ID is incomplete, not empty.
+
+stage1-v4 (ADR-0049; stage1-v3: every metadata response was requested per chunk). A
+`/argo/meta?id=` response may be served from the float-metadata cache when it was retrieved at most
+30 days before the run was actually created (no upper bound; the reference time T does not bound
+freshness). The chunk still records its own `verified_raw` attempt of origin `cache` whose manifest
+points at the cached immutable object, so reload and replay resolve it like any landing. Only role
+`metadata` is cached; fixture and replay inputs never use the cache. stage1-v4 (ADR-0052): for a run
+of source `gdac` the three selection roles are derived from the chunk's GDAC daily basin files and
+completeness is checked against the global profile index (§11) instead of an Argovis inventory.
 
 The selected endpoint has no documented pagination parameter. Unexpected pagination,
 continuation or truncation indicators fail closed; a missing page in a later supported
@@ -490,6 +513,15 @@ retained outside a later run's eligibility window, not just the chunk's eligible
 Only superseded profile revisions/obsolete levels are excluded as "older scientific state";
 old observation dates are retained until separately authorized lifecycle action.
 
+stage1-v4 (ADR-0051; stage1-v3: the generation definition above). A chunk publishes one Parquet
+*part* per changed slot containing only the chunk's accepted profiles; the retained population is not
+read back. The catalogue state of a slot is its membership manifest together with its active parts and
+at most one active *snapshot* that hold the manifest's rows. Generations are numbered per slot for
+parts and snapshots and need not equal the slot version. A part may still contain rows of profiles
+later replaced or moved out of the slot; the manifest, not the part, defines membership, and a
+compaction merges a slot's active parts into one snapshot and supersedes them in one transaction.
+Existing generations are snapshots.
+
 Persist two distinct coverage records in the chunk's publication transaction:
 - Fetch receipts: exact requested interval/tile, inventories/raw hashes, run T and upstream
   disposition (profiles_returned, verified_empty_fetch or source_absence_over_retained).
@@ -523,7 +555,7 @@ For a level-bearing Parquet file row_count means measurement levels and profile_
 means distinct profile identities. No zero-level profiles publish.
 
 Object keys are generated only from validated UUIDs and lowercase 64-hex SHA-256 values
-under fixed configured prefixes. Raw final keys are raw/sha256/<sha256>.json; quarantine
+under fixed configured prefixes. Raw final keys are raw/sha256/<sha256>.json (stage1-v4, ADR-0050/ADR-0052: or .nc for a GDAC NetCDF file); quarantine
 refers to those same sanitized immutable blobs through opaque manifests.
 Region labels, source URLs and CLI text never become
 path components. Reject traversal, absolute keys, embedded slashes in identifiers and
@@ -538,6 +570,18 @@ Publication steps:
 5. Copy/publish to `normalised/sha256/<sha256>.parquet` using create-if-absent semantics.
    Re-read the final object and repeat verification. An existing key is reusable only
    if its verified bytes match; never overwrite different bytes at an immutable key.
+   stage1-v4 (ADR-0050; stage1-v3: steps 3-5 as written) replaces steps 3-5 for normalised and raw
+   objects. 3. Write each candidate part once to a local file and verify it there by Arrow equality
+   (`arrow-equality-v4`): exact schema, level/profile counts, identity order and uniqueness, bounds,
+   each profile hash recomputed from the stored header and canonical level text, and equality with
+   the rows written; this yields a certificate for the file's SHA-256 and byte length. 4. Publish to
+   `normalised/sha256/<sha256>.parquet` with one conditional create-if-absent PUT carrying a
+   server-verified SHA-256 checksum; no `tmp/` object is written. 5. `stat` the final object: its
+   byte length, and its SHA-256 when the store returns one, must equal the certified values. An
+   existing key is reusable only if its stored checksum (or, when none was stored, the SHA-256 of a
+   full read-back) matches; never overwrite different bytes. The per-row numeric re-derivation and
+   `level_index` checks of the former first verification run only in the audit mode, which re-decodes
+   the file row by row and reads the stored object back; this contract does not set its cadence.
 6. Start one PostgreSQL transaction; lock affected profile identities and partition
    slots in deterministic order, validate publication lease/fencing token and recheck
    revisions/base generations and the open run's control epoch/cancellation/deadline.
@@ -547,7 +591,12 @@ Publication steps:
    sets, enforce window/month/FK constraints, persist validation/catalogue evidence,
    activate all changed generations, supersede their prior generations, record outcome
    totals and mark the chunk complete. Commit once. A transaction failure publishes
-   no scientific change, active catalogue change or chunk completion.
+   no scientific change, active catalogue change or chunk completion. stage1-v4 (ADR-0051): levels
+   are inserted set-based from a fenced staging table filled by binary COPY and stored as the
+   staged values (the per-level comparison with the canonical text is the sampled audit
+   `app.audit_levels`, not part of the commit); each changed slot's part is activated and its
+   membership manifest edited incrementally and checked against the stored population; a prior
+   generation is superseded only when the slot's manifest becomes empty or by compaction.
 8. Mark the publication intent committed in that transaction as well; optional temp
    reconciliation afterward must not determine success.
 
@@ -562,7 +611,11 @@ Raw verification, final read-back, database fencing and atomic commit are unchan
 Corruption, mismatched evidence, expiry and fresh-certificate charging tests are
 required. Bounded per-level encoding may reduce CPU overhead only with identical
 canonical bytes/hashes and budget boundary behavior. This is an implementation
-optimization, not a source or resource waiver; N08 remains binding.
+optimization, not a source or resource waiver; N08 remains binding. stage1-v4 (ADR-0050, ADR-0053;
+stage1-v3: certificate seeded from a separate full verification, conservative encoding preflight):
+the certificate is issued by the writer for the file it verified, and per-level encoding is
+encode-then-check: a level is C-encoded in full and streamed only when it exceeds the remaining
+allowance, with identical bytes, hashes and boundary charging.
 
 Unchanged partitions keep their generation IDs and objects. A stale replay never
 creates an active snapshot of stale data. Empty refreshes and accepted ownership changes
@@ -624,6 +677,12 @@ a missing/corrupt object or expired verification budget yields an unavailable/ga
 result, never a stale substitute. Cap a selector call at 600 seconds and 10 GiB read;
 large calls return an explicit budget gap and can be verified in smaller internal
 slices. This correctness proof does not claim Stage 2 query latency.
+stage1-v4 (ADR-0051; stage1-v3: one active record per slot): a slot may have several active
+records, parts and at most one snapshot. The selector returns every active part and the snapshot
+of a selected slot together with the slot's membership manifest, and rechecks each object as above;
+one missing or unreadable object makes the whole slot a gap. A reader keeps a row of a part or
+snapshot only if its (profile_id, profile_hash) is in the manifest; when the same pair is in two
+objects the rows are identical and one is kept.
 It does not implement SQL/DuckDB queries or a public API. Quarantined/failed chunk evidence never manufactures a partition; empty-fetch evidence
 has exactly the three selector outcomes above and cannot erase retained science. Completed no-op chunks may reference
 existing active generations.
@@ -717,13 +776,26 @@ the same unfinished run with a higher control_epoch and scope fencing token, inv
 old chunk authority and dispatches bounded resumptions. This adopts the existing run,
 T, plan and counters; it creates no fresh run/budget. A worker lease expiry while the
 controller lives is recovered by that controller. The supervisor performs no upstream
-work itself and does not add another HTTP/Celery retry owner.
+work itself and does not add another HTTP/Celery retry owner (stage1-v4, ADR-0047: there is no
+Celery; the queue is PostgreSQL).
 
 At most 4 controller claims and 4 processing claims per chunk, including the initial
 claims, and 4 publication attempts per chunk are permitted. Normal phase progress under
 one claim consumes no extra claim; worker/controller takeovers do. All logical HTTP
 attempt counters persist across claims. If a takeover budget is exhausted, fenced
 finalization fails unfinished chunks with recovery_budget_exhausted.
+
+stage1-v4 (ADR-0047; stage1-v3: the controller dispatched one worker task per chunk). Work is
+distributed through PostgreSQL queue tickets of kind `acquire` or `process`. After the acquire
+worker lands a chunk (`landed`) it creates the `process` ticket under the same control epoch and
+fence, so the hand-over is normal phase progress and consumes no extra claim. A recovery claim
+issues the ticket of the chunk's phase: `acquire` for planned and fetching chunks, `process` for
+landed, validating and publishing chunks. Every controller tick renews the lease of a nonterminal
+chunk whose newest ticket has not been started, so waiting for a worker spends no claim; a lease
+that lapses (dead worker, controller outage) still costs the budgeted claim, and a worker that
+dies after starting is recovered as before. A claimed ticket that was never started is handed out
+again after two minutes, and `started` admits exactly one executor. If no worker consumes a queue,
+its waiting chunks stay leased until the run's work deadline or cancellation.
 
 | Nonterminal phase at loss | Controller-authorized recovery while run remains open |
 |---|---|
@@ -815,6 +887,12 @@ performed, including certification again after recovery/new spool and full objec
 read-back reconstruction. The certification cache is process-local and bounded to
 100,000 retained plus 2,000 incoming distinct documents; do not export a cache waiver,
 skip object verification or exempt newly produced canonical output from the cap.
+stage1-v4 (ADR-0051; stage1-v3: as stated above): candidate canonical bytes are produced by the
+mapper in the same process and held in memory for the chunk; they are reused without a round-trip
+certification and the certification cache above no longer exists, because the retained population
+is not read back. The profile hash is computed once at encoding and each Parquet part is verified
+against the stored profile hashes (ADR-0050). Every conversion actually performed is still
+charged; recovery or a new process encodes again.
 
 Limits are explicit upper bounds for stage1-v3 (stage1-v2 limits except the run canonical
 cap, ADR-0041); configuration may reduce but cannot raise them without a reviewed contract
@@ -825,19 +903,19 @@ version. MiB/GiB are binary units.
 | Compressed/raw HTTP body | 16 MiB per response, streaming enforced even without Content-Length. |
 | Decompressed JSON body | 128 MiB per response; incremental decompression stops at bound. |
 | JSON structure | Depth 32; individual string 64 KiB; unknown complex structures quarantine. |
-| Numeric/canonical output | Numeric token <=128 ASCII bytes; written exponent magnitude <=400; normalized numeric text <=512 bytes; canonical profile/chunk/run <=16 MiB/256 MiB/40 GiB (stage1-v2: 10 GiB; ADR-0041) including repeated work. Preflight length before expansion; violations quarantine. |
+| Numeric/canonical output | Numeric token <=128 ASCII bytes; written exponent magnitude <=400; normalized numeric text <=512 bytes; canonical profile/chunk/run <=16 MiB/256 MiB/40 GiB (stage1-v2: 10 GiB; ADR-0041) including repeated work. Preflight length before expansion (stage1-v4, ADR-0053: computed arithmetically from the digits and exponent, and implied by the 128-byte token bound when there is no exponent; same categories and precedence); violations quarantine. |
 | Profile documents | 2,000 per chunk and 100,000 unique accepted profiles per run. |
 | Levels | 10,000 per profile, 2,000,000 per chunk and 100,000,000 accepted levels per run. |
 | Plan/chunks | Initial time slices: whole UTC calendar months clipped to the request in plan v2 (stage1-v3, ADR-0041; stage1-v2 <=7 days split at months), 10-degree tiles; at most 16,384 total persisted plan slots including split parents. Split down to 1 hour and 1-degree tiles, then fail if still too large. |
-| Requests/data | 50,000 HTTP attempts per run including retries and metadata; 10 GiB cumulative raw received bytes including unsuccessful attempts. |
-| Concurrency/memory | At most 2 active chunk workers per environment and 1 credentialed upstream request in flight; 1 GiB memory per worker, streaming/spill before bulk staging. stage1-v3 compliance (ADR-0042): worker cgroup `memory.max` = 1 GiB enforced, zero `oom`/`oom_kill` events and pipeline anonymous RSS peak <1 GiB; page-cache-inclusive `memory.peak` is recorded, not the pass criterion. |
+| Requests/data | 50,000 HTTP attempts per run including retries and metadata; 10 GiB cumulative raw received bytes including unsuccessful attempts. stage1-v4 (ADR-0049; stage1-v3: every metadata request was an HTTP attempt): a metadata response served from the float-metadata cache is a recorded attempt of origin `cache` and counts toward the 50,000 HTTP attempts only when a request is actually made. |
+| Concurrency/memory | At most 2 active chunk workers per environment and 1 credentialed upstream request in flight (stage1-v4: at most `ingestion_environment.max_active_chunks` active chunks, default 8, counting landed chunks waiting for the process pool, ADR-0047; at most N credentialed requests in flight, N = acquire slots <= `ingestion_environment.upstream_slots`, default 4, each holding one advisory-lock slot, N halved on HTTP 429 and restored one per 20 consecutive non-429 completions, ADR-0048; stage1-v3: 2 and 1); 1 GiB memory per worker, streaming/spill before bulk staging. stage1-v3 compliance (ADR-0042): worker cgroup `memory.max` = 1 GiB enforced, zero `oom`/`oom_kill` events and pipeline anonymous RSS peak <1 GiB; page-cache-inclusive `memory.peak` is recorded, not the pass criterion. stage1-v4 (ADR-0047): each process worker is bounded to 1 GiB by a cgroup `memory.max` of at most 1 GiB or by `RLIMIT_DATA` (configuration may only lower it); for the acquire plus process topology the report requires zero `oom`/`oom_kill` and an anonymous peak below `memory.max` in every sampled container, with `memory.max` exactly 1 GiB for acquire containers and finite for the process container. |
 | Wall time | Default 6 hours, hard maximum 12 hours (stage1-v3, ADR-0043; stage1-v2: 6 hours) from actual run creation, including queue/waits/retries/recovery; frozen reduced limits must exceed 60s. D_work = D minus 60s; final 60s reserved for fenced terminal evidence. |
-| I/O deadlines | DNS/connect/TLS <=10 s, idle read <=110 s (stage1-v3, ADR-0043/0045; stage1-v2: 20 s), whole HTTP attempt <=120 s; object operation <=120 s; DB lock wait <=5 s and transaction <=60 s, each capped by remaining run budget. |
-| Retry/recovery | <=4 HTTP attempts per logical request, <=4 controller claims per run, <=4 processing claims per chunk and <=4 publication attempts per chunk, all including the initial claim/attempt and persisted across deliveries. |
+| I/O deadlines | DNS/connect/TLS <=10 s, idle read <=110 s (stage1-v3, ADR-0043/0045; stage1-v2: 20 s), whole HTTP attempt <=120 s; object operation <=120 s; DB lock wait <=5 s and transaction <=60 s, each capped by remaining run budget. stage1-v4 (ADR-0048; stage1-v3: enforced by a POSIX alarm): the same bounds are enforced with socket timeouts and monotonic checks usable from any thread; DNS resolution and a single blocking read are checked only after they return, and object operations rely on client timeouts plus checks between 64 KiB parts. |
+| Retry/recovery | <=4 HTTP attempts per logical request, <=4 controller claims per run, <=4 processing claims per chunk and <=4 publication attempts per chunk, all including the initial claim/attempt and persisted across deliveries. stage1-v4 (ADR-0047): waiting in a queue spends no claim, because the controller renews the lease of a chunk whose ticket has not started; a lapsed lease still costs the budgeted claim. |
 
 The durable ingestion controller is the only retry owner. HTTP library automatic
 retries and Celery autoretry are disabled. Celery carries only opaque run/chunk IDs;
-redelivery consults durable attempts and lease state and adds no fresh budget. Timeouts,
+redelivery consults durable attempts and lease state and adds no fresh budget (stage1-v4, ADR-0047/0048: there is no Celery; PostgreSQL queue tickets carry only opaque run/chunk IDs, a re-claimed ticket consults durable attempts and lease state, and the in-process upstream governor is pacing, not a retry owner). Timeouts,
 connection faults, 408, 429 and 5xx may retry with equal jitter over maxima 60,180,300
 seconds (stage1-v3, ADR-0045; stage1-v2: full jitter over 2,4,8 seconds); Retry-After
 replaces that delay if longer, bounded to 300 seconds and
@@ -864,10 +942,18 @@ Disable automatic redirects; Stage 1 rejects all redirects and forwards no crede
 to a Location target. Parse and validate destinations for diagnostics without following
 them; a same-host redirect requires a later explicit adapter change. Never trust suffix
 matches such as argovis-api.colorado.edu.attacker.example.
+stage1-v4 (ADR-0052; stage1-v3: Argovis only): runs of source `gdac` additionally allow exact
+hostname `data-argo.ifremer.fr` on port 443, only for the global profile index, a
+`geo/indian_ocean/<yyyy>/<mm>/` directory listing and `geo/indian_ocean/<yyyy>/<mm>/<yyyymmdd>_prof.nc`
+daily files, with the same address validation, address pinning, TLS hostname check and rejection of
+redirects. The Argovis credential is never sent to it and no other host is allowed.
 
 ## 10. Scheduling, catch-up and lifecycle boundary
 
-Future Stage 1 defines one Celery Beat scheduler per environment, UTC, daily at 02:00.
+Future Stage 1 defines one Celery Beat scheduler per environment, UTC, daily at 02:00
+(stage1-v4, ADR-0047: `floatchat schedule`, started by cron or a systemd timer, replaces Celery Beat;
+each invocation performs one UTC-daily admission serialized by an advisory lock, and the timer
+configuration carries the 02:00 time).
 Live ingestion is disabled by default via `FLOATCHAT_LIVE_INGESTION_ENABLED=false`;
 both scheduler enqueue and worker execution check the flag. A manual live acceptance
 command additionally requires an explicit opt-in and owner-provided Argovis credential.
@@ -959,6 +1045,19 @@ establish regional completeness, authentic descending/core-null parser evidence,
 error wire mapping, or full Stage 1 acceptance. GO for isolated acceptance preparation is
 a separate bounded gate decision; it is not preparation/execution or Stage 2 permission.
 
+GDAC source fixtures (stage1-v4, ADR-0052; stage1-v3: Argovis fixtures only).
+`tests/fixtures/gdac/` holds two unmodified GDAC daily basin files (`20250115_prof.nc`,
+`20250214_prof.nc`), a Jan-Mar 2025 Indian Ocean excerpt of the global profile index and
+`manifest.json` with URL, SHA-256, byte length, retrieval time and the attribution "Argo (2000).
+Argo float data and metadata from Global Data Assembly Centre (Argo GDAC). SEANOE.
+https://doi.org/10.17882/42182". They are verbatim GDAC files, not Argovis responses, and prove
+only `gdac-core-v1` parsing, canonicalization and index completeness for those days and tiles. The
+daily files are regenerated upstream, so a re-fetch yields different bytes; the committed bytes and
+recorded hashes are the baseline. GDAC raw evidence is the NetCDF object
+`raw/sha256/<sha256>.nc` plus a landing manifest naming the derived files. GDAC profiles are a
+separate source population (logical keys `gdac/core/...`) and are reconciled separately from
+Argovis profiles.
+
 Captured-input `--replay-run` requires a closed complete predecessor in the same environment,
 mode, interval, geometry and policy/source versions. Clone its entire validated immutable
 split tree with fresh chunk IDs and durable one-to-one predecessor bindings: retain failed
@@ -985,7 +1084,8 @@ Reconcile three different units; never equate payloads, profiles and measurement
   HTTP failure, transport failure, size limit, interrupted). Persist `http_failure` with
   numeric status and safe reason before the single retry owner decides retry/termination;
   schema permits precisely these application dispositions. Verified raw payloads link SHA-256,
-  bytes, schema result and inventory/content role; identical blobs may serve many attempts.
+  bytes, schema result and inventory/content role; identical blobs may serve many attempts
+  (stage1-v4: attempt origins are http, captured, replay, cache (ADR-0049) and gdac (ADR-0052)).
 - Profile occurrences: received = outside-time/region/core-scope + overlap/identical
   duplicates + structurally quarantined + eligible unique candidates. Eligible candidates
   are classified insert/newer/no-op/stale/conflict; conflict moves the chunk to quarantine,
@@ -1001,7 +1101,8 @@ Reconcile three different units; never equate payloads, profiles and measurement
 Reconcile two explicitly named populations at the same committed publication snapshot:
 1. Full stored-snapshot reconciliation: compare all currently accepted stored PostgreSQL
    profile/level identities in the logical month/tile to the entire active Parquet
-   generation's identities/canonical manifests, including retained out-of-window
+   generation's identities/canonical manifests (stage1-v4, ADR-0051: the slot's active parts and
+   snapshot filtered by its membership manifest), including retained out-of-window
    observations. Both sides exclude superseded profile revisions, not old dates.
    Capture the PostgreSQL membership/hash manifest at publication commit; later reports
    compare that immutable manifest to the matching generation, not a different live DB
