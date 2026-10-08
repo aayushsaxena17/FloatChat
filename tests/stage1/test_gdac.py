@@ -1594,9 +1594,9 @@ def test_migration_0014_relaxes_exactly_the_source_checks():
         "(source = 'gdac' AND mapping_version = 'gdac-core-v1')",
         "[0-9a-f]{64}\\.(json|nc)$",
         "|| '.nc'",
-        "CHECK (origin IN ('http','captured','replay','gdac'))",
+        "CHECK (origin IN ('http','captured','replay','cache','gdac'))",
         "CHECK (kind IN ('live','captured','replay','gdac'))",
-        "p_origin NOT IN ('captured','replay','gdac')",
+        "p_origin NOT IN ('captured','replay','cache','gdac')",
         "'gdac/core/'",
         "'/indian-ocean-v1/gdac-core-v1/scientific-json-v2'",
     ):
