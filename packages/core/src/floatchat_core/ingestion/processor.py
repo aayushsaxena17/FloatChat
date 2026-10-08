@@ -292,9 +292,23 @@ class Processor:
                 spool.add(value, uuid.UUID(self.raw_ids["profile"]), index)
 
     def execute(self) -> str:
+        """Serial path: land, then process, in one worker (stage1-v3 behaviour)."""
+        state = self.land()
+        if state != "landed":
+            return state
+        return self.process()
+
+    def land(self) -> str:
+        """Fetch, verify the selection triple and resolve metadata up to `landed`.
+
+        Returns the chunk state reached: "landed" (ready for process()), a terminal
+        state, or "split_replaced". Chunks already past landing return "landed".
+        """
         row = self.repository.chunk(self.authority.chunk)
         if row["state"] in TERMINAL:
             return str(row["state"])
+        if row["state"] in ("landed", "validating", "publishing"):
+            return "landed"
         try:
             self.pulse()
             if row["state"] == "planned":
@@ -327,40 +341,62 @@ class Processor:
             phase = self.repository.chunk(self.authority.chunk)["state"]
             if phase == "fetching":
                 self.repository.transition(self.authority, "landed", "complete_verified_landing")
-                phase = "landed"
-            if phase == "landed":
+            return "landed"
+        except Rejection as error:
+            return self.terminal(error)
+
+    def process(self) -> str:
+        """Validate, map and publish a landed chunk (validating -> complete)."""
+        row = self.repository.chunk(self.authority.chunk)
+        if row["state"] in TERMINAL:
+            return str(row["state"])
+        try:
+            self.pulse()
+            if row["state"] == "landed":
                 self.repository.transition(self.authority, "validating", "mapping_started")
+            if not self.raw_paths:
+                self.reload_landing()
             return self.publish()
         except Rejection as error:
-            if error.category in ("publication_fenced", "run_fenced", "work_deadline"):
-                raise
-            self.accounting()
-            if error.category in SPLITTABLE:
-                try:
-                    self.repository.split(self.authority)
-                    return "split_replaced"
-                except Rejection:
-                    self.repository.transition(self.authority, "failed", "minimum_chunk_exceeded")
-                    return "failed"
-            state = "failed" if error.category in FAILURES else "quarantined"
-            self.repository.transition(
-                self.authority,
-                state,
-                error.category,
-                {
-                    **(
-                        {"resource_limit": error.resource_evidence}
-                        if error.resource_evidence
-                        else {}
-                    ),
-                    "conflicts": [
-                        outcome["evidence"]
-                        for outcome in self.outcomes
-                        if outcome["outcome"] == "revision_conflict"
-                    ],
-                },
+            return self.terminal(error)
+
+    def reload_landing(self) -> None:
+        """Recover the verified landing of this chunk without any upstream request."""
+        for role in ("inventory_before", "profile", "inventory_after"):
+            self.raw_paths[role] = self.landing(
+                "/argo", request_parameters(self.plan, inventory=role != "profile"), role
             )
-            return state
+        self.inventory_verified = True
+        for document in documents(self.raw_paths["profile"].read_bytes()):
+            self.metadata(document)
+
+    def terminal(self, error: Rejection) -> str:
+        """Record a rejection as split/failed/quarantined; fencing errors propagate."""
+        if error.category in ("publication_fenced", "run_fenced", "work_deadline"):
+            raise error
+        self.accounting()
+        if error.category in SPLITTABLE:
+            try:
+                self.repository.split(self.authority)
+                return "split_replaced"
+            except Rejection:
+                self.repository.transition(self.authority, "failed", "minimum_chunk_exceeded")
+                return "failed"
+        state = "failed" if error.category in FAILURES else "quarantined"
+        self.repository.transition(
+            self.authority,
+            state,
+            error.category,
+            {
+                **({"resource_limit": error.resource_evidence} if error.resource_evidence else {}),
+                "conflicts": [
+                    outcome["evidence"]
+                    for outcome in self.outcomes
+                    if outcome["outcome"] == "revision_conflict"
+                ],
+            },
+        )
+        return state
 
     def publish(self) -> str:
         # Rebuilds/recovery use the same raw landing, original T and persisted budgets.

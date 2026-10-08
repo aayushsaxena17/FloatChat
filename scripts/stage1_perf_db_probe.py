@@ -97,8 +97,7 @@ def migrate(url):
             "CREATE ROLE floatchat_app NOLOGIN; "
             "ALTER DEFAULT PRIVILEGES IN SCHEMA app GRANT ALL ON TABLES TO floatchat_app;",
         )
-        for number in range(2, 12):
-            file = next((ROOT / "infra/migrations/versions").glob(f"{number:04d}_*.sql"))
+        for file in sorted((ROOT / "infra/migrations/versions").glob("*.sql")):
             sql(connection, file.read_text())
         sql(
             connection,

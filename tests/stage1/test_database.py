@@ -374,16 +374,8 @@ def postgres():
             "CREATE ROLE floatchat_app NOLOGIN; "
             "ALTER DEFAULT PRIVILEGES IN SCHEMA app GRANT ALL ON TABLES TO floatchat_app;"
         )
-        execute((ROOT / "infra/migrations/versions/0002_ingestion_foundation.sql").read_text())
-        execute((ROOT / "infra/migrations/versions/0003_ingestion_control.sql").read_text())
-        execute((ROOT / "infra/migrations/versions/0004_scientific_publication.sql").read_text())
-        execute((ROOT / "infra/migrations/versions/0005_ingestion_admission.sql").read_text())
-        execute((ROOT / "infra/migrations/versions/0006_ingestion_runtime.sql").read_text())
-        execute((ROOT / "infra/migrations/versions/0007_http_replay.sql").read_text())
-        execute((ROOT / "infra/migrations/versions/0008_resource_evidence.sql").read_text())
-        execute((ROOT / "infra/migrations/versions/0009_stage1_v3.sql").read_text())
-        execute((ROOT / "infra/migrations/versions/0010_stage1_v3_runtime.sql").read_text())
-        execute((ROOT / "infra/migrations/versions/0011_set_based_publication.sql").read_text())
+        for migration in sorted((ROOT / "infra/migrations/versions").glob("*.sql")):
+            execute(migration.read_text())
         execute(SEED)
         execute.container_name = name
         yield execute
