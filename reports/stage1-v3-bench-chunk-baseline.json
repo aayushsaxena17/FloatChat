@@ -1,0 +1,106 @@
+{
+  "kind": "stage1_offline_chunk_cpu_profile",
+  "scope": "Synthetic clone of authentic 1901094_109 core profile; CPU stages only, no HTTP/MinIO/PostgreSQL; multiplicities read from code at e1ba4f0",
+  "basis": "tests/fixtures/argovis/recorded/6a8ffa52f6db4954b974c449e68c54bc",
+  "basis_label": "core6",
+  "profiles": 87,
+  "levels_per_profile": 699,
+  "raw_profile_payload_bytes": 1815778,
+  "raw_inventory_payload_bytes": 55768,
+  "python": "3.12.12",
+  "canonical_bytes_per_profile": 854393,
+  "canonical_bytes_per_level": 1222,
+  "canonical_bytes_chunk": 74332191,
+  "parquet_bytes": 4107573,
+  "parquet_rows": 60813,
+  "staging_ndjson_bytes": 143764696,
+  "stages": {
+    "sanitize_raw(profile payload)": {
+      "wall_s": 2.329,
+      "cpu_s": 2.336
+    },
+    "validate_raw(profile payload) x1": {
+      "wall_s": 2.05,
+      "cpu_s": 2.019
+    },
+    "sanitize_raw(inventory payload)": {
+      "wall_s": 0.024,
+      "cpu_s": 0.024
+    },
+    "validate_raw(inventory payload) x1": {
+      "wall_s": 0.011,
+      "cpu_s": 0.011
+    },
+    "sha256(profile payload)": {
+      "wall_s": 0.001,
+      "cpu_s": 0.001
+    },
+    "documents() decode profile payload x1": {
+      "wall_s": 2.301,
+      "cpu_s": 2.294
+    },
+    "documents() decode inventory payload x1": {
+      "wall_s": 0.011,
+      "cpu_s": 0.011
+    },
+    "map_profile + budget.encode (all profiles)": {
+      "wall_s": 9.963,
+      "cpu_s": 9.887
+    },
+    "spool.add (all)": {
+      "wall_s": 0.484,
+      "cpu_s": 0.482
+    },
+    "spool.prepare (restore+certify, no DB)": {
+      "wall_s": 4.852,
+      "cpu_s": 4.826
+    },
+    "spool.membership(slot)": {
+      "wall_s": 1.863,
+      "cpu_s": 1.83
+    },
+    "spool.profiles(slot) re-read (receipts pass)": {
+      "wall_s": 2.359,
+      "cpu_s": 2.344
+    },
+    "write_snapshot (write+verify+storage_comparison)": {
+      "wall_s": 17.691,
+      "cpu_s": 17.629
+    },
+    "  write_snapshot: verify_snapshot (local read-back)": {
+      "wall_s": 10.854
+    },
+    "  write_snapshot: storage_comparison (to_pandas)": {
+      "wall_s": 0.314
+    },
+    "  write_snapshot: writer loop (rows+ipc spill+parquet)": {
+      "wall_s": 6.523
+    },
+    "sha256(parquet file)": {
+      "wall_s": 0.009,
+      "cpu_s": 0.009
+    },
+    "publish_verified (certificate full verify + 2 light verifies; memory store)": {
+      "wall_s": 9.828,
+      "cpu_s": 9.659
+    },
+    "spool.write_candidates (NDJSON for COPY)": {
+      "wall_s": 4.449,
+      "cpu_s": 4.42
+    }
+  },
+  "sum_measured_wall_s": 58.225,
+  "multiplicity_per_chunk_from_code": {
+    "profile payload sanitize_raw": 1,
+    "profile payload validate_raw (publish_verified: payload, temporary, final)": 3,
+    "profile payload documents() decode in processor (inventory_accounting x2, inventory, metadata loop, map)": 5,
+    "canonical encode per profile (map, spool certify, verify_snapshot in write_snapshot, certificate first payload)": 4,
+    "parquet full read-back (write_snapshot verify, certificate first call)": 2,
+    "parquet light read (certificate temporary+final)": 2,
+    "spool.profiles(slot) restores (membership, write_snapshot, receipts)": 3
+  },
+  "max_rss_mib": 683.0,
+  "cprofile_top": {},
+  "finished_at_utc": "2026-10-08T14:21:00.632525+00:00",
+  "git_head": "272508b88de486c3d15a841360f095fc403098a2"
+}

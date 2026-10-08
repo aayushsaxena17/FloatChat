@@ -1,9 +1,15 @@
-"""Disposable PostgreSQL timings for one chunk's staging COPY, commit and retained read.
+"""Disposable PostgreSQL timings for one chunk's staging COPY, commit and next-chunk reads.
 
 Starts exactly one memory-limited container from the locally cached foundation
 image on a loopback-only random port, applies the migration SQL like
 tests/stage1/test_database.py, commits labelled synthetic chunks and removes the
 container. No upstream, MinIO or shared service is touched.
+
+Runs the stage1-v4 publication path: ProfileSpool.prepare over the two batched reads, one
+Parquet part for the changed slot, stage_candidates (slim COPY) then stage_levels (binary
+COPY), and commit_publication v4. After the commit it times what the next chunk touching the
+slot reads (identities_batch, science_hashes, slot_state with counts), which replaced the
+retained-population read-back.
 """
 
 import argparse
@@ -24,9 +30,10 @@ from floatchat_core.ingestion.argovis import map_profile  # noqa: E402
 from floatchat_core.ingestion.json_stream import documents  # noqa: E402
 from floatchat_core.ingestion.numeric import CanonicalBudget, decode_json  # noqa: E402
 from floatchat_core.ingestion.parquet import write_snapshot  # noqa: E402
+from floatchat_core.ingestion.planning import Interval, PlannedChunk, Tile  # noqa: E402
 from floatchat_core.ingestion.repository import Authority, Repository  # noqa: E402
 from floatchat_core.ingestion.spool import ProfileSpool  # noqa: E402
-from floatchat_core.ingestion.workflow import owner_slot  # noqa: E402
+from floatchat_core.ingestion.workflow import evidence_json, owner_slot  # noqa: E402
 from stage1_perf_profile import synthetic_chunk  # noqa: E402
 
 ENV = "00000000-0000-4000-8000-000000000003"
@@ -155,16 +162,14 @@ def scenario(url, work, profiles_count, levels, west, south, label, offset):
     budget = CanonicalBudget()
     docs = list(documents(payload))
     profiles = [map_profile(doc, meta_map, budget) for doc in docs]
-    spool = ProfileSpool(work / (uuid.uuid4().hex + ".sqlite"))
+    spool = ProfileSpool()
     for index, profile in enumerate(profiles):
         spool.add(profile, raw_id, index)
-    # Identity lookups are one read-only query per profile against the live schema.
+    # Two batched read-only queries against the live schema: identities, then stored hashes.
     timed(
         stages,
-        "spool.prepare with repository.identities per profile",
-        lambda: spool.prepare(
-            lambda p: (), identity_lookup=repository.identities, load_science=None
-        ),
+        "spool.prepare with repository.identities_batch + science_hashes",
+        lambda: spool.prepare(repository.identities_batch, repository.science_hashes),
     )
     slot = owner_slot(profiles[0])
     del profiles, docs
@@ -175,15 +180,16 @@ def scenario(url, work, profiles_count, levels, west, south, label, offset):
     )
     timed(stages, "heartbeat x20", lambda: [repository.heartbeat(authority) for _ in range(20)])
     repository.transition(authority, "publishing", "probe")
-    repository.ensure_slot(
-        authority,
-        datetime(2025, 1, 1, tzinfo=UTC),
-        __import__("floatchat_core.ingestion.planning", fromlist=["Tile"]).Tile(west, south),
+    repository.ensure_slot(authority, datetime(2025, 1, 1, tzinfo=UTC), Tile(west, south))
+    piece = PlannedChunk(
+        Interval(datetime(2025, 1, 1, tzinfo=UTC), datetime(2025, 2, 1, tzinfo=UTC)),
+        Tile(west, south),
     )
-    with repository.retained_snapshot(authority, (slot,), budget_repository) as (bases, rows):
-        retained = timed(
-            stages, "retained_snapshot read (before commit; expect 0 rows)", lambda: list(rows)
-        )
+    bases = timed(
+        stages,
+        "slot_state (publication base)",
+        lambda: {slot: repository.slot_state(authority, [slot], piece)[slot].version},
+    )
     file = work / (uuid.uuid4().hex + ".parquet")
     verified = write_snapshot(file, spool.profiles(slot), deadline=time.monotonic() + 3600)
     membership = spool.membership(slot)
@@ -193,6 +199,7 @@ def scenario(url, work, profiles_count, levels, west, south, label, offset):
         {
             "id": str(uuid.uuid4()),
             "logical_key": slot,
+            "kind": "part",
             "base_version": bases[slot],
             "membership_manifest": membership,
             "object_key": key,
@@ -201,7 +208,7 @@ def scenario(url, work, profiles_count, levels, west, south, label, offset):
             "row_count": verified["rows"],
             "profile_count": verified["profiles"],
             "schema_sha256": verified["schema_sha256"],
-            "verification_evidence": verified,
+            "verification_evidence": evidence_json(verified),
             "verified_at": datetime.now(UTC).isoformat(),
         }
     ]
@@ -219,14 +226,27 @@ def scenario(url, work, profiles_count, levels, west, south, label, offset):
         "prepare_intent",
         lambda: repository.prepare_intent(authority, intent_id, [key], bases, {}),
     )
-    staged = work / (uuid.uuid4().hex + ".ndjson")
-    timed(stages, "spool.write_candidates", lambda: spool.write_candidates(staged))
+    # candidates() is a generator: the staged JSON size is measured from a separate pass,
+    # outside the timed COPY stages.
     timed(
         stages,
-        "stage_file COPY to ingestion_staging",
-        lambda: repository.stage_file(authority, staged),
+        "stage_candidates COPY",
+        lambda: repository.stage_candidates(authority, spool.candidates()),
+    )
+    timed(
+        stages,
+        "stage_levels COPY",
+        lambda: repository.stage_levels(authority, spool.level_tables()),
+    )
+    stages["stage_candidates + stage_levels COPY"] = round(
+        stages["stage_candidates COPY"] + stages["stage_levels COPY"], 3
+    )
+    staging_json_bytes = sum(
+        len(json.dumps(candidate, allow_nan=False)) for candidate in spool.candidates()
     )
     outcome = None
+    hashes: dict = {}
+    stored_members = None
     try:
         timed(
             stages,
@@ -250,8 +270,9 @@ def scenario(url, work, profiles_count, levels, west, south, label, offset):
         )[0]
     print(json.dumps(stages, indent=1), flush=True)
     if outcome == "complete":
-        # The next chunk touching this slot must read every retained profile back;
-        # a fresh claimed chunk stands in for it (the completed chunk is fenced).
+        # The next chunk touching this slot reads the stored identities and hashes of the
+        # profiles it re-delivers and the slot's counts; a fresh claimed chunk stands in for
+        # it (the completed chunk is fenced).
         successor = uuid.uuid4()
         with psycopg.connect(url, autocommit=True) as admin:
             sql(
@@ -269,41 +290,33 @@ def scenario(url, work, profiles_count, levels, west, south, label, offset):
             """,
             )
         authority = Authority(uuid.UUID(RUN), successor, 1, 1)
-        with repository.retained_snapshot(authority, (slot,), budget_repository) as (bases2, rows2):
-            retained = timed(
-                stages,
-                "retained_snapshot read after commit (all slot profiles, science_row verify)",
-                lambda: list(rows2),
-            )
-        first = retained[0].identity.id
+        redelivered = [entry.profile for entry in spool.entries]
         timed(
             stages,
-            "load_science x5 (one profile)",
-            lambda: [repository.load_science(first, CanonicalBudget()) for _ in range(5)],
+            "identities_batch after commit (next chunk re-delivers every slot profile)",
+            lambda: repository.identities_batch(redelivered),
+        )
+        stored_ids = [uuid.UUID(item["profile_id"]) for item in membership]
+        hashes = timed(
+            stages,
+            "science_hashes after commit (all slot profiles)",
+            lambda: repository.science_hashes(stored_ids),
         )
         timed(
             stages,
-            "slot_members query",
-            lambda: repository.slot_members(
-                authority,
-                slot,
-                __import__(
-                    "floatchat_core.ingestion.planning", fromlist=["PlannedChunk"]
-                ).PlannedChunk(
-                    __import__("floatchat_core.ingestion.planning", fromlist=["Interval"]).Interval(
-                        datetime(2025, 1, 1, tzinfo=UTC), datetime(2025, 2, 1, tzinfo=UTC)
-                    ),
-                    __import__("floatchat_core.ingestion.planning", fromlist=["Tile"]).Tile(
-                        west, south
-                    ),
-                ),
-            ),
+            "science_hashes x5 (one profile)",
+            lambda: [repository.science_hashes(stored_ids[:1]) for _ in range(5)],
         )
+        counted = timed(
+            stages,
+            "slot_state counts after commit",
+            lambda: repository.slot_state(authority, [slot], piece, counts=[slot])[slot],
+        )
+        stored_members = counted.members
         # Release the stand-in so the environment's two-active-chunk bound holds.
         repository.transition(authority, "failed", "probe_released")
     else:
         repository.transition(authority, "failed", "probe_" + outcome)
-    spool.connection.close()
     repository.close()
     budget_repository.close()
     return {
@@ -311,7 +324,7 @@ def scenario(url, work, profiles_count, levels, west, south, label, offset):
         "profiles": profiles_count,
         "levels_per_profile": levels,
         "levels": profiles_count * levels,
-        "staging_ndjson_bytes": staged.stat().st_size,
+        "staging_json_bytes": staging_json_bytes,
         "parquet_bytes": file.stat().st_size,
         "chunk_state": state,
         "outcome": outcome,
@@ -322,7 +335,8 @@ def scenario(url, work, profiles_count, levels, west, south, label, offset):
             "ingestion_staging": sizes[2],
         },
         "stages_s": stages,
-        "retained_profiles_read_back": len(retained),
+        "stored_hashes_read_back": len(hashes),
+        "slot_members_after_commit": stored_members,
     }
 
 

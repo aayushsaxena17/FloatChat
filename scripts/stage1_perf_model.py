@@ -38,6 +38,8 @@ def main():
     stages = cpu["stages"]
     per_level = {}
     chunk_levels = cpu["profiles"] * cpu["levels_per_profile"]
+    # One table for both pipelines: the v3 stage names and the v4 names. A name the report
+    # does not carry counts as 0 s with multiplicity 1 and is listed in stage_names_missing.
     multiplicity = {
         "sanitize_raw(profile payload)": 1,
         "validate_raw(profile payload) x1": 3,
@@ -46,11 +48,19 @@ def main():
         "spool.add (all)": 1,
         "spool.prepare (restore+certify, no DB)": 1,
         "spool.membership(slot)": 1,
-        "spool.profiles(slot) re-read (receipts pass)": 1,
+        "spool.profiles(slot) re-read (receipts pass)": 1,  # v3 only
         "write_snapshot (write+verify+storage_comparison)": 1,
         "publish_verified (certificate full verify + 2 light verifies; memory store)": 1,
-        "spool.write_candidates (NDJSON for COPY)": 1,
+        "spool.write_candidates (NDJSON for COPY)": 1,  # v3 only
+        "spool.candidates (slim JSON)": 1,  # v4 only
+        "spool.level_tables (Arrow)": 1,  # v4 only
     }
+    # A v4 report records the counts it read from the code (validate_raw is 1, not 3:
+    # publish_verified validates once). They override the v3 defaults above.
+    recorded = cpu.get("stage_multiplicity")
+    if recorded:
+        multiplicity.update(recorded)
+    missing = [name for name in multiplicity if name not in stages]
     # Raw-side stages scale with every source column, not just core. The census
     # population averages ~34 KB raw per profile (200 MB / 5,845); the 6-column
     # synthetic basis is ~21 KB at 699 levels, the 24-column basis ~88 KB, so the
@@ -64,35 +74,32 @@ def main():
     cpu_per_level_us = 0.0
     for name, times in multiplicity.items():
         factor = raw_factor if name in raw_side else 1.0
-        value = stages[name]["wall_s"] * times * factor / chunk_levels * 1e6
+        seconds = stages[name]["wall_s"] if name in stages else 0.0
+        value = seconds * times * factor / chunk_levels * 1e6
         per_level[name] = {
             "multiplicity": times,
             "raw_column_factor": factor,
             "us_per_level": round(value, 1),
         }
         cpu_per_level_us += value
-    # DB: linear fit through the three probe points (COPY + commit), per level.
+    # DB: linear fit through the three probe points (COPY + commit), per level. The v4 probe
+    # names its staging stage "stage_candidates + stage_levels COPY" (v3: "stage_file ...").
+    copy_names = ("stage_candidates + stage_levels COPY", "stage_file COPY to ingestion_staging")
+
+    def copy_seconds(scenario):
+        stages_s = scenario["stages_s"]
+        return stages_s[next(name for name in copy_names if name in stages_s)]
+
     alone = json.loads((ROOT / "reports/stage1-perf-db-probe-87-alone.json").read_text())
     scenarios = [(s, "sequential") for s in db["scenarios"]] + [
         (s, "alone") for s in alone["scenarios"]
     ]
     points = [
-        (
-            s["levels"],
-            s["stages_s"]["stage_file COPY to ingestion_staging"]
-            + s["stages_s"]["commit_publication"],
-        )
-        for s, _ in scenarios
+        (s["levels"], copy_seconds(s) + s["stages_s"]["commit_publication"]) for s, _ in scenarios
     ]
     db_us_per_level = {
         f"{s['levels']} levels ({tag}, {s['profiles']}x{s['levels_per_profile']})": round(
-            (
-                s["stages_s"]["stage_file COPY to ingestion_staging"]
-                + s["stages_s"]["commit_publication"]
-            )
-            / s["levels"]
-            * 1e6,
-            1,
+            (copy_seconds(s) + s["stages_s"]["commit_publication"]) / s["levels"] * 1e6, 1
         )
         for s, tag in scenarios
     }
@@ -179,6 +186,12 @@ def main():
         "inputs": {
             "census": "reports/stage1-inventory-census.json",
             "cpu": cpu_label,
+            "cpu_pipeline": "stage1-v4" if recorded else "stage1-v3",
+            "db_pipeline": (
+                "stage1-v4"
+                if all(copy_names[0] in s["stages_s"] for s, _ in scenarios)
+                else "stage1-v3 (probe ran before publication v4)"
+            ),
             "db": [
                 "reports/stage1-perf-db-probe.json",
                 "reports/stage1-perf-db-probe-87-alone.json",
@@ -190,6 +203,7 @@ def main():
             "raw_calibration": "reports/stage1-perf-chunk-cpu-22x699-bgc24.json",
         },
         "cpu_us_per_level_by_stage": per_level,
+        "stage_names_missing": missing,
         "cpu_us_per_level_total": round(cpu_per_level_us, 1),
         "db_us_per_level_copy_plus_commit": db_us_per_level,
         "db_us_per_level_pooled": round(db_mid, 1),
@@ -205,6 +219,7 @@ def main():
                 for k, v in report.items()
                 if k
                 in (
+                    "stage_names_missing",
                     "cpu_us_per_level_total",
                     "db_us_per_level_copy_plus_commit",
                     "db_us_per_level_pooled",
