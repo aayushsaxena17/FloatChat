@@ -1,0 +1,116 @@
+name: ${COMPOSE_PROJECT_NAME:?Isolated acceptance project required}
+
+x-runtime: &runtime
+  image: ${ACCEPTANCE_API_IMAGE:?Cached image digest required}
+  pull_policy: never
+  user: ${ACCEPTANCE_UID:?}:${ACCEPTANCE_GID:?}
+  working_dir: /home/floatchat/FloatChat-stage1
+  mem_limit: 1g
+  environment: &runtime-environment
+    PYTHONPATH: /home/floatchat/FloatChat-stage1/packages/core/src:/home/floatchat/FloatChat-stage1/workers/src:/home/floatchat/FloatChat-stage1/.venv/lib/python3.12/site-packages
+    PYTHONDONTWRITEBYTECODE: "1"
+    HOME: /home/acceptance
+    INGESTION_DATABASE_URL: ${INGESTION_DATABASE_URL:?}
+    INGESTION_ENVIRONMENT_ID: ${INGESTION_ENVIRONMENT_ID:?}
+    INGESTION_BUCKET: ${INGESTION_BUCKET:?}
+    ACCEPTANCE_CONTROL_BUCKET: ${ACCEPTANCE_CONTROL_BUCKET:?}
+    INGESTION_QUEUE_NAMESPACE: ${INGESTION_QUEUE_NAMESPACE:?}
+    COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:?}
+    INGESTION_REDIS_URL: redis://redis:6379/13
+    REDIS_URL: redis://redis:6379/13
+    ACCEPTANCE_REDIS_PREFIX: ${ACCEPTANCE_REDIS_PREFIX:?}
+    OBJECT_STORAGE_ENDPOINT: http://minio:9000
+    OBJECT_STORAGE_ACCESS_KEY: ${OBJECT_STORAGE_ACCESS_KEY:?}
+    OBJECT_STORAGE_SECRET_KEY: ${OBJECT_STORAGE_SECRET_KEY:?}
+    INGESTION_APPLICATION_COMMIT: ${INGESTION_APPLICATION_COMMIT:?}
+    FLOATCHAT_LIVE_INGESTION_ENABLED: "false"
+  volumes:
+    - /home/floatchat/FloatChat-stage1:/home/floatchat/FloatChat-stage1:ro
+    - ${ACCEPTANCE_PRIVATE_DIRECTORY:?}:/home/acceptance/private
+
+services:
+  db:
+    image: ${ACCEPTANCE_DB_IMAGE:?}
+    pull_policy: never
+    mem_limit: 1g
+    environment:
+      POSTGRES_USER: floatchat_admin
+      POSTGRES_PASSWORD: ${DB_ADMIN_PASSWORD:?}
+      POSTGRES_DB: ${ACCEPTANCE_DATABASE:?}
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U floatchat_admin -d $$POSTGRES_DB"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  redis:
+    image: ${ACCEPTANCE_REDIS_IMAGE:?}
+    pull_policy: never
+    mem_limit: 128m
+    command: [redis-server, --appendonly, "yes"]
+    volumes: [redis_data:/data]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  minio:
+    image: ${ACCEPTANCE_MINIO_IMAGE:?}
+    pull_policy: never
+    mem_limit: 512m
+    command: [minio, server, /data]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?}
+      MINIO_BROWSER: "off"
+    volumes: [minio_data:/data]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9000/minio/health/ready', timeout=2)"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  db-init:
+    <<: *runtime
+    environment:
+      <<: *runtime-environment
+      DATABASE_ADMIN_URL: ${DATABASE_ADMIN_URL:?}
+      ACCEPTANCE_DATABASE: ${ACCEPTANCE_DATABASE:?}
+      ACCEPTANCE_DB_PASSWORD: ${ACCEPTANCE_DB_PASSWORD:?}
+    command: [python, scripts/stage1_acceptance_runtime.py, initialize]
+    restart: "no"
+  storage-init:
+    image: ${ACCEPTANCE_MINIO_IMAGE:?}
+    pull_policy: never
+    mem_limit: 256m
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?}
+      OBJECT_STORAGE_ENDPOINT: http://minio:9000
+      OBJECT_STORAGE_ACCESS_KEY: ${OBJECT_STORAGE_ACCESS_KEY:?}
+      OBJECT_STORAGE_SECRET_KEY: ${OBJECT_STORAGE_SECRET_KEY:?}
+      OBJECT_STORAGE_BUCKET: ${INGESTION_BUCKET:?}
+      ACCEPTANCE_CONTROL_BUCKET: ${ACCEPTANCE_CONTROL_BUCKET:?}
+    volumes:
+      - /home/floatchat/FloatChat-stage1/scripts/bootstrap_storage.py:/bootstrap_storage.py:ro
+      - /home/floatchat/FloatChat-stage1/scripts/stage1_acceptance_storage.py:/stage1_acceptance_storage.py:ro
+    command: [python, /stage1_acceptance_storage.py]
+    restart: "no"
+  worker:
+    <<: *runtime
+    command: [python, scripts/stage1_acceptance_runtime.py, worker]
+  supervisor:
+    <<: *runtime
+    command: [python, scripts/stage1_acceptance_runtime.py, supervise]
+  client:
+    <<: *runtime
+    profiles: [tools]
+    command: [python, scripts/stage1_acceptance_runtime.py, proof]
+
+networks:
+  default:
+    internal: true
+
+volumes:
+  postgres_data: {}
+  redis_data: {}
+  minio_data: {}
