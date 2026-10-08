@@ -118,7 +118,9 @@ def main() -> None:
                 "CREATE TABLE app.stage0_persistence(value text); "
                 "INSERT INTO app.stage0_persistence VALUES ('preserved'); "
                 "CREATE TABLE app.stage0_permissions("
-                "id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, value text);",
+                "id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, value text); "
+                "GRANT SELECT,INSERT,UPDATE,DELETE ON app.stage0_permissions TO floatchat_app; "
+                "GRANT USAGE ON app.stage0_permissions_id_seq TO floatchat_app;",
             )
             probe("permissions")
             # Reproduce drift from the old blanket grant, then prove repeat bootstrap repairs it.
