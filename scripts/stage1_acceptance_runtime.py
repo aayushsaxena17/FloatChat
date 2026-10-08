@@ -111,7 +111,7 @@ def proof():
         assert (
             identity["login"] == "acceptance_ingestion" and identity["role"] == "floatchat_ingestor"
         )
-        assert revision == "0010_stage1_v3_runtime" and counts == {
+        assert revision == "0011_set_based_publication" and counts == {
             "runs": 0,
             "profiles": 0,
             "levels": 0,
