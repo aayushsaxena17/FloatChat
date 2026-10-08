@@ -107,6 +107,13 @@ Advisor agreement for these ADRs is not recorded here.
   as a measurement: S1-SOURCE-2 receipts completed empty chunks, ~4.3 MB canonical per
   profile, 319 MiB worker anonymous peak, but ~10.5 h projected and 20 s idle-read
   transport failures. ADR-0043: 12 h run bound and 60 s idle read (migration 0010).
+- [x] Live runs 3-5 found and fixed: the quadratic per-level publication commit
+  (ADR-0044, 23.5 s -> 1.3 s per 10,000 levels), a >=15 minute upstream slow episode
+  outlasting the retry window (ADR-0045), and host sleep (keep-awake during runs).
+- [x] Fifth live run (7153be6379df84de): 269/270 leaves complete in 3.79 h, 5,792
+  profiles, 4,128,567 levels, 205 partitions, 64 empty receipts, 28 source exclusions,
+  20.4 GB canonical work, 3,009 HTTP attempts, 328 MiB worker anonymous peak, no OOM.
+  One chunk quarantined on `missing_basin`; ADR-0046 makes it informational.
 - [ ] Re-verify, fresh preparation, live acceptance and captured replay, CI on the
   final head, gate report.
 

@@ -754,12 +754,15 @@ Valid parsed peers are recorded as blocked-by-chunk-quarantine, never called com
 No `--ignore-quarantine` success override exists. A reviewed corrective replay is a new
 run linked to the quarantined evidence; original terminal records remain unchanged.
 
-stage1-v3 whole-profile source-loss exclusion (ADR-0040). A profile whose only warning is
-`degenerate_levels`, with a source `_id`, whose remaining schema validates and which the
-chunk's tile owns, gets outcome `excluded_source_loss` instead of quarantining the chunk:
-never published, returned levels recorded, lost levels `unknown`, and its warning, source
-ID, selection and raw landing kept in an exclusion ledger. Any other or additional warning,
-missing identity or schema drift still quarantines the whole chunk. Acceptance still needs
+stage1-v3 source warnings (ADR-0040, ADR-0046). A profile whose warnings are a
+duplicate-free subset of {`degenerate_levels`, `missing_basin`}, with a source `_id` and
+whose remaining schema validates, is handled per warning instead of quarantining the
+chunk. With `degenerate_levels`, the owned profile gets outcome `excluded_source_loss`:
+never published, returned levels recorded, lost levels `unknown`, and its warnings, source
+ID, selection and raw landing kept in an exclusion ledger. `missing_basin` alone (valid
+position, land-adjacent basin lookup) publishes normally and stays recorded in the raw
+landing. `missing_location`, `missing_timestamp`, any repeated or unknown warning, missing
+identity or schema drift still quarantine the whole chunk. Acceptance still needs
 zero quarantines and zero coverage gaps; with exclusions the report states
 `acceptance_qualified_with_source_exclusions` and never `scientific_source_complete = true`.
 Stage1-v2 runs and the historical 8 quarantines are unchanged.

@@ -707,6 +707,30 @@ every 10 s, so the 10-minute chunk lease holds. With one worker an episode now s
 the run instead of failing it; the 12-hour bound and the stall alarm cover that.
 Credentialed probes are not run while an acceptance run is live.
 
+## ADR-0046 - missing_basin is an informational source warning
+
+The fifth live run (session 7153be6379df84de) completed 269 of 270 leaves; one chunk
+(March, 50E/-20S) quarantined with `upstream_data_warning` because profile
+`1902191_253` (50.50E, 14.00S) carried `missing_basin`
+(`reports/stage1-live-warning-census-7153be63.json`). Across all 5,931 landed profile
+documents the only warnings were 31 `degenerate_levels` and this one `missing_basin`.
+The pinned OpenAPI 2.36.2 enumerates exactly four warnings: `degenerate_levels`,
+`missing_basin`, `missing_location` and `missing_timestamp`.
+
+The pinned translator (revision cbf2bb48, `util/helpers.py`, SHA-256 279af8ef...,
+re-verified 2026-10-08) adds `missing_basin` only when the location is present and the
+0.5-degree basin mask is land at every surrounding point (basin = -1). Position, time
+and measurements are unchanged; FloatChat does not use the basin label.
+
+Decision (stage1-v3, S1-SOURCE-2): a profile whose warnings are a duplicate-free subset
+of {`degenerate_levels`, `missing_basin`} and that has a source `_id` validates with the
+warnings stripped. `degenerate_levels` keeps the whole-profile exclusion (ADR-0040);
+`missing_basin` alone publishes normally, with the warning kept in the immutable raw
+landing and in the pre-commit outcome evidence. `missing_location`, `missing_timestamp`,
+any repeated or unknown warning, a missing identity or schema drift keep the strict
+whole-chunk quarantine, because ownership cannot be established without a real
+position and time. The processor probe covers all five cases.
+
 ## ADR-0047 - PostgreSQL work queue with acquire and process pools; per-environment concurrency
 
 Decision under ADR-0039 per the owner decisions of 2026-10-08 recorded in
