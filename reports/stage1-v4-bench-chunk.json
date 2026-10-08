@@ -12,89 +12,89 @@
   "canonical_bytes_per_profile": 854393,
   "canonical_bytes_per_level": 1222,
   "canonical_bytes_chunk": 74332191,
-  "parquet_bytes": 4107562,
+  "parquet_bytes": 4107575,
   "parquet_rows": 60813,
   "staging_json_bytes": 83222450,
   "staging_level_rows": 60813,
   "stages": {
     "sanitize_raw(profile payload)": {
-      "wall_s": 0.418,
-      "cpu_s": 0.416
+      "wall_s": 0.342,
+      "cpu_s": 0.342
     },
     "validate_raw(profile payload) x1": {
-      "wall_s": 0.215,
-      "cpu_s": 0.215
+      "wall_s": 0.187,
+      "cpu_s": 0.187
     },
     "sanitize_raw(inventory payload)": {
-      "wall_s": 0.011,
-      "cpu_s": 0.011
+      "wall_s": 0.009,
+      "cpu_s": 0.009
     },
     "validate_raw(inventory payload) x1": {
-      "wall_s": 0.006,
-      "cpu_s": 0.006
+      "wall_s": 0.005,
+      "cpu_s": 0.005
     },
     "sha256(profile payload)": {
       "wall_s": 0.001,
       "cpu_s": 0.001
     },
     "documents() decode profile payload x1": {
-      "wall_s": 0.507,
-      "cpu_s": 0.5
+      "wall_s": 0.365,
+      "cpu_s": 0.364
     },
     "documents() decode inventory payload x1": {
-      "wall_s": 0.015,
-      "cpu_s": 0.014
+      "wall_s": 0.007,
+      "cpu_s": 0.007
     },
     "map_profile + budget.encode (all profiles)": {
-      "wall_s": 4.617,
-      "cpu_s": 4.509
+      "wall_s": 1.903,
+      "cpu_s": 1.901
     },
     "spool.add (all)": {
       "wall_s": 0.0,
-      "cpu_s": 0.001
+      "cpu_s": 0.0
     },
     "spool.prepare (restore+certify, no DB)": {
-      "wall_s": 0.006,
-      "cpu_s": 0.006
+      "wall_s": 0.003,
+      "cpu_s": 0.003
     },
     "spool.membership(slot)": {
       "wall_s": 0.0,
       "cpu_s": 0.0
     },
     "write_snapshot (write+verify+storage_comparison)": {
-      "wall_s": 3.117,
-      "cpu_s": 3.128
+      "wall_s": 1.543,
+      "cpu_s": 1.543
     },
     "  write_snapshot: verify_snapshot (local read-back)": {
       "wall_s": 0
     },
     "  write_snapshot: storage_comparison (to_pandas)": {
-      "wall_s": 0.2
+      "wall_s": 0.163
     },
     "  write_snapshot: writer loop (rows+ipc spill+parquet)": {
-      "wall_s": 2.917
+      "wall_s": 1.38
     },
     "  write_snapshot: _verify_written (Arrow equality scan, informational)": {
-      "wall_s": 1.065
+      "wall_s": 0.518
     },
     "sha256(parquet file)": {
-      "wall_s": 0.005,
-      "cpu_s": 0.005
+      "wall_s": 0.004,
+      "cpu_s": 0.004
     },
     "publish_verified (certificate full verify + 2 light verifies; memory store)": {
-      "wall_s": 0.011,
-      "cpu_s": 0.011
+      "wall_s": 0.008,
+      "cpu_s": 0.008
     },
     "spool.candidates (slim JSON)": {
-      "wall_s": 0.378,
-      "cpu_s": 0.367
+      "wall_s": 0.225,
+      "cpu_s": 0.225
     },
     "spool.level_tables (Arrow)": {
-      "wall_s": 0.263,
-      "cpu_s": 0.263
+      "wall_s": 0.153,
+      "cpu_s": 0.153
     }
   },
-  "sum_measured_wall_s": 9.57,
+  "sum_measured_wall_s": 4.755,
   "multiplicity_per_chunk_from_code": {
     "profile payload sanitize_raw": 1,
     "profile payload validate_raw (publish_verified validates once; audit adds 1)": 1,
@@ -125,8 +125,8 @@
     "spool.candidates (slim JSON)": "replaces 'spool.write_candidates (NDJSON for COPY)'",
     "spool.level_tables (Arrow)": "typed level rows for the binary COPY; the COPY's client-side formatting is not timed here"
   },
-  "max_rss_mib": 522.2,
+  "max_rss_mib": 524.2,
   "cprofile_top": {},
-  "finished_at_utc": "2026-10-08T15:45:20.205662+00:00",
-  "git_head": "e2a96a633dd337ec019e54504cc48d196fb92b42"
+  "finished_at_utc": "2026-10-08T16:04:01.303785+00:00",
+  "git_head": "65eb3fcfe5ddc67c2a689730f8f56ef8ab0c182d"
 }

@@ -16,6 +16,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument(
+        "--db",
+        type=Path,
+        action="append",
+        default=None,
+        help="DB probe report(s) to use instead of the stage1-v3 probes",
+    )
+    parser.add_argument(
         "--cpu",
         type=Path,
         default=ROOT / "reports/stage1-perf-chunk-cpu-87x699.json",
@@ -28,7 +35,11 @@ def main():
     cpu_label = (
         cpu_path.relative_to(ROOT).as_posix() if cpu_path.is_relative_to(ROOT) else str(cpu_path)
     )
-    db = json.loads((ROOT / "reports/stage1-perf-db-probe.json").read_text())
+    db_paths = args.db or [
+        ROOT / "reports/stage1-perf-db-probe.json",
+        ROOT / "reports/stage1-perf-db-probe-87-alone.json",
+    ]
+    db_reports = [json.loads(Path(path).read_text()) for path in db_paths]
     transport = json.loads((ROOT / "reports/stage1-live-transport-8e8da1d4.json").read_text())
     slots = census["slot_profiles"]
     depth = {"2025-01": 699, "2025-02": 384, "2025-03": 384}  # ADR-0041 / depth spot-check
@@ -90,9 +101,10 @@ def main():
         stages_s = scenario["stages_s"]
         return stages_s[next(name for name in copy_names if name in stages_s)]
 
-    alone = json.loads((ROOT / "reports/stage1-perf-db-probe-87-alone.json").read_text())
-    scenarios = [(s, "sequential") for s in db["scenarios"]] + [
-        (s, "alone") for s in alone["scenarios"]
+    scenarios = [
+        (scenario, Path(str(path)).stem)
+        for path, report in zip(db_paths, db_reports, strict=True)
+        for scenario in report["scenarios"]
     ]
     points = [
         (s["levels"], copy_seconds(s) + s["stages_s"]["commit_publication"]) for s, _ in scenarios
@@ -192,10 +204,7 @@ def main():
                 if all(copy_names[0] in s["stages_s"] for s, _ in scenarios)
                 else "stage1-v3 (probe ran before publication v4)"
             ),
-            "db": [
-                "reports/stage1-perf-db-probe.json",
-                "reports/stage1-perf-db-probe-87-alone.json",
-            ],
+            "db": [str(path) for path in db_paths],
             "transport": "reports/stage1-live-transport-8e8da1d4.json",
             "depth_levels_per_profile_by_month": depth,
             "metadata_requests_assumed": metadata_requests,
