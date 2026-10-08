@@ -832,14 +832,15 @@ version. MiB/GiB are binary units.
 | Requests/data | 50,000 HTTP attempts per run including retries and metadata; 10 GiB cumulative raw received bytes including unsuccessful attempts. |
 | Concurrency/memory | At most 2 active chunk workers per environment and 1 credentialed upstream request in flight; 1 GiB memory per worker, streaming/spill before bulk staging. stage1-v3 compliance (ADR-0042): worker cgroup `memory.max` = 1 GiB enforced, zero `oom`/`oom_kill` events and pipeline anonymous RSS peak <1 GiB; page-cache-inclusive `memory.peak` is recorded, not the pass criterion. |
 | Wall time | Default 6 hours, hard maximum 12 hours (stage1-v3, ADR-0043; stage1-v2: 6 hours) from actual run creation, including queue/waits/retries/recovery; frozen reduced limits must exceed 60s. D_work = D minus 60s; final 60s reserved for fenced terminal evidence. |
-| I/O deadlines | DNS/connect/TLS <=10 s, idle read <=60 s (stage1-v3, ADR-0043; stage1-v2: 20 s), whole HTTP attempt <=120 s; object operation <=120 s; DB lock wait <=5 s and transaction <=60 s, each capped by remaining run budget. |
+| I/O deadlines | DNS/connect/TLS <=10 s, idle read <=110 s (stage1-v3, ADR-0043/0045; stage1-v2: 20 s), whole HTTP attempt <=120 s; object operation <=120 s; DB lock wait <=5 s and transaction <=60 s, each capped by remaining run budget. |
 | Retry/recovery | <=4 HTTP attempts per logical request, <=4 controller claims per run, <=4 processing claims per chunk and <=4 publication attempts per chunk, all including the initial claim/attempt and persisted across deliveries. |
 
 The durable ingestion controller is the only retry owner. HTTP library automatic
 retries and Celery autoretry are disabled. Celery carries only opaque run/chunk IDs;
 redelivery consults durable attempts and lease state and adds no fresh budget. Timeouts,
-connection faults, 408, 429 and 5xx may retry with full jitter over exponential maxima
-2,4,8 seconds; Retry-After replaces that delay if longer, bounded to 300 seconds and
+connection faults, 408, 429 and 5xx may retry with equal jitter over maxima 60,180,300
+seconds (stage1-v3, ADR-0045; stage1-v2: full jitter over 2,4,8 seconds); Retry-After
+replaces that delay if longer, bounded to 300 seconds and
 the remaining deadline. Invalid/oversized Retry-After or insufficient time fails.
 401/403, other 4xx, invalid schema and conflicts do not retry. Repeated delivery of a
 complete chunk succeeds immediately; attempt exhaustion is not reset by process restart.

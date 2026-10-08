@@ -20,7 +20,7 @@ from pathlib import Path
 from floatchat_core.ingestion.argovis import map_profile, policy_versions
 from floatchat_core.ingestion.numeric import MIB, CanonicalBudget, Rejection, decode_json
 from floatchat_core.ingestion.raw import sanitize_raw
-from floatchat_core.ingestion.transport import BASE, HTTPFailure, fetch, retry_delay
+from floatchat_core.ingestion.transport import BASE, HTTPFailure, fetch, retry_after_seconds
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -40,7 +40,7 @@ class SafeHTTPDiagnostic(Rejection):
         }
         if failure.status == 429 and isinstance(failure.retry_after, str):
             try:
-                duration = retry_delay(1, failure.retry_after, datetime.now(UTC), 0)
+                duration = retry_after_seconds(failure.retry_after, datetime.now(UTC))
             except Rejection:
                 pass
             else:

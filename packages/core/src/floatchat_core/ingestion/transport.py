@@ -126,27 +126,39 @@ class HTTPFailure(Rejection):
         return self.status in (408, 429) or 500 <= self.status <= 599
 
 
+# ADR-0045: retries must outlast measured upstream slow episodes (>=15 min), so the
+# three backoffs use 60/180/300 s maxima with equal jitter (a guaranteed half-maximum
+# floor). Four attempts per logical request and the 300 s Retry-After cap are unchanged.
+RETRY_MAXIMA = {1: 60.0, 2: 180.0, 3: 300.0}
+
+
 def retry_delay(attempt: int, retry_after: str | None, now: datetime, jitter: float) -> float:
     if not 1 <= attempt < 4 or not 0 <= jitter <= 1:
         raise Rejection("retry_exhausted")
-    delay = float(2**attempt) * jitter
+    maximum = RETRY_MAXIMA[attempt]
+    delay = maximum / 2 + maximum / 2 * jitter
     if retry_after is not None:
-        if len(retry_after) > 128:
-            raise Rejection("invalid_retry_after")
-        try:
-            if retry_after.isascii() and retry_after.isdigit():
-                requested = float(int(retry_after))
-            else:
-                instant = parsedate_to_datetime(retry_after)
-                if instant.tzinfo is None:
-                    raise ValueError
-                requested = max(0.0, (instant - now).total_seconds())
-            if not 0 <= requested <= 300:
-                raise ValueError
-        except (ValueError, OverflowError, TypeError):
-            raise Rejection("invalid_retry_after") from None
-        delay = max(delay, requested)
+        delay = max(delay, retry_after_seconds(retry_after, now))
     return delay
+
+
+def retry_after_seconds(retry_after: str, now: datetime) -> float:
+    """The server-requested wait, bounded to 300 s; invalid values are rejected."""
+    if len(retry_after) > 128:
+        raise Rejection("invalid_retry_after")
+    try:
+        if retry_after.isascii() and retry_after.isdigit():
+            requested = float(int(retry_after))
+        else:
+            instant = parsedate_to_datetime(retry_after)
+            if instant.tzinfo is None:
+                raise ValueError
+            requested = max(0.0, (instant - now).total_seconds())
+        if not 0 <= requested <= 300:
+            raise ValueError
+    except (ValueError, OverflowError, TypeError):
+        raise Rejection("invalid_retry_after") from None
+    return requested
 
 
 def read_body(
@@ -295,8 +307,8 @@ def fetch(
             if not enabled():
                 raise Rejection("live_ingestion_disabled")
             assert connection.sock is not None
-            # ADR-0043: monthly inventories can take >20 s to first byte upstream.
-            connection.sock.settimeout(min(60, absolute - time.monotonic()))
+            # ADR-0043/0045: upstream slow episodes measured >60 s to first byte.
+            connection.sock.settimeout(min(110, absolute - time.monotonic()))
             connection.request(
                 "GET",
                 path + "?" + urlencode(parameters),

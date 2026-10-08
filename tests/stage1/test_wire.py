@@ -9,6 +9,7 @@ from unittest.mock import Mock
 import pytest
 from floatchat_core.ingestion.numeric import Rejection
 from floatchat_core.ingestion.transport import (
+    RETRY_MAXIMA,
     HTTPFailure,
     empty_receipt,
     empty_receipt_request,
@@ -95,9 +96,13 @@ def test_B02_truncated_or_ambiguous_transport(data, headers, category):
 
 def test_B03_retry_policy_and_safe_exception():
     now = datetime(2025, 4, 1, tzinfo=UTC)
-    assert retry_delay(1, None, now, 0.5) == 1
-    assert retry_delay(2, "30", now, 0) == 30
-    assert retry_delay(3, "Tue, 01 Apr 2025 00:00:05 GMT", now, 1) == 8
+    # ADR-0045: equal jitter over 60/180/300 s maxima; Retry-After wins when longer.
+    assert retry_delay(1, None, now, 0.5) == 45
+    assert retry_delay(1, None, now, 0) == 30 and retry_delay(1, None, now, 1) == 60
+    assert retry_delay(2, "30", now, 0) == 90
+    assert retry_delay(1, "250", now, 0) == 250
+    assert retry_delay(3, "Tue, 01 Apr 2025 00:00:05 GMT", now, 1) == 300
+    assert sum(RETRY_MAXIMA.values()) == 540  # Spans a >=15 min slow episode with 4 attempts.
     for value in ("301", "NaN", "sentinel-secret", "-1", "9" * 129):
         with pytest.raises(Rejection, match="invalid_retry_after") as caught:
             retry_delay(1, value, now, 0)

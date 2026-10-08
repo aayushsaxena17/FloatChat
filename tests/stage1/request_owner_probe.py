@@ -6,11 +6,15 @@ import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 
+from floatchat_core.ingestion import transport as transport_module
 from floatchat_core.ingestion.landing import RequestOwner
 from floatchat_core.ingestion.numeric import Rejection
 from floatchat_core.ingestion.reporting import markdown_report, persisted_report
 from floatchat_core.ingestion.transport import HTTPFailure, Response
 from psycopg.types.json import Jsonb
+
+# Retry ownership/persistence proof; the backoff policy is pinned in test_wire.
+transport_module.RETRY_MAXIMA = {1: 0.0, 2: 0.0, 3: 0.0}
 
 
 def verify_http_path(repository, store, environment, piece):
