@@ -1,0 +1,1005 @@
+{
+  "kind": "authoritative_stage1_offline_blocker_matrix_v1",
+  "decision": "NO_GO",
+  "generated_at_utc": "2026-10-07T16:24:47.123689+00:00",
+  "source_tree_sha256": "ec68cfc082b2e54e1c165b634fe60f6baff464099ad2a80149cc092a0195ba7b",
+  "exact_source_verification": "Full local suite bound to this tree; capacity runtime source pins match",
+  "checks": {
+    "python_lint": {
+      "exit_code": 0,
+      "seconds": 0.06632981299480889,
+      "evidence": "reports/stage1-python_lint.log"
+    },
+    "python_format": {
+      "exit_code": 0,
+      "seconds": 0.06607839500065893,
+      "evidence": "reports/stage1-python_format.log"
+    },
+    "python_types": {
+      "exit_code": 0,
+      "seconds": 0.7679573289933614,
+      "evidence": "reports/stage1-python_types.log"
+    },
+    "unit": {
+      "exit_code": 0,
+      "seconds": 13.512220777003677,
+      "evidence": "reports/stage1-unit.log"
+    },
+    "database": {
+      "exit_code": 0,
+      "seconds": 393.36586034500215,
+      "evidence": "reports/stage1-database.log"
+    },
+    "object_store": {
+      "exit_code": 0,
+      "seconds": 6.831440042005852,
+      "evidence": "reports/stage1-object_store.log"
+    },
+    "terminalization": {
+      "exit_code": 0,
+      "seconds": 17.56769554899074,
+      "evidence": "reports/stage1-terminalization.log"
+    },
+    "resource": {
+      "exit_code": 0,
+      "seconds": 150.00547017400095,
+      "evidence": "reports/stage1-resource.log"
+    },
+    "broker": {
+      "exit_code": 0,
+      "seconds": 293.63738428599027,
+      "evidence": "reports/stage1-broker.log"
+    },
+    "fixture_audit": {
+      "exit_code": 0,
+      "seconds": 0.42709104900131933,
+      "evidence": "reports/stage1-fixture_audit.log"
+    },
+    "secrets_recorded_bundle": {
+      "exit_code": 0,
+      "seconds": 0.5674504530034028,
+      "evidence": "reports/stage1-secrets_recorded_bundle.log"
+    },
+    "web_lint": {
+      "exit_code": 0,
+      "seconds": 3.928399205993628,
+      "evidence": "reports/stage1-web_lint.log"
+    },
+    "web_format": {
+      "exit_code": 0,
+      "seconds": 0.967570844994043,
+      "evidence": "reports/stage1-web_format.log"
+    },
+    "web_types": {
+      "exit_code": 0,
+      "seconds": 1.6713797749980586,
+      "evidence": "reports/stage1-web_types.log"
+    },
+    "web_tests": {
+      "exit_code": 0,
+      "seconds": 2.8724727779917885,
+      "evidence": "reports/stage1-web_tests.log"
+    },
+    "web_build": {
+      "exit_code": 0,
+      "seconds": 3.379588562005665,
+      "evidence": "reports/stage1-web_build.log"
+    },
+    "secrets_current": {
+      "exit_code": 0,
+      "seconds": 2.1256717889918946,
+      "evidence": "reports/stage1-secrets_current.log"
+    },
+    "secrets_history": {
+      "exit_code": 0,
+      "seconds": 1.0672592299961252,
+      "evidence": "reports/stage1-secrets_history.log"
+    },
+    "diff_whitespace": {
+      "exit_code": 0,
+      "seconds": 0.016395759012084454,
+      "evidence": "reports/stage1-diff_whitespace.log"
+    }
+  },
+  "python_suites": {
+    "unit": {
+      "tests": 410,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "database": {
+      "tests": 40,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "object_store": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "resource": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "broker": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "terminalization": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "component_gate_assessments": {
+    "S1-G01": {
+      "state": "supported_at_real_broker_prefork_component_scope",
+      "fresh_evidence": "reports/stage1-broker-evidence.json",
+      "qualifications": "Accelerated leases and explicit redelivery; no live regional proof"
+    },
+    "S1-G02": {
+      "state": "supported_at_writer_readback_scope",
+      "fresh_evidence": "reports/stage1-parquet-resource.json",
+      "pipeline_evidence": "reports/stage1-regional-capacity-model.json",
+      "qualifications": "Writer and synthetic whole-worker envelope are separate measures"
+    },
+    "S1-G03": {
+      "state": "http_replay_reporting_components_supported_regional_gate_open",
+      "fresh_evidence": "reports/stage1-http-retry-evidence.json",
+      "qualifications": "Original frozen evidence, regional completeness and capacity pending"
+    },
+    "S1-G04": {
+      "state": "owner_amended_F01_2_minimum_supported",
+      "fresh_evidence": "reports/stage1-fixture-corpus-coverage.json",
+      "qualifications": "Waived authentic gaps remain unobserved; no regional census"
+    }
+  },
+  "historical_evidence_limits": {
+    "original_forensics": "Saved immutable reports, not fresh reads of the preserved database",
+    "source_witnesses": "Pinned previously executed translator models, not lost authentic inputs",
+    "prior_verification": "Previous source digest 582d4599 and its 412 tests are historical",
+    "superseded_model": "Stopped experiment; not a capacity pass or part of current run budget",
+    "timed_out_model": "One-hour harness timeout; no completed capacity result",
+    "first_final_verification": "64be1492: 17 SQL cases failed after the shared lease expired; Beat teardown also exceeded its five-second test bound during concurrent model work. These failures are retained and never substituted for fresh serial verification."
+  },
+  "input_sha256": [
+    {
+      "path": "docs/stage1-source-policy-proposal.md",
+      "sha256": "871f1bfb7ed0017c43b5244c2bd02a3b643bebc2cc7499a49ba5f229cd1401ad"
+    },
+    {
+      "path": "docs/stage1-terminalization-review.md",
+      "sha256": "9371275b2713412f34900fc83729261c8b6a12f71c02cfd557bb36fd266fcb8e"
+    },
+    {
+      "path": "reports/stage1-acceptance-live-interrupted.json",
+      "sha256": "d59191baac6f74c3db266d6de8ca117c2539794df3d18b9d7961196b61decb20"
+    },
+    {
+      "path": "reports/stage1-blocker-focused.xml",
+      "sha256": "6b1c8e46f2fccca0e60ef84cddcd1b331db2adae4a71b840b18c58cf01a41600"
+    },
+    {
+      "path": "reports/stage1-coverage-failure-review.json",
+      "sha256": "5c6f2fb11058c21bfd0983f70aa95c28e099fba1fccdfc6204f2810664cdfe48"
+    },
+    {
+      "path": "reports/stage1-discarded-input-science.json",
+      "sha256": "72ff742a32dda37b4c311c19b206ebdcddf564c64244b2acccb40f7aff370289"
+    },
+    {
+      "path": "reports/stage1-first-final-64be1492/stage1-database.xml",
+      "sha256": "7b4a9730c978889ef882c4a125f6f1a502b8e9e975b2f2b3c4815dfcf55502e7"
+    },
+    {
+      "path": "reports/stage1-http-retry-evidence.json",
+      "sha256": "6ba563a3379ec85563adc0b52e69311e09ac9401921ad439d04d929ec70e5dfe"
+    },
+    {
+      "path": "reports/stage1-http-source-semantics.json",
+      "sha256": "290ead3ccd4e197c4ab4b101b1db2da85d6dde6f060aea3321c8b9503ad9cc42"
+    },
+    {
+      "path": "reports/stage1-regional-capacity-model.json",
+      "sha256": "3b85a3bf2e6497d101544c7c3731c4795d65aa70ed8c4dd539ee5927606e7a09"
+    },
+    {
+      "path": "reports/stage1-regional-capacity.xml",
+      "sha256": "0483bbe3edaf5d0fb52ec1aa80e99b55abf895d8de4c4ca7ac813ecff35246bf"
+    },
+    {
+      "path": "reports/stage1-regional-superseded-attempt.json",
+      "sha256": "76730d4862ce52f49b7845881f99e2f2c96ede50ee329cdadca2ef31efa00890"
+    },
+    {
+      "path": "reports/stage1-regional-timeout-attempt/stage1-regional-capacity.xml",
+      "sha256": "4805bc1803086548972b659db13f54565d9207299e2bbf4d1664a746eb5026b2"
+    },
+    {
+      "path": "reports/stage1-terminalization-0007-rehearsal.json",
+      "sha256": "2d82af8aa0650366533ae3d0b18d007e4b48bb1607c5a76176c89b54b60ce9b6"
+    },
+    {
+      "path": "reports/stage1-terminalization.xml",
+      "sha256": "16e8f0541f9960436b6f0c6b94b34cdb9783da9b81786cc23eadd5a0aacace9d"
+    },
+    {
+      "path": "reports/stage1-verification.json",
+      "sha256": "df29c47aa085250a0f4740dafa358db17a6e9fc58f4b1e49f6e0f45c107c47ed"
+    }
+  ],
+  "blockers": [
+    {
+      "id": "BR-404",
+      "priority": "P1",
+      "state": "decision-and-evidence-required",
+      "finding": "44 failed pre-inventory selections do not prove empty coverage",
+      "requirements": [
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1034,
+          "case": "G04",
+          "exact_assertion": "Bounded retry or terminal non-success; no successful empty coverage."
+        },
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1035,
+          "case": "G05",
+          "exact_assertion": "Only verified matching terminal empties complete with 0 and no fabricated active object."
+        },
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1096,
+          "case": "F02",
+          "exact_assertion": "Separate payload/profile/level equations and identity-manifest agreement balance; unknown levels remain unknown."
+        }
+      ],
+      "evidence": [
+        "reports/stage1-coverage-failure-review.json",
+        "reports/stage1-http-source-semantics.json"
+      ],
+      "limit": "Status-only historical responses; deployed compatibility/bodies unknown",
+      "implementation": "Strict failure remains. Inactive exact-role proposal oracle tested",
+      "decision": "Choose strict A or explicitly qualified S1-SOURCE-2 B; B is not active",
+      "closure": "A: corrected coherent complete selections/independent source census. B: precise amendment approval plus deployment-attested complete bounded triples",
+      "authorization": "Any new upstream validation/capture or policy activation",
+      "implementation_references": [
+        {
+          "file": "packages/core/src/floatchat_core/ingestion/landing.py",
+          "line": 141
+        }
+      ]
+    },
+    {
+      "id": "BR-SOURCE-LOSS",
+      "priority": "P1",
+      "state": "decision-and-evidence-required",
+      "finding": "Four degenerate_levels selections cannot certify affected science",
+      "requirements": [
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1071,
+          "case": "C03",
+          "exact_assertion": "Whole chunk quarantined, peers counted blocked; zero tolerance prevents exit 0."
+        },
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1052,
+          "case": "S03",
+          "exact_assertion": "Entire malformed chunk quarantines; no zip truncation; genuinely absent variable gets N nulls."
+        },
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1096,
+          "case": "F02",
+          "exact_assertion": "Separate payload/profile/level equations and identity-manifest agreement balance; unknown levels remain unknown."
+        }
+      ],
+      "evidence": [
+        "reports/stage1-coverage-failure-review.json",
+        "reports/stage1-discarded-input-science.json"
+      ],
+      "limit": "Pinned translator models show possible losses, not authentic discarded inputs",
+      "implementation": "Whole-chunk quarantine unchanged. Profile-exclusion proposal inactive",
+      "decision": "A needs corrected complete science; B needs explicit exclusion/acceptance amendment",
+      "closure": "Reconstruct discarded measurements under A, or approve qualified B and persist whole-profile raw provenance, IDs/selections/returned and unknown lost levels",
+      "authorization": "Policy/exclusion activation and any independent source acquisition",
+      "implementation_references": [
+        {
+          "file": "packages/core/src/floatchat_core/ingestion/argovis.py",
+          "line": 254
+        }
+      ]
+    },
+    {
+      "id": "BR-CAPACITY",
+      "priority": "P1",
+      "state": "evidence-required",
+      "finding": "Original aggregate cap exhausted; actual regional envelope remains unknown",
+      "requirements": [
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1080,
+          "case": "B01",
+          "exact_assertion": "Limit accepted when otherwise valid; exceedance bounded, no publication, appropriate size split/failure or schema quarantine."
+        },
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1081,
+          "case": "B02",
+          "exact_assertion": "Independent deadlines and worker memory bound enforced including cleanup; run finalizer persists failures within reserved budget."
+        },
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1083,
+          "case": "B04",
+          "exact_assertion": "<=2 chunk workers, <=1 upstream request; no budget reset; six-hour run limit includes queue time."
+        },
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1109,
+          "case": "N08",
+          "exact_assertion": "Stream/preflight counters bounded, no oversized allocation; exceeded limit quarantines before publication and does not reset on recovery. Assert unchanged DB/generation state and no certified hash for rejected profile."
+        },
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1100,
+          "case": "F06",
+          "exact_assertion": "Reproducible measured sizes/options, equivalent content verified; DataFrame measure distinct from RSS; empty ratio not-applicable."
+        }
+      ],
+      "evidence": [
+        "reports/stage1-regional-capacity-model.json",
+        "reports/stage1-coverage-failure-review.json"
+      ],
+      "limit": "One synthetic admitted-fixture model cannot bound live profile count, depths, canonical sizes, hot-slot concentration or further recovery/rebuild amplification",
+      "implementation": "Per-publication SHA-bound certificate removes redundant encodings; all actual work and conservative process-loss reservations stay charged",
+      "decision": "No cap increase, new hidden budgets or smaller acceptance geometry",
+      "closure": "Justified actual-region envelope including retained slot growth and retry/rebuild margin fits 10 GiB, 1 GiB/worker and unchanged six-hour run limit",
+      "authorization": "Any live population measurement; no new acceptance run yet",
+      "implementation_references": [
+        {
+          "file": "packages/core/src/floatchat_core/ingestion/numeric.py",
+          "line": 261
+        },
+        {
+          "file": "tests/stage1/regional_capacity_probe.py",
+          "line": 141
+        }
+      ]
+    },
+    {
+      "id": "BR-OPEN-RUN",
+      "priority": "P1",
+      "state": "decision-required",
+      "finding": "Original run is still open without frozen incomplete evidence",
+      "requirements": [
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1070,
+          "case": "C02",
+          "exact_assertion": "Correct run reduction and exits 3/4/5; every planned chunk has recorded terminal outcome."
+        },
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1076,
+          "case": "C08",
+          "exact_assertion": "No new processing/publication past cutoff; supervisor finalizes unfinished leaves in reserved 60s, preserves complete chunks; exit 3/5, never 130; no watermark advance for non-complete run."
+        },
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1079,
+          "case": "C11",
+          "exact_assertion": "<=4 each with initial claim included; no fresh run/budget on restart; unfinished leaves failed with precise reason. DB outage cannot report persisted terminal success; on restore overdue work finalizes, never publishes late."
+        },
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1097,
+          "case": "F03",
+          "exact_assertion": "Identical evidence-derived report; no fabricated counts/timing/storage claims."
+        }
+      ],
+      "evidence": [
+        "reports/stage1-terminalization-0007-rehearsal.json",
+        "docs/stage1-terminalization-review.md"
+      ],
+      "limit": "Migration-0007 replica inspected; original DB/functions/objects not operated",
+      "implementation": "Concrete guarded restricted-role terminalizer and closed-state recovery tested",
+      "decision": "Separately review/approve deadline-only closure; never restart ingestion",
+      "closure": "Approved original operation validates exact saved identities/manifests/counters, closes partial with 120 complete/1132 failed/8 quarantined and one frozen report",
+      "authorization": "Operating original database and calling its existing finalizer",
+      "implementation_references": [
+        {
+          "file": "scripts/stage1_terminalize.py",
+          "line": 111
+        }
+      ]
+    },
+    {
+      "id": "BR-HTTP-REPLAY",
+      "priority": "P1",
+      "state": "closed-at-offline-component-scope",
+      "finding": "Previously reported HTTP disposition and adaptive predecessor replay defects",
+      "requirements": [
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1082,
+          "case": "B03",
+          "exact_assertion": "Single owner; <=4 attempts per logical request across deliveries; no multiplied retries; nonretryable errors fail."
+        },
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1098,
+          "case": "F04",
+          "exact_assertion": "Validated complete predecessor topology and immutable bindings preserved; profile/measurement scientific state and active generations unchanged; attempt/run/audit increases explained separately. Reject invalid predecessors."
+        }
+      ],
+      "evidence": [
+        "reports/stage1-http-retry-evidence.json",
+        "reports/stage1-verification.json"
+      ],
+      "limit": "Mocked HTTP and captured predecessors, not live regional success",
+      "implementation": "Migration 0007 aligned dispositions and immutable validated topology bindings",
+      "decision": "No source-policy waiver inferred",
+      "closure": "Fresh restricted PG status/retry/exhaustion/frozen reporting and actual --replay-run temporal/spatial tests with credential/upstream access denied",
+      "authorization": "None for completed offline tests",
+      "implementation_references": [
+        {
+          "file": "infra/migrations/versions/0007_http_replay.sql",
+          "line": 3
+        },
+        {
+          "file": "packages/core/src/floatchat_core/ingestion/source.py",
+          "line": 108
+        }
+      ]
+    },
+    {
+      "id": "BR-TEST-SEED",
+      "priority": "P2",
+      "state": "closed-at-offline-component-scope",
+      "finding": "Shared SQL test seed lease expired after a long independent processor probe",
+      "requirements": [
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1099,
+          "case": "F05",
+          "exact_assertion": "Offline suite succeeds without credentials; live acceptance remains explicitly opt-in and isolated."
+        }
+      ],
+      "evidence": [
+        "reports/stage1-first-final-64be1492/stage1-database.xml",
+        "reports/stage1-verification.json"
+      ],
+      "limit": "First concurrent verification failed; never counted as a pass",
+      "implementation": "Refresh only the disposable seed controller lease between independent SQL cases; production guards and all work deadlines/budgets unchanged",
+      "decision": "Heavy model and final broker verification run separately on this small VM",
+      "closure": "Complete fresh suite including controller expiry/fencing tests passes",
+      "authorization": "None for isolated offline test setup",
+      "implementation_references": [
+        {
+          "file": "tests/stage1/test_database.py",
+          "line": 277
+        }
+      ]
+    },
+    {
+      "id": "BR-CI",
+      "priority": "P2",
+      "state": "evidence-required",
+      "finding": "Required CI has not run on the actual eventual Stage 1 head",
+      "requirements": [
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1099,
+          "case": "F05",
+          "exact_assertion": "Offline suite succeeds without credentials; live acceptance remains explicitly opt-in and isolated."
+        }
+      ],
+      "evidence": [
+        "reports/stage1-verification.json"
+      ],
+      "limit": "Local offline verification of an uncommitted source digest is not remote head CI",
+      "implementation": "Local offline checks complete; no commit/push/PR",
+      "decision": "Publishing remains prohibited in this task",
+      "closure": "Separately authorized actual-head required CI passes and evidence is retained",
+      "authorization": "Commit/push/PR or remote CI operation",
+      "implementation_references": [
+        {
+          "file": ".github/workflows/stage0.yml",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "BR-FULL-ACCEPTANCE",
+      "priority": "P1",
+      "state": "evidence-required",
+      "finding": "No successful complete isolated Jan\u2013Mar acceptance and captured replay",
+      "requirements": [
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1027,
+          "case": "T03",
+          "exact_assertion": "Exact half-open interval and fixed T; all three months eligible; matching isolated environment required."
+        },
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1028,
+          "case": "T04",
+          "exact_assertion": "Reject before writes; normal T/retention/watermarks unchanged."
+        },
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1098,
+          "case": "F04",
+          "exact_assertion": "Validated complete predecessor topology and immutable bindings preserved; profile/measurement scientific state and active generations unchanged; attempt/run/audit increases explained separately. Reject invalid predecessors."
+        },
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1099,
+          "case": "F05",
+          "exact_assertion": "Offline suite succeeds without credentials; live acceptance remains explicitly opt-in and isolated."
+        },
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1110,
+          "case": "X01",
+          "exact_assertion": "Stage 1 has internal selector only; no Stage 2+ feature/cloud provision/destructive retention; migrations remain portable PostgreSQL."
+        }
+      ],
+      "evidence": [
+        "reports/stage1-acceptance-live-interrupted.json"
+      ],
+      "limit": "Historical preparation GO withdrawn; incomplete original data stays preserved",
+      "implementation": "No acceptance preparation/execution in this offline task",
+      "decision": "Resolve all preceding policy/capacity/review gates before preparing a fresh run",
+      "closure": "New reviewed isolated environment, explicit live opt-in, complete persisted coverage/reconciliation/replay evidence under the accepted policy and limits",
+      "authorization": "Fresh preparation and live execution separately",
+      "implementation_references": [
+        {
+          "file": "docs/stage1-contract.md",
+          "line": 1016
+        }
+      ]
+    }
+  ],
+  "next_action_gates": {
+    "original_terminalization": "GO_for_separate_procedure_review_only; approval/execution pending",
+    "bounded_source_validation_capture": "NO_GO_execution; precise policy and capture scope unapproved",
+    "fresh_acceptance_preparation": "NO_GO; source-policy and actual-population feasibility unresolved",
+    "live_acceptance_execution": "NO_GO; preparation, owner opt-in, CI and full evidence outstanding"
+  },
+  "capacity_model": {
+    "run_id": "fcd1984d-c03d-4c0c-9c09-71df372bdc79",
+    "root_chunks": 1260,
+    "planned_incoming_occurrences": 896,
+    "planned_current_profiles_after_8_moves": 888,
+    "planned_incoming_levels": 448896,
+    "levels_per_occurrence": 501,
+    "occupied_month_tile_slots": 9,
+    "month_slices": {
+      "January": 5,
+      "February": 4,
+      "March": 5
+    },
+    "state": "complete",
+    "canonical_bytes": 7225605264,
+    "cap_bytes": 10737418240,
+    "elapsed_seconds": 4129.941408579005,
+    "pipeline_peak_rss_bytes": 477233152,
+    "cgroup_memory_peak_bytes": 1074417664,
+    "cgroup_memory_limit_bytes": 1073741824,
+    "cgroup_memory_events": "low 0\nhigh 0\nmax 10831\noom 0\noom_kill 0\noom_group_kill 0\n",
+    "operations": [
+      {
+        "operation": "bounded_recovery_reservation",
+        "status": "process_loss",
+        "operations": 1,
+        "bytes": "16777216"
+      },
+      {
+        "operation": "incoming_existing_database_comparison",
+        "status": "complete",
+        "operations": 8,
+        "bytes": "4930792"
+      },
+      {
+        "operation": "incoming_normalization",
+        "status": "complete",
+        "operations": 904,
+        "bytes": "557180268"
+      },
+      {
+        "operation": "incoming_spool_certification",
+        "status": "complete",
+        "operations": 904,
+        "bytes": "557180268"
+      },
+      {
+        "operation": "publication_local_readback",
+        "status": "complete",
+        "operations": 2920,
+        "bytes": "1799741616"
+      },
+      {
+        "operation": "publication_object_readback",
+        "status": "complete",
+        "operations": 2920,
+        "bytes": "1799741616"
+      },
+      {
+        "operation": "retained_database_certification",
+        "status": "complete",
+        "operations": 2024,
+        "bytes": "1247492140"
+      },
+      {
+        "operation": "retained_spool_certification",
+        "status": "complete",
+        "operations": 2016,
+        "bytes": "1242561348"
+      }
+    ],
+    "measured_incoming_canonical_sizes": {
+      "measured_normalization_occurrences": 904,
+      "distinct_source_ids": 888,
+      "minimum_bytes": 616349,
+      "maximum_bytes": 616350,
+      "total_bytes": "557180268",
+      "levels": 452904
+    },
+    "bounded_recovery": [
+      {
+        "chunk": "ffe2e3e2-4c9d-45ab-91e6-f2698516049e",
+        "old_fence": 1,
+        "new_fence": 2,
+        "result": "complete"
+      }
+    ],
+    "complete_delivery_noops": [
+      {
+        "chunk": "ffe2e3e2-4c9d-45ab-91e6-f2698516049e",
+        "kind": "lost_ack_complete_delivery",
+        "science_catalogue_attempt_audit_unchanged": true
+      },
+      {
+        "chunk": "e0712650-e045-425e-976d-943c9ab14ae6",
+        "kind": "lost_ack_complete_delivery",
+        "science_catalogue_attempt_audit_unchanged": true
+      },
+      {
+        "chunk": "7aa1d483-b6d2-4d99-9f64-33a223e87431",
+        "kind": "lost_ack_complete_delivery",
+        "science_catalogue_attempt_audit_unchanged": true
+      }
+    ],
+    "current_science": {
+      "profiles": 888,
+      "postgres_json_bytes": 589620340,
+      "levels": 444888
+    },
+    "progress": [
+      {
+        "processed": 1,
+        "state": "complete",
+        "canonical_bytes": 0
+      },
+      {
+        "processed": 91,
+        "state": "complete",
+        "canonical_bytes": 0
+      },
+      {
+        "processed": 181,
+        "state": "complete",
+        "canonical_bytes": 0
+      },
+      {
+        "processed": 271,
+        "state": "complete",
+        "canonical_bytes": 0
+      },
+      {
+        "processed": 361,
+        "state": "complete",
+        "canonical_bytes": 0
+      },
+      {
+        "processed": 451,
+        "state": "complete",
+        "canonical_bytes": 0
+      },
+      {
+        "processed": 541,
+        "state": "complete",
+        "canonical_bytes": 0
+      },
+      {
+        "processed": 631,
+        "state": "complete",
+        "canonical_bytes": 0
+      },
+      {
+        "processed": 721,
+        "state": "complete",
+        "canonical_bytes": 0
+      },
+      {
+        "processed": 811,
+        "state": "complete",
+        "canonical_bytes": 0
+      },
+      {
+        "processed": 901,
+        "state": "complete",
+        "canonical_bytes": 0
+      },
+      {
+        "processed": 991,
+        "state": "complete",
+        "canonical_bytes": 0
+      },
+      {
+        "processed": 1081,
+        "state": "complete",
+        "canonical_bytes": 0
+      },
+      {
+        "processed": 1171,
+        "state": "complete",
+        "canonical_bytes": 0
+      },
+      {
+        "processed": 1219,
+        "state": "complete",
+        "canonical_bytes": 56223552
+      },
+      {
+        "processed": 1220,
+        "state": "complete",
+        "canonical_bytes": 95669952
+      },
+      {
+        "processed": 1221,
+        "state": "complete",
+        "canonical_bytes": 194285936
+      },
+      {
+        "processed": 1222,
+        "state": "complete",
+        "canonical_bytes": 233732272
+      },
+      {
+        "processed": 1223,
+        "state": "complete",
+        "canonical_bytes": 312625072
+      },
+      {
+        "processed": 1224,
+        "state": "complete",
+        "canonical_bytes": 509857056
+      },
+      {
+        "processed": 1225,
+        "state": "complete",
+        "canonical_bytes": 569026560
+      },
+      {
+        "processed": 1226,
+        "state": "complete",
+        "canonical_bytes": 687365760
+      },
+      {
+        "processed": 1227,
+        "state": "complete",
+        "canonical_bytes": 983213744
+      },
+      {
+        "processed": 1228,
+        "state": "complete",
+        "canonical_bytes": 1062106416
+      },
+      {
+        "processed": 1229,
+        "state": "complete",
+        "canonical_bytes": 1219892016
+      },
+      {
+        "processed": 1230,
+        "state": "complete",
+        "canonical_bytes": 1614356000
+      },
+      {
+        "processed": 1231,
+        "state": "complete",
+        "canonical_bytes": 1712971840
+      },
+      {
+        "processed": 1232,
+        "state": "complete",
+        "canonical_bytes": 1910203840
+      },
+      {
+        "processed": 1233,
+        "state": "complete",
+        "canonical_bytes": 2403283824
+      },
+      {
+        "processed": 1234,
+        "state": "complete",
+        "canonical_bytes": 2423006992
+      },
+      {
+        "processed": 1235,
+        "state": "complete",
+        "canonical_bytes": 2462453392
+      },
+      {
+        "processed": 1236,
+        "state": "complete",
+        "canonical_bytes": 3049218568
+      },
+      {
+        "processed": 1237,
+        "state": "complete",
+        "canonical_bytes": 3088664904
+      },
+      {
+        "processed": 1238,
+        "state": "complete",
+        "canonical_bytes": 3167557704
+      },
+      {
+        "processed": 1239,
+        "state": "complete",
+        "canonical_bytes": 3364789688
+      },
+      {
+        "processed": 1240,
+        "state": "complete",
+        "canonical_bytes": 3423959192
+      },
+      {
+        "processed": 1241,
+        "state": "complete",
+        "canonical_bytes": 3542298392
+      },
+      {
+        "processed": 1242,
+        "state": "complete",
+        "canonical_bytes": 3838146376
+      },
+      {
+        "processed": 1243,
+        "state": "complete",
+        "canonical_bytes": 3917039048
+      },
+      {
+        "processed": 1244,
+        "state": "complete",
+        "canonical_bytes": 4074824648
+      },
+      {
+        "processed": 1245,
+        "state": "complete",
+        "canonical_bytes": 4469288632
+      },
+      {
+        "processed": 1246,
+        "state": "complete",
+        "canonical_bytes": 4489011800
+      },
+      {
+        "processed": 1247,
+        "state": "complete",
+        "canonical_bytes": 4528458200
+      },
+      {
+        "processed": 1248,
+        "state": "complete",
+        "canonical_bytes": 5016607376
+      },
+      {
+        "processed": 1249,
+        "state": "complete",
+        "canonical_bytes": 5056053712
+      },
+      {
+        "processed": 1250,
+        "state": "complete",
+        "canonical_bytes": 5134946512
+      },
+      {
+        "processed": 1251,
+        "state": "complete",
+        "canonical_bytes": 5332178496
+      },
+      {
+        "processed": 1252,
+        "state": "complete",
+        "canonical_bytes": 5391348000
+      },
+      {
+        "processed": 1253,
+        "state": "complete",
+        "canonical_bytes": 5509687200
+      },
+      {
+        "processed": 1254,
+        "state": "complete",
+        "canonical_bytes": 5805535184
+      },
+      {
+        "processed": 1255,
+        "state": "complete",
+        "canonical_bytes": 5884427856
+      },
+      {
+        "processed": 1256,
+        "state": "complete",
+        "canonical_bytes": 6042213456
+      },
+      {
+        "processed": 1257,
+        "state": "complete",
+        "canonical_bytes": 6436677440
+      },
+      {
+        "processed": 1258,
+        "state": "complete",
+        "canonical_bytes": 6535293280
+      },
+      {
+        "processed": 1259,
+        "state": "complete",
+        "canonical_bytes": 6732525280
+      },
+      {
+        "processed": 1260,
+        "state": "complete",
+        "canonical_bytes": 7225605264
+      }
+    ],
+    "injected_publication_rebuild": true
+  },
+  "capacity_feasibility": {
+    "canonical_time_rss_envelope_completed": true,
+    "strict_cgroup_peak_within_limit": false,
+    "measured_envelope_completed_within_all_memory_bounds": false,
+    "actual_regional_feasibility_proved": false,
+    "remaining_limits": [
+      "Unknown full regional profiles/levels/canonical sizes/slot distribution",
+      "One platform/metadata set and no live transport latency",
+      "One recovery and rebuild, not the complete permitted retry envelope",
+      "One worker pipeline at a time, not two simultaneous large tasks"
+    ]
+  },
+  "original_evidence": {
+    "failed_404_selections": 44,
+    "quarantines": 8,
+    "canonical_bytes": 10721657712,
+    "scientific_state": {
+      "active_manifest_sha256": "8b076c77c999bee3e793169e05698a770437fb020407f1b400d64893504203b0",
+      "active_partitions": 67,
+      "levels": 572347,
+      "profile_manifest_sha256": "44808aba4b9f6ff8a8aa6d9037c1d92ecb673fd5393dda5af44ef8581394939b",
+      "profiles": 819
+    },
+    "run_open": true,
+    "operated_this_turn": false
+  },
+  "inactive_source_policy": "S1-SOURCE-2; strict A remains active; B requires exact approval",
+  "f01_limitations": "F01-2 minimum preserved; descending/present-core-null authentic unobserved; repeated pressure synthetic; errors normalized/storage only, no verified wire mapping",
+  "actual_head_ci": "outstanding",
+  "full_acceptance": "outstanding",
+  "stage2": "blocked"
+}

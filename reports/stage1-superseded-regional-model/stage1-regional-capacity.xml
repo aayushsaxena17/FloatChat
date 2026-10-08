@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1135.230" timestamp="2026-10-07T11:42:38.551929+00:00" hostname="Anduril"><testcase classname="tests.stage1.test_regional_capacity" name="test_one_run_actual_1260_root_capacity_and_pipeline_memory" time="1135.008"><failure message="AssertionError: Traceback (most recent call last):&#10;    File &quot;/test/tests/stage1/regional_capacity_probe.py&quot;, line 375, in &lt;module&gt;&#10;      &quot;planned_incoming_occurrences&quot;: incoming,&#10;  ^^&#10;    File &quot;/test/tests/stage1/regional_capacity_probe.py&quot;, line 263, in main&#10;      ),&#10;         &#10;  AssertionError&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['docker', 'run', '--pull=never', '--name', 'floatchat-stage1-regional-worker-92960896949e4047aa...ng,\n^^\n  File &quot;/test/tests/stage1/regional_capacity_probe.py&quot;, line 263, in main\n    ),\n       \nAssertionError\n').returncode">tests/stage1/test_regional_capacity.py:115: in test_one_run_actual_1260_root_capacity_and_pipeline_memory
+    timeout=3600,
+E   AssertionError: Traceback (most recent call last):
+E       File "/test/tests/stage1/regional_capacity_probe.py", line 375, in &lt;module&gt;
+E         "planned_incoming_occurrences": incoming,
+E     ^^
+E       File "/test/tests/stage1/regional_capacity_probe.py", line 263, in main
+E         ),
+E            
+E     AssertionError
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['docker', 'run', '--pull=never', '--name', 'floatchat-stage1-regional-worker-92960896949e4047aa...ng,\n^^\n  File "/test/tests/stage1/regional_capacity_probe.py", line 263, in main\n    ),\n       \nAssertionError\n').returncode</failure></testcase></testsuite></testsuites>

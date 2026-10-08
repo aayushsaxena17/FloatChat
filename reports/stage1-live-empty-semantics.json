@@ -1,0 +1,178 @@
+{
+  "authorization": "ADR-0039",
+  "endpoint": "https://argovis-api.colorado.edu/argo",
+  "kind": "argovis_live_empty_selection_probe",
+  "requests": 7,
+  "results": [
+    {
+      "decoded_bytes": 5,
+      "headers": {
+        "content-type": "application/json; charset=utf-8",
+        "transfer-encoding": "chunked"
+      },
+      "http_status": 404,
+      "json": {
+        "body": "[]",
+        "type": "list"
+      },
+      "parameters": {
+        "endDate": "2025-01-08T00:00:00Z",
+        "polygon": "[[19.999999,-1e-06],[30.000001,-1e-06],[30.000001,10.000001],[19.999999,10.000001],[19.999999,-1e-06]]",
+        "startDate": "2025-01-01T00:00:00Z"
+      },
+      "raw_body_hex": "5b0a0a5d0a",
+      "received_bytes": 5,
+      "requested_at_utc": "2026-10-07T21:23:07.813186+00:00",
+      "role": "inventory_before",
+      "selection": "historical_404_land_20_0",
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "tile": "20:0:10:10"
+    },
+    {
+      "decoded_bytes": 5,
+      "headers": {
+        "content-type": "application/json; charset=utf-8",
+        "transfer-encoding": "chunked"
+      },
+      "http_status": 404,
+      "json": {
+        "body": "[]",
+        "type": "list"
+      },
+      "parameters": {
+        "data": "all",
+        "endDate": "2025-01-08T00:00:00Z",
+        "polygon": "[[19.999999,-1e-06],[30.000001,-1e-06],[30.000001,10.000001],[19.999999,10.000001],[19.999999,-1e-06]]",
+        "startDate": "2025-01-01T00:00:00Z"
+      },
+      "raw_body_hex": "5b0a0a5d0a",
+      "received_bytes": 5,
+      "requested_at_utc": "2026-10-07T21:23:09.935283+00:00",
+      "role": "profile",
+      "selection": "historical_404_land_20_0",
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "tile": "20:0:10:10"
+    },
+    {
+      "decoded_bytes": 5,
+      "headers": {
+        "content-type": "application/json; charset=utf-8",
+        "transfer-encoding": "chunked"
+      },
+      "http_status": 404,
+      "json": {
+        "body": "[]",
+        "type": "list"
+      },
+      "parameters": {
+        "endDate": "2025-01-08T00:00:00Z",
+        "polygon": "[[19.999999,-1e-06],[30.000001,-1e-06],[30.000001,10.000001],[19.999999,10.000001],[19.999999,-1e-06]]",
+        "startDate": "2025-01-01T00:00:00Z"
+      },
+      "raw_body_hex": "5b0a0a5d0a",
+      "received_bytes": 5,
+      "requested_at_utc": "2026-10-07T21:23:12.063514+00:00",
+      "role": "inventory_after",
+      "selection": "historical_404_land_20_0",
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "tile": "20:0:10:10"
+    },
+    {
+      "decoded_bytes": 5,
+      "headers": {
+        "content-type": "application/json; charset=utf-8",
+        "transfer-encoding": "chunked"
+      },
+      "http_status": 404,
+      "json": {
+        "body": "[]",
+        "type": "list"
+      },
+      "parameters": {
+        "endDate": "2025-01-08T00:00:00Z",
+        "polygon": "[[99.999999,9.999999],[110.000001,9.999999],[110.000001,20.000001],[99.999999,20.000001],[99.999999,9.999999]]",
+        "startDate": "2025-01-01T00:00:00Z"
+      },
+      "raw_body_hex": "5b0a0a5d0a",
+      "received_bytes": 5,
+      "requested_at_utc": "2026-10-07T21:23:14.267870+00:00",
+      "role": "inventory_before",
+      "selection": "historical_404_coastal_100_10",
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "tile": "100:10:10:10"
+    },
+    {
+      "decoded_bytes": 5,
+      "headers": {
+        "content-type": "application/json; charset=utf-8",
+        "transfer-encoding": "chunked"
+      },
+      "http_status": 404,
+      "json": {
+        "body": "[]",
+        "type": "list"
+      },
+      "parameters": {
+        "data": "all",
+        "endDate": "2025-01-08T00:00:00Z",
+        "polygon": "[[99.999999,9.999999],[110.000001,9.999999],[110.000001,20.000001],[99.999999,20.000001],[99.999999,9.999999]]",
+        "startDate": "2025-01-01T00:00:00Z"
+      },
+      "raw_body_hex": "5b0a0a5d0a",
+      "received_bytes": 5,
+      "requested_at_utc": "2026-10-07T21:23:16.437239+00:00",
+      "role": "profile",
+      "selection": "historical_404_coastal_100_10",
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "tile": "100:10:10:10"
+    },
+    {
+      "decoded_bytes": 5,
+      "headers": {
+        "content-type": "application/json; charset=utf-8",
+        "transfer-encoding": "chunked"
+      },
+      "http_status": 404,
+      "json": {
+        "body": "[]",
+        "type": "list"
+      },
+      "parameters": {
+        "endDate": "2025-01-08T00:00:00Z",
+        "polygon": "[[99.999999,9.999999],[110.000001,9.999999],[110.000001,20.000001],[99.999999,20.000001],[99.999999,9.999999]]",
+        "startDate": "2025-01-01T00:00:00Z"
+      },
+      "raw_body_hex": "5b0a0a5d0a",
+      "received_bytes": 5,
+      "requested_at_utc": "2026-10-07T21:23:19.655057+00:00",
+      "role": "inventory_after",
+      "selection": "historical_404_coastal_100_10",
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "tile": "100:10:10:10"
+    },
+    {
+      "decoded_bytes": 19530,
+      "headers": {
+        "content-type": "application/json; charset=utf-8",
+        "transfer-encoding": "chunked"
+      },
+      "http_status": 200,
+      "json": {
+        "documents": 21,
+        "type": "array"
+      },
+      "parameters": {
+        "endDate": "2025-01-08T00:00:00Z",
+        "polygon": "[[69.999999,-10.000001],[80.000001,-10.000001],[80.000001,1e-06],[69.999999,1e-06],[69.999999,-10.000001]]",
+        "startDate": "2025-01-01T00:00:00Z"
+      },
+      "received_bytes": 19530,
+      "requested_at_utc": "2026-10-07T21:23:21.803753+00:00",
+      "role": "inventory_before",
+      "selection": "control_published_70_-10",
+      "sha256": "d4013ec4f77dc87c6a6d96d3aede46b5e31bb3bdba39474c3b40f4d2b95542f0",
+      "tile": "70:-10:10:10"
+    }
+  ],
+  "scope": "Diagnostic HTTP semantics only; not ingestion, F01 or acceptance evidence"
+}

@@ -1,0 +1,24 @@
+..F.                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_P01_P05_R02_B03_F02_F03_F04_F06_F07_combined_processor_publication_replay _
+tests/stage1/test_database.py:423: in test_P01_P05_R02_B03_F02_F03_F04_F06_F07_combined_processor_publication_replay
+    raise AssertionError(str(errors[-5:]) + result.stderr.decode())
+E   AssertionError: []Traceback (most recent call last):
+E     File "/test/tests/stage1/processor_probe.py", line 273, in <module>
+E       main()
+E     File "/test/tests/stage1/processor_probe.py", line 249, in main
+E       capacity_evidence = verify_capacity(repository, ENV)
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/test/tests/stage1/capacity_probe.py", line 20, in verify_capacity
+E       profile_bytes = (basis / "02-profile.json").read_bytes()
+E                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/usr/local/lib/python3.12/pathlib.py", line 1019, in read_bytes
+E       with self.open(mode='rb') as f:
+E            ^^^^^^^^^^^^^^^^^^^^
+E     File "/usr/local/lib/python3.12/pathlib.py", line 1013, in open
+E       return io.open(self, mode, buffering, encoding, errors, newline)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 13] Permission denied: '/test/tests/fixtures/argovis/recorded/9efe8f4e713c44a1a2964407e52b9a45/02-profile.json'
+=========================== short test summary info ============================
+FAILED tests/stage1/test_database.py::test_P01_P05_R02_B03_F02_F03_F04_F06_F07_combined_processor_publication_replay
+1 failed, 3 passed, 35 deselected in 21.87s

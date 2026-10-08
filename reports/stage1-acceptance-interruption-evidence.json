@@ -1,0 +1,167 @@
+{
+  "attempts": [
+    {
+      "attempts": 1,
+      "disposition": "transport_failure",
+      "error_category": "io_deadline",
+      "finished": 1,
+      "first_started": "2026-10-07T07:17:31.902355+00:00",
+      "http_status": null,
+      "last_finished": "2026-10-07T07:17:41.907921+00:00",
+      "last_started": "2026-10-07T07:17:31.902355+00:00",
+      "origin": "http",
+      "run_id": "fee47d4d-8e91-4cd4-ace2-a1c3d1129fdb"
+    },
+    {
+      "attempts": 1215,
+      "disposition": "verified_raw",
+      "error_category": null,
+      "finished": 1215,
+      "first_started": "2026-10-07T07:04:51.311836+00:00",
+      "http_status": 200,
+      "last_finished": "2026-10-07T08:24:24.371131+00:00",
+      "last_started": "2026-10-07T08:24:22.080077+00:00",
+      "origin": "http",
+      "run_id": "fee47d4d-8e91-4cd4-ace2-a1c3d1129fdb"
+    },
+    {
+      "attempts": 44,
+      "disposition": "http_failure",
+      "error_category": "upstream_http_failure",
+      "finished": 44,
+      "first_started": "2026-10-07T07:04:50.128934+00:00",
+      "http_status": 404,
+      "last_finished": "2026-10-07T08:21:20.905029+00:00",
+      "last_started": "2026-10-07T08:21:18.099494+00:00",
+      "origin": "http",
+      "run_id": "fee47d4d-8e91-4cd4-ace2-a1c3d1129fdb"
+    }
+  ],
+  "captured_at_utc": "2026-10-07T08:26:31.637809+00:00",
+  "chunks": [
+    {
+      "count": 120,
+      "leaf": true,
+      "reason": "verified_publication",
+      "run_id": "fee47d4d-8e91-4cd4-ace2-a1c3d1129fdb",
+      "state": "complete"
+    },
+    {
+      "count": 44,
+      "leaf": true,
+      "reason": "http_retry_exhausted",
+      "run_id": "fee47d4d-8e91-4cd4-ace2-a1c3d1129fdb",
+      "state": "failed"
+    },
+    {
+      "count": 1088,
+      "leaf": true,
+      "reason": null,
+      "run_id": "fee47d4d-8e91-4cd4-ace2-a1c3d1129fdb",
+      "state": "planned"
+    },
+    {
+      "count": 4,
+      "leaf": true,
+      "reason": "upstream_data_warning",
+      "run_id": "fee47d4d-8e91-4cd4-ace2-a1c3d1129fdb",
+      "state": "quarantined"
+    },
+    {
+      "count": 4,
+      "leaf": true,
+      "reason": "canonical_output_limit",
+      "run_id": "fee47d4d-8e91-4cd4-ace2-a1c3d1129fdb",
+      "state": "quarantined"
+    }
+  ],
+  "credentials_or_private_originals_accessed": false,
+  "events": [
+    {
+      "count": 4,
+      "reason": "canonical_output_limit",
+      "run_id": "fee47d4d-8e91-4cd4-ace2-a1c3d1129fdb"
+    },
+    {
+      "count": 505,
+      "reason": "child_phase",
+      "run_id": "fee47d4d-8e91-4cd4-ace2-a1c3d1129fdb"
+    },
+    {
+      "count": 1,
+      "reason": "complete_plan_persisted",
+      "run_id": "fee47d4d-8e91-4cd4-ace2-a1c3d1129fdb"
+    },
+    {
+      "count": 128,
+      "reason": "complete_verified_landing",
+      "run_id": "fee47d4d-8e91-4cd4-ace2-a1c3d1129fdb"
+    },
+    {
+      "count": 44,
+      "reason": "http_retry_exhausted",
+      "run_id": "fee47d4d-8e91-4cd4-ace2-a1c3d1129fdb"
+    },
+    {
+      "count": 128,
+      "reason": "mapping_started",
+      "run_id": "fee47d4d-8e91-4cd4-ace2-a1c3d1129fdb"
+    },
+    {
+      "count": 174,
+      "reason": "processing_claim",
+      "run_id": "fee47d4d-8e91-4cd4-ace2-a1c3d1129fdb"
+    },
+    {
+      "count": 1,
+      "reason": "run_admitted_reference_captured",
+      "run_id": "fee47d4d-8e91-4cd4-ace2-a1c3d1129fdb"
+    },
+    {
+      "count": 4,
+      "reason": "upstream_data_warning",
+      "run_id": "fee47d4d-8e91-4cd4-ace2-a1c3d1129fdb"
+    },
+    {
+      "count": 121,
+      "reason": "validated_candidate",
+      "run_id": "fee47d4d-8e91-4cd4-ace2-a1c3d1129fdb"
+    },
+    {
+      "count": 120,
+      "reason": "verified_publication",
+      "run_id": "fee47d4d-8e91-4cd4-ace2-a1c3d1129fdb"
+    },
+    {
+      "count": 172,
+      "reason": "worker_started",
+      "run_id": "fee47d4d-8e91-4cd4-ace2-a1c3d1129fdb"
+    }
+  ],
+  "live_worker_restarted": false,
+  "runs": [
+    {
+      "accepted_levels": 572347,
+      "accepted_profiles": 819,
+      "closed": false,
+      "controller_claims": 1,
+      "controller_lease_until": "2026-10-07T08:35:11.939007+00:00",
+      "created_at_actual_utc": "2026-10-07T07:04:38.284791+00:00",
+      "deadline": "2026-10-07T13:04:38.284791+00:00",
+      "http_attempts": 1260,
+      "id": "fee47d4d-8e91-4cd4-ace2-a1c3d1129fdb",
+      "raw_received_bytes": 30314644,
+      "state": "validating",
+      "termination_reason": null,
+      "work_deadline": "2026-10-07T13:03:38.284791+00:00"
+    }
+  ],
+  "science": [
+    {
+      "active_partitions": 67,
+      "levels": 572347,
+      "profiles": 819
+    }
+  ],
+  "session": "6f3e7301f9789059"
+}

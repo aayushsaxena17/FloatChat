@@ -1,0 +1,203 @@
+...............F.FFF.FF.FFF.FF.FFF..FFF.                                 [100%]
+=================================== FAILURES ===================================
+_______ test_F01_I04_S05_labelled_authentic_pressure_derivative_storage ________
+tests/stage1/test_database.py:774: in test_F01_I04_S05_labelled_authentic_pressure_derivative_storage
+    result = postgres(
+tests/stage1/test_database.py:345: in execute
+    assert result.returncode == expected, result.stderr
+E   AssertionError: ERROR:  claim_denied
+E     CONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE
+E     
+E   assert 3 == 0
+E    +  where 3 = CompletedProcess(args=['docker', 'exec', '-i', 'floatchat-stage1-offline-e253dba429df4cba8273192716f2d29b', 'psql', '-...stdout='', stderr='ERROR:  claim_denied\nCONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE\n').returncode
+_ test_F01_S01_S03_labelled_present_core_null_restricted_database_publication[R] _
+tests/stage1/test_database.py:838: in test_F01_S01_S03_labelled_present_core_null_restricted_database_publication
+    result = postgres("\n".join(queries)).splitlines()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/stage1/test_database.py:345: in execute
+    assert result.returncode == expected, result.stderr
+E   AssertionError: ERROR:  claim_denied
+E     CONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE
+E     
+E   assert 3 == 0
+E    +  where 3 = CompletedProcess(args=['docker', 'exec', '-i', 'floatchat-stage1-offline-e253dba429df4cba8273192716f2d29b', 'psql', '-...stdout='', stderr='ERROR:  claim_denied\nCONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE\n').returncode
+_ test_F01_S01_S03_labelled_present_core_null_restricted_database_publication[A] _
+tests/stage1/test_database.py:838: in test_F01_S01_S03_labelled_present_core_null_restricted_database_publication
+    result = postgres("\n".join(queries)).splitlines()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/stage1/test_database.py:345: in execute
+    assert result.returncode == expected, result.stderr
+E   AssertionError: ERROR:  claim_denied
+E     CONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE
+E     
+E   assert 3 == 0
+E    +  where 3 = CompletedProcess(args=['docker', 'exec', '-i', 'floatchat-stage1-offline-e253dba429df4cba8273192716f2d29b', 'psql', '-...stdout='', stderr='ERROR:  claim_denied\nCONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE\n').returncode
+_ test_F01_I01_I02_I03_labelled_descending_database_direction_and_natural_key __
+tests/stage1/test_database.py:891: in test_F01_I01_I02_I03_labelled_descending_database_direction_and_natural_key
+    result = postgres(
+tests/stage1/test_database.py:345: in execute
+    assert result.returncode == expected, result.stderr
+E   AssertionError: ERROR:  claim_denied
+E     CONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE
+E     
+E   assert 3 == 0
+E    +  where 3 = CompletedProcess(args=['docker', 'exec', '-i', 'floatchat-stage1-offline-e253dba429df4cba8273192716f2d29b', 'psql', '-...stdout='', stderr='ERROR:  claim_denied\nCONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE\n').returncode
+______ test_F02_F03_B03_persisted_retry_status_reason_and_timing_metrics _______
+tests/stage1/test_database.py:968: in test_F02_F03_B03_persisted_retry_status_reason_and_timing_metrics
+    evidence = json.loads(postgres("\n".join(commands)).splitlines()[-1])
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/stage1/test_database.py:345: in execute
+    assert result.returncode == expected, result.stderr
+E   AssertionError: ERROR:  claim_denied
+E     CONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE
+E     
+E   assert 3 == 0
+E    +  where 3 = CompletedProcess(args=['docker', 'exec', '-i', 'floatchat-stage1-offline-e253dba429df4cba8273192716f2d29b', 'psql', '-...stdout='', stderr='ERROR:  claim_denied\nCONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE\n').returncode
+____________________ test_C01_C05_claim_fence_and_recovery _____________________
+tests/stage1/test_database.py:997: in test_C01_C05_claim_fence_and_recovery
+    assert postgres(query).splitlines() == ["1", "", "1", "2", "interrupted", "1"]
+           ^^^^^^^^^^^^^^^
+tests/stage1/test_database.py:345: in execute
+    assert result.returncode == expected, result.stderr
+E   AssertionError: ERROR:  claim_denied
+E     CONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE
+E     
+E   assert 3 == 0
+E    +  where 3 = CompletedProcess(args=['docker', 'exec', '-i', 'floatchat-stage1-offline-e253dba429df4cba8273192716f2d29b', 'psql', '-...stdout='', stderr='ERROR:  claim_denied\nCONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE\n').returncode
+______________ test_P11_legal_late_quarantine_intent_disposition _______________
+tests/stage1/test_database.py:1031: in test_P11_legal_late_quarantine_intent_disposition
+    result = postgres(query).splitlines()
+             ^^^^^^^^^^^^^^^
+tests/stage1/test_database.py:345: in execute
+    assert result.returncode == expected, result.stderr
+E   AssertionError: ERROR:  claim_denied
+E     CONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE
+E     
+E   assert 3 == 0
+E    +  where 3 = CompletedProcess(args=['docker', 'exec', '-i', 'floatchat-stage1-offline-e253dba429df4cba8273192716f2d29b', 'psql', '-...stdout='', stderr='ERROR:  claim_denied\nCONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE\n').returncode
+__________________ test_C07_cancellation_finalizes_and_fences __________________
+tests/stage1/test_database.py:1043: in test_C07_cancellation_finalizes_and_fences
+    assert postgres(query).splitlines() == ["1", "failed", "failed|true", "failed"]
+           ^^^^^^^^^^^^^^^
+tests/stage1/test_database.py:345: in execute
+    assert result.returncode == expected, result.stderr
+E   AssertionError: ERROR:  claim_denied
+E     CONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE
+E     
+E   assert 3 == 0
+E    +  where 3 = CompletedProcess(args=['docker', 'exec', '-i', 'floatchat-stage1-offline-e253dba429df4cba8273192716f2d29b', 'psql', '-...stdout='', stderr='ERROR:  claim_denied\nCONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE\n').returncode
+_____________________ test_B03_persisted_retry_exhaustion ______________________
+tests/stage1/test_database.py:1060: in test_B03_persisted_retry_exhaustion
+    assert postgres(begin + commands + "ROLLBACK;").splitlines() == ["1", "1", "2", "3", "4"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/stage1/test_database.py:345: in execute
+    assert result.returncode == expected, result.stderr
+E   AssertionError: ERROR:  claim_denied
+E     CONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE
+E     
+E   assert 3 == 0
+E    +  where 3 = CompletedProcess(args=['docker', 'exec', '-i', 'floatchat-stage1-offline-e253dba429df4cba8273192716f2d29b', 'psql', '-...stdout='', stderr='ERROR:  claim_denied\nCONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE\n').returncode
+______ test_B09_month_creation_and_failed_publication_roll_back_together _______
+tests/stage1/test_database.py:1119: in test_B09_month_creation_and_failed_publication_roll_back_together
+    result = postgres(
+tests/stage1/test_database.py:345: in execute
+    assert result.returncode == expected, result.stderr
+E   AssertionError: ERROR:  claim_denied
+E     CONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE
+E     
+E   assert 3 == 0
+E    +  where 3 = CompletedProcess(args=['docker', 'exec', '-i', 'floatchat-stage1-offline-e253dba429df4cba8273192716f2d29b', 'psql', '-...stdout='', stderr='ERROR:  claim_denied\nCONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE\n').returncode
+______________ test_P06_P07_atomic_publication_and_complete_retry ______________
+tests/stage1/test_database.py:1199: in test_P06_P07_atomic_publication_and_complete_retry
+    result = postgres(
+tests/stage1/test_database.py:345: in execute
+    assert result.returncode == expected, result.stderr
+E   AssertionError: ERROR:  claim_denied
+E     CONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE
+E     
+E   assert 3 == 0
+E    +  where 3 = CompletedProcess(args=['docker', 'exec', '-i', 'floatchat-stage1-offline-e253dba429df4cba8273192716f2d29b', 'psql', '-...stdout='', stderr='ERROR:  claim_denied\nCONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE\n').returncode
+____________ test_R02_R06_publication_replaces_entire_shortened_set ____________
+tests/stage1/test_database.py:1265: in test_R02_R06_publication_replaces_entire_shortened_set
+    assert postgres(source).splitlines()[-2:] == ["3|2", "newer"]
+           ^^^^^^^^^^^^^^^^
+tests/stage1/test_database.py:345: in execute
+    assert result.returncode == expected, result.stderr
+E   AssertionError: ERROR:  claim_denied
+E     CONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE
+E     
+E   assert 3 == 0
+E    +  where 3 = CompletedProcess(args=['docker', 'exec', '-i', 'floatchat-stage1-offline-e253dba429df4cba8273192716f2d29b', 'psql', '-...stdout='', stderr='ERROR:  claim_denied\nCONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE\n').returncode
+__________ test_P11_late_conflict_preserves_winner_and_abandons_loser __________
+tests/stage1/test_database.py:1315: in test_P11_late_conflict_preserves_winner_and_abandons_loser
+    assert postgres(source).splitlines()[-5:] == [
+           ^^^^^^^^^^^^^^^^
+tests/stage1/test_database.py:345: in execute
+    assert result.returncode == expected, result.stderr
+E   AssertionError: ERROR:  claim_denied
+E     CONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE
+E     
+E   assert 3 == 0
+E    +  where 3 = CompletedProcess(args=['docker', 'exec', '-i', 'floatchat-stage1-offline-e253dba429df4cba8273192716f2d29b', 'psql', '-...stdout='', stderr='ERROR:  claim_denied\nCONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE\n').returncode
+______________ test_P09b_empty_refresh_retains_active_generation _______________
+tests/stage1/test_database.py:1346: in test_P09b_empty_refresh_retains_active_generation
+    assert postgres(source).splitlines()[-4:] == ["1|1", "1", "3", "source_absence_over_retained"]
+           ^^^^^^^^^^^^^^^^
+tests/stage1/test_database.py:345: in execute
+    assert result.returncode == expected, result.stderr
+E   AssertionError: ERROR:  claim_denied
+E     CONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE
+E     
+E   assert 3 == 0
+E    +  where 3 = CompletedProcess(args=['docker', 'exec', '-i', 'floatchat-stage1-offline-e253dba429df4cba8273192716f2d29b', 'psql', '-...stdout='', stderr='ERROR:  claim_denied\nCONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE\n').returncode
+________ test_C06_worker_heartbeat_does_not_keep_dead_controller_alive _________
+tests/stage1/test_database.py:1399: in test_C06_worker_heartbeat_does_not_keep_dead_controller_alive
+    postgres(f"""BEGIN;
+tests/stage1/test_database.py:345: in execute
+    assert result.returncode == expected, result.stderr
+E   AssertionError: ERROR:  claim_denied
+E     CONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE
+E     
+E   assert 3 == 0
+E    +  where 3 = CompletedProcess(args=['docker', 'exec', '-i', 'floatchat-stage1-offline-e253dba429df4cba8273192716f2d29b', 'psql', '-...stdout='', stderr='ERROR:  claim_denied\nCONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE\n').returncode
+__________ test_P09a_empty_initial_fetch_has_receipt_and_no_partition __________
+tests/stage1/test_database.py:1430: in test_P09a_empty_initial_fetch_has_receipt_and_no_partition
+    assert postgres(source).splitlines()[-4:] == [
+           ^^^^^^^^^^^^^^^^
+tests/stage1/test_database.py:345: in execute
+    assert result.returncode == expected, result.stderr
+E   AssertionError: ERROR:  claim_denied
+E     CONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE
+E     
+E   assert 3 == 0
+E    +  where 3 = CompletedProcess(args=['docker', 'exec', '-i', 'floatchat-stage1-offline-e253dba429df4cba8273192716f2d29b', 'psql', '-...stdout='', stderr='ERROR:  claim_denied\nCONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE\n').returncode
+____________ test_P09c_last_profile_correction_deactivates_old_slot ____________
+tests/stage1/test_database.py:1483: in test_P09c_last_profile_correction_deactivates_old_slot
+    assert postgres(source).splitlines()[-5:] == [
+           ^^^^^^^^^^^^^^^^
+tests/stage1/test_database.py:345: in execute
+    assert result.returncode == expected, result.stderr
+E   AssertionError: ERROR:  claim_denied
+E     CONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE
+E     
+E   assert 3 == 0
+E    +  where 3 = CompletedProcess(args=['docker', 'exec', '-i', 'floatchat-stage1-offline-e253dba429df4cba8273192716f2d29b', 'psql', '-...stdout='', stderr='ERROR:  claim_denied\nCONTEXT:  PL/pgSQL function claim_chunk(uuid,uuid,bigint) line 10 at RAISE\n').returncode
+=========================== short test summary info ============================
+FAILED tests/stage1/test_database.py::test_F01_I04_S05_labelled_authentic_pressure_derivative_storage
+FAILED tests/stage1/test_database.py::test_F01_S01_S03_labelled_present_core_null_restricted_database_publication[R]
+FAILED tests/stage1/test_database.py::test_F01_S01_S03_labelled_present_core_null_restricted_database_publication[A]
+FAILED tests/stage1/test_database.py::test_F01_I01_I02_I03_labelled_descending_database_direction_and_natural_key
+FAILED tests/stage1/test_database.py::test_F02_F03_B03_persisted_retry_status_reason_and_timing_metrics
+FAILED tests/stage1/test_database.py::test_C01_C05_claim_fence_and_recovery
+FAILED tests/stage1/test_database.py::test_P11_legal_late_quarantine_intent_disposition
+FAILED tests/stage1/test_database.py::test_C07_cancellation_finalizes_and_fences
+FAILED tests/stage1/test_database.py::test_B03_persisted_retry_exhaustion - A...
+FAILED tests/stage1/test_database.py::test_B09_month_creation_and_failed_publication_roll_back_together
+FAILED tests/stage1/test_database.py::test_P06_P07_atomic_publication_and_complete_retry
+FAILED tests/stage1/test_database.py::test_R02_R06_publication_replaces_entire_shortened_set
+FAILED tests/stage1/test_database.py::test_P11_late_conflict_preserves_winner_and_abandons_loser
+FAILED tests/stage1/test_database.py::test_P09b_empty_refresh_retains_active_generation
+FAILED tests/stage1/test_database.py::test_C06_worker_heartbeat_does_not_keep_dead_controller_alive
+FAILED tests/stage1/test_database.py::test_P09a_empty_initial_fetch_has_receipt_and_no_partition
+FAILED tests/stage1/test_database.py::test_P09c_last_profile_correction_deactivates_old_slot
+17 failed, 23 passed in 615.31s (0:10:15)
