@@ -62,7 +62,6 @@ def main():
         INGESTION_BUCKET=store.bucket,
         INGESTION_QUEUE_NAMESPACE="component",
         COMPOSE_PROJECT_NAME="component",
-        INGESTION_REDIS_URL="redis://127.0.0.1:6379/11",
         OBJECT_STORAGE_ENDPOINT="http://127.0.0.1:9000",
         OBJECT_STORAGE_ACCESS_KEY=os.environ["MINIO_ROOT_USER"],
         OBJECT_STORAGE_SECRET_KEY=os.environ["MINIO_ROOT_PASSWORD"],

@@ -2,7 +2,9 @@
 name = "floatchat-workers"
 version = "0.0.0"
 requires-python = ">=3.12,<3.13"
-dependencies = ["floatchat-core", "celery[redis]==5.6.2"]
+dependencies = [
+    "floatchat-core",
+]
 
 [project.scripts]
 floatchat = "floatchat_workers.cli:main"

@@ -1,6 +1,6 @@
 """Controller-authorized HTTP retry owner and immutable, sanitized raw landing.
 
-No HTTP adapter or Celery task retries independently. Every request reservation,
+No HTTP adapter or queue worker retries independently. Every request reservation,
 including interrupted attempts, is persisted before the single network call.
 Recovery reuses verified landing for the same pinned logical request. Float metadata
 landed by an earlier chunk or run is reused through a per-chunk `cache` manifest.

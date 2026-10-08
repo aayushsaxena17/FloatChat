@@ -33,6 +33,7 @@ STAGE1_TABLES = frozenset(
         "chunk_accounting",
         "processing_ticket",
         "float_metadata_cache",
+        "replay_chunk_source",
         "measurement_staging",
         "landing_reset",
         "ingestion_event_sequence_seq",
