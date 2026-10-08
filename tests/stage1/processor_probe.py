@@ -274,6 +274,43 @@ def main():
             for item in conflict["persisted_metrics"]["state_reasons"]
         )
         assert conflict["scientific_level_delta_balanced"]
+        # ADR-0046: missing_basin alone is informational and publishes normally.
+        basin = {
+            **wire,
+            "_id": "synthetic-missing-basin",
+            "cycle_number": wire["cycle_number"] + 20000,
+            "data_warning": ["missing_basin"],
+        }
+        published = execute([basin], root / "missing_basin")
+        assert published["state"] == "complete", published
+        assert not published["scientific_no_change"]
+        assert published["full_snapshot_balanced"] and published["scientific_level_delta_balanced"]
+        assert published["source_policy"]["source_exclusion_count"] == 0
+        # Combined with degenerate_levels the whole profile is still excluded.
+        both = execute(
+            [
+                {
+                    **basin,
+                    "_id": "synthetic-both",
+                    "cycle_number": basin["cycle_number"] + 1,
+                    "data_warning": ["missing_basin", "degenerate_levels"],
+                }
+            ],
+            root / "both_warnings",
+        )
+        assert both["state"] == "complete" and both["scientific_no_change"]
+        assert both["source_policy"]["source_exclusion_count"] == 1
+        # missing_location (and missing_timestamp) keep the whole-chunk quarantine.
+        located = execute(
+            [{**basin, "_id": "synthetic-located", "data_warning": ["missing_location"]}],
+            root / "missing_location",
+        )
+        assert located["state"] == "quarantined", located
+        repeated = execute(
+            [{**basin, "_id": "synthetic-repeated", "data_warning": ["missing_basin"] * 2}],
+            root / "repeated_warning",
+        )
+        assert repeated["state"] == "quarantined", repeated
     budget.close()
     from capacity_probe import verify_capacity
 

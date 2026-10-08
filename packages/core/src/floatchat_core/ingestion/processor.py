@@ -21,6 +21,9 @@ from .source import Source
 from .spool import ProfileSpool, revision_json
 from .states import TERMINAL
 
+# OpenAPI 2.36.2 warnings with a defined S1-SOURCE-2 outcome (ADR-0040, ADR-0046).
+TOLERATED_WARNINGS = frozenset({"degenerate_levels", "missing_basin"})
+
 SPLITTABLE = frozenset(
     {
         "compressed_size_limit",
@@ -219,13 +222,23 @@ class Processor:
             self.pulse()
             outcome = self.outcomes[index]
             outcome["outcome"] = "structurally_quarantined"
-            # S1-SOURCE-2 exclusion: only the known degenerate_levels warning, alone.
-            # The rest of the schema must still validate; any other warning, missing
-            # identity or drift keeps the strict whole-chunk quarantine.
-            source_loss = doc.get("data_warning") == ["degenerate_levels"]
-            if source_loss:
+            # S1-SOURCE-2 (ADR-0040/0046): degenerate_levels excludes the whole profile;
+            # missing_basin is an informational label (valid position, land-adjacent
+            # basin lookup) and publishes normally. The rest of the schema must still
+            # validate; missing_location/missing_timestamp, any other or repeated
+            # warning, missing identity or drift keep the strict whole-chunk quarantine.
+            warnings = doc.get("data_warning", [])
+            source_loss = informational = False
+            if (
+                isinstance(warnings, list)
+                and warnings
+                and len(set(warnings)) == len(warnings)
+                and set(warnings) <= TOLERATED_WARNINGS
+            ):
                 if not doc.get("_id"):
                     raise Rejection("upstream_data_warning")
+                source_loss = "degenerate_levels" in warnings
+                informational = "missing_basin" in warnings
                 doc = {**doc, "data_warning": []}
             with self.budget_repository.canonical_budget(self.authority) as budget:
                 value = map_profile(doc, self.metadata(doc), budget)
@@ -281,6 +294,7 @@ class Processor:
                     **outcome["evidence"],
                     "policy": "S1-SOURCE-2",
                     "warning": "degenerate_levels",
+                    "source_warnings": sorted(warnings),
                     "source_profile_id": value.source_profile_id,
                     "raw_profile_landing": self.raw_ids["profile"],
                     "selection": request_parameters(self.plan, inventory=False),
@@ -289,6 +303,12 @@ class Processor:
                 }
             else:
                 outcome["outcome"] = "blocked_uncommitted"
+                if informational:
+                    # The warning itself stays in the immutable raw landing.
+                    outcome["evidence"] = {
+                        **outcome["evidence"],
+                        "source_warnings": ["missing_basin"],
+                    }
                 spool.add(value, uuid.UUID(self.raw_ids["profile"]), index)
 
     def execute(self) -> str:
