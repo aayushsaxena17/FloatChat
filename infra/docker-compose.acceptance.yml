@@ -16,9 +16,6 @@ x-runtime: &runtime
     ACCEPTANCE_CONTROL_BUCKET: ${ACCEPTANCE_CONTROL_BUCKET:?}
     INGESTION_QUEUE_NAMESPACE: ${INGESTION_QUEUE_NAMESPACE:?}
     COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:?}
-    INGESTION_REDIS_URL: redis://redis:6379/13
-    REDIS_URL: redis://redis:6379/13
-    ACCEPTANCE_REDIS_PREFIX: ${ACCEPTANCE_REDIS_PREFIX:?}
     OBJECT_STORAGE_ENDPOINT: http://minio:9000
     OBJECT_STORAGE_ACCESS_KEY: ${OBJECT_STORAGE_ACCESS_KEY:?}
     OBJECT_STORAGE_SECRET_KEY: ${OBJECT_STORAGE_SECRET_KEY:?}
@@ -40,17 +37,6 @@ services:
     volumes: [postgres_data:/var/lib/postgresql/data]
     healthcheck:
       test: [CMD-SHELL, "pg_isready -U floatchat_admin -d $$POSTGRES_DB"]
-      interval: 2s
-      timeout: 3s
-      retries: 30
-  redis:
-    image: ${ACCEPTANCE_REDIS_IMAGE:?}
-    pull_policy: never
-    mem_limit: 128m
-    command: [redis-server, --appendonly, "yes"]
-    volumes: [redis_data:/data]
-    healthcheck:
-      test: [CMD, redis-cli, ping]
       interval: 2s
       timeout: 3s
       retries: 30
@@ -95,9 +81,28 @@ services:
       - /home/floatchat/FloatChat-stage1/scripts/stage1_acceptance_storage.py:/stage1_acceptance_storage.py:ro
     command: [python, /stage1_acceptance_storage.py]
     restart: "no"
-  worker:
+  # Worker sizing. Production (8 GB host): process `--workers 4` in a 4g container
+  # (ACCEPTANCE_PROCESS_WORKERS=4, ACCEPTANCE_PROCESS_MEMORY=4g). This 3.7 GB WSL host with
+  # PostgreSQL (1g) and MinIO (512m) beside it: `--workers 2` in 2g, the defaults below.
+  # Each process worker is single-use and bounded to INGESTION_WORKER_MEMORY_BYTES (1 GiB,
+  # RLIMIT_DATA) so the container needs one GiB per worker. The acquire side is one process
+  # of N threads (1g is enough: it only lands bytes); N may not exceed the environment's
+  # upstream_slots (default 4).
+  acquire:
     <<: *runtime
-    command: [python, scripts/stage1_acceptance_runtime.py, worker]
+    mem_limit: 1g
+    environment:
+      <<: *runtime-environment
+      INGESTION_ACQUIRE_SLOTS: ${ACCEPTANCE_ACQUIRE_SLOTS:-4}
+    command: [python, scripts/stage1_acceptance_runtime.py, acquire]
+  process:
+    <<: *runtime
+    mem_limit: ${ACCEPTANCE_PROCESS_MEMORY:-2g}
+    environment:
+      <<: *runtime-environment
+      INGESTION_PROCESS_WORKERS: ${ACCEPTANCE_PROCESS_WORKERS:-2}
+      INGESTION_WORKER_MEMORY_BYTES: "1073741824"
+    command: [python, scripts/stage1_acceptance_runtime.py, process]
   supervisor:
     <<: *runtime
     command: [python, scripts/stage1_acceptance_runtime.py, supervise]
@@ -112,5 +117,4 @@ networks:
 
 volumes:
   postgres_data: {}
-  redis_data: {}
   minio_data: {}

@@ -48,6 +48,8 @@ FAILURES = frozenset(
         "snapshot_deadline",
         "object_deadline",
         "object_stat_failure",
+        "landing_retry_exhausted",
+        "invalid_metadata_cache_entry",
         "live_ingestion_disabled",
         "publication_budget_exhausted",
         "private_spool_size_limit",

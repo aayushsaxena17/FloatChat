@@ -1,4 +1,4 @@
-.PHONY: dev stop restart build setup test integration lint typecheck eval secrets-current secrets-history
+.PHONY: dev stop restart build setup test integration bench lint typecheck eval secrets-current secrets-history
 dev:
 	python3 -m scripts.dev dev
 stop:
@@ -16,6 +16,8 @@ test:
 	pnpm test
 integration:
 	uv run --all-packages --frozen python -m scripts.integration
+bench:
+	STAGE1_BENCH=1 uv run --all-packages --frozen python -m pytest tests/stage1/test_chunk_scale.py -q -s
 lint:
 	uv run --all-packages --frozen ruff check .
 	uv run --all-packages --frozen ruff format --check .

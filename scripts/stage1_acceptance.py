@@ -31,8 +31,10 @@ IMAGES = {
     "API": "sha256:7055829eacc85bbc99fbbaefb735bd3ce8a916c93d4aec115ccf12ded1eccd2a",
     "DB": "sha256:d84da980fdcc9c281fffd62c626f72da7f8c78a239694bb63c60679541024d1b",
     "MINIO": "sha256:0c9f68b6e6633c942dfaba317af259e74ffbc201102eff13dd56a98e8df666ff",
-    "REDIS": "sha256:02419de7eddf55aa5bcf49efb74e88fa8d931b4d77c07eff8a6b2144472b6952",
 }
+# Worker sizing of this 3.7 GB host, written to each session's environment file and manifest
+# (docker-compose.acceptance.yml documents the 8 GB production sizing: 4 workers in 4g).
+TOPOLOGY = {"acquire_slots": 4, "process_workers": 2, "process_memory": "2g"}
 
 
 class PreparationFailure(Exception):
@@ -236,9 +238,22 @@ def print_progress(identifier, request, phase):
         complete = counts.get("complete", 0)
         failed = counts.get("failed", 0)
         quarantined = counts.get("quarantined", 0)
+        # Queue depth per ticket kind (stage1-v4); absent from older runtime output.
+        tickets = data.get("tickets", {})
+        if set(tickets) - {"acquire", "process"} or any(
+            set(item) != {"queued", "started"}
+            or any(type(n) is not int or not 0 <= n <= 1048576 for n in item.values())
+            for item in tickets.values()
+        ):
+            raise PreparationFailure("unexpected_progress_tickets")
+        queued = "".join(
+            f" {kind}_queued={tickets[kind]['queued']}"
+            for kind in ("acquire", "process")
+            if kind in tickets
+        )
         print(
             f"acceptance_{phase}: state={state} chunks={sum(counts.values())} "
-            f"complete={complete} failed={failed} quarantined={quarantined}",
+            f"complete={complete} failed={failed} quarantined={quarantined}{queued}",
             flush=True,
         )
     except Exception:
@@ -289,7 +304,7 @@ def inspection(identifier):
                     str(Path.home() / ".local/share/floatchat/stage1-acceptance" / identifier)
                 )
         services.append(service)
-    assert {"db", "redis", "minio", "worker", "supervisor"}.issubset(services)
+    assert {"db", "minio", "acquire", "process", "supervisor"}.issubset(services)
     internal = command(
         ["docker", "network", "inspect", project + "_default", "--format", "{{json .Internal}}"]
     ).stdout.strip()
@@ -322,6 +337,66 @@ def inspection(identifier):
         "development_volume_identities": sorted(set(development_volumes)),
         "live_network_created": False,
     }
+
+
+def start_sampler(directory, project):
+    """Background cgroup sampler of the worker containers (ADR-0042 evidence); best effort."""
+    for name in ("memory.stop", "memory.json"):
+        (directory / name).unlink(missing_ok=True)
+    try:
+        return subprocess.Popen(
+            [
+                sys.executable,
+                str(ROOT / "scripts/stage1_memory_sampler.py"),
+                "--project",
+                project,
+                "--output",
+                str(directory / "memory.json"),
+                "--stop-file",
+                str(directory / "memory.stop"),
+                "--max-seconds",
+                "87000",
+            ],
+            cwd=ROOT,
+            env=safe_environment(),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except OSError:
+        return None
+
+
+def stop_sampler(directory, sampler):
+    """Stop the sampler and return its per-container summary (None: it never ran)."""
+    if sampler is None:
+        return None
+    try:
+        (directory / "memory.stop").touch()
+        try:
+            sampler.wait(timeout=30)
+        except subprocess.TimeoutExpired:
+            sampler.terminate()
+            sampler.wait(timeout=30)
+        report = json.loads((directory / "memory.json").read_text())
+        save(ROOT / "reports/stage1-acceptance-memory.json", report)
+        return {
+            "available": True,
+            "pass": report["pass"],
+            "samples": report["samples"],
+            "by_service": report["by_service"],
+        }
+    except Exception:
+        return {"available": False}
+
+
+def running_services(identifier, *names):
+    """The given services that have a running container now, in the order given."""
+    return [
+        name
+        for name in names
+        if compose(identifier, "ps", "--status", "running", "-q", name).stdout.strip()
+    ]
 
 
 def prepare():
@@ -358,7 +433,9 @@ def prepare():
         "INGESTION_BUCKET": project,
         "ACCEPTANCE_CONTROL_BUCKET": project + "-control",
         "INGESTION_QUEUE_NAMESPACE": project + ".ingestion",
-        "ACCEPTANCE_REDIS_PREFIX": project + ":",
+        "ACCEPTANCE_ACQUIRE_SLOTS": str(TOPOLOGY["acquire_slots"]),
+        "ACCEPTANCE_PROCESS_WORKERS": str(TOPOLOGY["process_workers"]),
+        "ACCEPTANCE_PROCESS_MEMORY": TOPOLOGY["process_memory"],
         "OBJECT_STORAGE_ACCESS_KEY": "acceptance-" + identifier,
         "OBJECT_STORAGE_SECRET_KEY": secrets.token_hex(24),
         "MINIO_ROOT_USER": "acceptance-admin-" + identifier,
@@ -376,8 +453,12 @@ def prepare():
         "database": database,
         "bucket": project,
         "queue": environment["INGESTION_QUEUE_NAMESPACE"],
-        "redis_database": 13,
-        "redis_prefix": environment["ACCEPTANCE_REDIS_PREFIX"],
+        "worker_topology": {
+            **TOPOLOGY,
+            "acquire_memory": "1g",
+            "worker_memory_bytes": 1024**3,
+            "services": ["acquire", "process", "supervisor"],
+        },
         "environment_id": environment["INGESTION_ENVIRONMENT_ID"],
         "images": IMAGES,
         "source_sha256": source_hash(),
@@ -404,19 +485,34 @@ def prepare():
             "--wait-timeout",
             "90",
             "db",
-            "redis",
             "minio",
         )
         compose(identifier, "run", "--rm", "-T", "--no-deps", "db-init")
         compose(identifier, "run", "--rm", "-T", "--no-deps", "storage-init")
-        compose(identifier, "up", "-d", "--pull", "never", "--no-build", "worker", "supervisor")
+        compose(
+            identifier,
+            "up",
+            "-d",
+            "--pull",
+            "never",
+            "--no-build",
+            "acquire",
+            "process",
+            "supervisor",
+        )
         proof = json_line(
             compose(identifier, "run", "--rm", "-T", "--no-deps", "client", timeout=120).stdout
         )
+        # Both queue workers start offline (no key, empty queue) and must still be up once the
+        # proof has run: a failed configuration or slot check ends them within seconds.
+        running = running_services(identifier, "acquire", "process", "supervisor")
+        if running != ["acquire", "process", "supervisor"]:
+            raise PreparationFailure("acceptance_worker_not_running")
         evidence = {
             **manifest,
             "isolation": inspection(identifier),
             "runtime_proof": proof,
+            "workers_running_after_proof": running,
             "scope": "offline preparation only; no ingestion or upstream calls",
             "full_acceptance": "pending_owner_opt_in",
             "actual_head_CI": "pending",
@@ -482,6 +578,7 @@ def execute(identifier, opt_in):
         raise PreparationFailure("invalid_owner_credential")
     worker = None
     worker_log = None
+    sampler = None
     live_run = None
     try:
         compose(
@@ -495,12 +592,14 @@ def execute(identifier, opt_in):
             "--wait-timeout",
             "90",
             "db",
-            "redis",
             "minio",
         )
-        compose(identifier, "stop", "worker")
-        # Compose launches the live worker, but never receives the key in its env,
-        # argv or configuration. Only container stdin transfers it into memory.
+        # An offline acquire process would claim and fail upstream tickets: it stays down
+        # while the live one runs.
+        compose(identifier, "stop", "acquire")
+        # Compose launches the live acquire process, but never receives the key in its env,
+        # argv or configuration. Only container stdin transfers it into memory. The process
+        # pool and supervisor start without it, on the internal network only.
         live_args = [
             "docker",
             "compose",
@@ -520,7 +619,7 @@ def execute(identifier, opt_in):
             "--no-deps",
             "--name",
             manifest["project"] + "-live-owner",
-            "live-worker",
+            "live-acquire",
         ]
         worker_log = open(
             directory / "owner-worker.log",
@@ -539,7 +638,10 @@ def execute(identifier, opt_in):
         worker.stdin.write(key + "\n")
         worker.stdin.close()
         del key
-        compose(identifier, "up", "-d", "--pull", "never", "--no-build", "supervisor")
+        compose(identifier, "up", "-d", "--pull", "never", "--no-build", "process", "supervisor")
+        # Per-container anonymous peaks and oom counters of acquire and process, sampled from
+        # the host cgroups for the whole live and replay phases.
+        sampler = start_sampler(directory, manifest["project"])
         for phase in ("live", "replay"):
             print(
                 f"acceptance_{phase}_starting; per_run_budget_seconds=43200; "
@@ -562,10 +664,13 @@ def execute(identifier, opt_in):
             ]
             if phase == "replay":
                 assert live_run is not None
-                # Remove upstream worker before replay. Replay's worker cannot
-                # read a credential and has only the internal Docker network.
+                # Remove the upstream acquire process before replay. Replay's acquire and
+                # process containers cannot read a credential and have only the internal
+                # Docker network.
                 command(["docker", "stop", "--time", "15", manifest["project"] + "-live-owner"])
-                compose(identifier, "up", "-d", "--pull", "never", "--no-build", "worker")
+                compose(
+                    identifier, "up", "-d", "--pull", "never", "--no-build", "acquire", "process"
+                )
                 args += ["--replay-run", live_run]
 
             def progress_update(phase=phase):
@@ -598,11 +703,15 @@ def execute(identifier, opt_in):
                 raise PreparationFailure("acceptance_run_incomplete_persisted_report_available")
             validate_report(report, replay=phase == "replay")
             live_run = run
+        memory = stop_sampler(directory, sampler)
+        sampler = None
         save(
             ROOT / "reports/stage1-acceptance-owner-result.json",
             {
                 "session": identifier,
                 "live_and_replay_runs_complete": True,
+                "worker_topology": manifest.get("worker_topology"),
+                "memory_evidence": memory,
                 "full_contract_gate": "pending_review_and_actual_head_CI",
                 "completed_at_utc": datetime.now(UTC).isoformat(),
                 "stage2": "blocked",
@@ -612,6 +721,7 @@ def execute(identifier, opt_in):
     finally:
         with uninterrupted_cleanup():
             failures = stop_acceptance(identifier, manifest["project"])
+            memory = stop_sampler(directory, sampler)
             if worker is not None:
                 try:
                     worker.wait(timeout=30)
@@ -625,6 +735,7 @@ def execute(identifier, opt_in):
                 {
                     "checked_at_utc": datetime.now(UTC).isoformat(),
                     "failures": failures,
+                    "memory_evidence": memory,
                     "data_preserved": True,
                     "run_not_automatically_cancelled": True,
                 },

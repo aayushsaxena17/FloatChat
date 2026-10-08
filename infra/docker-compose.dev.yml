@@ -2,7 +2,7 @@ name: ${COMPOSE_PROJECT_NAME:-floatchat-dev}
 
 x-app-environment: &app-environment
   DATABASE_URL: ${DATABASE_URL:?Run scripts/dev.py dev to initialize local configuration}
-  REDIS_URL: ${REDIS_URL:?Local broker URL required}
+  REDIS_URL: ${REDIS_URL:?Local Redis URL required (API readiness check)}
   OBJECT_STORAGE_ENDPOINT: ${OBJECT_STORAGE_ENDPOINT:?Local storage URL required}
   OBJECT_STORAGE_ACCESS_KEY: ${OBJECT_STORAGE_ACCESS_KEY:?Local application key required}
   OBJECT_STORAGE_SECRET_KEY: ${OBJECT_STORAGE_SECRET_KEY:?Local application credential required}
@@ -22,6 +22,7 @@ services:
       interval: 2s
       timeout: 3s
       retries: 60
+  # Stage 0 API readiness dependency only; the ingestion work queue is PostgreSQL.
   redis:
     image: library/redis:7.4.2-alpine@sha256:02419de7eddf55aa5bcf49efb74e88fa8d931b4d77c07eff8a6b2144472b6952
     command: [redis-server, --appendonly, "yes"]
@@ -78,17 +79,9 @@ services:
       interval: 2s
       timeout: 6s
       retries: 30
-  worker:
-    build: { context: .., dockerfile: infra/docker/api.Dockerfile, target: runtime }
-    environment: *app-environment
-    command: [celery, -A, floatchat_workers.app:app, worker, --loglevel=WARNING, --concurrency=1, --hostname=worker@floatchat]
-    depends_on:
-      api: { condition: service_healthy }
-    healthcheck:
-      test: [CMD, celery, -A, floatchat_workers.app:app, inspect, ping, --destination=worker@floatchat, --timeout=3]
-      interval: 5s
-      timeout: 5s
-      retries: 20
+  # No ingestion workers in this Stage 0 stack: `floatchat acquire`/`floatchat process` need an
+  # ingestion login, an app.ingestion_environment row and the work queue, which only the
+  # acceptance project (docker-compose.acceptance.yml) and a production deployment create.
   web:
     build: { context: .., dockerfile: infra/docker/web.Dockerfile, target: development }
     environment:

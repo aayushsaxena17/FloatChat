@@ -139,7 +139,8 @@ def verify_split_replay(repository, environment, wire, metadata, root):
         authority = repository.claim(predecessor, chunk["id"], epoch)
         ticket = repository.ticket(authority)
         assert (
-            ingestion.process_ticket(str(predecessor), str(chunk["id"]), str(ticket)) == "complete"
+            ingestion.process_ticket(str(predecessor), str(chunk["id"]), str(ticket), "execute")
+            == "complete"
         )
         repository.controller_heartbeat(predecessor, epoch)
     assert repository.finalize(predecessor) == "complete"
@@ -199,9 +200,12 @@ def verify_split_replay(repository, environment, wire, metadata, root):
                 assert thread.is_alive() and time.monotonic() < limit, result
                 time.sleep(0.01)
 
-        def dispatch(authority):
+        def dispatch(authority, kind):
+            # Serial execute path: the default process ticket is enough whatever the phase kind.
             ticket = repository.ticket(authority)
-            state = ingestion.process_ticket(str(authority.run), str(authority.chunk), str(ticket))
+            state = ingestion.process_ticket(
+                str(authority.run), str(authority.chunk), str(ticket), "execute"
+            )
             assert state == "complete", state
 
         controller = Controller(repository, target, dispatch)

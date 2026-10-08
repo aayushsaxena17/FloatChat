@@ -103,30 +103,6 @@ def test_P03_corrupted_science_rejected(tmp_path, wire, linked_metadata, field, 
         verify_snapshot(path, deadline=time.monotonic() + 10)
 
 
-def test_I02_chunk_internal_natural_alias_conflict(wire, linked_metadata):
-    try:
-        from floatchat_core.ingestion.workflow import preview
-    except ImportError:  # Publication v4 (package F) replaces workflow.preview.
-        pytest.skip("workflow.preview was removed by the publication v4 rewrite")
-    wire_profile = decode_json(json.dumps(wire).encode())
-    metadata = linked_metadata
-    first = map_profile(wire_profile, metadata, CanonicalBudget())
-    wire_profile["_id"] = "different-id"
-    second = map_profile(wire_profile, metadata, CanonicalBudget())
-    # Complete fallback identity agrees but two stable IDs cannot become two inserts.
-    if first.direction == "U":
-        wire_profile["profile_direction"] = "A"
-        wire_profile["_id"] = first.source_profile_id
-        first = map_profile(wire_profile, metadata, CanonicalBudget())
-        wire_profile["_id"] = "different-id"
-        second = map_profile(wire_profile, metadata, CanonicalBudget())
-    with pytest.raises(Rejection, match="identity_conflict"):
-        preview(((first, uuid.uuid4()), (second, uuid.uuid4())), ())
-
-
-# --- arrow-equality-v4 write and verification ----------------------------------------------
-
-
 def one_profile(wire, linked_metadata):
     return map_profile(decode_json(json.dumps(wire).encode()), linked_metadata, CanonicalBudget())
 

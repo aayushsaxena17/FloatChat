@@ -122,7 +122,6 @@ def main():
         INGESTION_BUCKET=store.bucket,
         INGESTION_QUEUE_NAMESPACE="regional-model",
         COMPOSE_PROJECT_NAME="regional-model",
-        INGESTION_REDIS_URL="redis://127.0.0.1:6379/11",
         OBJECT_STORAGE_ENDPOINT="http://127.0.0.1:9000",
         OBJECT_STORAGE_ACCESS_KEY=os.environ["MINIO_ROOT_USER"],
         OBJECT_STORAGE_SECRET_KEY=os.environ["MINIO_ROOT_PASSWORD"],
@@ -300,7 +299,7 @@ def main():
                 authority = repository.claim(run, chunk["id"], epoch)
                 assert authority is not None
                 ticket = repository.ticket(authority)
-                result = process_ticket(str(run), str(chunk["id"]), str(ticket))
+                result = process_ticket(str(run), str(chunk["id"]), str(ticket), "execute")
                 if result == "recovery_required":
                     admin.connection.execute(
                         "UPDATE app.ingestion_chunk SET lease_until="
@@ -310,7 +309,7 @@ def main():
                     next_authority = repository.claim(run, chunk["id"], epoch)
                     assert next_authority is not None and next_authority.fence > authority.fence
                     next_ticket = repository.ticket(next_authority)
-                    result = process_ticket(str(run), str(chunk["id"]), str(next_ticket))
+                    result = process_ticket(str(run), str(chunk["id"]), str(next_ticket), "execute")
                     recoveries.append(
                         {
                             "chunk": str(chunk["id"]),
@@ -338,7 +337,10 @@ def main():
                         "SELECT app.scientific_snapshot() AS value"
                     ).fetchone()["value"]
                     spent = repository.run(run)["canonical_bytes"]
-                    assert process_ticket(str(run), str(chunk["id"]), str(ticket)) == "complete"
+                    assert (
+                        process_ticket(str(run), str(chunk["id"]), str(ticket), "execute")
+                        == "complete"
+                    )
                     after = admin.connection.execute(
                         "SELECT app.scientific_snapshot() AS value"
                     ).fetchone()["value"]

@@ -32,6 +32,8 @@ STAGE1_TABLES = frozenset(
         "run_final_evidence",
         "chunk_accounting",
         "processing_ticket",
+        "float_metadata_cache",
+        "measurement_staging",
         "landing_reset",
         "ingestion_event_sequence_seq",
         "profile_outcome_sequence_seq",

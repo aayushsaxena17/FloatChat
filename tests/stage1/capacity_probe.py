@@ -146,7 +146,11 @@ def verify_capacity(repository, environment, store=None):
         report = persisted_report(repository, run)
         assert report["final_evidence_frozen"] and not report["coverage"]["proved_complete"]
         assert report["full_snapshot_balanced"] and report["run_eligible_balanced"]
-        assert report["active_part_count"] == 5 and report["active_snapshot_count"] == 0
+        assert report["active_part_count"] == 5 and report["active_snapshot_count"] == 0, (
+            report["active_part_count"],
+            report["active_snapshot_count"],
+            report["active_partitions"],
+        )
         assert (
             report["persisted_metrics"]["resource_counters"]["canonical_bytes"]
             < 10 * 1024**3 - 16 * 1024**2
