@@ -2,14 +2,18 @@
 
 Never imported by production entrypoints. Barriers do not replace work, change
 scientific decisions, shorten deadlines or grant scientific DML privileges.
+
+The probe starts the real queue workers through `main` below. The acquire process runs its
+threads in one interpreter, so patching Repository here covers them. Process-pool children
+are fresh spawned interpreters: the pool starts them with `run_ticket` below, which is
+importable from this module, so they apply the same patches when they import it.
 """
 
 import os
+import sys
 
 from floatchat_core.ingestion.repository import Repository
-from floatchat_workers.app import app
-
-app.conf.broker_transport_options = {"visibility_timeout": 10}
+from floatchat_workers import cli, process
 
 
 def barrier(repository, authority, phase):
@@ -55,3 +59,22 @@ def commit(self, authority, *args, **kwargs):
 Repository.recorded_reserve = recorded_reserve
 Repository.transition = transition
 Repository.commit = commit
+
+original_run_ticket = process.run_ticket
+
+
+def run_ticket(run, chunk, identifier):
+    """Pool child entrypoint; importing this module in the child installed the barriers."""
+    original_run_ticket(run, chunk, identifier)
+
+
+process.run_ticket = run_ticket
+
+
+def main(arguments):
+    """The production CLI with barriers: acquire --slots N, process --workers M, supervise."""
+    return cli.main(arguments)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

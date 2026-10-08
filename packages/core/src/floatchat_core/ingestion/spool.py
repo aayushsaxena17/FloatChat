@@ -1,27 +1,38 @@
-"""Private disk staging: one decoded scientific profile in memory at a time.
+"""In-memory candidate set of one chunk: identity and revision decisions before staging.
 
-The incoming budget and retained snapshot population are distinct. Retained
-observations are never removed by a new rolling cutoff or an empty refresh.
-The spool confers no publication authority; SQL rechecks the preview at commit.
+stage1-v4: the chunk's mapped profiles stay in memory (bounded by the chunk caps) and are
+resolved against the database with two batched reads: stored identities, then stored
+hashes and revisions. Nothing is re-encoded or re-hashed: the canonical bytes and hash
+come from the mapper. The retained population of a slot is never loaded; the set exposes
+only this chunk's own accepted profiles per slot (the content of one published part).
+The spool confers no publication authority; SQL rechecks identities and revisions.
 """
 
 import hashlib
 import json
-import sqlite3
 import uuid
-from collections.abc import Callable, Iterable, Iterator
-from contextlib import AbstractContextManager, nullcontext
-from dataclasses import replace
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from dataclasses import dataclass, replace
 from decimal import Decimal
-from pathlib import Path
 from typing import Any
+
+import pyarrow as pa
+import pyarrow.compute as pc
 
 from .argovis import VARIABLES, Profile
 from .identity import StoredIdentity, resolve_identity
 from .numeric import CanonicalBudget, Rejection, ScientificNumber
 from .planning import timestamp
 from .revisions import Revision, compare
-from .workflow import StoredScience, owner_slot, staged_candidate
+from .workflow import StoredState, owner_slot, staged_candidate, staging_table
+
+CANONICAL_LIMIT = 256 * 1024**2
+PROFILE_LIMIT = 2000
+LEVEL_LIMIT = 2_000_000
+
+# One query for all candidate identities, one for the hashes of the stored ids found.
+IdentityBatch = Callable[[Sequence[Profile]], Mapping[str, tuple[StoredIdentity, ...]]]
+HashLookup = Callable[[Sequence[uuid.UUID]], Mapping[uuid.UUID, StoredState]]
 
 
 def revision_json(revision: Revision | None) -> str:
@@ -34,6 +45,16 @@ def revision_json(revision: Revision | None) -> str:
         },
         sort_keys=True,
         separators=(",", ":"),
+    )
+
+
+def parse_revision(value: Mapping[str, Any] | None) -> Revision | None:
+    """Inverse of revision_json for a decoded value (also the stored jsonb)."""
+    if value is None:
+        return None
+    return Revision(
+        value["kind"],
+        tuple(sorted((key, timestamp(instant)) for key, instant in value["components"].items())),
     )
 
 
@@ -87,7 +108,6 @@ def restore_profile(
                 value = level[variable + suffix]
                 row[variable + suffix] = None if value is None else number(value).value
         levels.append(row)
-    vector = json.loads(revision)
     return Profile(
         source_id,
         content["platform"],
@@ -96,12 +116,7 @@ def restore_profile(
         content["observed_at"],
         number(content["longitude"]),
         number(content["latitude"]),
-        None
-        if vector is None
-        else Revision(
-            vector["kind"],
-            tuple(sorted((key, timestamp(value)) for key, value in vector["components"].items())),
-        ),
+        parse_revision(json.loads(revision)),
         tuple(levels),
         canonical,
         digest,
@@ -109,148 +124,162 @@ def restore_profile(
     )
 
 
+def merge_parts(
+    tables: Sequence[pa.Table], manifest: Sequence[Mapping[str, Any]]
+) -> Iterator[tuple[uuid.UUID, Profile]]:
+    """The slot members held by parts/snapshots (oldest first), as profiles in id order.
+
+    A row is a member only if its (profile_id, profile_hash) is in the slot manifest: a
+    replaced or moved profile keeps its old rows in an older part. If the same pair is in
+    several objects the newest wins. Every profile is rebuilt from its Parquet rows and
+    checked against profile_hash (restore_profile), the level count against the manifest.
+    """
+    wanted = {f"{item['profile_id']}|{item['hash']}": item["levels"] for item in manifest}
+    taken: set[str] = set()
+    chosen: list[pa.Table] = []
+    for table in reversed(tables):
+        keys = pc.binary_join_element_wise(table["profile_id"], table["profile_hash"], "|")
+        present = (set(pc.unique(keys).to_pylist()) & wanted.keys()) - taken
+        if present:
+            chosen.append(table.filter(pc.is_in(keys, value_set=pa.array(sorted(present)))))
+            taken |= present
+    if taken != wanted.keys():
+        raise Rejection("stored_snapshot_membership_mismatch")
+    if not chosen:
+        return
+    merged = pa.concat_tables(chosen).sort_by(
+        [("profile_id", "ascending"), ("level_index", "ascending")]
+    )
+    counts = pc.value_counts(merged["profile_id"])
+    start = 0
+    for identifier, count in sorted(
+        zip(counts.field("values").to_pylist(), counts.field("counts").to_pylist(), strict=True)
+    ):
+        block = merged.slice(start, count)
+        start += count
+        digest = block["profile_hash"][0].as_py()
+        if wanted[f"{identifier}|{digest}"] != count:
+            raise Rejection("stored_snapshot_membership_mismatch")
+        content = json.loads(block["profile_content"][0].as_py())
+        content["levels"] = [json.loads(text) for text in block["canonical_level"].to_pylist()]
+        canonical = json.dumps(content, sort_keys=True, separators=(",", ":"), allow_nan=False)
+        yield (
+            uuid.UUID(identifier),
+            restore_profile(
+                canonical.encode(),
+                digest,
+                block["source_profile_id"][0].as_py(),
+                "null",
+                verify_encoding=False,
+            ),
+        )
+
+
+@dataclass
+class _Entry:
+    ordinal: int
+    profile: Profile
+    raw: uuid.UUID
+    profile_id: uuid.UUID | None = None
+    outcome: str | None = None
+    slot: str | None = None
+
+
 class ProfileSpool:
-    def __init__(
-        self,
-        path: Path,
-        *,
-        disk_limit: int = 10 * 1024**3,
-        budget_factory: Callable[[], AbstractContextManager[CanonicalBudget]] | None = None,
-    ) -> None:
-        if path.exists() or not 0 < disk_limit <= 10 * 1024**3:
-            raise Rejection("invalid_private_spool")
-        # Exclusive file creation and restrictive mode precede SQLite opening it.
-        with path.open("xb"):
-            path.chmod(0o600)
-        self.path, self.disk_limit = path, disk_limit
-        self.budget_factory = budget_factory or (lambda: nullcontext(CanonicalBudget()))
-        self.connection = sqlite3.connect(path)
-        self.connection.execute("PRAGMA journal_mode=OFF")
-        self.connection.execute("PRAGMA temp_store=FILE")
-        self.connection.execute("PRAGMA cache_size=-8192")
-        self.connection.execute(f"PRAGMA max_page_count={max(1, disk_limit // 4096)}")
-        self.connection.executescript("""
-          CREATE TABLE incoming(ordinal INTEGER PRIMARY KEY, identity TEXT UNIQUE,
-            canonical BLOB NOT NULL, hash TEXT NOT NULL, source_id TEXT, revision TEXT NOT NULL,
-            raw_id TEXT NOT NULL, profile_id TEXT, outcome TEXT);
-          CREATE TABLE science(profile_id TEXT PRIMARY KEY, slot TEXT NOT NULL,
-            canonical BLOB NOT NULL, hash TEXT NOT NULL, source_id TEXT, revision TEXT NOT NULL,
-            overlay INTEGER NOT NULL);
-          CREATE INDEX science_slot ON science(slot,profile_id);
-        """)
-        self.incoming_bytes = self.incoming_levels = self.disk_bytes = 0
+    """Candidates of one chunk, in occurrence order, with their resolved outcomes.
+
+    Accepted means outcome insert or newer. For a profile accepted twice in one chunk
+    only the last accepted version is this chunk's content for its slot.
+    """
+
+    def __init__(self, source: str = "argovis") -> None:
+        self.source = source
+        self.entries: list[_Entry] = []
+        self.by_identity: dict[str, _Entry] = {}
+        self.incoming_bytes = self.incoming_levels = 0
         self.changed_slots: set[str] = set()
         self.conflicts: list[tuple[int, dict[str, Any]]] = []
         self.identities: dict[uuid.UUID, StoredIdentity] = {}
         self.outcomes: list[tuple[int, str, str, int]] = []
-        # Certification lives only for this private spool/process. Every reuse
-        # still checks the actual bytes' SHA-256; recovery starts with no cache.
-        self._verified_canonical: set[str] = set()
+        self.accepted: dict[uuid.UUID, _Entry] = {}
+        # Stored state (before this chunk) of the profiles an accepted candidate replaces.
+        self.replaced: dict[uuid.UUID, StoredState] = {}
 
     def __enter__(self) -> "ProfileSpool":
         return self
 
     def __exit__(self, *args: Any) -> None:
-        self.connection.close()
-
-    def charge(self, count: int) -> None:
-        if self.disk_bytes + count > self.disk_limit:
-            raise Rejection("private_spool_size_limit")
-        self.disk_bytes += count
-
-    def restore(self, canonical: bytes, digest: str, source: str | None, revision: str) -> Profile:
-        if digest in self._verified_canonical:
-            return restore_profile(canonical, digest, source, revision, verify_encoding=False)
-        with self.budget_factory() as budget:
-            profile = restore_profile(canonical, digest, source, revision, budget=budget)
-        if len(self._verified_canonical) >= 102000:
-            raise Rejection("snapshot_profile_limit")
-        self._verified_canonical.add(digest)
-        return profile
+        self.entries.clear()
+        self.by_identity.clear()
+        self.accepted.clear()
 
     def add(self, profile: Profile, raw: uuid.UUID, ordinal: int) -> None:
         self.incoming_bytes += len(profile.canonical_bytes)
         self.incoming_levels += len(profile.levels)
         if (
-            self.incoming_bytes > 256 * 1024**2
-            or self.incoming_levels > 2_000_000
-            or not 0 <= ordinal < 2000
+            self.incoming_bytes > CANONICAL_LIMIT
+            or self.incoming_levels > LEVEL_LIMIT
+            or not 0 <= ordinal < PROFILE_LIMIT
         ):
             raise Rejection("chunk_scientific_resource_limit")
-        previous = self.connection.execute(
-            "SELECT hash,revision FROM incoming WHERE identity=?", (profile.identity,)
-        ).fetchone()
+        previous = self.by_identity.get(profile.identity)
         if previous is not None:
-            if previous != (profile.content_hash, revision_json(profile.revision)):
+            if (previous.profile.content_hash, previous.profile.revision) != (
+                profile.content_hash,
+                profile.revision,
+            ):
                 raise Rejection("conflicting_duplicate_profile")
             self.outcomes.append(
                 (ordinal, profile.identity, "identical_duplicate", len(profile.levels))
             )
             return
-        self.charge(len(profile.canonical_bytes))
-        self.connection.execute(
-            "INSERT INTO incoming VALUES(?,?,?,?,?,?,?,NULL,NULL)",
-            (
-                ordinal,
-                profile.identity,
-                profile.canonical_bytes,
-                profile.content_hash,
-                profile.source_profile_id,
-                revision_json(profile.revision),
-                str(raw),
-            ),
-        )
+        entry = _Entry(ordinal, profile, raw)
+        self.entries.append(entry)
+        self.by_identity[profile.identity] = entry
 
-    def prepare(
-        self,
-        lookup: Callable[[Profile], tuple[StoredScience, ...]],
-        *,
-        identity_lookup: Callable[[Profile], tuple[StoredIdentity, ...]] | None = None,
-        load_science: Callable[[uuid.UUID], Profile] | None = None,
-    ) -> None:
-        for row in self.connection.execute("SELECT * FROM incoming ORDER BY ordinal"):
-            ordinal, key, canonical, digest, source, revision, _, _, _ = row
-            profile = self.restore(canonical, digest, source, revision)
-            existing = () if identity_lookup is not None else lookup(profile)
-            registry = (
-                tuple(row.identity for row in existing)
-                if identity_lookup is None
-                else identity_lookup(profile)
-            )
-            for stored in registry:
+    def prepare(self, identities: IdentityBatch, hashes: HashLookup) -> None:
+        found = identities([entry.profile for entry in self.entries])
+        for entry in self.entries:
+            for stored in found.get(entry.profile.identity, ()):
                 self.identities.setdefault(stored.id, stored)
-            if len(self.identities) > 100000:
-                raise Rejection("identity_registry_limit")
+        if len(self.identities) > 100000:
+            raise Rejection("identity_registry_limit")
+        states = hashes(list(self.identities)) if self.identities else {}
+        for entry in self.entries:
+            profile = entry.profile
             identity = resolve_identity(profile, tuple(self.identities.values()))
             identifier = identity.stored_id or uuid.uuid4()
-            previous = next((r.profile for r in existing if r.identity.id == identifier), None)
-            if load_science is not None and identity.stored_id is not None:
-                previous = load_science(identity.stored_id)
-            local = self.connection.execute(
-                "SELECT canonical,hash,source_id,revision FROM science WHERE profile_id=?",
-                (str(identifier),),
-            ).fetchone()
+            stored_state = None if identity.stored_id is None else states.get(identity.stored_id)
+            if identity.stored_id is not None and stored_state is None:
+                raise Rejection("publication_base_changed")
+            local = self.accepted.get(identifier)
+            previous_hash: str | None = None
+            previous_revision: Revision | None = None
             if local is not None:
-                previous = self.restore(*local)
+                previous_hash, previous_revision = (
+                    local.profile.content_hash,
+                    local.profile.revision,
+                )
+            elif stored_state is not None:
+                previous_hash, previous_revision = stored_state.content_hash, stored_state.revision
             outcome = compare(
-                digest,
-                profile.revision,
-                None if previous is None else previous.content_hash,
-                None if previous is None else previous.revision,
+                profile.content_hash, profile.revision, previous_hash, previous_revision
             )
             if outcome == "revision_conflict":
-                self.outcomes.append((ordinal, key, outcome, len(profile.levels)))
+                self.outcomes.append(
+                    (entry.ordinal, profile.identity, outcome, len(profile.levels))
+                )
                 self.conflicts.append(
                     (
-                        ordinal,
+                        entry.ordinal,
                         {
                             "stored_profile_id": str(identifier),
-                            "incoming_hash": digest,
+                            "incoming_hash": profile.content_hash,
                             "incoming_revision": json.loads(revision_json(profile.revision)),
-                            "stored_hash": None if previous is None else previous.content_hash,
+                            "stored_hash": previous_hash,
                             "stored_revision": None
-                            if previous is None
-                            else json.loads(revision_json(previous.revision)),
+                            if previous_hash is None
+                            else json.loads(revision_json(previous_revision)),
                         },
                     )
                 )
@@ -259,88 +288,52 @@ class ProfileSpool:
                 self.identities[identifier] = StoredIdentity(
                     identifier,
                     profile.platform,
-                    source,
+                    profile.source_profile_id,
                     profile.cycle,
                     profile.direction,
                     profile.natural_key,
                 )
             elif identity.action == "attach_stable_alias":
                 self.identities[identifier] = replace(
-                    self.identities[identifier], source_profile_id=source
+                    self.identities[identifier], source_profile_id=profile.source_profile_id
                 )
-            self.connection.execute(
-                "UPDATE incoming SET profile_id=?,outcome=? WHERE ordinal=?",
-                (str(identifier), outcome, ordinal),
-            )
-            self.outcomes.append((ordinal, key, outcome, len(profile.levels)))
+            entry.profile_id, entry.outcome = identifier, outcome
+            self.outcomes.append((entry.ordinal, profile.identity, outcome, len(profile.levels)))
             if outcome in ("insert", "newer"):
-                if previous is not None:
-                    self.changed_slots.add(owner_slot(previous))
-                slot = owner_slot(profile)
-                self.changed_slots.add(slot)
-                self.charge(len(canonical))
-                self.connection.execute(
-                    "INSERT OR REPLACE INTO science VALUES(?,?,?,?,?,?,1)",
-                    (str(identifier), slot, canonical, digest, source, revision),
-                )
-
-    def retain(self, stored: Iterable[StoredScience]) -> None:
-        for item in stored:
-            identifier, profile = item.identity.id, item.profile
-            if owner_slot(profile) not in self.changed_slots:
-                raise Rejection("unexpected_retained_slot")
-            exists = self.connection.execute(
-                "SELECT 1 FROM science WHERE profile_id=?", (str(identifier),)
-            ).fetchone()
-            if exists:
-                continue  # A newer accepted ownership correction overrides the old slot.
-            self.charge(len(profile.canonical_bytes))
-            self.connection.execute(
-                "INSERT INTO science VALUES(?,?,?,?,?,?,0)",
-                (
-                    str(identifier),
-                    owner_slot(profile),
-                    profile.canonical_bytes,
-                    profile.content_hash,
-                    profile.source_profile_id,
-                    revision_json(profile.revision),
-                ),
-            )
-        self.connection.commit()
+                if stored_state is not None:
+                    self.changed_slots.add(stored_state.slot_of(self.source))
+                    self.replaced.setdefault(identifier, stored_state)
+                if local is not None and local.slot is not None:
+                    self.changed_slots.add(local.slot)
+                entry.slot = owner_slot(profile, self.source)
+                self.changed_slots.add(entry.slot)
+                self.accepted[identifier] = entry
 
     def profiles(self, slot: str) -> Iterator[tuple[uuid.UUID, Profile]]:
-        for row in self.connection.execute(
-            "SELECT profile_id,canonical,hash,source_id,revision FROM science "
-            "WHERE slot=? ORDER BY profile_id",
-            (slot,),
-        ):
-            yield uuid.UUID(row[0]), self.restore(*row[1:])
+        """Own accepted profiles of the slot in profile_id order: the content of its part."""
+        for identifier in sorted(self.accepted):
+            entry = self.accepted[identifier]
+            if entry.slot == slot:
+                yield identifier, entry.profile
+
+    def departed(self, slot: str) -> list[StoredState]:
+        """Stored profiles of the slot that an accepted candidate replaces or moves away."""
+        return [state for state in self.replaced.values() if state.slot_of(self.source) == slot]
 
     def candidates(self) -> Iterator[dict[str, Any]]:
-        for row in self.connection.execute("SELECT * FROM incoming ORDER BY ordinal"):
-            ordinal, _, canonical, digest, source, revision, raw, identifier, _ = row
-            if identifier is None:
+        for entry in self.entries:
+            if entry.profile_id is None:
                 raise Rejection("unprepared_spool")
             yield {
-                "occurrence_index": ordinal,
-                **staged_candidate(
-                    self.restore(canonical, digest, source, revision),
-                    uuid.UUID(identifier),
-                    uuid.UUID(raw),
-                ),
+                "occurrence_index": entry.ordinal,
+                **staged_candidate(entry.profile, entry.profile_id, entry.raw),
             }
 
-    def write_candidates(self, path: Path) -> None:
-        # Canonical accounting completes before COPY takes the run-control lock.
-        # The COPY reader does no profile decoding or nested authority writes.
-        with path.open("xb") as output:
-            path.chmod(0o600)
-            for candidate in self.candidates():
-                data = json.dumps(candidate, separators=(",", ":"), allow_nan=False).encode()
-                if len(data) > 64 * 1024**2:
-                    raise Rejection("staging_resource_limit")
-                self.charge(len(data))
-                output.write(str(candidate["occurrence_index"]).encode() + b"\t" + data + b"\n")
+    def level_tables(self) -> Iterator[pa.Table]:
+        """Typed level rows of every candidate whose levels SQL will insert."""
+        for entry in self.entries:
+            if entry.outcome in ("insert", "newer"):
+                yield staging_table(entry.profile, entry.ordinal)
 
     def membership(self, slot: str) -> list[dict[str, Any]]:
         result = []

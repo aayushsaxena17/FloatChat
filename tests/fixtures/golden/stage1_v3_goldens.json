@@ -1,0 +1,566 @@
+{
+ "bundles": {
+  "10b19b21ac4d4d8ba69a4fc95e87de3c": {
+   "mutations": {
+    "13857_068:argo_fill_salinity_0": {
+     "canonical_bytes": 119320,
+     "canonical_sha256": "13656548049786e4452cd06e65b95fc274a6268a3e486af572b184645edeb3c2",
+     "content_hash": "13656548049786e4452cd06e65b95fc274a6268a3e486af572b184645edeb3c2",
+     "identity": "id:13857_068",
+     "levels": 103,
+     "levels_sha256": "0c0d159564b14d70041c2d8cbafd7bb1fc339bd08ab072a232b91bc3d0047dbe",
+     "owner_slot": null,
+     "revision": "{\"components\":{\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/13857/profiles/D13857_068.nc\\\"]\":\"2026-02-20T14:35:33+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    "13857_068:core_null_level_1": {
+     "canonical_bytes": 119324,
+     "canonical_sha256": "eb7d64db9c17688e9e8403f1c5a2575bf67d660679d045fe6d8e410c462e19c1",
+     "content_hash": "eb7d64db9c17688e9e8403f1c5a2575bf67d660679d045fe6d8e410c462e19c1",
+     "identity": "id:13857_068",
+     "levels": 103,
+     "levels_sha256": "9545d80f22dc5d72500b4bbd0e4f8b936e185103258a7d82b8c86d02b7d0d8ac",
+     "owner_slot": null,
+     "revision": "{\"components\":{\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/13857/profiles/D13857_068.nc\\\"]\":\"2026-02-20T14:35:33+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    "13857_068:descending": {
+     "canonical_bytes": 119320,
+     "canonical_sha256": "ef449d0fed6c98b2c5c99467f05cb0b7a46bcb1e8cd2d96f070735d9cb0f6d33",
+     "content_hash": "ef449d0fed6c98b2c5c99467f05cb0b7a46bcb1e8cd2d96f070735d9cb0f6d33",
+     "identity": "id:13857_068",
+     "levels": 103,
+     "levels_sha256": "0c0d159564b14d70041c2d8cbafd7bb1fc339bd08ab072a232b91bc3d0047dbe",
+     "owner_slot": null,
+     "revision": "{\"components\":{\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/13857/profiles/D13857_068.nc\\\"]\":\"2026-02-20T14:35:33+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    "13857_068:nonfinite_temperature_0": {
+     "canonical_bytes": 119306,
+     "canonical_sha256": "309e251f53bad929729426bdd877c6b388f9a50d0638bd517ac42fd658f0a423",
+     "content_hash": "309e251f53bad929729426bdd877c6b388f9a50d0638bd517ac42fd658f0a423",
+     "identity": "id:13857_068",
+     "levels": 103,
+     "levels_sha256": "730729ed89367a144d8bb0659097fdb264f3584691b55f4566c888126f36d2ec",
+     "owner_slot": null,
+     "revision": "{\"components\":{\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/13857/profiles/D13857_068.nc\\\"]\":\"2026-02-20T14:35:33+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    "13857_068:repeated_pressure_2": {
+     "canonical_bytes": 119319,
+     "canonical_sha256": "4420a9f4ab4f6a7d75c8c94bd13aaa0c57b8fd644b0d28ec357a70197903b831",
+     "content_hash": "4420a9f4ab4f6a7d75c8c94bd13aaa0c57b8fd644b0d28ec357a70197903b831",
+     "identity": "id:13857_068",
+     "levels": 103,
+     "levels_sha256": "d204c0d9b699cac9df9287220ffbdf293e8f6102fb0c36f1479fc96dab6b7bb3",
+     "owner_slot": null,
+     "revision": "{\"components\":{\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/13857/profiles/D13857_068.nc\\\"]\":\"2026-02-20T14:35:33+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    "13857_068:unknown_pressure_qc_0": {
+     "canonical_bytes": 119334,
+     "canonical_sha256": "0f49ca6ae7a8d84e30e15421eef9fc8fe34481b68cc1cfc027e9ba8af7f09e51",
+     "content_hash": "0f49ca6ae7a8d84e30e15421eef9fc8fe34481b68cc1cfc027e9ba8af7f09e51",
+     "identity": "id:13857_068",
+     "levels": 103,
+     "levels_sha256": "534002c7e307d169763790c34b44fa4cfe0fc0d9b5ff70b6f940da5a9b70b2a1",
+     "owner_slot": null,
+     "revision": "{\"components\":{\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/13857/profiles/D13857_068.nc\\\"]\":\"2026-02-20T14:35:33+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    }
+   },
+   "profiles": {
+    "13857_068": {
+     "canonical_bytes": 119320,
+     "canonical_sha256": "13656548049786e4452cd06e65b95fc274a6268a3e486af572b184645edeb3c2",
+     "content_hash": "13656548049786e4452cd06e65b95fc274a6268a3e486af572b184645edeb3c2",
+     "identity": "id:13857_068",
+     "levels": 103,
+     "levels_sha256": "0c0d159564b14d70041c2d8cbafd7bb1fc339bd08ab072a232b91bc3d0047dbe",
+     "owner_slot": null,
+     "revision": "{\"components\":{\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/13857/profiles/D13857_068.nc\\\"]\":\"2026-02-20T14:35:33+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    }
+   },
+   "raw": {
+    "01-inventory_before.json": {
+     "documents": 1,
+     "input_sha256": "e6589dcd9d225505641d25ae8d90e12ed5f14557361748dc2dc495d1d795b155",
+     "sanitized_bytes": 680,
+     "sanitized_sha256": "e6589dcd9d225505641d25ae8d90e12ed5f14557361748dc2dc495d1d795b155"
+    },
+    "02-profile.json": {
+     "documents": 1,
+     "input_sha256": "bb8ead610998ce3d2f0c760bc85b0a7af404ecb344b7b2083ef0a0a6b18033f6",
+     "sanitized_bytes": 2744,
+     "sanitized_sha256": "bb8ead610998ce3d2f0c760bc85b0a7af404ecb344b7b2083ef0a0a6b18033f6"
+    },
+    "03-inventory_after.json": {
+     "documents": 1,
+     "input_sha256": "e6589dcd9d225505641d25ae8d90e12ed5f14557361748dc2dc495d1d795b155",
+     "sanitized_bytes": 680,
+     "sanitized_sha256": "e6589dcd9d225505641d25ae8d90e12ed5f14557361748dc2dc495d1d795b155"
+    },
+    "04-metadata.json": {
+     "documents": 1,
+     "input_sha256": "4470deb86c71c588a137297aafcd969a2c87626d73cb2e72b0f6d61db9b219e9",
+     "sanitized_bytes": 347,
+     "sanitized_sha256": "4470deb86c71c588a137297aafcd969a2c87626d73cb2e72b0f6d61db9b219e9"
+    }
+   }
+  },
+  "25f21e056e7c4db7bc1e21b0a28ea45f": {
+   "mutations": {
+    "6990616_100:argo_fill_salinity_0": {
+     "rejection": "invalid_scientific_number"
+    },
+    "6990616_100:core_null_level_1": {
+     "canonical_bytes": 53065,
+     "canonical_sha256": "fcf7a9278259bd81160bac97b6c0896ae9240cd51ec5c4fd3faf68f77ac24b16",
+     "content_hash": "fcf7a9278259bd81160bac97b6c0896ae9240cd51ec5c4fd3faf68f77ac24b16",
+     "identity": "id:6990616_100",
+     "levels": 43,
+     "levels_sha256": "d01663105e075baa04a8cbfd41f9272f559d7cbe8d2253c0875d0215219f4949",
+     "owner_slot": "argovis/core/2026-10/60:-10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+     "revision": "{\"components\":{\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/incois/6990616/profiles/R6990616_100.nc\\\"]\":\"2026-10-05T04:12:00+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    "6990616_100:descending": {
+     "canonical_bytes": 53125,
+     "canonical_sha256": "2e607f886ad8501884ef32920f5f823633215c04fd0d9caa01c7d6c139ef058f",
+     "content_hash": "2e607f886ad8501884ef32920f5f823633215c04fd0d9caa01c7d6c139ef058f",
+     "identity": "id:6990616_100",
+     "levels": 43,
+     "levels_sha256": "d03690a669d3bd23c55413b853e69531b5ec7983c62b0d4eb283e0a1b90ccef9",
+     "owner_slot": "argovis/core/2026-10/60:-10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+     "revision": "{\"components\":{\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/incois/6990616/profiles/R6990616_100.nc\\\"]\":\"2026-10-05T04:12:00+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    "6990616_100:nonfinite_temperature_0": {
+     "canonical_bytes": 53111,
+     "canonical_sha256": "069d3195c4869b6bba0018df5403e4615b0484fde7e5f93f34a23c9b3a8fea36",
+     "content_hash": "069d3195c4869b6bba0018df5403e4615b0484fde7e5f93f34a23c9b3a8fea36",
+     "identity": "id:6990616_100",
+     "levels": 43,
+     "levels_sha256": "d051e7fc7135a88b7e63e52839f68c40e1aa30e5363acc54e713bf024ca1ad6f",
+     "owner_slot": "argovis/core/2026-10/60:-10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+     "revision": "{\"components\":{\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/incois/6990616/profiles/R6990616_100.nc\\\"]\":\"2026-10-05T04:12:00+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    "6990616_100:repeated_pressure_2": {
+     "canonical_bytes": 53145,
+     "canonical_sha256": "595709533222a3ae8d7b4ad2e2debb5c784cbac00b164ef673451d14b5e21d3a",
+     "content_hash": "595709533222a3ae8d7b4ad2e2debb5c784cbac00b164ef673451d14b5e21d3a",
+     "identity": "id:6990616_100",
+     "levels": 43,
+     "levels_sha256": "f57e984f1bf5f9237090dcbbdc4e027ce2b5afae5759b58df11ac511967f8429",
+     "owner_slot": "argovis/core/2026-10/60:-10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+     "revision": "{\"components\":{\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/incois/6990616/profiles/R6990616_100.nc\\\"]\":\"2026-10-05T04:12:00+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    "6990616_100:unknown_pressure_qc_0": {
+     "canonical_bytes": 53139,
+     "canonical_sha256": "7261b0cd0f8e3e0715a279b7713327d72cc551a0b60b41ebc12daf23a309955c",
+     "content_hash": "7261b0cd0f8e3e0715a279b7713327d72cc551a0b60b41ebc12daf23a309955c",
+     "identity": "id:6990616_100",
+     "levels": 43,
+     "levels_sha256": "16199e49fc93fcf56c7ddea1aa542e788baed937c0d75855299f5aaaef2a5169",
+     "owner_slot": "argovis/core/2026-10/60:-10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+     "revision": "{\"components\":{\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/incois/6990616/profiles/R6990616_100.nc\\\"]\":\"2026-10-05T04:12:00+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    }
+   },
+   "profiles": {
+    "6990616_100": {
+     "canonical_bytes": 53125,
+     "canonical_sha256": "eb5f397e8626fa8146fc41faed6d39ce49c233059dfeb3c77a95c833db5f7eb7",
+     "content_hash": "eb5f397e8626fa8146fc41faed6d39ce49c233059dfeb3c77a95c833db5f7eb7",
+     "identity": "id:6990616_100",
+     "levels": 43,
+     "levels_sha256": "d03690a669d3bd23c55413b853e69531b5ec7983c62b0d4eb283e0a1b90ccef9",
+     "owner_slot": "argovis/core/2026-10/60:-10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+     "revision": "{\"components\":{\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/incois/6990616/profiles/R6990616_100.nc\\\"]\":\"2026-10-05T04:12:00+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    }
+   },
+   "raw": {
+    "01-inventory_before.json": {
+     "documents": 1,
+     "input_sha256": "132a783e69d3ab0108ae4af6a28c250879c8047679982575708e5df7a756d2a9",
+     "sanitized_bytes": 741,
+     "sanitized_sha256": "132a783e69d3ab0108ae4af6a28c250879c8047679982575708e5df7a756d2a9"
+    },
+    "02-profile.json": {
+     "documents": 1,
+     "input_sha256": "0abfe6dc9a9bd3418d549842b1c2d7d8d4859f3b3922532dcaf09f6c6d65fbf2",
+     "sanitized_bytes": 2097,
+     "sanitized_sha256": "0abfe6dc9a9bd3418d549842b1c2d7d8d4859f3b3922532dcaf09f6c6d65fbf2"
+    },
+    "03-inventory_after.json": {
+     "documents": 1,
+     "input_sha256": "132a783e69d3ab0108ae4af6a28c250879c8047679982575708e5df7a756d2a9",
+     "sanitized_bytes": 741,
+     "sanitized_sha256": "132a783e69d3ab0108ae4af6a28c250879c8047679982575708e5df7a756d2a9"
+    },
+    "04-metadata.json": {
+     "documents": 1,
+     "input_sha256": "96734e1c036ec56842faea6fc55d656f3dc2c40ec8c7f5b823fdc4a18e220c10",
+     "sanitized_bytes": 352,
+     "sanitized_sha256": "96734e1c036ec56842faea6fc55d656f3dc2c40ec8c7f5b823fdc4a18e220c10"
+    }
+   }
+  },
+  "6a8ffa52f6db4954b974c449e68c54bc": {
+   "mutations": {
+    "1901094_109:argo_fill_salinity_0": {
+     "rejection": "invalid_scientific_number"
+    },
+    "1901094_109:core_null_level_1": {
+     "canonical_bytes": 111343,
+     "canonical_sha256": "049777c6de08534efa7793687e3dc2448534f426cc516e08ba3de537c40f3290",
+     "content_hash": "049777c6de08534efa7793687e3dc2448534f426cc516e08ba3de537c40f3290",
+     "identity": "id:1901094_109",
+     "levels": 92,
+     "levels_sha256": "9099e1d86e0e7cb255f863a91edbd3d991110c9fceb8ecabedf55dcb87ea69c0",
+     "owner_slot": null,
+     "revision": "{\"components\":{\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/coriolis/1901094/profiles/D1901094_109.nc\\\"]\":\"2025-01-30T15:11:24+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    "1901094_109:descending": {
+     "canonical_bytes": 111387,
+     "canonical_sha256": "35a5d1e37c42eb7ae8b524654753626e763d275ecd3b19e8be800592e0ac1173",
+     "content_hash": "35a5d1e37c42eb7ae8b524654753626e763d275ecd3b19e8be800592e0ac1173",
+     "identity": "id:1901094_109",
+     "levels": 92,
+     "levels_sha256": "669ac1b6c4841f05505ac318cce302874dd4f07fddb1a8e6710bd3a21ff0030b",
+     "owner_slot": null,
+     "revision": "{\"components\":{\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/coriolis/1901094/profiles/D1901094_109.nc\\\"]\":\"2025-01-30T15:11:24+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    "1901094_109:nonfinite_temperature_0": {
+     "canonical_bytes": 111373,
+     "canonical_sha256": "2d3b7dc91e43191bef04604b81f4f201d77671c542bba2b754778d314e60f0d1",
+     "content_hash": "2d3b7dc91e43191bef04604b81f4f201d77671c542bba2b754778d314e60f0d1",
+     "identity": "id:1901094_109",
+     "levels": 92,
+     "levels_sha256": "eb17807376d716dd46c2850200746384392b4edc47895502fd50e09d6cb26199",
+     "owner_slot": null,
+     "revision": "{\"components\":{\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/coriolis/1901094/profiles/D1901094_109.nc\\\"]\":\"2025-01-30T15:11:24+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    "1901094_109:repeated_pressure_2": {
+     "canonical_bytes": 111406,
+     "canonical_sha256": "21e59277f69d1467081b33d93bf26c7cdc2f4c5194a5fa908c572a7220b7f0b4",
+     "content_hash": "21e59277f69d1467081b33d93bf26c7cdc2f4c5194a5fa908c572a7220b7f0b4",
+     "identity": "id:1901094_109",
+     "levels": 92,
+     "levels_sha256": "d7752e7edd12a4f3b0b17a92b08f8310529f80d691bfb0a80c76964052b2aad9",
+     "owner_slot": null,
+     "revision": "{\"components\":{\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/coriolis/1901094/profiles/D1901094_109.nc\\\"]\":\"2025-01-30T15:11:24+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    "1901094_109:unknown_pressure_qc_0": {
+     "canonical_bytes": 111400,
+     "canonical_sha256": "8930d3c67317c044cb71fdd4cca0493274181f0faa55af36e9e91663cbf8feb2",
+     "content_hash": "8930d3c67317c044cb71fdd4cca0493274181f0faa55af36e9e91663cbf8feb2",
+     "identity": "id:1901094_109",
+     "levels": 92,
+     "levels_sha256": "b187e34c89d87c263ed6caaf7e57524ca477f195980cbb064a8a901b3a0667a5",
+     "owner_slot": null,
+     "revision": "{\"components\":{\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/coriolis/1901094/profiles/D1901094_109.nc\\\"]\":\"2025-01-30T15:11:24+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    "4901283_003:argo_fill_salinity_0": {
+     "rejection": "invalid_scientific_number"
+    },
+    "4901283_003:core_null_level_1": {
+     "canonical_bytes": 510044,
+     "canonical_sha256": "4330c7abe95b6435b913f690a9ac1893933b322661a9a58caadc2c1f0d099676",
+     "content_hash": "4330c7abe95b6435b913f690a9ac1893933b322661a9a58caadc2c1f0d099676",
+     "identity": "id:4901283_003",
+     "levels": 423,
+     "levels_sha256": "1e2aa430d06ee471fe573e10aadbd46634c7ab5930ce3336e940f599980f89f9",
+     "owner_slot": null,
+     "revision": "{\"components\":{\"[[\\\"argo_bgc\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/4901283/profiles/SD4901283_003.nc\\\"]\":\"2022-06-29T21:21:10+00:00\",\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/4901283/profiles/D4901283_003.nc\\\"]\":\"2018-10-03T14:45:37+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    "4901283_003:descending": {
+     "canonical_bytes": 510087,
+     "canonical_sha256": "6dfed266aff87f8b211d6a4eb769afd680fb92a40efd17984483200a08c822e0",
+     "content_hash": "6dfed266aff87f8b211d6a4eb769afd680fb92a40efd17984483200a08c822e0",
+     "identity": "id:4901283_003",
+     "levels": 423,
+     "levels_sha256": "5e22658a08b25f25d4716db2f31435322c656280aa6fb79db4afb1659b02dac2",
+     "owner_slot": null,
+     "revision": "{\"components\":{\"[[\\\"argo_bgc\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/4901283/profiles/SD4901283_003.nc\\\"]\":\"2022-06-29T21:21:10+00:00\",\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/4901283/profiles/D4901283_003.nc\\\"]\":\"2018-10-03T14:45:37+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    "4901283_003:nonfinite_temperature_0": {
+     "canonical_bytes": 510070,
+     "canonical_sha256": "113a4cc808fe9024c5f828140ae94d3d3f1b5f67f9ecabcc6ac431f94000e60f",
+     "content_hash": "113a4cc808fe9024c5f828140ae94d3d3f1b5f67f9ecabcc6ac431f94000e60f",
+     "identity": "id:4901283_003",
+     "levels": 423,
+     "levels_sha256": "b9db51e2771a25241dcf970dc07d4c9696eebee8acc0cd6d67f246c02ab0e9de",
+     "owner_slot": null,
+     "revision": "{\"components\":{\"[[\\\"argo_bgc\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/4901283/profiles/SD4901283_003.nc\\\"]\":\"2022-06-29T21:21:10+00:00\",\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/4901283/profiles/D4901283_003.nc\\\"]\":\"2018-10-03T14:45:37+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    "4901283_003:repeated_pressure_2": {
+     "canonical_bytes": 510106,
+     "canonical_sha256": "1b4a121046dcb16fd9df3c167bb821ba6b5b52b2237a658e51fb746b9176bf42",
+     "content_hash": "1b4a121046dcb16fd9df3c167bb821ba6b5b52b2237a658e51fb746b9176bf42",
+     "identity": "id:4901283_003",
+     "levels": 423,
+     "levels_sha256": "c7b2e3394cdc016268004ad93ac07d64e1e0ab6c525ca5bf736cb048a678f0b1",
+     "owner_slot": null,
+     "revision": "{\"components\":{\"[[\\\"argo_bgc\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/4901283/profiles/SD4901283_003.nc\\\"]\":\"2022-06-29T21:21:10+00:00\",\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/4901283/profiles/D4901283_003.nc\\\"]\":\"2018-10-03T14:45:37+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    "4901283_003:unknown_pressure_qc_0": {
+     "canonical_bytes": 510100,
+     "canonical_sha256": "2f97134d07e758d8d63b63dbc353e80c419c078fc4953b937a3f7d7bf7e543ed",
+     "content_hash": "2f97134d07e758d8d63b63dbc353e80c419c078fc4953b937a3f7d7bf7e543ed",
+     "identity": "id:4901283_003",
+     "levels": 423,
+     "levels_sha256": "d0d5773a869ad2dc8241107982a97b885ffe2946388207e08ca6fca5305d61d8",
+     "owner_slot": null,
+     "revision": "{\"components\":{\"[[\\\"argo_bgc\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/4901283/profiles/SD4901283_003.nc\\\"]\":\"2022-06-29T21:21:10+00:00\",\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/4901283/profiles/D4901283_003.nc\\\"]\":\"2018-10-03T14:45:37+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    }
+   },
+   "profiles": {
+    "1901094_109": {
+     "canonical_bytes": 111387,
+     "canonical_sha256": "4720d3534449499d5fc67703e9c04a719c63b776600aab98d1111bbd42e8e0d4",
+     "content_hash": "4720d3534449499d5fc67703e9c04a719c63b776600aab98d1111bbd42e8e0d4",
+     "identity": "id:1901094_109",
+     "levels": 92,
+     "levels_sha256": "669ac1b6c4841f05505ac318cce302874dd4f07fddb1a8e6710bd3a21ff0030b",
+     "owner_slot": null,
+     "revision": "{\"components\":{\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/coriolis/1901094/profiles/D1901094_109.nc\\\"]\":\"2025-01-30T15:11:24+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    "4901283_003": {
+     "canonical_bytes": 510087,
+     "canonical_sha256": "e0e9bb008a98fec66e47ffdffd987d2548ff94de6d456a608aced14e65474782",
+     "content_hash": "e0e9bb008a98fec66e47ffdffd987d2548ff94de6d456a608aced14e65474782",
+     "identity": "id:4901283_003",
+     "levels": 423,
+     "levels_sha256": "5e22658a08b25f25d4716db2f31435322c656280aa6fb79db4afb1659b02dac2",
+     "owner_slot": null,
+     "revision": "{\"components\":{\"[[\\\"argo_bgc\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/4901283/profiles/SD4901283_003.nc\\\"]\":\"2022-06-29T21:21:10+00:00\",\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/4901283/profiles/D4901283_003.nc\\\"]\":\"2018-10-03T14:45:37+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    }
+   },
+   "raw": {
+    "01-inventory_before.json": {
+     "documents": 1,
+     "input_sha256": "c1b79ee839135292e2de68fbdbab8cfa4101265594faededb52eebaff8bd5a36",
+     "sanitized_bytes": 866,
+     "sanitized_sha256": "c1b79ee839135292e2de68fbdbab8cfa4101265594faededb52eebaff8bd5a36"
+    },
+    "02-profile.json": {
+     "documents": 1,
+     "input_sha256": "c650083aa1a3119ddc3d334581e3c4a0a7d80a18f6b768fd6ef3d76b2585a4ed",
+     "sanitized_bytes": 3323,
+     "sanitized_sha256": "c650083aa1a3119ddc3d334581e3c4a0a7d80a18f6b768fd6ef3d76b2585a4ed"
+    },
+    "03-inventory_after.json": {
+     "documents": 1,
+     "input_sha256": "c1b79ee839135292e2de68fbdbab8cfa4101265594faededb52eebaff8bd5a36",
+     "sanitized_bytes": 866,
+     "sanitized_sha256": "c1b79ee839135292e2de68fbdbab8cfa4101265594faededb52eebaff8bd5a36"
+    },
+    "04-metadata.json": {
+     "documents": 1,
+     "input_sha256": "8c707f40b8f74c5d9aa03d743b2ae523b2c92af51d08decdb4c229c605e1ea29",
+     "sanitized_bytes": 360,
+     "sanitized_sha256": "8c707f40b8f74c5d9aa03d743b2ae523b2c92af51d08decdb4c229c605e1ea29"
+    },
+    "05-inventory_before.json": {
+     "documents": 1,
+     "input_sha256": "f839f589fe11fdbd2dfa2fef03f33605e62875ac6f41fddc5854c22061589e87",
+     "sanitized_bytes": 1093,
+     "sanitized_sha256": "f839f589fe11fdbd2dfa2fef03f33605e62875ac6f41fddc5854c22061589e87"
+    },
+    "06-profile.json": {
+     "documents": 1,
+     "input_sha256": "6b18c1dc8e626657fc3b3311d4fdd0520a2e3c16979c236cc3130361ef434a37",
+     "sanitized_bytes": 23800,
+     "sanitized_sha256": "6b18c1dc8e626657fc3b3311d4fdd0520a2e3c16979c236cc3130361ef434a37"
+    },
+    "07-inventory_after.json": {
+     "documents": 1,
+     "input_sha256": "f839f589fe11fdbd2dfa2fef03f33605e62875ac6f41fddc5854c22061589e87",
+     "sanitized_bytes": 1093,
+     "sanitized_sha256": "f839f589fe11fdbd2dfa2fef03f33605e62875ac6f41fddc5854c22061589e87"
+    },
+    "08-metadata.json": {
+     "documents": 1,
+     "input_sha256": "6e879d4c5e868ede2af4868b82e2766bf73b2f8a21f69ee08dad09f39afdd4a5",
+     "sanitized_bytes": 350,
+     "sanitized_sha256": "6e879d4c5e868ede2af4868b82e2766bf73b2f8a21f69ee08dad09f39afdd4a5"
+    }
+   }
+  },
+  "9efe8f4e713c44a1a2964407e52b9a45": {
+   "mutations": {
+    "2904014_040:argo_fill_salinity_0": {
+     "rejection": "invalid_scientific_number"
+    },
+    "2904014_040:core_null_level_1": {
+     "canonical_bytes": 616316,
+     "canonical_sha256": "486e137a8b077e5ca6abc26c6bdfb7b1e722f7dba521e0ee1e34c4b814b49668",
+     "content_hash": "486e137a8b077e5ca6abc26c6bdfb7b1e722f7dba521e0ee1e34c4b814b49668",
+     "identity": "id:2904014_040",
+     "levels": 501,
+     "levels_sha256": "ed1785f6c8bb8c94f2907b18b2f1f60ea6cdf16aafc3a7b08f4cda6408642f0e",
+     "owner_slot": "argovis/core/2026-10/60:-10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+     "revision": "{\"components\":{\"[[\\\"argo_bgc\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/2904014/profiles/SR2904014_040.nc\\\"]\":\"2026-10-04T13:03:35+00:00\",\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/2904014/profiles/R2904014_040.nc\\\"]\":\"2026-10-04T05:21:17+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    "2904014_040:descending": {
+     "canonical_bytes": 616374,
+     "canonical_sha256": "002822cc7c472d042733932df1223a7f53196f2395fafeb1c1c19fc2836fa745",
+     "content_hash": "002822cc7c472d042733932df1223a7f53196f2395fafeb1c1c19fc2836fa745",
+     "identity": "id:2904014_040",
+     "levels": 501,
+     "levels_sha256": "12cead4329b7c1df50bd21c2e842c133fca95216a612b8976f232816cdd7b86e",
+     "owner_slot": "argovis/core/2026-10/60:-10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+     "revision": "{\"components\":{\"[[\\\"argo_bgc\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/2904014/profiles/SR2904014_040.nc\\\"]\":\"2026-10-04T13:03:35+00:00\",\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/2904014/profiles/R2904014_040.nc\\\"]\":\"2026-10-04T05:21:17+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    "2904014_040:nonfinite_temperature_0": {
+     "canonical_bytes": 616360,
+     "canonical_sha256": "718d092b330b73850ef294ca44467a8dc78fdd24130ade698bd2fd25f106a689",
+     "content_hash": "718d092b330b73850ef294ca44467a8dc78fdd24130ade698bd2fd25f106a689",
+     "identity": "id:2904014_040",
+     "levels": 501,
+     "levels_sha256": "7ef4a926f9a352a47dba5e0cdc1126194aa3d3c750d11a12a467c25bacb01c7a",
+     "owner_slot": "argovis/core/2026-10/60:-10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+     "revision": "{\"components\":{\"[[\\\"argo_bgc\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/2904014/profiles/SR2904014_040.nc\\\"]\":\"2026-10-04T13:03:35+00:00\",\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/2904014/profiles/R2904014_040.nc\\\"]\":\"2026-10-04T05:21:17+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    "2904014_040:repeated_pressure_2": {
+     "canonical_bytes": 616394,
+     "canonical_sha256": "37283b27d2b9c2f75466f75d5bb965977d1b029f68757fefb0875eab134dbe0c",
+     "content_hash": "37283b27d2b9c2f75466f75d5bb965977d1b029f68757fefb0875eab134dbe0c",
+     "identity": "id:2904014_040",
+     "levels": 501,
+     "levels_sha256": "32464443f0554e6fa9446132b24ad1bcee17e5b3969751f37785027f39c0452d",
+     "owner_slot": "argovis/core/2026-10/60:-10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+     "revision": "{\"components\":{\"[[\\\"argo_bgc\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/2904014/profiles/SR2904014_040.nc\\\"]\":\"2026-10-04T13:03:35+00:00\",\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/2904014/profiles/R2904014_040.nc\\\"]\":\"2026-10-04T05:21:17+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    "2904014_040:unknown_pressure_qc_0": {
+     "canonical_bytes": 616388,
+     "canonical_sha256": "0bf9fd681184411699d56bc60997dd1a29cb0a5e1461571baee585892feac78f",
+     "content_hash": "0bf9fd681184411699d56bc60997dd1a29cb0a5e1461571baee585892feac78f",
+     "identity": "id:2904014_040",
+     "levels": 501,
+     "levels_sha256": "740629365ddf94f2021390962a57c326edb98410022f3f3f1392dea9b84b7802",
+     "owner_slot": "argovis/core/2026-10/60:-10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+     "revision": "{\"components\":{\"[[\\\"argo_bgc\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/2904014/profiles/SR2904014_040.nc\\\"]\":\"2026-10-04T13:03:35+00:00\",\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/2904014/profiles/R2904014_040.nc\\\"]\":\"2026-10-04T05:21:17+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    }
+   },
+   "profiles": {
+    "2904014_040": {
+     "canonical_bytes": 616374,
+     "canonical_sha256": "a57bfef74f81d4d1344b9002aa14040969af2a75f65de50fdc4b21a87b4bbda3",
+     "content_hash": "a57bfef74f81d4d1344b9002aa14040969af2a75f65de50fdc4b21a87b4bbda3",
+     "identity": "id:2904014_040",
+     "levels": 501,
+     "levels_sha256": "12cead4329b7c1df50bd21c2e842c133fca95216a612b8976f232816cdd7b86e",
+     "owner_slot": "argovis/core/2026-10/60:-10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+     "revision": "{\"components\":{\"[[\\\"argo_bgc\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/2904014/profiles/SR2904014_040.nc\\\"]\":\"2026-10-04T13:03:35+00:00\",\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/2904014/profiles/R2904014_040.nc\\\"]\":\"2026-10-04T05:21:17+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    }
+   },
+   "raw": {
+    "01-inventory_before.json": {
+     "documents": 1,
+     "input_sha256": "a6fb76a248f7a8dd9e7d50d5e0123959a8fa918debcf7542750f197cbebd277c",
+     "sanitized_bytes": 1541,
+     "sanitized_sha256": "a6fb76a248f7a8dd9e7d50d5e0123959a8fa918debcf7542750f197cbebd277c"
+    },
+    "02-profile.json": {
+     "documents": 1,
+     "input_sha256": "c51989d8f3285a976e64e55fd7dde0c8d95a6a4306bb27607980e2b8d1c8ba4f",
+     "sanitized_bytes": 65715,
+     "sanitized_sha256": "c51989d8f3285a976e64e55fd7dde0c8d95a6a4306bb27607980e2b8d1c8ba4f"
+    },
+    "03-inventory_after.json": {
+     "documents": 1,
+     "input_sha256": "a6fb76a248f7a8dd9e7d50d5e0123959a8fa918debcf7542750f197cbebd277c",
+     "sanitized_bytes": 1541,
+     "sanitized_sha256": "a6fb76a248f7a8dd9e7d50d5e0123959a8fa918debcf7542750f197cbebd277c"
+    },
+    "04-metadata.json": {
+     "documents": 1,
+     "input_sha256": "0b108edd5db80012cfc7b7860719f81ca43b72d937fa16ac61887b2a9bb5474a",
+     "sanitized_bytes": 375,
+     "sanitized_sha256": "0b108edd5db80012cfc7b7860719f81ca43b72d937fa16ac61887b2a9bb5474a"
+    }
+   }
+  }
+ },
+ "commit": "90e1e6714909afd3e738fd18f0d6dc782bcdcbbd",
+ "kind": "stage1_v3_scientific_goldens",
+ "synthetic": {
+  "bgc24-3x699": {
+   "payload_sha256": "d0ff216e4934532f9b97b5b48b625ea06c8506c632e0a3fae4efb69be870ffb6",
+   "profiles": [
+    {
+     "canonical_bytes": 854241,
+     "canonical_sha256": "6a863bf595a3b2c61584aef785a056efd5497cdeb8d5d8a99c68dabe13d0479f",
+     "content_hash": "6a863bf595a3b2c61584aef785a056efd5497cdeb8d5d8a99c68dabe13d0479f",
+     "identity": "id:synthetic-perf-0000",
+     "levels": 699,
+     "levels_sha256": "db0a6ef5b1c379d35afeecc02d7617eeb76f57c3586cb92cd8a2a23f30eb449f",
+     "owner_slot": "argovis/core/2025-01/70:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+     "revision": "{\"components\":{\"[[\\\"argo_bgc\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/2904014/profiles/SR2904014_040.nc\\\"]\":\"2026-10-04T13:03:35+00:00\",\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/2904014/profiles/R2904014_040.nc\\\"]\":\"2026-10-04T05:21:17+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    {
+     "canonical_bytes": 854241,
+     "canonical_sha256": "3b13592a99117a65a6b77e5c50f2c0d072bf87c4240124d0fcb16e80cb384649",
+     "content_hash": "3b13592a99117a65a6b77e5c50f2c0d072bf87c4240124d0fcb16e80cb384649",
+     "identity": "id:synthetic-perf-0001",
+     "levels": 699,
+     "levels_sha256": "db0a6ef5b1c379d35afeecc02d7617eeb76f57c3586cb92cd8a2a23f30eb449f",
+     "owner_slot": "argovis/core/2025-01/70:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+     "revision": "{\"components\":{\"[[\\\"argo_bgc\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/2904014/profiles/SR2904014_040.nc\\\"]\":\"2026-10-04T13:03:35+00:00\",\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/2904014/profiles/R2904014_040.nc\\\"]\":\"2026-10-04T05:21:17+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    {
+     "canonical_bytes": 854241,
+     "canonical_sha256": "6c2881232154552748a9d9e3b984706453af38a33e063deaf1d03a9e9693ff78",
+     "content_hash": "6c2881232154552748a9d9e3b984706453af38a33e063deaf1d03a9e9693ff78",
+     "identity": "id:synthetic-perf-0002",
+     "levels": 699,
+     "levels_sha256": "db0a6ef5b1c379d35afeecc02d7617eeb76f57c3586cb92cd8a2a23f30eb449f",
+     "owner_slot": "argovis/core/2025-01/70:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+     "revision": "{\"components\":{\"[[\\\"argo_bgc\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/2904014/profiles/SR2904014_040.nc\\\"]\":\"2026-10-04T13:03:35+00:00\",\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/2904014/profiles/R2904014_040.nc\\\"]\":\"2026-10-04T05:21:17+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    }
+   ],
+   "sanitized_sha256": "d0ff216e4934532f9b97b5b48b625ea06c8506c632e0a3fae4efb69be870ffb6",
+   "snapshot": {
+    "membership_sha256": "a9b45104842d6452a9cc7eeec8e5e3fbb264018665438c334dfdd14cc31ecbd8",
+    "profiles": 3,
+    "rows": 2097,
+    "schema_sha256": "265e6149cab7be216f5b87228bd67fdd1ab3cad8cd807bea328b8ff7bdc88c80"
+   }
+  },
+  "core6-3x699": {
+   "payload_sha256": "c47c656916d891e4074f0455ba20893d34c90c5bd90d9f5bbf21d556f7bad390",
+   "profiles": [
+    {
+     "canonical_bytes": 854393,
+     "canonical_sha256": "f18063bbd7f8980dfdf5fd69f527dc1bf6a887f9a52e573c4825f2d5a7d15852",
+     "content_hash": "f18063bbd7f8980dfdf5fd69f527dc1bf6a887f9a52e573c4825f2d5a7d15852",
+     "identity": "id:synthetic-perf-0000",
+     "levels": 699,
+     "levels_sha256": "1eb59cf40d409cd6b1f1e0e0a6ccbfa118c10daddc7edfdd836196da3acc118d",
+     "owner_slot": "argovis/core/2025-01/70:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+     "revision": "{\"components\":{\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/coriolis/1901094/profiles/D1901094_109.nc\\\"]\":\"2025-01-30T15:11:24+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    {
+     "canonical_bytes": 854393,
+     "canonical_sha256": "01bd501b2f7eb4bc7de4e8e086ece84a496f6969590cd3a33f33f68beec1fd21",
+     "content_hash": "01bd501b2f7eb4bc7de4e8e086ece84a496f6969590cd3a33f33f68beec1fd21",
+     "identity": "id:synthetic-perf-0001",
+     "levels": 699,
+     "levels_sha256": "1eb59cf40d409cd6b1f1e0e0a6ccbfa118c10daddc7edfdd836196da3acc118d",
+     "owner_slot": "argovis/core/2025-01/70:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+     "revision": "{\"components\":{\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/coriolis/1901094/profiles/D1901094_109.nc\\\"]\":\"2025-01-30T15:11:24+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    },
+    {
+     "canonical_bytes": 854393,
+     "canonical_sha256": "d0f926d80be6cc9e4ae1e934188cf85c4c7215b40e787e69fddf823f31d9a4da",
+     "content_hash": "d0f926d80be6cc9e4ae1e934188cf85c4c7215b40e787e69fddf823f31d9a4da",
+     "identity": "id:synthetic-perf-0002",
+     "levels": 699,
+     "levels_sha256": "1eb59cf40d409cd6b1f1e0e0a6ccbfa118c10daddc7edfdd836196da3acc118d",
+     "owner_slot": "argovis/core/2025-01/70:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+     "revision": "{\"components\":{\"[[\\\"argo_core\\\"],\\\"ftp://ftp.ifremer.fr/ifremer/argo/dac/coriolis/1901094/profiles/D1901094_109.nc\\\"]\":\"2025-01-30T15:11:24+00:00\"},\"kind\":\"argovis-source-vector-v1\"}"
+    }
+   ],
+   "sanitized_sha256": "c47c656916d891e4074f0455ba20893d34c90c5bd90d9f5bbf21d556f7bad390",
+   "snapshot": {
+    "membership_sha256": "987e0caa47b9969444ee9abe4d5caae901dc45809e46f6c36456af7bb36b9ac2",
+    "profiles": 3,
+    "rows": 2097,
+    "schema_sha256": "265e6149cab7be216f5b87228bd67fdd1ab3cad8cd807bea328b8ff7bdc88c80"
+   }
+  }
+ }
+}

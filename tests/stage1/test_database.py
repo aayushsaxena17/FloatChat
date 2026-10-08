@@ -4,6 +4,7 @@ No host ports, mounted source/config, network access or existing volumes are use
 Provision the pinned foundation image separately; tests refuse to pull one.
 """
 
+import copy
 import json
 import os
 import secrets
@@ -35,6 +36,7 @@ ATTEMPT = "00000000-0000-4000-8000-000000000004"
 RAW = "00000000-0000-4000-8000-000000000005"
 FLOAT = "00000000-0000-4000-8000-000000000006"
 PROFILE = "00000000-0000-4000-8000-000000000007"
+SECOND_PROFILE = "00000000-0000-4000-8000-0000000000a7"  # sorts after PROFILE
 INTENT = "00000000-0000-4000-8000-000000000008"
 SEED = f"""
 INSERT INTO app.ingestion_environment VALUES('{ENV}','test','acceptance',true,'test','test','test');
@@ -66,8 +68,8 @@ VALUES('{PROFILE}','argovis','source-id','{FLOAT}',1,'A','2025-01-02','single',t
 """
 MEASUREMENT = f"""
 INSERT INTO app.core_measurement(observation_month,profile_id,level_index,pressure,
-  pressure_unit,pressure_data_mode,pressure_flags,temperature_flags,salinity_flags,canonical_level)
-VALUES('2025-01-01','{PROFILE}',0,1,'dbar','R','[]','[]','[]','{{}}');
+  pressure_unit,pressure_data_mode,pressure_flags,temperature_flags,salinity_flags)
+VALUES('2025-01-01','{PROFILE}',0,1,'dbar','R','[]','[]','[]');
 """
 PARTITION = """
 CREATE TABLE app.core_measurement_202501 PARTITION OF app.core_measurement
@@ -340,7 +342,7 @@ def postgres():
             assert time.monotonic() < deadline, "Disposable database did not become ready"
             time.sleep(0.25)
 
-        def execute(source, *, expected=0, database="postgres"):
+        def execute(source, *, expected=0, database="postgres", timeout=30):
             result = subprocess.run(
                 [
                     "docker",
@@ -362,7 +364,7 @@ def postgres():
                 input=source,
                 text=True,
                 capture_output=True,
-                timeout=30,
+                timeout=timeout,
             )
             assert result.returncode == expected, result.stderr
             return result.stdout.strip()
@@ -374,16 +376,8 @@ def postgres():
             "CREATE ROLE floatchat_app NOLOGIN; "
             "ALTER DEFAULT PRIVILEGES IN SCHEMA app GRANT ALL ON TABLES TO floatchat_app;"
         )
-        execute((ROOT / "infra/migrations/versions/0002_ingestion_foundation.sql").read_text())
-        execute((ROOT / "infra/migrations/versions/0003_ingestion_control.sql").read_text())
-        execute((ROOT / "infra/migrations/versions/0004_scientific_publication.sql").read_text())
-        execute((ROOT / "infra/migrations/versions/0005_ingestion_admission.sql").read_text())
-        execute((ROOT / "infra/migrations/versions/0006_ingestion_runtime.sql").read_text())
-        execute((ROOT / "infra/migrations/versions/0007_http_replay.sql").read_text())
-        execute((ROOT / "infra/migrations/versions/0008_resource_evidence.sql").read_text())
-        execute((ROOT / "infra/migrations/versions/0009_stage1_v3.sql").read_text())
-        execute((ROOT / "infra/migrations/versions/0010_stage1_v3_runtime.sql").read_text())
-        execute((ROOT / "infra/migrations/versions/0011_set_based_publication.sql").read_text())
+        for migration in sorted((ROOT / "infra/migrations/versions").glob("*.sql")):
+            execute(migration.read_text())
         execute(SEED)
         execute.container_name = name
         yield execute
@@ -588,17 +582,12 @@ def test_B09_actual_alembic_repeat_and_refused_downgrade(postgres):
     for _ in range(2):
         result = subprocess.run([*command, "upgrade", "head"], capture_output=True, timeout=60)
         assert result.returncode == 0, result.stderr.decode()
-    assert (
-        postgres("SELECT version_num FROM alembic_version", database="migration_probe")
-        == "0011_set_based_publication"
-    )
+    head = sorted(path.stem for path in (ROOT / "infra/migrations/versions").glob("[0-9]*.py"))[-1]
+    assert postgres("SELECT version_num FROM alembic_version", database="migration_probe") == head
     result = subprocess.run([*command, "downgrade", "base"], capture_output=True, timeout=60)
     assert result.returncode != 0
     assert b"Downgrade refused" in result.stderr
-    assert (
-        postgres("SELECT version_num FROM alembic_version", database="migration_probe")
-        == "0011_set_based_publication"
-    )
+    assert postgres("SELECT version_num FROM alembic_version", database="migration_probe") == head
 
 
 @pytest.mark.integration
@@ -856,7 +845,8 @@ def test_F01_S01_S03_labelled_present_core_null_restricted_database_publication(
         queries.append(
             f"SELECT jsonb_build_object('value',{variable}{suffix},'qc',{variable}{suffix}_qc,"
             f"'unit',{variable}_unit,'mode',{variable}_data_mode,'canonical',"
-            f"canonical_level->'{variable}{suffix}') FROM app.core_measurement "
+            f"(SELECT scientific_content->'levels'->{index}->'{variable}{suffix}' "
+            f"FROM app.argo_profile)) FROM app.core_measurement "
             f"WHERE level_index={index};"
         )
     queries += ["SELECT scientific_content->'direction' FROM app.argo_profile;", "ROLLBACK;"]
@@ -1245,27 +1235,52 @@ def test_B09_month_creation_and_failed_publication_roll_back_together(
     assert postgres("SELECT to_regclass('app.core_measurement_202501') IS NULL") == "t"
 
 
-def _candidate(wire, metadata):
-    wire["timestamp"] = "2025-01-02T00:00:00Z"
+def _candidate(wire, metadata, proposed=PROFILE, when="2025-01-02T00:00:00Z"):
+    wire["timestamp"] = when
     wire["profile_direction"] = "A"  # Explicit synthetic derivative for fallback tests.
     profile = map_profile(decode_json(json.dumps(wire).encode()), metadata, CanonicalBudget())
-    return profile, staged_candidate(profile, uuid.UUID(PROFILE), uuid.UUID(RAW))
+    return profile, staged_candidate(profile, uuid.UUID(proposed), uuid.UUID(RAW))
 
 
-def _publishing(profile, candidate):
-    """SQL component fixture: object evidence is synthetic, not a MinIO acceptance proof."""
-    slot = owner_slot(profile)
+def _staged_levels(levels, *, occurrence=0, chunk=CHUNK, fence=1):
+    """One statement staging typed level rows exactly as binary COPY would."""
+    rows = [
+        {
+            **level,
+            "run_id": RUN,
+            "chunk_id": chunk,
+            "fence": fence,
+            "occurrence_index": occurrence,
+        }
+        for level in levels
+    ]
+    return (
+        "INSERT INTO app.measurement_staging SELECT * FROM "
+        f"jsonb_populate_recordset(NULL::app.measurement_staging,{_literal(rows)});"
+    )
+
+
+def _publishing(profile, candidate, *, levels=None, base=0, source="argovis"):
+    """SQL component fixture: object evidence is synthetic, not a MinIO acceptance proof.
+
+    levels overrides the typed level rows staged for the candidate (default: the profile's);
+    base is the slot version the part is built on; source selects the population (and key).
+    """
+    slot = owner_slot(profile, source)
+    tile_key = "70:10" if source == "argovis" else slot.split("/")[3]
+    profile_id = candidate["proposed_profile_id"]
     digest = "d" * 64
     key = f"normalised/sha256/{digest}.parquet"
     membership = [
-        {"profile_id": PROFILE, "hash": profile.content_hash, "levels": len(profile.levels)}
+        {"profile_id": profile_id, "hash": profile.content_hash, "levels": len(profile.levels)}
     ]
     verification = {"schema_sha256": "e" * 64, "rows": len(profile.levels), "profiles": 1}
     generations = [
         {
             "id": str(uuid.uuid4()),
             "logical_key": slot,
-            "base_version": 0,
+            "kind": "part",
+            "base_version": base,
             "membership_manifest": membership,
             "sha256": digest,
             "object_key": key,
@@ -1301,10 +1316,11 @@ def _publishing(profile, candidate):
     SELECT app.transition_chunk('{RUN}','{CHUNK}',1,1,'publishing','test');
     {PARTITION}
     INSERT INTO app.logical_partition_slot(environment_id,logical_key,observation_month,tile_key)
-      VALUES('{ENV}','{slot}','2025-01-01','70:10') ON CONFLICT DO NOTHING;
+      VALUES('{ENV}','{slot}','2025-01-01','{tile_key}') ON CONFLICT DO NOTHING;
     INSERT INTO app.publication_intent VALUES('{INTENT}','{CHUNK}',1,1,'prepared',now(),
-      {_literal([key])},{_literal({slot: 0})},'{{}}',NULL);
+      {_literal([key])},{_literal({slot: base})},'{{}}',NULL);
     INSERT INTO app.ingestion_staging VALUES('{RUN}','{CHUNK}',1,0,{_literal(candidate)});
+    {_staged_levels(profile.levels if levels is None else levels)}
     """
     commit = f"SELECT app.commit_publication('{RUN}','{CHUNK}',1,1,'{INTENT}'," + (
         _literal(generations) + "," + _literal(receipts) + ");"
@@ -1335,32 +1351,38 @@ def test_P06_P07_atomic_publication_and_complete_retry(postgres, wire, linked_me
 
 @pytest.mark.integration
 @pytest.mark.parametrize(
-    "mutation,category",
+    "mutation,commit_result,audit_result",
     [
-        ("index_out_of_range", "invalid_level_index"),
-        ("index_missing", "invalid_level_index"),
-        ("numeric_value", "measurement_content_mismatch"),
-        ("qc_flag", "measurement_content_mismatch"),
-        ("unit", "measurement_content_mismatch"),
-        ("none", "committed"),
+        # Set checks that stay in the commit.
+        ("index_out_of_range", "invalid_level_index", None),
+        ("level_missing", "level_set_mismatch", None),
+        # Content checks moved to the sampled audit (ADR-0044 amendment, stage1-v4).
+        ("numeric_value", "committed", "measurement_content_mismatch"),
+        ("qc_flag", "committed", "measurement_content_mismatch"),
+        ("unit_source", "committed", "measurement_content_mismatch"),
+        ("flags", "committed", "measurement_content_mismatch"),
+        ("none", "committed", "audited"),
     ],
 )
-def test_ADR0044_set_based_level_checks_keep_categories(
-    postgres, wire, linked_metadata, mutation, category
+def test_ADR0044_level_set_checks_in_commit_content_checks_in_audit(
+    postgres, wire, linked_metadata, mutation, commit_result, audit_result
 ):
     profile, candidate = _candidate(wire, linked_metadata)
-    level = candidate["levels"][1]
+    levels = [dict(level) for level in profile.levels]
+    level = levels[1]
     if mutation == "index_out_of_range":
-        level["level_index"] = len(candidate["levels"])
-    elif mutation == "index_missing":
-        del level["level_index"]
+        level["level_index"] = len(levels)
+    elif mutation == "level_missing":
+        levels.pop()
     elif mutation == "numeric_value":
         level["temperature"] = (level["temperature"] or 0) + 1
     elif mutation == "qc_flag":
         level["temperature_qc"] = "9" if level.get("temperature_qc") != "9" else "1"
-    elif mutation == "unit":
-        level["pressure_unit"] = "synthetic-unit"
-    setup, _, generations, receipts = _publishing(profile, candidate)
+    elif mutation == "unit_source":
+        level["pressure_unit_source"] = "synthetic-unit-source"
+    elif mutation == "flags":
+        level["pressure_flags"] = [*level["pressure_flags"], "synthetic_flag"]
+    setup, _, generations, receipts = _publishing(profile, candidate, levels=levels)
     result = postgres(
         setup
         + f"""
@@ -1371,27 +1393,69 @@ def test_ADR0044_set_based_level_checks_keep_categories(
         RETURN 'committed';
       EXCEPTION WHEN raise_exception THEN RETURN SQLERRM;
       END $body$;
+      CREATE FUNCTION pg_temp.audit() RETURNS text LANGUAGE plpgsql AS $body$
+      BEGIN
+        PERFORM app.audit_levels('{CHUNK}',10);
+        RETURN 'audited';
+      EXCEPTION WHEN raise_exception THEN RETURN SQLERRM;
+      END $body$;
       SELECT pg_temp.attempt();
+      SELECT pg_temp.audit();
       SELECT count(*) FROM app.core_measurement;
       ROLLBACK;
     """
     )
     lines = result.splitlines()
-    assert lines[-2] == category
-    assert lines[-1] == ("3" if category == "committed" else "0")
+    assert lines[-3] == commit_result
+    if commit_result == "committed":
+        assert lines[-2:] == [audit_result, "3"]
+    else:
+        assert lines[-1] == "0"  # a failed commit leaves no level behind
 
 
 @pytest.mark.integration
-def test_ADR0044_canonical_values_replace_staged_floats(postgres, wire, linked_metadata):
+def test_ADR0044_stored_levels_equal_the_canonical_values_and_indexes_exist(
+    postgres, wire, linked_metadata
+):
     profile, candidate = _candidate(wire, linked_metadata)
     setup, commit, _, _ = _publishing(profile, candidate)
     result = postgres(
-        setup + commit + "SELECT bool_and(m.pressure IS NOT DISTINCT FROM "
-        "(m.canonical_level->'pressure'->>'exact')::float8 AND m.temperature IS NOT DISTINCT FROM "
-        "(m.canonical_level->'temperature'->>'exact')::float8) FROM app.core_measurement m; "
-        "SELECT count(*) FROM pg_indexes WHERE indexname='argo_profile_owner_slot_idx'; ROLLBACK;"
+        setup
+        + commit
+        + "SELECT app.audit_levels('"
+        + CHUNK
+        + "',5); SELECT count(*) FROM pg_indexes WHERE indexname='argo_profile_owner_slot_idx';"
+        # Typed rows are the staged Python values: positive zero holds because the mapper
+        # normalizes it; the audit is what proves stored value == canonical exact value.
+        "SELECT bool_and(m.pressure IS NOT DISTINCT FROM "
+        "(p.scientific_content->'levels'->m.level_index->'pressure'->>'exact')::float8) "
+        "FROM app.core_measurement m JOIN app.argo_profile p ON p.id=m.profile_id; ROLLBACK;"
     )
-    assert result.splitlines()[-2:] == ["t", "1"]
+    audit, indexes, equal = result.splitlines()[-3:]
+    assert json.loads(audit) == {"profiles": 1, "levels": 3}
+    assert (indexes, equal) == ("1", "t")
+
+
+@pytest.mark.integration
+def test_v4_staged_level_rows_need_the_fenced_authority_and_are_cleared(
+    postgres, wire, linked_metadata
+):
+    profile, candidate = _candidate(wire, linked_metadata)
+    setup, _, _, _ = _publishing(profile, candidate)
+    # A stale fence cannot stage levels: the statement-level authority check raises.
+    stale = _staged_levels(profile.levels, fence=2)
+    postgres(setup + stale, expected=3)
+    result = postgres(
+        setup
+        + f"""
+      SELECT count(*) FROM app.measurement_staging;
+      SELECT app.clear_staging('{RUN}','{CHUNK}',1,1);
+      SELECT count(*) FROM app.measurement_staging;
+      SELECT count(*) FROM app.ingestion_staging;
+      ROLLBACK;
+    """
+    )
+    assert result.splitlines()[-4:] == ["3", "", "0", "0"]
 
 
 @pytest.mark.integration
@@ -1668,6 +1732,324 @@ def test_P09c_last_profile_correction_deactivates_old_slot(postgres, wire, linke
         "empty_stored_domain",
         "3",
     ]
+
+
+def _attempt(generations, receipts, *, chunk=CHUNK, intent=INTENT):
+    """A pg_temp function returning the commit's exception category (or 'committed')."""
+    return f"""
+      CREATE FUNCTION pg_temp.attempt() RETURNS text LANGUAGE plpgsql AS $body$
+      BEGIN
+        PERFORM app.commit_publication('{RUN}','{chunk}',1,1,'{intent}',
+          {_literal(generations)},{_literal(receipts)});
+        RETURN 'committed';
+      EXCEPTION WHEN raise_exception THEN RETURN SQLERRM;
+      END $body$;
+    """
+
+
+def _two_parts(wire, linked_metadata):
+    """Two commits into one slot: a part per chunk, the second built on slot version 1."""
+    second = copy.deepcopy(wire)
+    second["_id"] = "second-part-profile"
+    second["cycle_number"] += 1
+    profile, candidate = _candidate(wire, linked_metadata)
+    initial, first, _, _ = _publishing(profile, candidate)
+    other, other_candidate = _candidate(second, linked_metadata, proposed=SECOND_PROFILE)
+    setup, commit, _, _ = _publishing(other, other_candidate, base=1)
+    setup, commit, chunk, intent = _second_publication(setup, commit)
+    return owner_slot(profile), initial + first + setup + commit, profile, other
+
+
+@pytest.mark.integration
+def test_v4_each_commit_adds_a_part_and_edits_the_slot_manifest(postgres, wire, linked_metadata):
+    slot, source, profile, other = _two_parts(wire, linked_metadata)
+    result = postgres(
+        source
+        + f"""
+      SELECT count(*) FROM app.committed_active_partitions;
+      SELECT string_agg(kind||':'||slot_version||':'||generation||':'||part_ordinal,','
+        ORDER BY generation) FROM app.committed_active_partitions;
+      SELECT slot_version||'|'||jsonb_array_length(membership_manifest)
+        FROM app.logical_partition_slot WHERE logical_key='{slot}';
+      SELECT string_agg(m.e->>'profile_id',',' ORDER BY m.pos) FROM app.logical_partition_slot s,
+        jsonb_array_elements(s.membership_manifest) WITH ORDINALITY AS m(e,pos)
+        WHERE s.logical_key='{slot}';
+      SELECT app.audit_slot_manifest('{ENV}','{slot}');
+      SELECT count(*) FROM app.core_measurement;
+      SELECT count(*) FROM app.measurement_staging;
+      ROLLBACK;
+    """
+    )
+    assert result.splitlines()[-7:] == [
+        "2",
+        "part:2:1:1,part:2:2:2",  # both active objects carry the slot's current version
+        "2|2",
+        f"{PROFILE},{SECOND_PROFILE}",  # ordered by profile_id
+        "t",
+        "6",
+        "0",  # staged levels are consumed by the commit
+    ]
+
+
+@pytest.mark.integration
+def test_v4_replacement_drops_the_old_manifest_entry_and_adds_a_second_part(
+    postgres, wire, linked_metadata
+):
+    profile, candidate = _candidate(wire, linked_metadata)
+    initial, first, _, _ = _publishing(profile, candidate)
+    wire["data"][0][0] += 0.25
+    for source in wire["source"]:
+        source["date_updated"] = "2025-02-01T00:00:00Z"
+    newer, newer_candidate = _candidate(wire, linked_metadata)
+    assert newer.content_hash != profile.content_hash
+    setup, commit, _, _ = _publishing(newer, newer_candidate, base=1)
+    setup, commit, chunk, intent = _second_publication(setup, commit)
+    slot = owner_slot(profile)
+    result = postgres(
+        initial
+        + first
+        + setup
+        + commit
+        + f"""
+      SELECT count(*)||'|'||string_agg(kind,',') FROM app.committed_active_partitions;
+      SELECT jsonb_array_length(membership_manifest)||'|'||(membership_manifest->0->>'hash')
+        FROM app.logical_partition_slot WHERE logical_key='{slot}';
+      SELECT outcome FROM app.profile_outcome WHERE chunk_id='{chunk}';
+      SELECT count(*) FROM app.core_measurement;
+      SELECT app.audit_slot_manifest('{ENV}','{slot}');
+      ROLLBACK;
+    """
+    )
+    assert result.splitlines()[-5:] == [
+        "2|part,part",
+        f"1|{newer.content_hash}",
+        "newer",
+        "3",
+        "t",
+    ]
+
+
+@pytest.mark.integration
+def test_v4_part_must_declare_exactly_the_accepted_profiles_of_the_slot(
+    postgres, wire, linked_metadata
+):
+    profile, candidate = _candidate(wire, linked_metadata)
+    setup, _, generations, receipts = _publishing(profile, candidate)
+    generations[0]["membership_manifest"][0]["hash"] = "0" * 64
+    result = postgres(
+        setup + _attempt(generations, receipts) + "SELECT pg_temp.attempt(); ROLLBACK;"
+    )
+    assert result.splitlines()[-1] == "stored_snapshot_membership_mismatch"
+    generations[0]["membership_manifest"] = []  # the slot is changed but the part is empty
+    result = postgres(
+        setup + _attempt(generations, receipts) + "SELECT pg_temp.attempt(); ROLLBACK;"
+    )
+    assert result.splitlines()[-1] == "stored_snapshot_membership_mismatch"
+
+
+@pytest.mark.integration
+def test_v4_receipt_only_slot_is_guarded_by_its_base_version(postgres, wire, linked_metadata):
+    profile, candidate = _candidate(wire, linked_metadata)
+    setup, _, _, receipts = _publishing(profile, candidate)
+    receipts[0]["fetch_disposition"] = "verified_empty_fetch"
+    receipts[0]["stored_disposition"] = "empty_stored_selection"
+    outcomes = []
+    for base in (7, 0):
+        receipts[0]["base_version"] = base
+        outcomes.append(
+            postgres(
+                setup
+                + f"DELETE FROM app.ingestion_staging WHERE chunk_id='{CHUNK}';"
+                + _attempt([], receipts)
+                + "SELECT pg_temp.attempt(); ROLLBACK;"
+            ).splitlines()[-1]
+        )
+    # A moved slot means the caller counted a population that no longer exists: rebuild.
+    assert outcomes == ["publication_base_changed", "committed"]
+
+
+@pytest.mark.integration
+def test_v4_manifest_audit_detects_drift(postgres, wire, linked_metadata):
+    profile, candidate = _candidate(wire, linked_metadata)
+    setup, commit, _, _ = _publishing(profile, candidate)
+    slot = owner_slot(profile)
+    result = postgres(
+        setup
+        + commit
+        + f"""
+      SELECT app.audit_slot_manifest('{ENV}','{slot}');
+      UPDATE app.logical_partition_slot SET membership_manifest='[]' WHERE logical_key='{slot}';
+      SELECT app.audit_slot_manifest('{ENV}','{slot}');
+      ROLLBACK;
+    """
+    )
+    assert result.splitlines()[-2:] == ["t", "f"]
+
+
+@pytest.mark.integration
+def test_v4_compact_slot_swaps_parts_for_one_snapshot_and_refuses_stale_input(
+    postgres, wire, linked_metadata
+):
+    slot, source, _, _ = _two_parts(wire, linked_metadata)
+    result = postgres(
+        source
+        + f"""
+      CREATE FUNCTION pg_temp.compact(p_base bigint,p_drop_listed boolean,p_alter boolean)
+      RETURNS text LANGUAGE plpgsql AS $body$
+      DECLARE slot_row app.logical_partition_slot; listed jsonb; manifest jsonb; total bigint;
+      BEGIN
+        SELECT * INTO STRICT slot_row FROM app.logical_partition_slot WHERE logical_key='{slot}';
+        SELECT jsonb_agg(d.id ORDER BY d.generation) INTO listed FROM app.dataset_partition d
+          WHERE d.logical_key='{slot}' AND d.status='active';
+        IF p_drop_listed THEN listed := listed - 0; END IF;
+        manifest := slot_row.membership_manifest;
+        IF p_alter THEN manifest := manifest - 0; END IF;
+        SELECT sum((m->>'levels')::bigint) INTO total
+          FROM jsonb_array_elements(slot_row.membership_manifest) m;
+        PERFORM app.compact_slot('{ENV}','{slot}',jsonb_build_object(
+          'id',gen_random_uuid(),'kind','snapshot','logical_key','{slot}',
+          'base_version',coalesce(p_base,slot_row.slot_version),'membership_manifest',manifest,
+          'supersedes',listed,'object_key','normalised/sha256/'||repeat('f',64)||'.parquet',
+          'sha256',repeat('f',64),'bytes',20,'row_count',total,
+          'profile_count',jsonb_array_length(slot_row.membership_manifest),
+          'schema_sha256',repeat('e',64),'verified_at','2025-04-01T00:00:00Z',
+          'verification_evidence',jsonb_build_object('schema_sha256',repeat('e',64),
+            'rows',total,'profiles',jsonb_array_length(slot_row.membership_manifest))));
+        RETURN 'compacted';
+      EXCEPTION WHEN raise_exception THEN RETURN SQLERRM;
+      END $body$;
+      SELECT pg_temp.compact(99,false,false);
+      SELECT pg_temp.compact(NULL,true,false);
+      SELECT pg_temp.compact(NULL,false,true);
+      SELECT pg_temp.compact(NULL,false,false);
+      SELECT count(*)||'|'||min(kind)||'|'||min(slot_version) FROM app.committed_active_partitions;
+      SELECT count(*) FROM app.dataset_partition WHERE status='superseded';
+      SELECT jsonb_array_length(membership_manifest) FROM app.logical_partition_slot
+        WHERE logical_key='{slot}';
+      ROLLBACK;
+    """
+    )
+    assert result.splitlines()[-7:] == [
+        "publication_base_changed",  # the slot moved since the snapshot was built
+        "publication_base_changed",  # the active objects are not the ones that were merged
+        "stored_snapshot_membership_mismatch",  # the snapshot does not hold the manifest
+        "compacted",
+        "1|snapshot|2",
+        "2",
+        "2",
+    ]
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    "mutation,category",
+    [
+        ("hash", "scientific_hash_mismatch"),
+        ("direction", "candidate_content_mismatch"),
+        ("level_count", "invalid_level_count"),
+        ("raw_manifest", "raw_provenance_mismatch"),
+        ("no_generation", "missing_affected_slot"),
+        ("base_version", "publication_base_changed"),
+        ("empty_domain", "coverage_disposition_mismatch"),
+        ("absence_with_candidates", "coverage_disposition_mismatch"),
+    ],
+)
+def test_v4_commit_keeps_its_rejection_categories(
+    postgres, wire, linked_metadata, mutation, category
+):
+    profile, candidate = _candidate(wire, linked_metadata)
+    base = 5 if mutation == "base_version" else 0
+    if mutation == "hash":
+        candidate["content_hash"] = "0" * 64
+    elif mutation == "direction":
+        candidate["direction"] = "D"
+    elif mutation == "level_count":
+        candidate["level_count"] = 0
+    elif mutation == "raw_manifest":
+        candidate["raw_manifest_id"] = str(uuid.uuid4())
+    setup, _, generations, receipts = _publishing(profile, candidate, base=base)
+    if mutation == "no_generation":
+        generations = []
+    elif mutation == "empty_domain":
+        receipts[0]["stored_disposition"] = "empty_stored_domain"  # the slot is not empty
+    elif mutation == "absence_with_candidates":
+        receipts[0]["fetch_disposition"] = "source_absence_over_retained"  # but rows are staged
+    result = postgres(
+        setup + _attempt(generations, receipts) + "SELECT pg_temp.attempt(); ROLLBACK;"
+    )
+    assert result.splitlines()[-1] == category
+
+
+@pytest.mark.integration
+def test_v4_fallback_identity_time_correction_and_identity_conflict_are_rejected(
+    postgres, wire, linked_metadata
+):
+    # An ID-less profile whose cycle/direction already exists at another observation time.
+    anonymous = copy.deepcopy(wire)
+    del anonymous["_id"]
+    first, candidate = _candidate(anonymous, linked_metadata)
+    initial, first_commit, _, _ = _publishing(first, candidate)
+    later = copy.deepcopy(anonymous)
+    again, again_candidate = _candidate(
+        later, linked_metadata, proposed=SECOND_PROFILE, when="2025-01-03T00:00:00Z"
+    )
+    setup, _, generations, receipts = _publishing(again, again_candidate, base=1)
+    setup, _, chunk, intent = _second_publication(setup, "")
+    result = postgres(
+        initial
+        + first_commit
+        + setup
+        + _attempt(generations, receipts, chunk=chunk, intent=intent)
+        + "SELECT pg_temp.attempt(); ROLLBACK;"
+    )
+    assert result.splitlines()[-1] == "fallback_observation_time_correction"
+    # A stable id of one stored profile together with the natural key of another.
+    named = copy.deepcopy(wire)
+    first_named, first_candidate = _candidate(named, linked_metadata)
+    one, one_commit, _, _ = _publishing(first_named, first_candidate)
+    other_wire = copy.deepcopy(wire)
+    other_wire["_id"], other_wire["cycle_number"] = "other-stable-id", wire["cycle_number"] + 1
+    other, other_candidate = _candidate(other_wire, linked_metadata, proposed=SECOND_PROFILE)
+    two, two_commit, _, _ = _publishing(other, other_candidate, base=1)
+    two, two_commit, _, _ = _second_publication(two, two_commit)
+    crossed_wire = copy.deepcopy(wire)  # the first stable id, the second cycle
+    crossed_wire["cycle_number"] = wire["cycle_number"] + 1
+    crossed, crossed_candidate = _candidate(
+        crossed_wire, linked_metadata, proposed="00000000-0000-4000-8000-0000000000b7"
+    )
+    three, _, generations, receipts = _publishing(crossed, crossed_candidate, base=2)
+    three, _, chunk, intent = _second_publication(three, "")
+    result = postgres(
+        one
+        + one_commit
+        + two
+        + two_commit
+        + three
+        + _attempt(generations, receipts, chunk=chunk, intent=intent)
+        + "SELECT pg_temp.attempt(); ROLLBACK;"
+    )
+    assert result.splitlines()[-1] == "identity_conflict"
+
+
+@pytest.mark.integration
+def test_v4_commit_reserve_is_enforced_after_the_final_authority_check(
+    postgres, wire, linked_metadata
+):
+    profile, candidate = _candidate(wire, linked_metadata)
+    setup, _, generations, receipts = _publishing(profile, candidate)
+    # Less than the one-second final reserve remains, but the work deadline has not passed.
+    # CHECK work_deadline = deadline - 60 s holds, so both move together from one instant.
+    result = postgres(
+        setup
+        + "ALTER TABLE app.ingestion_run DISABLE TRIGGER ingestion_run_immutable;"
+        + "UPDATE app.ingestion_run SET work_deadline=w.at,"
+        + "deadline=w.at+interval '60 seconds' "
+        + "FROM (SELECT clock_timestamp()+interval '990 milliseconds' AS at) w "
+        + f"WHERE id='{RUN}';"
+        + _attempt(generations, receipts)
+        + "SELECT pg_temp.attempt(); ROLLBACK;"
+    )
+    assert result.splitlines()[-1] == "commit_reserve_exhausted"
 
 
 @pytest.mark.integration

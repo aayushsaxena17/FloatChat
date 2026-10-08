@@ -149,4 +149,110 @@ def verify_http_path(repository, store, environment, piece):
         assert markdown_report(persisted_report(repository, run)) == rendered
     for item in evidence:
         item["frozen_reporting_identical_after_later_runs"] = True
+    evidence.append(verify_metadata_cache(repository, store, environment, piece))
     return evidence
+
+
+def verify_metadata_cache(repository, store, environment, piece):
+    """stage1-v4 float metadata cache against the real tables (requires migration 0012).
+
+    Chunk 1 fetches and upserts; chunk 2 of the same run is served by a per-chunk
+    `cache` attempt and manifest with no request (fresh: retrieved after the run was
+    created, whatever its reference time); chunk 2 reloads it by verified_landing.
+    """
+    result = repository.admit(
+        environment,
+        uuid.uuid4(),
+        "acceptance",
+        piece.interval,
+        {"execution_seconds": 600},
+        input_kind="live",
+        descriptor={"live_opt_in": True},
+    )
+    run = uuid.UUID(result["run_id"])
+    epoch = repository.start_controller(run, uuid.uuid4())
+    with repository.transaction() as cursor:
+        cursor.execute("SELECT app.persist_baseline(%s,%s)", (run, epoch))
+    chunks = [uuid.uuid4(), uuid.uuid4()]
+    repository.connection.execute("RESET ROLE")
+    for number, chunk in enumerate(chunks):
+        repository.connection.execute(
+            "INSERT INTO app.ingestion_chunk(id,run_id,logical_chunk_key,requested_start,"
+            "requested_end,tile,plan_version) VALUES(%s,%s,%s,%s,%s,%s,'component')",
+            (
+                chunk,
+                run,
+                f"cache-component-{number}",
+                piece.interval.start,
+                piece.interval.end,
+                Jsonb({"west": 70, "south": 10, "width": 10, "height": 10}),
+            ),
+        )
+    repository.connection.execute("SET ROLE floatchat_ingestor")
+    authorities = [repository.claim(run, chunk, epoch) for chunk in chunks]
+    for authority in authorities:
+        repository.transition(authority, "fetching", "offline_cache_probe")
+    parameters = {"id": "synthetic-cache-probe"}
+    payload = b'[{"_id":"synthetic-cache-probe","n":1.00}]'
+    calls = []
+
+    def transport(path, parameters, credential, account, **kwargs):
+        calls.append(parameters["id"])
+        account(len(payload))
+        return Response(payload, len(payload), datetime.now(UTC), {})
+
+    def refuse(*args, **kwargs):
+        raise AssertionError("Cache hit and reload must not request")
+
+    with tempfile.TemporaryDirectory() as directory:
+
+        def owner(authority, transport, require_existing=False):
+            return RequestOwner(
+                repository,
+                store,
+                authority,
+                deadline=time.monotonic() + 60,
+                application_commit="offline-cache-component",
+                enabled=lambda: True,
+                credential=lambda: "offline-transport-sentinel",
+                transport=transport,
+                originals=Path(directory) / "originals",
+                jitter=lambda: 0,
+                require_existing=require_existing,
+            )
+
+        first = owner(authorities[0], transport).obtain("/argo/meta", parameters, "metadata")
+        second = owner(authorities[1], refuse).obtain("/argo/meta", parameters, "metadata")
+        reloaded = owner(authorities[1], refuse, True).obtain("/argo/meta", parameters, "metadata")
+    assert calls == ["synthetic-cache-probe"] and first.payload == second.payload
+    assert str(reloaded.manifest["id"]) == str(second.manifest["id"])
+    with repository.transaction(readonly_snapshot=True) as cursor:
+        cursor.execute(
+            "SELECT a.chunk_id,a.origin,a.disposition,a.http_status,m.object_key,m.id AS manifest "
+            "FROM app.ingestion_attempt a JOIN app.raw_manifest m ON m.attempt_id=a.id "
+            "WHERE a.chunk_id=ANY(%s) ORDER BY a.attempt_number",
+            (chunks,),
+        )
+        rows = {row["chunk_id"]: row for row in cursor.fetchall()}
+        cursor.execute(
+            "SELECT raw_manifest_id FROM app.float_metadata_cache WHERE pointer=%s",
+            (parameters["id"],),
+        )
+        cached = cursor.fetchone()
+    assert [rows[chunk]["origin"] for chunk in chunks] == ["http", "cache"]
+    assert {row["disposition"] for row in rows.values()} == {"verified_raw"}
+    assert rows[chunks[0]]["object_key"] == rows[chunks[1]]["object_key"]
+    assert rows[chunks[0]]["manifest"] != rows[chunks[1]]["manifest"]
+    assert cached["raw_manifest_id"] == rows[chunks[0]]["manifest"]
+    for authority in authorities:
+        repository.transition(authority, "failed", "component_cache_probe_complete")
+    assert repository.finalize(run) == "failed"
+    return {
+        "run_id": str(run),
+        "chunks": [str(chunk) for chunk in chunks],
+        "origins": ["http", "cache"],
+        "requests": len(calls),
+        "same_object_distinct_manifests": True,
+        "reload_by_verified_landing": True,
+        "scope": "Real repository/MinIO, mocked HTTP; metadata cache component",
+    }

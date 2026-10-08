@@ -1,5 +1,84 @@
 # Stage progress
 
+## Stage 1 - stage1-v4 execution rewrite implemented offline (ADR-0047..0053), 2026-10-08
+
+Branch `codex/stage-1-perf` from `e1ba4f0`. Scientific rules are unchanged (ADR-0053,
+`tests/stage1/test_byte_identity.py`); execution model, verification, catalogue model and sources
+changed under owner decisions recorded in `docs/stage1-v4-execution-design.md` (ADR-0039 authority).
+Advisor agreement for these ADRs is not recorded here.
+
+- [x] Live acceptance session 7153be6379df84de (stage1-v3 code) finished: 269 leaves complete, 1
+  quarantined, CLI exit 5, no captured replay run. The cause of the quarantine is to be read from the
+  preserved database; the session's evidence files and the cause analysis live in the live checkout,
+  not on this branch.
+- [x] Phase A review, analysis only ([review](docs/ingestion-performance-review.md), commit
+  `90e1e67`): the Jan-Mar backfill is upstream-bound (serial model 3.14-4.47 h: HTTP selection
+  1.12-2.45 h, metadata 0.55 h, worker CPU 1.14 h, COPY and commit 0.33 h,
+  [model](reports/stage1-perf-run-model.json)); the worker repeated the same work 4-5 times per
+  chunk (1,425 µs per level); one synthetic 87 x 699 commit took 16.5 s into an empty partition and 34.0 s
+  into a populated one, unexplained ([probe](reports/stage1-perf-db-probe.json)); "under 1 hour"
+  was judged not reliably reachable through Argovis with one request in flight.
+- [x] Owner decisions and the package brief: [execution design](docs/stage1-v4-execution-design.md);
+  per-package reports in `docs/v4-packages/` (A-J); ADR numbers, clauses changed and unsourced items
+  in [I.md](docs/v4-packages/I.md).
+- [x] A, decode/sanitize/encode (ADR-0053): 126,000 tokens, 20,970 levels,
+  [bench](reports/stage1-v4-bench-A.json): encode 0.797 s to 0.251 s, `documents()` 0.392 s to
+  0.070 s, `sanitize_raw` 0.659 s to 0.175 s, output identical to the pre-v4 code.
+- [x] B, fast mapper (ADR-0053), [bench](reports/stage1-v4-bench-B.json): map plus encode stage
+  8.661 s to 5.368 s with the old encoder (1.61x); 9.963 s to 4.617 s in the whole-chunk benchmark
+  with package A's encoder.
+- [x] C, write-once Parquet, Arrow-equality verification, checksum-verified upload (ADR-0050),
+  [bench](reports/stage1-v4-bench-C.json): `write_snapshot` 25.6 s to a best of three of 2.75 s (a
+  loaded host gave 1.7-14.7 s), `publish_verified` 12.0 s to 0.013 s.
+- [x] D, PostgreSQL work queue, acquire and process pools, `schedule` command, migration 0012
+  (ADR-0047): Celery, Beat and Redis removed from the workers; 160 offline tests passed; no
+  benchmark.
+- [x] E, thread-safe transport, adaptive governor, float-metadata cache (ADR-0048, ADR-0049),
+  [bench](reports/stage1-v4-bench-E.json) with a fake transport (12 chunks, 16 floats): HTTP attempts
+  96 to 52, `validate_raw` calls 384 to 52; no real upstream measurement.
+- [x] F, publication parts, slim staging, binary level COPY, compaction, migration 0013 (ADR-0051):
+  staged bytes 143,764,696 to 83,222,450 and `spool.prepare` 4.852 s to 0.006 s
+  ([baseline](reports/stage1-v3-bench-chunk-baseline.json), [v4](reports/stage1-v4-bench-chunk.json));
+  the commit on the new path is unmeasured.
+- [x] G, GDAC NetCDF source, `gdac-core-v1`, migration 0014, fixtures (ADR-0052): 105 offline tests;
+  observed download rates 5-47 KB/s from this host; not wired into the processor, CLI or publication
+  SQL.
+- [x] H, acceptance Compose with `acquire` and `process` services, memory sampler per service (ADR-0047):
+  95 offline tests; no Docker run.
+- [x] J, whole-chunk benchmark (87 x 699, synthetic, CPU only): `sum_measured_wall_s` 58.225 s to
+  9.57 s after packages A-F and 4.75 s after decode-once (commit 65eb3fc); RSS 683.0 to 524 MiB
+  ([bench](reports/stage1-v4-bench-chunk.json), [v3 baseline](reports/stage1-v3-bench-chunk-baseline.json)).
+- [x] Database on the new path ([probe](reports/stage1-v4-perf-db-probe.json)): 87 x 699 staging
+  COPY 3.8 s plus commit 3.2 s (was 4.0 s plus 16.5-34 s); pooled COPY+commit 107 µs per level (was
+  408); successor-chunk slot reads in milliseconds (was 20 s). The run model on v4 inputs
+  ([model](reports/stage1-v4-run-model.json)) projects worker CPU 126 µs per level (0.10 h for
+  Jan-Mar, was 1.14 h), database 0.09 h (was 0.33 h), captured replay 0.19 h (was 1.47 h); its HTTP
+  rows are still the serial one-request measurements, so the live wall time with four slots and
+  decoupled pools is not projected and must be measured.
+- [x] Integration suite on the integrated head: migrations 0012-0014 apply; `tests/stage1 -m
+  integration` 114 passed, 0 failed, plus the combined processor/MinIO case (passed, 61 s) and the
+  1 GiB writer proof; MinIO checksum behaviour confirmed by `minio_probe`
+  ([INTEGRATION-1](docs/v4-packages/INTEGRATION-1.md)). Offline: `pytest tests -m "not integration"`
+  1,295 passed; the four `test_security` cases need `gitleaks`, absent on this host. `ruff check`,
+  `ruff format --check` and strict `mypy` are clean repository-wide.
+- [ ] Benchmarks still missing: concurrent Argovis requests (no measurement of the governor) and the
+  cache's real hit ratio; both need a live run.
+- [ ] Live re-run of the Jan-Mar acceptance and its replay on the new topology: not scheduled; it
+  needs the owner's agreement, and the acceptance Compose topology and memory sampler have not run
+  under Docker.
+- [ ] Redis is still required by the Stage 0 API (`redis_url`, readiness check) and stays in the dev
+  stack; only the Stage 1 workers dropped it.
+- [x] GDAC wired end to end ([G2](docs/v4-packages/G2.md)): `ingest --source gdac` with
+  `prepare_cache`, source-aware admission and policy versions, `GdacSource` in `process_ticket`,
+  `gdac_map_profile` routing, migration 0015 (`app.run_source`, `app.profile_slot`, source-aware
+  `admit_run`/`ensure_slot`/`commit_publication`); offline fixture run publishes gdac profiles;
+  `test_gdac_sql.py` 6 integration cases pass. Not done: skipping the synthetic metadata landings,
+  gdac replay, Parquet schema metadata still names `argovis-core-v1`.
+- [ ] Not implemented: the audit cadence (`audit=True`, `app.audit_levels`), persisted governor
+  counters, and a decision on memory at the contractual chunk cap.
+- [x] ADR-0046 (`missing_basin` informational warning, codex/stage-1 50dbdbc) merged into this
+  branch; the v4 ADRs are ADR-0047..0053.
+
 ## Stage 1 - stage1-v3 implemented (ADR-0040..0042), 2026-10-08
 
 - [x] Original session terminalized with the reviewed command: exit 3,

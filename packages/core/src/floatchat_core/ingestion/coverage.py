@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from .numeric import Rejection
 from .objects import CatalogueRecord, CatalogueSnapshot
-from .planning import GEOMETRY_VERSION, Interval, Tile, month_start, shift_months
+from .planning import GEOMETRY_VERSION, MAPPINGS, Interval, Tile, month_start, shift_months
 
 
 @dataclass(frozen=True)
@@ -74,6 +74,7 @@ def resolve(
     *,
     tiles: tuple[Tile, ...] | None = None,
     deadline: float,
+    source: str = "argovis",
 ) -> CatalogueSnapshot:
     if len(receipts) > 16384:
         raise Rejection("selector_receipt_limit")
@@ -91,10 +92,17 @@ def resolve(
         )
     ):
         raise Rejection("invalid_selector_tiles")
-    active = {record.logical_key: record for record in records}
-    if len(active) != len(records):
+    # stage1-v4: a slot may have several active parts and one snapshot; a repeated partition
+    # id or a second snapshot in one slot is still a corrupt catalogue.
+    active: dict[str, list[CatalogueRecord]] = {}
+    if len({record.partition_id for record in records}) != len(records):
         raise Rejection("duplicate_active_catalogue_slot")
-    selected = []
+    for record in records:
+        group = active.setdefault(record.logical_key, [])
+        if record.kind == "snapshot" and any(other.kind == "snapshot" for other in group):
+            raise Rejection("duplicate_active_catalogue_slot")
+        group.append(record)
+    selected: list[CatalogueRecord] = []
     gaps = []
     empties: list[str] = []
     absences: list[str] = []
@@ -105,8 +113,8 @@ def resolve(
         piece = Interval(max(month, interval.start), min(shift_months(month, 1), interval.end))
         for tile in tiles:
             slot = (
-                f"argovis/core/{month:%Y-%m}/{tile.west}:{tile.south}/{GEOMETRY_VERSION}/"
-                "argovis-core-v1/scientific-json-v2"
+                f"{source}/core/{month:%Y-%m}/{tile.west}:{tile.south}/{GEOMETRY_VERSION}/"
+                f"{MAPPINGS[source]}/scientific-json-v2"
             )
             relevant = tuple(receipt for receipt in receipts if receipt.logical_key == slot)
             if not covers(piece, tile, relevant, deadline=deadline):
@@ -118,7 +126,7 @@ def resolve(
                 if slot not in active:
                     gaps.append(slot + ":missing_active_generation")
                 else:
-                    selected.append(active[slot])
+                    selected.extend(active[slot])
                 absences.extend(
                     f"{receipt.identifier}@{receipt.committed_at}"
                     for receipt in current

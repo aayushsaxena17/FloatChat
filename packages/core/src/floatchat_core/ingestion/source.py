@@ -82,7 +82,7 @@ class RecordedSource:
                 or existing["versions"] != policy_versions()
             ):
                 raise Rejection("landing_unavailable")
-            validate_raw(data)
+            # Validated once when landed; the matching hash identifies those bytes.
             return Landing(existing, data)
         if self.require_existing:
             raise Rejection("landing_unavailable")

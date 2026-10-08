@@ -1,17 +1,21 @@
 """Profile-at-a-time decoding of the pinned API's top-level object arrays."""
 
+import re
 from collections.abc import Callable, Iterator
-from decimal import Decimal
 from typing import Any
 
 from .numeric import Rejection, decode_json, exact_number
+
+# Strings and brackets only: numbers, commas and whitespace are skipped at C speed.
+# A string that never closes runs to the end of input, so it ends there.
+_TOKEN = re.compile(rb'"[^"\\]*(?:\\[\s\S][^"\\]*)*(?:"|\\?\Z)|[\[\]{}]')
 
 
 def documents(
     raw: bytes,
     *,
     max_documents: int = 2000,
-    number_decoder: Callable[[str], Decimal] = exact_number,
+    number_decoder: Callable[[str], Any] = exact_number,
 ) -> Iterator[dict[str, Any]]:
     if not 0 < max_documents <= 2000 or len(raw) > 128 * 1024 * 1024:
         raise Rejection("decompressed_size_limit")
@@ -37,30 +41,19 @@ def documents(
             raise Rejection("unsupported_response_schema")
         first = cursor
         depth = 0
-        quoted = escaped = False
-        while cursor < length:
-            char = raw[cursor]
-            if quoted:
-                if escaped:
-                    escaped = False
-                elif char == 92:
-                    escaped = True
-                elif char == 34:
-                    quoted = False
-            elif char == 34:
-                quoted = True
-            elif char in (123, 91):
+        for token in _TOKEN.finditer(raw, first):
+            char = raw[token.start()]
+            if char in (123, 91):
                 depth += 1
                 if depth + 1 > 32:
                     raise Rejection("json_depth_limit")
             elif char in (125, 93):
                 depth -= 1
                 if depth == 0:
-                    cursor += 1
+                    cursor = token.end()
                     break
-            cursor += 1
-        if depth or quoted:
-            raise Rejection("invalid_json")
+        else:
+            raise Rejection("invalid_json")  # Input ended inside the document or a string.
         count += 1
         if count > max_documents:
             raise Rejection("profile_count_limit")

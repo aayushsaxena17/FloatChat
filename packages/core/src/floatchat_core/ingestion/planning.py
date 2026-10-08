@@ -12,6 +12,8 @@ from typing import Literal
 from .numeric import Rejection
 
 GEOMETRY_VERSION = "indian-ocean-v1"
+# Mapping version (and logical-key namespace) of each source population.
+MAPPINGS = {"argovis": "argovis-core-v1", "gdac": "gdac-core-v1"}
 WKT = "POLYGON((20 -60,120 -60,120 30,20 30,20 -60))"
 GEOMETRY_SHA256 = hashlib.sha256(WKT.encode()).hexdigest()
 ACCEPTANCE_REFERENCE = datetime(2025, 4, 1, tzinfo=UTC)

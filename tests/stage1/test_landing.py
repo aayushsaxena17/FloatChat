@@ -6,11 +6,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
+from floatchat_core.ingestion import landing as landing_module
 from floatchat_core.ingestion import transport as transport_module
 from floatchat_core.ingestion.landing import RequestOwner
 from floatchat_core.ingestion.numeric import Rejection
 from floatchat_core.ingestion.repository import Authority
-from floatchat_core.ingestion.transport import HTTPFailure, Response
+from floatchat_core.ingestion.transport import HTTPFailure, Response, UpstreamGovernor
 
 
 class Store:
@@ -29,6 +30,15 @@ class Store:
     def publish_if_absent(self, temporary, final, deadline):
         self.data.setdefault(final, self.data[temporary])
 
+    # stage1-v4 object protocol (package C), kept so these tests survive its swap.
+    def write_immutable(self, key, data, sha256_hex, deadline):
+        self.data.setdefault(key, data)
+
+    def stat(self, key, deadline):
+        if key not in self.data:
+            raise Rejection("object_missing")
+        return {"bytes": len(self.data[key]), "sha256": None}
+
 
 class Repository:
     def __init__(self):
@@ -37,6 +47,7 @@ class Repository:
         self.finishes = []
         self.manifest = None
         self.locked = False
+        self.slots = []
 
     def verified_landing(self, authority, key):
         return self.manifest
@@ -62,8 +73,9 @@ class Repository:
             self.manifest = {**manifest, "object_key": manifest["key"]}
 
     @contextmanager
-    def upstream_slot(self, authority, deadline):
+    def upstream_slot(self, authority, deadline, slot=1):
         assert not self.locked
+        self.slots.append(slot)
         self.locked = True
         try:
             yield
@@ -82,7 +94,7 @@ def immediate_retries(monkeypatch):
     monkeypatch.setattr(transport_module, "RETRY_MAXIMA", {1: 0.0, 2: 0.0, 3: 0.0})
 
 
-def owner(repository, store, transport, *, enabled=lambda: True):
+def owner(repository, store, transport, *, enabled=lambda: True, **kwargs):
     return RequestOwner(
         repository,
         store,
@@ -94,6 +106,7 @@ def owner(repository, store, transport, *, enabled=lambda: True):
         transport=transport,
         jitter=lambda: 0,
         originals=Path(tempfile.mkdtemp(prefix="floatchat-landing-test-")),
+        **kwargs,
     )
 
 
@@ -183,3 +196,71 @@ def test_B05_raw_response_representation_never_exposes_bytes_or_headers():
         {"untrusted": "synthetic-private-header"},
     )
     assert "synthetic-private" not in repr(response)
+
+
+def test_E01_validate_once_per_landing_and_never_on_reload(monkeypatch):
+    repository, store = Repository(), Store()
+    calls = []
+    real = landing_module.validate_raw
+    monkeypatch.setattr(
+        landing_module, "validate_raw", lambda payload: calls.append(1) or real(payload)
+    )
+    response = Response(b'[{"n":1}]', 9, datetime.now(UTC), {})
+    landed = owner(repository, store, lambda *a, **kw: response).obtain(
+        "/argo", {"id": "example"}, "profile"
+    )
+    landings = len(calls)
+    assert landings >= 1  # publish_verified decides how often (package C narrows it to 1)
+    reloaded = owner(
+        repository, store, lambda *a, **kw: pytest.fail("Refetch"), require_existing=True
+    )
+    assert reloaded.obtain("/argo", {"id": "example"}, "profile").payload == landed.payload
+    assert len(calls) == landings  # a reload verifies bytes by hash, not by decoding again
+
+
+def test_E02_default_owner_uses_slot_one_and_explicit_slot_is_forwarded():
+    response = Response(b"[]", 2, datetime.now(UTC), {})
+    default, explicit = Repository(), Repository()
+    owner(default, Store(), lambda *a, **kw: response).obtain("/argo", {"id": "a"}, "profile")
+    owner(explicit, Store(), lambda *a, **kw: response, slot=3).obtain(
+        "/argo", {"id": "b"}, "profile"
+    )
+    assert default.slots == [1] and explicit.slots == [3]
+
+
+def test_E03_governor_permit_wraps_the_request_and_is_released_before_retry_delay(monkeypatch):
+    monkeypatch.setattr(transport_module, "RETRY_MAXIMA", {1: 2.0, 2: 2.0, 3: 2.0})
+    repository, store = Repository(), Store()
+    governor = UpstreamGovernor(4, pause=0.0)
+    events, now = [], [0.0]
+
+    def transport(*args, **kwargs):
+        events.append(("request", sorted(governor._held)))
+        if len(events) == 1:
+            raise HTTPFailure(429, "0")
+        return Response(b"[]", 2, datetime.now(UTC), {})
+
+    def sleep(seconds):
+        events.append(("sleep", sorted(governor._held), governor.current_permits))
+        now[0] += seconds
+
+    request = owner(repository, store, transport, governor=governor)
+    request.clock, request.sleep = lambda: now[0], sleep
+    request.obtain("/argo", {"id": "example"}, "profile")
+    # The 429 halved the permits (4 -> 2) and the permit was free while the owner slept.
+    assert events == [("request", [1]), ("sleep", [], 2), ("request", [1])]
+    assert governor.observed_429 == 1 and governor.current_permits == 2
+    assert repository.slots == [1, 1] and not governor._held
+    assert repository.finishes[0] == ("http_failure", 429, "upstream_http_failure")
+
+
+def test_E04_governor_slot_index_selects_the_advisory_lock():
+    repository = Repository()
+    governor = UpstreamGovernor(4)
+    held = governor.acquire(time.monotonic() + 5)  # another thread's slot 1
+    response = Response(b"[]", 2, datetime.now(UTC), {})
+    owner(repository, Store(), lambda *a, **kw: response, governor=governor).obtain(
+        "/argo", {"id": "example"}, "profile"
+    )
+    assert held == 1 and repository.slots == [2]
+    governor.release(held, 200)

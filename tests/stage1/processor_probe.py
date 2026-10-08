@@ -62,7 +62,6 @@ def main():
         INGESTION_BUCKET=store.bucket,
         INGESTION_QUEUE_NAMESPACE="component",
         COMPOSE_PROJECT_NAME="component",
-        INGESTION_REDIS_URL="redis://127.0.0.1:6379/11",
         OBJECT_STORAGE_ENDPOINT="http://127.0.0.1:9000",
         OBJECT_STORAGE_ACCESS_KEY=os.environ["MINIO_ROOT_USER"],
         OBJECT_STORAGE_SECRET_KEY=os.environ["MINIO_ROOT_PASSWORD"],
@@ -159,8 +158,8 @@ def main():
         authority = repository.claim(run, chunk, epoch)
         assert authority is not None
         ticket = repository.ticket(authority)
-        result = process_ticket(str(run), str(chunk), str(ticket))
-        assert process_ticket(str(run), str(chunk), str(ticket)) == result
+        result = process_ticket(str(run), str(chunk), str(ticket), "execute")
+        assert process_ticket(str(run), str(chunk), str(ticket), "execute") == result
         state = repository.finalize(run)
         assert result == state
         return persisted_report(repository, run)
@@ -264,6 +263,26 @@ def main():
             == frozen_markdown
         )
         assert not newer["active_partition_no_change"]
+        # stage1-v4: the replacement is a second part of the slot, not a rewritten snapshot;
+        # the compact job then merges both parts into one snapshot holding the new version.
+        assert newer["active_part_count"] == 2 and newer["active_snapshot_count"] == 0
+        with repository.transaction(readonly_snapshot=True) as cursor:
+            cursor.execute("SELECT DISTINCT logical_key FROM app.committed_active_partitions")
+            (slot,) = [row["logical_key"] for row in cursor.fetchall()]
+        assert repository.compact(ENV, slot, store, time.monotonic() + 60) == "compacted"
+        with repository.transaction(readonly_snapshot=True) as cursor:
+            cursor.execute(
+                "SELECT kind,profile_count,row_count,object_key,sha256,bytes "
+                "FROM app.committed_active_partitions"
+            )
+            (merged,) = [dict(row) for row in cursor.fetchall()]
+        assert (merged["kind"], merged["profile_count"], merged["row_count"]) == ("snapshot", 1, 2)
+        merged_bytes = store.read(merged["object_key"], merged["bytes"], time.monotonic() + 10)
+        assert hashlib.sha256(merged_bytes).hexdigest() == merged["sha256"]
+        assert (
+            verify_snapshot(io.BytesIO(merged_bytes), deadline=time.monotonic() + 10)["rows"] == 2
+        )
+        assert repository.compact(ENV, slot, store, time.monotonic() + 60) == "unchanged"
         wire["data"][0][0] += 1
         conflict = execute([wire], root / "conflict")
         assert conflict["state"] == "quarantined", conflict
@@ -314,7 +333,7 @@ def main():
     budget.close()
     from capacity_probe import verify_capacity
 
-    capacity_evidence = verify_capacity(repository, ENV)
+    capacity_evidence = verify_capacity(repository, ENV, store)
     from request_owner_probe import verify_http_path
 
     http_evidence = verify_http_path(repository, store, ENV, PIECE)

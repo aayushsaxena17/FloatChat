@@ -89,7 +89,7 @@ def main():
                     "pyarrow_version": pa.__version__,
                     "parquet_bytes": path.stat().st_size,
                     "parquet_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-                    "verification": result,
+                    "verification": {k: v for k, v in result.items() if k != "certificate"},
                     "anonymous_peak_bytes": anon_peak,
                     "criterion": "ADR-0042: anonymous peak < 1 GiB and zero oom/oom_kill",
                     "peak_rss_bytes": rss,

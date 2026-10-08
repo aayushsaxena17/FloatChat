@@ -4,24 +4,30 @@ import copy
 import hashlib
 import json
 import tempfile
+import time
 import uuid
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from pathlib import Path
 
 from floatchat_core.ingestion.argovis import policy_versions, request_parameters
 from floatchat_core.ingestion.planning import Interval, PlannedChunk, Tile, timestamp
 from floatchat_core.ingestion.reporting import persisted_report
+from floatchat_core.ingestion.workflow import slot_key
 from floatchat_workers.ingestion import process_ticket
 from psycopg.types.json import Jsonb
 
 
-def verify_capacity(repository, environment):
+def verify_capacity(repository, environment, store=None):
     basis = Path("/test/tests/fixtures/argovis/recorded/9efe8f4e713c44a1a2964407e52b9a45")
     profile_bytes = (basis / "02-profile.json").read_bytes()
     metadata_bytes = (basis / "04-metadata.json").read_bytes()
     authentic = json.loads(profile_bytes)[0]
     assert authentic["_id"] == "2904014_040"
     start, end = timestamp("2025-01-01T00:00:00Z"), timestamp("2025-02-01T00:00:00Z")
+    # Every synthetic profile sits at (85, -25) in January: one slot, tile 80:-30. The
+    # environment also holds the slot the earlier component probe compacted (tile 70:10).
+    slot = slot_key(start, Decimal(85), Decimal(-25))
     pieces = [
         PlannedChunk(
             Interval(start + timedelta(days=7 * i), min(start + timedelta(days=7 * (i + 1)), end)),
@@ -29,8 +35,9 @@ def verify_capacity(repository, environment):
         )
         for i in range(5)
     ]
-    # Five month-bounded slices grow one retained snapshot: 8 -> 16 -> ... -> 40
-    # profiles, each with the source's complete 501-level A-mode column set.
+    # Five month-bounded slices fill one slot with five parts of 8 profiles each (stage1-v4:
+    # a chunk publishes only its own profiles); the active objects hold 8 -> 16 -> ... -> 40
+    # profiles in total, each with the source's complete 501-level A-mode column set.
     with tempfile.TemporaryDirectory() as temporary:
         root = Path(temporary)
         responses = []
@@ -122,7 +129,7 @@ def verify_capacity(repository, environment):
             authority = repository.claim(run, chunk, epoch)
             assert authority is not None
             ticket = repository.ticket(authority)
-            assert process_ticket(str(run), str(chunk), str(ticket)) == "complete"
+            assert process_ticket(str(run), str(chunk), str(ticket), "execute") == "complete"
             with repository.transaction(readonly_snapshot=True) as cursor:
                 cursor.execute(
                     "SELECT sum(profile_count) AS profiles,sum(row_count) AS levels "
@@ -144,10 +151,40 @@ def verify_capacity(repository, environment):
         report = persisted_report(repository, run)
         assert report["final_evidence_frozen"] and not report["coverage"]["proved_complete"]
         assert report["full_snapshot_balanced"] and report["run_eligible_balanced"]
+        # The report lists every active object of the environment: count this slot's own, and
+        # check that the earlier component slot still holds its one snapshot plus any parts
+        # published after it (ADR-0046's missing_basin chunk adds one).
+        mine = [row for row in report["active_partitions"] if row["logical_key"] == slot]
+        earlier = [row for row in report["active_partitions"] if row["logical_key"] != slot]
+        assert [row["kind"] for row in mine] == ["part"] * 5, report["active_partitions"]
+        assert [row["kind"] for row in earlier].count("snapshot") == 1, report["active_partitions"]
+        assert {row["logical_key"].split("/")[3] for row in earlier} == {"70:10"}, earlier
+        earlier_parts = sum(row["kind"] == "part" for row in earlier)
+        assert report["active_part_count"] == 5 + earlier_parts
+        assert report["active_snapshot_count"] == 1
         assert (
             report["persisted_metrics"]["resource_counters"]["canonical_bytes"]
             < 10 * 1024**3 - 16 * 1024**2
         )
+        compaction = None
+        if store is not None:
+            # The compact job merges the five parts into one snapshot of the whole slot.
+            started = time.monotonic()
+            assert repository.compact(environment, slot, store, time.monotonic() + 300) == (
+                "compacted"
+            )
+            with repository.transaction(readonly_snapshot=True) as cursor:
+                cursor.execute(
+                    "SELECT kind,profile_count,row_count FROM app.committed_active_partitions "
+                    "WHERE logical_key=%s",
+                    (slot,),
+                )
+                (merged,) = [dict(row) for row in cursor.fetchall()]
+            assert merged == {"kind": "snapshot", "profile_count": 40, "row_count": 40 * 501}
+            assert repository.compact(environment, slot, store, time.monotonic() + 30) == (
+                "unchanged"
+            )
+            compaction = {**merged, "seconds": round(time.monotonic() - started, 3)}
         with repository.transaction(readonly_snapshot=True) as cursor:
             cursor.execute(
                 "SELECT sum(w.actual_bytes) AS bytes,count(*) AS operations "
@@ -209,7 +246,9 @@ def verify_capacity(repository, environment):
         assert exhausted_authority is not None
         exhausted_ticket = repository.ticket(exhausted_authority)
         assert (
-            process_ticket(str(exhausted_run), str(exhausted_chunk), str(exhausted_ticket))
+            process_ticket(
+                str(exhausted_run), str(exhausted_chunk), str(exhausted_ticket), "execute"
+            )
             == "quarantined"
         )
         assert repository.finalize(exhausted_run) == "quarantined"
@@ -246,6 +285,8 @@ def verify_capacity(repository, environment):
             "final_evidence_frozen": True,
             "regional_coverage_proved": False,
             "live_calls": 0,
+            "parts_before_compaction": report["active_part_count"],
+            "compaction": compaction,
             # Match the CLI's persisted-report export for UUIDs, datetimes and
             # PostgreSQL numeric aggregates; scientific counters stay numeric.
             "report": json.loads(json.dumps(report, default=str)),
@@ -259,7 +300,7 @@ def verify_capacity(repository, environment):
                 "final_evidence_frozen": exhausted_report["final_evidence_frozen"],
                 "unchanged_bytes": 42933912432,
             },
-            "scope": "Five growing month/tile snapshots, real restricted PostgreSQL and MinIO "
-            "temporary/final verification and commits; not Jan–Mar regional capacity "
-            "or whole-pipeline memory proof.",
+            "scope": "Five parts of one month/tile slot compacted into one snapshot, real "
+            "restricted PostgreSQL and MinIO verification and commits; not Jan–Mar regional "
+            "capacity or whole-pipeline memory proof.",
         }

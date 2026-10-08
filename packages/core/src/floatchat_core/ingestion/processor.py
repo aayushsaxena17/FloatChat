@@ -4,22 +4,28 @@ import hashlib
 import json
 import time
 import uuid
+from collections.abc import Iterable
 from datetime import UTC, datetime
 from decimal import Decimal
+from functools import partial
 from pathlib import Path
 from typing import Any
 
 from .argovis import VARIABLES, bounded_text, integer, map_profile, request_parameters
+from .gdac import gdac_map_profile
 from .json_stream import documents
 from .numeric import Rejection, scientific_number
 from .objects import ObjectStore, publish_verified
-from .parquet import PublicationSnapshotVerifier, write_snapshot
+from .parquet import write_snapshot
 from .planning import Interval, PlannedChunk, RunPolicy, Tile, in_region, month_start, timestamp
-from .repository import Authority, Repository
+from .repository import Authority, Repository, SlotState
 from .revisions import compare
 from .source import Source
 from .spool import ProfileSpool, revision_json
 from .states import TERMINAL
+from .workflow import evidence_json, snapshot_certificate
+
+DECODE_CACHE_BYTES = 8 * 1024**2  # census maximum was 2.66 MB; decoded objects are several x
 
 # OpenAPI 2.36.2 warnings with a defined S1-SOURCE-2 outcome (ADR-0040, ADR-0046).
 TOLERATED_WARNINGS = frozenset({"degenerate_levels", "missing_basin"})
@@ -29,6 +35,7 @@ SPLITTABLE = frozenset(
         "compressed_size_limit",
         "decompressed_size_limit",
         "profile_count_limit",
+        "measurement_count_limit",
         "chunk_scientific_resource_limit",
     }
 )
@@ -48,9 +55,20 @@ FAILURES = frozenset(
         "database_deadline",
         "snapshot_deadline",
         "object_deadline",
+        "object_stat_failure",
+        "landing_retry_exhausted",
+        "invalid_metadata_cache_entry",
         "live_ingestion_disabled",
         "publication_budget_exhausted",
         "private_spool_size_limit",
+        # GDAC (G2): download side (an upstream file over its bound) and run configuration
+        # (descriptor, cache pin, request shape). Never data defects: nothing is quarantined.
+        "gdac_file_size_limit",
+        "gdac_index_changed",
+        "invalid_gdac_descriptor",
+        "unapproved_cache_path",
+        "invalid_request_parameters",
+        "invalid_request_role",
     }
 )
 
@@ -83,6 +101,10 @@ class Processor:
         ) = 0
         self.meta: dict[str, Path] = {}
         self.raw_paths: dict[str, Path] = {}
+        # Landed payloads are decoded once per role (exact-decimal decoding is the
+        # second-largest CPU item); payloads above the cache bound stream as before.
+        self.decoded: dict[str, list[dict[str, Any]]] = {}
+        self.meta_rows: dict[str, dict[str, Any]] = {}
         self.inventory_verified = False
         row = repository.chunk(authority.chunk)
         self.plan = PlannedChunk(
@@ -93,6 +115,9 @@ class Processor:
             run["run_reference_time_utc"], run["mode"], str(run["environment_id"])
         )
         self.environment = run["environment_id"]
+        # The input kind selects the mapper and the slot namespace (read once per chunk run).
+        inputs = repository.input(authority.run)
+        self.source_name = "gdac" if inputs is not None and inputs["kind"] == "gdac" else "argovis"
 
     def pulse(self) -> None:
         now = time.monotonic()
@@ -111,6 +136,7 @@ class Processor:
             output.write(result.payload)
         self.raw_ids[role] = str(result.manifest["id"])
         self.raw_statuses[role] = int(result.manifest.get("http_status", 200))
+        self.decoded.pop(role, None)
         return file
 
     def metadata(self, document: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -122,15 +148,28 @@ class Processor:
             pointer = bounded_text(pointer, 512, "invalid_metadata_pointer")
             if pointer not in self.meta:
                 self.meta[pointer] = self.landing("/argo/meta", {"id": pointer}, "metadata")
-            rows = list(documents(self.meta[pointer].read_bytes(), max_documents=1))
-            if len(rows) != 1 or rows[0].get("_id") != pointer:
-                raise Rejection("unresolved_metadata")
-            result[pointer] = rows[0]
+                self.meta_rows.pop(pointer, None)
+            if pointer not in self.meta_rows:
+                rows = list(documents(self.meta[pointer].read_bytes(), max_documents=1))
+                if len(rows) != 1 or rows[0].get("_id") != pointer:
+                    raise Rejection("unresolved_metadata")
+                self.meta_rows[pointer] = rows[0]
+            result[pointer] = self.meta_rows[pointer]
         return result
 
-    def inventory(self, path: Path) -> frozenset[str]:
+    def documents_of(self, role: str) -> Iterable[dict[str, Any]]:
+        """The landed documents of a role, decoded once and kept while they fit the bound."""
+        if role in self.decoded:
+            return self.decoded[role]
+        path = self.raw_paths[role]
+        if path.stat().st_size > DECODE_CACHE_BYTES:
+            return documents(path.read_bytes())
+        self.decoded[role] = list(documents(path.read_bytes()))
+        return self.decoded[role]
+
+    def inventory(self, role: str) -> frozenset[str]:
         identities = set()
-        for doc in documents(path.read_bytes()):
+        for doc in self.documents_of(role):
             self.pulse()
             observed = timestamp(doc.get("timestamp", ""))
             point = doc.get("geolocation", {})
@@ -185,7 +224,7 @@ class Processor:
     def inventory_accounting(self) -> None:
         self.outcomes = []
         self.observed_profiles = self.known_levels = self.unknown_level_profiles = 0
-        for index, doc in enumerate(documents(self.raw_paths["profile"].read_bytes())):
+        for index, doc in enumerate(self.documents_of("profile")):
             self.pulse()
             self.observed_profiles += 1
             arrays = doc.get("data")
@@ -218,7 +257,7 @@ class Processor:
             self.outcomes.append(outcome)
 
     def map(self, spool: ProfileSpool) -> None:
-        for index, doc in enumerate(documents(self.raw_paths["profile"].read_bytes())):
+        for index, doc in enumerate(self.documents_of("profile")):
             self.pulse()
             outcome = self.outcomes[index]
             outcome["outcome"] = "structurally_quarantined"
@@ -241,7 +280,11 @@ class Processor:
                 informational = "missing_basin" in warnings
                 doc = {**doc, "data_warning": []}
             with self.budget_repository.canonical_budget(self.authority) as budget:
-                value = map_profile(doc, self.metadata(doc), budget)
+                value = (
+                    gdac_map_profile(doc, budget, self.metadata(doc))
+                    if self.source_name == "gdac"
+                    else map_profile(doc, self.metadata(doc), budget)
+                )
             self.canonical_input += len(value.canonical_bytes)
             if self.canonical_input > 256 * 1024**2 or self.known_levels > 2_000_000:
                 raise Rejection("chunk_scientific_resource_limit")
@@ -263,10 +306,11 @@ class Processor:
                 and self.policy.mode == "normal"
                 and value.source_profile_id is not None
             ):
-                for identity in self.repository.identities(value):
+                for identity in self.repository.identities(value, self.source_name):
                     if identity.source_profile_id == value.source_profile_id:
-                        with self.budget_repository.canonical_budget(self.authority) as budget:
-                            previous = self.repository.load_science(identity.id, budget)
+                        previous = self.repository.science_hashes([identity.id]).get(identity.id)
+                        if previous is None:
+                            raise Rejection("publication_base_changed")
                         if compare(
                             value.content_hash,
                             value.revision,
@@ -312,9 +356,23 @@ class Processor:
                 spool.add(value, uuid.UUID(self.raw_ids["profile"]), index)
 
     def execute(self) -> str:
+        """Serial path: land, then process, in one worker (stage1-v3 behaviour)."""
+        state = self.land()
+        if state != "landed":
+            return state
+        return self.process()
+
+    def land(self) -> str:
+        """Fetch, verify the selection triple and resolve metadata up to `landed`.
+
+        Returns the chunk state reached: "landed" (ready for process()), a terminal
+        state, or "split_replaced". Chunks already past landing return "landed".
+        """
         row = self.repository.chunk(self.authority.chunk)
         if row["state"] in TERMINAL:
             return str(row["state"])
+        if row["state"] in ("landed", "validating", "publishing"):
+            return "landed"
         try:
             self.pulse()
             if row["state"] == "planned":
@@ -325,9 +383,9 @@ class Processor:
                         "/argo", request_parameters(self.plan, inventory=role != "profile"), role
                     )
                 self.inventory_accounting()
-                before = self.inventory(self.raw_paths["inventory_before"])
-                current = self.inventory(self.raw_paths["profile"])
-                after = self.inventory(self.raw_paths["inventory_after"])
+                before = self.inventory("inventory_before")
+                current = self.inventory("profile")
+                after = self.inventory("inventory_after")
                 # S1-SOURCE-2: an empty-delivery 404 counts only as a coherent triple;
                 # a mixed 200/404 selection is retried like a changing inventory.
                 coherent = len({self.raw_statuses[r] for r in self.raw_paths}) == 1
@@ -338,68 +396,103 @@ class Processor:
                     raise Rejection("incomplete_inventory")
                 self.source.restart_selection()
                 self.meta.clear()
+                self.meta_rows.clear()
                 self.raw_paths.clear()
+                self.decoded.clear()
                 self.raw_statuses.clear()
             self.inventory_verified = True
             # Resolve every profile's metadata before declaring the landing complete.
-            for document in documents(self.raw_paths["profile"].read_bytes()):
+            for document in self.documents_of("profile"):
                 self.metadata(document)
             phase = self.repository.chunk(self.authority.chunk)["state"]
             if phase == "fetching":
                 self.repository.transition(self.authority, "landed", "complete_verified_landing")
-                phase = "landed"
-            if phase == "landed":
+            return "landed"
+        except Rejection as error:
+            return self.terminal(error)
+
+    def process(self) -> str:
+        """Validate, map and publish a landed chunk (validating -> complete)."""
+        row = self.repository.chunk(self.authority.chunk)
+        if row["state"] in TERMINAL:
+            return str(row["state"])
+        try:
+            self.pulse()
+            if row["state"] == "landed":
                 self.repository.transition(self.authority, "validating", "mapping_started")
+            if not self.raw_paths:
+                self.reload_landing()
             return self.publish()
         except Rejection as error:
-            if error.category in ("publication_fenced", "run_fenced", "work_deadline"):
-                raise
-            self.accounting()
-            if error.category in SPLITTABLE:
-                try:
-                    self.repository.split(self.authority)
-                    return "split_replaced"
-                except Rejection:
-                    self.repository.transition(self.authority, "failed", "minimum_chunk_exceeded")
-                    return "failed"
-            state = "failed" if error.category in FAILURES else "quarantined"
-            self.repository.transition(
-                self.authority,
-                state,
-                error.category,
-                {
-                    **(
-                        {"resource_limit": error.resource_evidence}
-                        if error.resource_evidence
-                        else {}
-                    ),
-                    "conflicts": [
-                        outcome["evidence"]
-                        for outcome in self.outcomes
-                        if outcome["outcome"] == "revision_conflict"
-                    ],
-                },
+            return self.terminal(error)
+        finally:
+            # Decoded payloads are not kept beyond the chunk's processing.
+            self.decoded.clear()
+            self.meta_rows.clear()
+
+    def reload_landing(self) -> None:
+        """Recover this chunk's verified landing without any upstream request.
+
+        The source is constructed with require_existing for chunks at or past
+        `landed`, so every obtain() below resolves the chunk's own persisted
+        manifests (a metadata cache hit still records a per-chunk manifest). The
+        inventory triple was verified by the process that recorded `landed`; that
+        persisted transition, not this reload, is the evidence.
+        """
+        state = self.repository.chunk(self.authority.chunk)["state"]
+        if state not in ("landed", "validating", "publishing"):
+            raise Rejection("landing_unavailable")
+        for role in ("inventory_before", "profile", "inventory_after"):
+            self.raw_paths[role] = self.landing(
+                "/argo", request_parameters(self.plan, inventory=role != "profile"), role
             )
-            return state
+        self.inventory_verified = True
+        for document in self.documents_of("profile"):
+            self.metadata(document)
+
+    def terminal(self, error: Rejection) -> str:
+        """Record a rejection as split/failed/quarantined; fencing errors propagate.
+
+        Shared by land() and process(): a SPLITTABLE category splits the plan slot,
+        which is only valid while no publication intent exists for the chunk.
+        """
+        if error.category in ("publication_fenced", "run_fenced", "work_deadline"):
+            raise error
+        self.accounting()
+        if error.category in SPLITTABLE:
+            try:
+                self.repository.split(self.authority)
+                return "split_replaced"
+            except Rejection:
+                self.repository.transition(self.authority, "failed", "minimum_chunk_exceeded")
+                return "failed"
+        state = "failed" if error.category in FAILURES else "quarantined"
+        self.repository.transition(
+            self.authority,
+            state,
+            error.category,
+            {
+                **({"resource_limit": error.resource_evidence} if error.resource_evidence else {}),
+                "conflicts": [
+                    outcome["evidence"]
+                    for outcome in self.outcomes
+                    if outcome["outcome"] == "revision_conflict"
+                ],
+            },
+        )
+        return state
 
     def publish(self) -> str:
         # Rebuilds/recovery use the same raw landing, original T and persisted budgets.
         for attempt in range(4):
             self.inventory_accounting()
             self.canonical_input = 0
-            with ProfileSpool(
-                self.private / (uuid.uuid4().hex + ".sqlite"),
-                budget_factory=lambda: self.budget_repository.canonical_budget(self.authority),
-            ) as spool:
+            with ProfileSpool(self.source_name) as spool:
                 self.map(spool)
-
-                def old(identifier: uuid.UUID) -> Any:
-                    with self.budget_repository.canonical_budget(self.authority) as budget:
-                        return self.repository.load_science(identifier, budget)
-
                 try:
                     spool.prepare(
-                        lambda p: (), identity_lookup=self.repository.identities, load_science=old
+                        partial(self.repository.identities_batch, source=self.source_name),
+                        self.repository.science_hashes,
                     )
                 except Rejection:
                     for index, key, result, levels in spool.outcomes:
@@ -425,19 +518,28 @@ class Processor:
                     self.repository.ensure_slot(
                         self.authority, timestamp(pieces[2] + "-01T00:00:00Z"), Tile(west, south)
                     )
-                with self.repository.retained_snapshot(
-                    self.authority, tuple(sorted(spool.changed_slots)), self.budget_repository
-                ) as (bases, rows):
-                    spool.retain(rows)
+                # Bases (slot versions) and the stored counts the receipts need, in one
+                # snapshot. Commit rejects publication_base_changed if any slot moved.
+                states = self.repository.slot_state(
+                    self.authority,
+                    sorted(spool.changed_slots | {own}),
+                    self.plan,
+                    counts=self.counted(spool, own),
+                    source=self.source_name,
+                )
+                bases = {slot: states[slot].version for slot in spool.changed_slots}
                 intent = uuid.uuid4()
                 generations = []
                 keys = []
                 publications = []
+                budget_factory = partial(self.budget_repository.canonical_budget, self.authority)
                 for slot in sorted(spool.changed_slots):
+                    # A part holds only this chunk's accepted profiles of the slot.
                     membership = spool.membership(slot)
                     generation = {
                         "id": str(uuid.uuid4()),
                         "logical_key": slot,
+                        "kind": "part",
                         "base_version": bases[slot],
                         "membership_manifest": membership,
                     }
@@ -447,54 +549,51 @@ class Processor:
                             file,
                             spool.profiles(slot),
                             deadline=self.deadline,
-                            budget_factory=lambda: self.budget_repository.canonical_budget(
-                                self.authority
-                            ),
+                            budget_factory=budget_factory,
                         )
-                        digest = hashlib.sha256(file.read_bytes()).hexdigest()
+                        payload = file.read_bytes()
+                        digest = hashlib.sha256(payload).hexdigest()
                         final = f"normalised/sha256/{digest}.parquet"
                         temporary = f"tmp/{intent.hex}/{uuid.uuid4().hex}"
                         keys.extend([final, temporary])
                         generation.update(
                             object_key=final,
                             sha256=digest,
-                            bytes=file.stat().st_size,
+                            bytes=len(payload),
                             row_count=verified["rows"],
                             profile_count=verified["profiles"],
                             schema_sha256=verified["schema_sha256"],
-                            verification_evidence=verified,
+                            verification_evidence=evidence_json(verified),
                             verified_at=datetime.now(UTC).isoformat(),
                         )
                         publications.append(
                             (
                                 file,
                                 temporary,
-                                PublicationSnapshotVerifier(
-                                    digest,
-                                    file.stat().st_size,
+                                snapshot_certificate(
                                     verified,
+                                    payload,
                                     deadline=self.deadline,
-                                    budget_factory=lambda: self.budget_repository.canonical_budget(
-                                        self.authority
-                                    ),
+                                    budget_factory=budget_factory,
                                 ),
                             )
                         )
+                        del payload
                     generations.append(generation)
                 self.repository.prepare_intent(self.authority, intent, keys, bases, {})
-                for file, temporary, verify_publication in publications:
+                for file, temporary, certificate in publications:
                     publish_verified(
                         self.store,
                         file.read_bytes(),
                         intent,
-                        verify_publication,
+                        certificate,
                         deadline=self.deadline,
                         temporary_key=temporary,
                     )
-                receipts = self.receipts(spool, own)
-                staged = self.private / (uuid.uuid4().hex + ".ndjson")
-                spool.write_candidates(staged)
-                self.repository.stage_file(self.authority, staged)
+                    file.unlink()
+                receipts = self.receipts(spool, own, states)
+                self.repository.stage_candidates(self.authority, spool.candidates())
+                self.repository.stage_levels(self.authority, spool.level_tables())
                 self.pulse()
                 try:
                     self.repository.commit(self.authority, intent, generations, receipts)
@@ -504,21 +603,60 @@ class Processor:
                         raise
         raise Rejection("publication_budget_exhausted")
 
-    def receipts(self, spool: ProfileSpool, own: str) -> list[dict[str, Any]]:
+    def selected(
+        self, observed: datetime, longitude: Decimal | None, latitude: Decimal | None
+    ) -> bool:
+        """Inside this chunk's exact requested interval and tile (not its whole slot)."""
+        return (
+            longitude is not None
+            and latitude is not None
+            and self.plan.interval.contains(observed)
+            and self.plan.tile.owns(longitude, latitude)
+        )
+
+    def arrivals(self, spool: ProfileSpool, slot: str) -> tuple[int, int]:
+        """Profiles this chunk puts into the slot, and how many of them are in the selection."""
+        profiles = [profile for _, profile in spool.profiles(slot)]
+        return len(profiles), sum(
+            self.selected(
+                timestamp(p.observed_at),
+                Decimal(p.longitude.exact or "NaN"),
+                Decimal(p.latitude.exact or "NaN"),
+            )
+            for p in profiles
+        )
+
+    def counted(self, spool: ProfileSpool, own: str) -> list[str]:
+        """Slots whose receipt needs the stored population: the chunk adds nothing in the
+        selection (selected after unknown) or nothing at all to a changed slot (can it be
+        empty?). Slots the chunk fills need no read: they are certainly populated."""
         result = []
         for slot in sorted(spool.changed_slots | {own}):
-            if slot in spool.changed_slots:
-                full = spool.membership(slot)
-                selected = sum(
-                    1
-                    for _, p in spool.profiles(slot)
-                    if self.plan.interval.contains(timestamp(p.observed_at))
-                    and self.plan.tile.owns(
-                        Decimal(p.longitude.exact or "NaN"), Decimal(p.latitude.exact or "NaN")
-                    )
-                )
+            arrived, arrived_selected = self.arrivals(spool, slot)
+            if not arrived_selected or (slot in spool.changed_slots and not arrived):
+                result.append(slot)
+        return result
+
+    def receipts(
+        self, spool: ProfileSpool, own: str, states: dict[str, SlotState]
+    ) -> list[dict[str, Any]]:
+        result = []
+        for slot in sorted(spool.changed_slots | {own}):
+            state = states[slot]
+            arrived, arrived_selected = self.arrivals(spool, slot)
+            departed = spool.departed(slot)
+            # Population after commit = stored now - what this chunk replaces or moves
+            # out + what it adds. Counts are read only when the answer is not certain.
+            if state.members is None or state.selected is None:
+                members = None if arrived == 0 else arrived
+                selected = None if arrived_selected == 0 else arrived_selected
             else:
-                full, selected = self.repository.slot_members(self.authority, slot, self.plan)
+                members = state.members - len(departed) + arrived
+                selected = (
+                    state.selected
+                    - sum(self.selected(s.observed_at, s.longitude, s.latitude) for s in departed)
+                    + arrived_selected
+                )
             fetch = (
                 "profiles_returned"
                 if self.observed_profiles
@@ -528,23 +666,25 @@ class Processor:
             )
             stored = (
                 "empty_stored_domain"
-                if slot in spool.changed_slots and not full
+                if slot in spool.changed_slots and members == 0
                 else "active_generation"
                 if selected
                 else "empty_stored_selection"
             )
-            result.append(
-                {
-                    "id": str(uuid.uuid4()),
-                    "logical_key": slot,
-                    "fetch_disposition": fetch,
-                    "stored_disposition": stored,
-                    "evidence": {
-                        "raw_roles": self.raw_ids,
-                        "full_membership": full,
-                        "selected_profiles": selected,
-                        "run_reference_time_utc": self.policy.reference.isoformat(),
-                    },
-                }
-            )
+            receipt: dict[str, Any] = {
+                "id": str(uuid.uuid4()),
+                "logical_key": slot,
+                "fetch_disposition": fetch,
+                "stored_disposition": stored,
+                "evidence": {
+                    "raw_roles": self.raw_ids,
+                    "run_reference_time_utc": self.policy.reference.isoformat(),
+                    # SQL adds full_membership: the slot manifest after this commit.
+                    **({} if selected is None else {"selected_profiles": selected}),
+                },
+            }
+            if slot not in spool.changed_slots:
+                # Receipt-only slot: commit proves the counts above still describe it.
+                receipt["base_version"] = state.version
+            result.append(receipt)
         return result

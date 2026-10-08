@@ -8,11 +8,16 @@ import sys
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from decimal import Decimal
+from itertools import compress, repeat
 from typing import Any
 
 HASH_VERSION = "scientific-json-v2"
 MIB = 1024 * 1024
 NUMERIC = re.compile(r"-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\Z")
+# NUMERIC split by exponent: `PLAIN_NUMBER` is the common case, `_NUMBER` has the exponent
+# (captured, so no second split is needed). Together they accept exactly NUMERIC's tokens.
+PLAIN_NUMBER = re.compile(r"-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?\Z")
+_NUMBER = re.compile(r"-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?[eE]([+-]?[0-9]+)\Z")
 
 
 def safe_resource_evidence(value: Any) -> dict[str, Any]:
@@ -50,28 +55,84 @@ class Rejection(ValueError):
         super().__init__(category)
 
 
+def _layout_length(sign: int, count: int, exponent: int) -> int:
+    """Length of the exponent-free text for `count` significant digits, no trailing zeros."""
+    point = count + exponent
+    return sign + (point if exponent >= 0 else count + 1 if point > 0 else 2 - point + count)
+
+
+def _normalized_length(value: Decimal) -> int:
+    """`len(decimal_text(value))` for a finite value, from its digit tuple alone.
+
+    No digit string or normalized text is built, so the exact_number preflight costs
+    a few integer operations; `decimal_text` shares `_layout_length`.
+    """
+    sign, digit_tuple, exponent = value.as_tuple()
+    assert isinstance(exponent, int)
+    end = len(digit_tuple)
+    start = 0
+    while start < end and digit_tuple[start] == 0:
+        start += 1
+    if start == end:
+        return 1
+    zeros = 0
+    while digit_tuple[end - 1 - zeros] == 0:
+        zeros += 1
+    return _layout_length(sign, end - start - zeros, exponent + zeros)
+
+
+def _canonical_output_limit(length: int) -> Rejection:
+    return Rejection(
+        "canonical_output_limit",
+        resource={
+            "scope": "number",
+            "operation": "normalization",
+            "limit_bytes": 512,
+            "used_bytes": 0,
+            "requested_bytes": length,
+        },
+    )
+
+
 def exact_number(token: str) -> Decimal:
-    if not NUMERIC.fullmatch(token):
+    if PLAIN_NUMBER.fullmatch(token) is not None:
+        if len(token) > 128:
+            raise Rejection("numeric_token_limit")
+        # Without an exponent the normalized text is no longer than the token (at most
+        # 128 bytes), so the 512-byte preflight below cannot fail.
+        return Decimal(token)
+    match = _NUMBER.fullmatch(token)
+    if match is None:
         raise Rejection("invalid_json_number")
     if len(token) > 128:
         raise Rejection("numeric_token_limit")
-    exponent = re.split("[eE]", token)
-    if len(exponent) == 2:
-        digits = exponent[1].lstrip("+-").lstrip("0") or "0"
-        if len(digits) > 3 or int(digits) > 400:
-            raise Rejection("numeric_exponent_limit")
+    digits = match.group(1).lstrip("+-").lstrip("0") or "0"
+    if len(digits) > 3 or int(digits) > 400:
+        raise Rejection("numeric_exponent_limit")
     value = Decimal(token)
-    decimal_text(value)  # Preflight before any exponent-free allocation.
+    # Preflight before any exponent-free allocation; arithmetic only, no text built.
+    length = _normalized_length(value)
+    if length > 512:
+        raise _canonical_output_limit(length)
     return value
 
 
 def decimal_text(value: Decimal) -> str:
     if not value.is_finite():
         raise Rejection("invalid_json_number")
+    # str() is exact and positional, with no exponent, when the exponent is <= 0 and the
+    # adjusted exponent >= -6; the normalized text is then that text without trailing
+    # fraction zeros (and "-0" is "0"). Anything else, or a text long enough to need the
+    # 512-byte check, takes the digit-tuple route below.
+    text = str(value)
+    if "E" not in text and len(text) <= 512:
+        if "." in text:
+            text = text.rstrip("0").rstrip(".")
+        return "0" if text == "-0" else text
     sign, digit_tuple, exponent_value = value.as_tuple()
     if not isinstance(exponent_value, int):
         raise Rejection("invalid_json_number")
-    digits = "".join(str(d) for d in digit_tuple).lstrip("0")
+    digits = "".join(map(str, digit_tuple)).lstrip("0")
     if not digits:
         return "0"
     exponent = exponent_value
@@ -79,20 +140,9 @@ def decimal_text(value: Decimal) -> str:
         digits = digits[:-1]
         exponent += 1
     point = len(digits) + exponent
-    length = sign + (
-        point if exponent >= 0 else len(digits) + 1 if point > 0 else 2 - point + len(digits)
-    )
+    length = _layout_length(sign, len(digits), exponent)
     if length > 512:
-        raise Rejection(
-            "canonical_output_limit",
-            resource={
-                "scope": "number",
-                "operation": "normalization",
-                "limit_bytes": 512,
-                "used_bytes": 0,
-                "requested_bytes": length,
-            },
-        )
+        raise _canonical_output_limit(length)
     if exponent >= 0:
         text = digits + "0" * exponent
     elif point > 0:
@@ -107,22 +157,37 @@ def _nonstandard(_: str) -> None:
 
 
 def _object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-    result: dict[str, Any] = {}
-    for key, value in pairs:
-        if key in result:
-            raise Rejection("duplicate_json_key")
-        result[key] = value
+    result = dict(pairs)
+    if len(result) != len(pairs):
+        raise Rejection("duplicate_json_key")
     return result
 
 
-def decode_json(
-    raw: bytes,
-    *,
-    max_bytes: int = 128 * MIB,
-    number_decoder: Callable[[str], Decimal] = exact_number,
-) -> Any:
-    if len(raw) > max_bytes:
-        raise Rejection("decompressed_size_limit")
+_DEPTH_LIMIT = 32
+_ARRAY_LIMIT = 10000
+# The C-speed filter holds a bytes object per string and per innermost pair (about 50
+# bytes each), which the byte loop never did. Input with more than _TOKEN_LIMIT quotes and
+# brackets, or larger than _SCAN_LIMIT, goes to the byte loop instead: a hostile payload is
+# then rejected as cheaply as before (the filter's objects stay under ~15 MB) and real
+# profile documents (a few hundred quotes and brackets, tens of KB to a few MB) stay on the
+# fast path.
+_TOKEN_LIMIT = 1 << 18
+_SCAN_LIMIT = 8 * MIB
+# Worst-case JSON escape expansion is 6 source bytes per decoded byte (+ closing quote).
+_STRING_LIMIT = 6 * 64 * 1024 + 1
+# One string token: opening quote to closing quote, or to the end of input when the
+# string never closes (as the byte loop stays quoted to the end; each quote is consumed
+# once, so the scan stays linear).
+_STRINGS = re.compile(rb'("[^"\\]*(?:\\[\s\S][^"\\]*)*(?:"|\\?\Z))')
+# A bracket pair with no bracket inside; each split peels one nesting level. Only the
+# `[` pairs are captured: the byte loop counts the elements of arrays, not of objects.
+_INNERMOST = re.compile(rb"(\[[^\[\]{}]*[\]}])|\{[^\[\]{}]*[\]}]")
+_BRACKET = re.compile(rb"[\[\]{}]")
+_CONTAINERS: frozenset[type] = frozenset({str, list, dict})
+
+
+def _byte_caps(raw: bytes) -> None:
+    """Reference structural scan: one Python iteration per byte, first violation raises."""
     # Prevent the recursive decoder allocating beyond the declared structural caps.
     depth = 0
     quoted = escaped = False
@@ -133,8 +198,7 @@ def decode_json(
     for byte in raw:
         if quoted:
             string_size += 1
-            # Worst-case JSON escape expansion is 6 source bytes per decoded byte.
-            if string_size > 6 * 64 * 1024 + 1:
+            if string_size > _STRING_LIMIT:
                 raise Rejection("json_string_limit")
             if escaped:
                 escaped = False
@@ -149,7 +213,7 @@ def decode_json(
                 elif byte not in b" \n\r\t]" and not arrays[-1][2]:
                     arrays[-1][1] += 1
                     arrays[-1][2] = 1
-                    if arrays[-1][1] > 10000:
+                    if arrays[-1][1] > _ARRAY_LIMIT:
                         raise Rejection("invalid_array_length")
             if byte == 34:
                 quoted = True
@@ -157,12 +221,72 @@ def decode_json(
             elif byte in (91, 123):
                 depth += 1
                 arrays.append([byte, 0, 0])
-                if depth > 32:
+                if depth > _DEPTH_LIMIT:
                     raise Rejection("json_depth_limit")
             elif byte in (93, 125):
                 depth -= 1
                 if arrays:
                     arrays.pop()
+
+
+def _within_caps(raw: bytes) -> bool:
+    """True only if `_byte_caps` provably would not raise for `raw`.
+
+    The filter is sound, never complete: it must not clear an input the byte loop
+    rejects, and may decline one it accepts:
+      * strings: the tokens are exactly the loop's quoted runs (the last one runs to the
+        end of input if it never closes), and a run's `string_size` is `len(token) - 1`;
+      * depth: with strings removed, the loop's depth is the bracket nesting depth, and
+        one `_INNERMOST` split peels exactly one level, so a fully peeled input needs at
+        most `_DEPTH_LIMIT` splits iff its depth is within the cap;
+      * arrays: the loop counts at most one element per run between direct commas, so
+        an array's count is at most its direct commas + 1; peeled children collapse to
+        a single placeholder, so a pair's `,` count is its direct commas.
+    """
+    structural = sum(map(raw.count, (b'"', b"[", b"]", b"{", b"}")))  # No allocation.
+    if structural > _TOKEN_LIMIT:
+        return False
+    parts = _STRINGS.split(raw)
+    if len(parts) > 1 and max(map(len, parts[1::2])) - 1 > _STRING_LIMIT:
+        return False
+    skeleton = b"0".join(parts[0::2])  # strings collapse to one element placeholder
+    budget = 4 * len(skeleton) + 4096  # Bytes the peeling passes may scan in total.
+    for _ in range(_DEPTH_LIMIT):
+        budget -= len(skeleton)
+        if budget < 0:
+            return False
+        pieces = _INNERMOST.split(skeleton)
+        if len(pieces) == 1:
+            break
+        arrays = filter(None, pieces[1::2])
+        if max(map(bytes.count, arrays, repeat(b",")), default=0) >= _ARRAY_LIMIT:
+            return False
+        skeleton = b"0".join(pieces[0::2])
+    return _BRACKET.search(skeleton) is None
+
+
+def _structural_caps(raw: bytes) -> None:
+    """Depth, array and string caps before the allocating decode, at C speed.
+
+    `_within_caps` clears the input, or `_byte_caps` decides it: inputs over a cap,
+    with an unterminated string or with unbalanced/mismatched brackets run the byte
+    loop, which raises the original category in the original byte order. The scan is
+    therefore at least as strict as the byte loop (it is the byte loop whenever it
+    cannot prove the input is within the caps) and adds no rejection of its own.
+    """
+    if len(raw) > _SCAN_LIMIT or not _within_caps(raw):
+        _byte_caps(raw)
+
+
+def decode_json(
+    raw: bytes,
+    *,
+    max_bytes: int = 128 * MIB,
+    number_decoder: Callable[[str], Any] = exact_number,
+) -> Any:
+    if len(raw) > max_bytes:
+        raise Rejection("decompressed_size_limit")
+    _structural_caps(raw)
     try:
         result = json.loads(
             raw,
@@ -186,10 +310,15 @@ def decode_json(
             if size > 64 * 1024:
                 raise Rejection("json_string_limit")
         elif isinstance(item, list):
-            pending.extend(item)
+            # Numbers, null and booleans have nothing to check: queue only the rest,
+            # in the same order, with C-level iteration.
+            if not _CONTAINERS.isdisjoint(map(type, item)):
+                pending.extend(compress(item, map(_CONTAINERS.__contains__, map(type, item))))
         elif isinstance(item, dict):
             pending.extend(item.keys())
-            pending.extend(item.values())
+            values = item.values()
+            if not _CONTAINERS.isdisjoint(map(type, values)):
+                pending.extend(compress(values, map(_CONTAINERS.__contains__, map(type, values))))
     return result
 
 
@@ -307,51 +436,16 @@ class CanonicalBudget:
         return bytes(result), digest.hexdigest()
 
 
-def _small_json_bound(value: Any) -> int | None:
-    """Bound a level before C encoding; unsupported/large structures stream normally.
-
-    This walk produces no canonical bytes. Its conservative ASCII upper bound
-    includes surrogate-pair escapes and applies only to exact JSON builtin types.
-    """
-    pending = [(value, 0)]
-    size = nodes = 0
-    while pending:
-        item, depth = pending.pop()
-        nodes += 1
-        if nodes > 512 or depth > 16:
-            return None
-        if type(item) is str:
-            size += 2 + 12 * len(item)
-        elif item is None or type(item) is bool:
-            size += 5
-        elif type(item) is int and item.bit_length() <= 64:
-            size += 21
-        elif type(item) is float and math.isfinite(item):
-            size += 32
-        elif type(item) is dict and len(item) <= 512 and all(type(key) is str for key in item):
-            size += 2 + 2 * len(item)
-            pending.extend((key, depth + 1) for key in item)
-            pending.extend((part, depth + 1) for part in item.values())
-        elif type(item) is list:
-            size += 2 + len(item)
-            if len(item) > 512:
-                return None
-            pending.extend((part, depth + 1) for part in item)
-        else:
-            return None
-        if size > 64 * 1024:
-            return None
-    return size
-
-
 def _canonical_pieces(
     content: dict[str, Any], encoder: json.JSONEncoder, remaining: Callable[[], int]
 ) -> Iterator[str]:
-    """C encode bounded levels while retaining the exact sorted JSON byte stream.
+    """C encode each level while retaining the exact sorted JSON byte stream.
 
-    A level uses the fast path only if its proven output bound fits every budget.
-    Near a boundary the original streaming encoder preserves rejection precedence
-    and actual-work charging, without allocating an unbounded encoded profile.
+    A level is encoded in one C call and yielded whole when it fits every budget (the
+    pieces of a fitting level would all pass the same checks). A level that does not
+    fit is streamed again, so rejection precedence and the charged used/requested
+    bytes at the boundary are those of the streaming encoder. The encoded level is
+    allocated before the check; it is bounded by the input level's size.
     """
     if type(content) is not dict or type(content.get("levels")) is not list:
         yield from encoder.iterencode(content)
@@ -372,9 +466,15 @@ def _canonical_pieces(
         for level_index, level in enumerate(content[key]):
             if level_index:
                 yield ","
-            bound = _small_json_bound(level)
-            if bound is not None and bound <= remaining():
-                yield encoder.encode(level)
+            try:
+                encoded = encoder.encode(level)
+            except (TypeError, ValueError, RecursionError):
+                # Unsupported or non-finite content fails where the stream reaches it,
+                # after the budget has charged the pieces before it.
+                yield from encoder.iterencode(level)
+                continue
+            if len(encoded) <= remaining():
+                yield encoded
             else:
                 yield from encoder.iterencode(level)
         yield "]"

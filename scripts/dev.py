@@ -132,7 +132,7 @@ def main() -> None:
         elif args.action == "stop":
             compose("stop")
         else:
-            compose("restart", "api", "worker", "web")
+            compose("restart", "api", "web")
             wait_ready(f"http://127.0.0.1:{published_port('API_PORT', 8000)}/v1/health/ready", 120)
     except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
         # Do not dump compose configuration, environment values, or service logs.

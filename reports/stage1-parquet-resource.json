@@ -1,7 +1,7 @@
 {
-  "anonymous_peak_bytes": 303681536,
+  "anonymous_peak_bytes": 348762112,
   "cgroup_limit_bytes": 1073741824,
-  "cgroup_memory_peak_bytes": 1073758208,
+  "cgroup_memory_peak_bytes": 1074003968,
   "criterion": "ADR-0042: anonymous peak < 1 GiB and zero oom/oom_kill",
   "input": "synthetic derivative of authentic 1901094_109; 11 identities, maximum 65536-byte sampling header",
   "kind": "offline_cgroup_parquet_resource_proof",
@@ -9,14 +9,14 @@
   "memory_events": {
     "high": "0",
     "low": "0",
-    "max": "122611",
+    "max": "173828",
     "oom": "0",
     "oom_group_kill": "0",
     "oom_kill": "0"
   },
   "parquet_bytes": 6650941,
   "parquet_sha256": "fbbf6b9ae00b91c2e5b2299b1c201dd03fa60201e5746335214fc0fd52a6912e",
-  "peak_rss_bytes": 1093009408,
+  "peak_rss_bytes": 1109778432,
   "profiles": 11,
   "pyarrow_version": "23.0.1",
   "row_groups": [
@@ -25,7 +25,7 @@
   ],
   "rows": 100001,
   "scope": "Writer and read-back verifier in one memory-limited process; not regional acceptance",
-  "seconds": 365.9699574599981,
+  "seconds": 125.82389094700193,
   "verification": {
     "membership_sha256": "dc06d34ec475c52fc152d0b6fb08aef0734e5f93ec2ff27fb67786ffaa1c5b91",
     "profiles": 11,
@@ -159,6 +159,7 @@
       "ratio_status": "measured",
       "rows": 100001
     },
+    "verification": "arrow-equality-v4",
     "writer_options": {
       "compression": "zstd",
       "compression_level": 3,

@@ -1,6 +1,7 @@
 """Container-side acceptance setup/proof and owner-only runtime entrypoint.
 
-No Argovis key is loaded in initialize/proof/offline worker/supervisor modes.
+No Argovis key is loaded in initialize/proof/process/supervisor modes, nor in an offline
+acquire. Only `acquire --stdin-key` reads it, from stdin, when live ingestion is enabled.
 All exception output is a fixed category, never a representation or traceback.
 """
 
@@ -10,25 +11,18 @@ import json
 import os
 import subprocess
 import sys
-import time
 import uuid
 
 import psycopg
-import redis
 from botocore.exceptions import ClientError
 from floatchat_core.ingestion.numeric import Rejection
 from floatchat_core.ingestion.reporting import persisted_report
 from floatchat_workers.ingestion import Configuration, live_enabled
 from psycopg import sql
 
-
-def configure_broker():
-    from floatchat_workers.app import app
-
-    prefix = os.environ["ACCEPTANCE_REDIS_PREFIX"]
-    app.conf.broker_transport_options = {"global_keyprefix": prefix, "visibility_timeout": 43200}
-    app.conf.result_backend_transport_options = {"global_keyprefix": prefix}
-    return app
+# Alembic head the isolated database must reach (tests/stage1/test_acceptance_preparation.py
+# keeps this equal to the newest file in infra/migrations/versions).
+MIGRATION_HEAD = "0015_gdac_wiring"
 
 
 def initialize():
@@ -107,11 +101,13 @@ def proof():
                 "(SELECT count(*) FROM app.core_measurement) AS levels"
             )
             counts = dict(cursor.fetchone())
+            cursor.execute("SELECT count(*) AS n FROM app.processing_ticket")
+            tickets = cursor.fetchone()["n"]
         assert identity["database"].startswith("floatchat_s1_")
         assert (
             identity["login"] == "acceptance_ingestion" and identity["role"] == "floatchat_ingestor"
         )
-        assert revision == "0011_set_based_publication" and counts == {
+        assert revision == MIGRATION_HEAD and counts == {
             "runs": 0,
             "profiles": 0,
             "levels": 0,
@@ -132,18 +128,11 @@ def proof():
             scoped = True
         else:
             raise Rejection("unscoped_acceptance_storage_identity")
-        broker = redis.Redis(host="redis", port=6379, db=13)
-        assert broker.ping()
-        app = configure_broker()
-        until = time.monotonic() + 60
-        while not app.control.ping(timeout=1):
-            assert time.monotonic() < until
-            time.sleep(0.5)
-        result = app.send_task(
-            "floatchat.smoke", args=["acceptance-isolation"], queue=configuration.queue, retry=False
-        )
-        assert result.get(timeout=20) == "ok:acceptance-isolation"
-        assert broker.llen(os.environ["ACCEPTANCE_REDIS_PREFIX"] + configuration.queue) == 0
+        # The work queue is PostgreSQL: nothing is queued before admission, and both claim
+        # paths answer "empty" under this login (the grants and the function exist).
+        assert tickets == 0
+        assert repository.claim_ticket("acquire", "acceptance-proof") is None
+        assert repository.claim_ticket("process", "acceptance-proof") is None
         from floatchat_workers.cli import main
 
         assert (
@@ -175,10 +164,9 @@ def proof():
                     "bucket_readback_sha256": hashlib.sha256(marker).hexdigest(),
                     "bucket_scoped_identity": scoped,
                     "denied_control_bucket": os.environ["ACCEPTANCE_CONTROL_BUCKET"],
-                    "redis_database": 13,
-                    "redis_prefix": os.environ["ACCEPTANCE_REDIS_PREFIX"],
                     "queue": configuration.queue,
-                    "smoke_acknowledged": True,
+                    "queue_ticket_rows": tickets,
+                    "queue_claims_empty": True,
                     "live_disabled_admission_refused": True,
                     "run_created": False,
                 },
@@ -221,24 +209,63 @@ def progress(request):
                 (row["id"],),
             )
             result["leaf_states"] = {item["state"]: item["n"] for item in cursor.fetchall()}
+            cursor.execute(
+                "SELECT kind,count(*) FILTER (WHERE NOT started) AS queued,"
+                "count(*) FILTER (WHERE started) AS started FROM app.processing_ticket "
+                "WHERE run_id=%s GROUP BY kind",
+                (row["id"],),
+            )
+            result["tickets"] = {
+                item["kind"]: {"queued": item["queued"], "started": item["started"]}
+                for item in cursor.fetchall()
+            }
         print(json.dumps(result, default=str))
     finally:
         repository.close()
+
+
+def acquire():
+    """The acquire process: INGESTION_ACQUIRE_SLOTS landing threads (blocks until stopped)."""
+    from floatchat_workers.acquire import main as acquire_main
+
+    return acquire_main(Configuration.load().acquire_slots)
+
+
+def process():
+    """The process pool: INGESTION_PROCESS_WORKERS single-use workers (blocks until stopped)."""
+    from floatchat_workers.process import main as process_main
+
+    return process_main(Configuration.load().process_workers)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "command",
-        choices=("initialize", "proof", "worker", "supervise", "ingest", "report", "progress"),
+        choices=(
+            "initialize",
+            "proof",
+            "acquire",
+            "process",
+            "supervise",
+            "ingest",
+            "report",
+            "progress",
+            "compact",
+        ),
     )
     parser.add_argument("--stdin-key", action="store_true")
     parser.add_argument("--run-id")
     parser.add_argument("--request-id")
     parser.add_argument("--replay-run")
+    parser.add_argument("--seconds", type=int)
+    parser.add_argument("--source", choices=("argovis", "gdac"), default="argovis")
+    parser.add_argument("--gdac-cache")
     args = parser.parse_args()
     if args.stdin_key:
-        if args.command != "worker" or not live_enabled():
+        # Only the acquire process may hold the upstream credential; the process pool,
+        # supervisor and every other mode run without it.
+        if args.command != "acquire" or not live_enabled():
             raise Rejection("live_acceptance_opt_in_required")
         # Owner execution only. The preparation path never reads this stream/key.
         key = sys.stdin.buffer.readline(4097).decode().rstrip("\n")
@@ -253,51 +280,51 @@ def main():
         report(args.run_id)
     elif args.command == "progress":
         progress(args.request_id)
+    elif args.command == "acquire":
+        raise SystemExit(acquire())
+    elif args.command == "process":
+        raise SystemExit(process())
     else:
-        app = configure_broker()
-        if args.command == "worker":
-            app.worker_main(
-                [
-                    "worker",
-                    "--loglevel=WARNING",
-                    "--concurrency=1",
-                    "-Q",
-                    os.environ["INGESTION_QUEUE_NAMESPACE"],
-                    "--hostname=acceptance@%h",
-                ]
-            )
-        else:
-            from floatchat_workers.cli import main as cli
+        from floatchat_workers.cli import main as cli
 
-            arguments = (
-                ["supervise"]
-                if args.command == "supervise"
-                else [
-                    "ingest",
-                    "--mode",
-                    "acceptance",
-                    "--region",
-                    "indian-ocean",
-                    "--from",
-                    "2025-01",
-                    "--to",
-                    "2025-03",
-                    "--execution-seconds",
-                    "43200",
-                    "--request-id",
-                    args.request_id,
-                ]
-            )
-            if args.command == "ingest":
+        if args.command == "supervise":
+            arguments = ["supervise"]
+        elif args.command == "compact":
+            arguments = ["compact"] + (["--seconds", str(args.seconds)] if args.seconds else [])
+        else:
+            arguments = [
+                "ingest",
+                "--mode",
+                "acceptance",
+                "--region",
+                "indian-ocean",
+                "--from",
+                "2025-01",
+                "--to",
+                "2025-03",
+                "--execution-seconds",
+                "43200",
+                "--request-id",
+                args.request_id,
+            ]
+            if args.source == "gdac":
+                # The GDAC bulk source has no live opt-in: the cache is filled before admission.
+                arguments += ["--source", "gdac"]
+                arguments += ["--gdac-cache", args.gdac_cache] if args.gdac_cache else []
+            else:
                 arguments += (
                     ["--replay-run", args.replay_run] if args.replay_run else ["--live-opt-in"]
                 )
-            raise SystemExit(cli(arguments))
+        raise SystemExit(cli(arguments))
 
 
 if __name__ == "__main__":
     try:
         main()
+    except Rejection as error:
+        # Categories are fixed identifiers (for example acquire_slots_exceed_environment).
+        print(error.category, file=sys.stderr)
+        raise SystemExit(5) from None
     except Exception:
         print("acceptance_runtime_failed_no_sensitive_diagnostics", file=sys.stderr)
         raise SystemExit(5) from None

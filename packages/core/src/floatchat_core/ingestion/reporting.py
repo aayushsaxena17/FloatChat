@@ -31,6 +31,8 @@ def coverage_evidence(metrics: dict[str, Any], environment: uuid.UUID) -> dict[s
             row["object_key"],
             row["sha256"],
             row["bytes"],
+            row.get("kind", "snapshot"),
+            row.get("part_ordinal"),
         )
         for row in metrics["active_generations"]
     )
@@ -224,6 +226,27 @@ def persisted_report(repository: Repository, run: uuid.UUID) -> dict[str, Any]:
         "scientific_source_complete": False if exclusions else "unknown",
     }
     result["active_generation_ids"] = [row["id"] for row in metrics["active_generations"]]
+    # stage1-v4: every active object of every slot, parts and snapshots (frozen reports from
+    # earlier runs carry no kind: they only had snapshots).
+    result["active_partitions"] = [
+        {
+            "id": row["id"],
+            "logical_key": row["logical_key"],
+            "generation": row["generation"],
+            "kind": row.get("kind", "snapshot"),
+            "part_ordinal": row.get("part_ordinal"),
+            "slot_version": row.get("slot_version"),
+            "profiles": row["profiles"],
+            "levels": row["levels"],
+        }
+        for row in metrics["active_generations"]
+    ]
+    result["active_part_count"] = sum(
+        row.get("kind", "snapshot") == "part" for row in metrics["active_generations"]
+    )
+    result["active_snapshot_count"] = (
+        len(metrics["active_generations"]) - result["active_part_count"]
+    )
     result["scientific_level_delta_balanced"] = (
         None
         if before is None

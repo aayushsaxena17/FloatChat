@@ -24,6 +24,17 @@ def main():
         result = repository.catalogue_snapshot(ENV, interval, tiles=(Tile(70, 10),))
         assert len(result.records) == 1 and not result.gaps
         assert not result.empty_evidence and not result.source_absence_evidence
+        # stage1-v4: the record is the chunk's part and the manifest travels with the snapshot.
+        (record,) = result.records
+        assert record.kind == "part" and record.part_ordinal == 1
+        (manifest,) = result.manifests.values()
+        assert [item["hash"] for item in manifest] == [rows[0].profile.content_hash]
+        assert repository.science_hashes([rows[0].identity.id])[
+            rows[0].identity.id
+        ].content_hash == (rows[0].profile.content_hash)
+        found = repository.identities_batch([rows[0].profile])[rows[0].profile.identity]
+        assert [identity.id for identity in found] == [rows[0].identity.id]
+        assert repository.audit_levels(CHUNK, 5) == {"profiles": 1, "levels": 3}
         # Already complete is recognized before expired/stale caller authority or
         # empty proposed generation arguments; nothing new is merged.
         repository.commit(Authority(RUN, CHUNK, 1, 1), INTENT, [], [])
@@ -34,7 +45,7 @@ def main():
         else:
             raise AssertionError("Ingestor acquired unrestricted scientific deletes")
         try:
-            repository.stage(Authority(RUN, CHUNK, 1, 1), ())
+            repository.stage_candidates(Authority(RUN, CHUNK, 1, 1), ())
         except Rejection as error:
             assert (
                 error.category == "invalid_state_transition"

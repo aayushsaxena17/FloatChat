@@ -1,7 +1,10 @@
 """Deterministic, bounded level snapshots with exact scientific-content verification.
 
-Writers spill row groups to a private file. Verification scans row groups and holds
-at most one profile's canonical content, rather than loading a full snapshot table.
+Writers build Arrow arrays per profile and spill row groups to a private file. The
+Parquet file is then verified once, in Arrow (arrow-equality-v4): the read-back must
+equal the spilled rows and every profile's scientific hash must follow from its stored
+header and canonical_level strings. verify_snapshot is the row-by-row audit and holds at
+most one profile's canonical content, rather than loading a full snapshot table.
 Mutable upstream revisions, attempt times and retrieval evidence are deliberately
 absent from this schema.
 """
@@ -17,13 +20,14 @@ from decimal import Decimal
 from itertools import chain
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any
+from typing import Any, NamedTuple
 
 import pandas as pd
 import pyarrow as pa
+import pyarrow.compute as pc
 import pyarrow.parquet as pq
 
-from .argovis import VARIABLES, Profile
+from .argovis import VARIABLES, Profile, level_table
 from .numeric import CanonicalBudget, Rejection, scientific_number
 from .objects import MAX_OBJECT_BYTES
 
@@ -40,6 +44,13 @@ WRITER_OPTIONS = {
     "data_page_size": 64 * 1024,
     "write_batch_size": BATCH_ROWS,
 }
+VERIFICATION = "arrow-equality-v4"
+PROFILE_CANONICAL_LIMIT = 16 * 1024 * 1024
+PROFILE_LEVEL_LIMIT = 10_000
+BLOCK_BYTES = 8 * 1024 * 1024  # Arrow arrays are built for about this much text at a time
+BLOCK_ROW_OVERHEAD = 1024  # estimate for the non-text columns of one row
+VERIFY_BATCH_BYTES = 32 * 1024 * 1024
+VERIFY_BATCH_ROWS = 2048
 
 
 def schema() -> Any:
@@ -105,6 +116,102 @@ def rows(identifier: uuid.UUID, profile: Profile) -> Iterator[dict[str, Any]]:
         }
 
 
+class _Parts(NamedTuple):
+    """One profile before it becomes Arrow rows: its constants and its level table."""
+
+    identifier: uuid.UUID
+    alias: str | None
+    digest: str
+    header: str
+    levels: Any
+
+
+def _header(profile: Profile) -> str:
+    """profile_content: the canonical object without its levels, as rows() encodes it."""
+    text = profile.canonical_bytes.decode()
+    opening = text.find('"levels":[')
+    closing = text.find('],"longitude":', opening)
+    if opening > 0 and closing > opening:
+        # The canonical bytes are already in this encoding; cut instead of parsing every
+        # level, and accept the cut only if the header re-frames the text it came from.
+        header = text[: opening - 1] + text[closing + 1 :]
+        try:
+            prefix, suffix = _frame(header)
+        except ValueError:
+            prefix = suffix = ""
+        if text.startswith(prefix) and text.endswith(suffix) and prefix and suffix:
+            return header
+    canonical = json.loads(profile.canonical_bytes)
+    canonical.pop("levels")
+    return json.dumps(canonical, sort_keys=True, separators=(",", ":"), allow_nan=False)
+
+
+def _readback_limit(used: int, requested: int) -> Rejection:
+    return Rejection(
+        "canonical_output_limit",
+        resource={
+            "scope": "profile",
+            "operation": "readback",
+            "limit_bytes": PROFILE_CANONICAL_LIMIT,
+            "used_bytes": used,
+            "requested_bytes": requested,
+        },
+    )
+
+
+def _check_limits(parts: _Parts, sizes: Any) -> None:
+    """The per-profile bounds verify_snapshot enforces on read-back, from the strings in hand."""
+    header = len(parts.header.encode())
+    if header > PROFILE_CANONICAL_LIMIT:
+        raise _readback_limit(0, header)
+    if header + (pc.sum(sizes).as_py() or 0) > PROFILE_CANONICAL_LIMIT or (
+        len(sizes) > PROFILE_LEVEL_LIMIT
+    ):
+        used = header
+        for index, size in enumerate(sizes.to_pylist()):
+            if used + size > PROFILE_CANONICAL_LIMIT:
+                raise _readback_limit(used, size)
+            if index >= PROFILE_LEVEL_LIMIT:
+                raise Rejection("canonical_output_limit")
+            used += size
+
+
+def _block(parts: _Parts, start: int, stop: int, fields: Any) -> Any:
+    """Arrow arrays for levels [start, stop) of one profile, columns in schema() order."""
+    count = stop - start
+    levels = parts.levels.slice(start, count)
+    constants = {
+        "profile_id": pa.repeat(str(parts.identifier), count),
+        "source_profile_id": pa.repeat(parts.alias, count)
+        if parts.alias is not None
+        else pa.nulls(count, pa.string()),
+        "profile_hash": pa.repeat(parts.digest, count),
+        "profile_content": pa.repeat(parts.header, count),
+    }
+    return pa.Table.from_arrays(
+        [
+            constants[field.name] if field.name in constants else levels[field.name]
+            for field in fields
+        ],
+        schema=fields,
+    )
+
+
+def _open_written(path: Path) -> Any:
+    # Read-back seam: the file as the object store will receive it.
+    return pq.ParquetFile(path)
+
+
+def _file_digest(path: Path) -> tuple[str, int]:
+    digest = hashlib.sha256()
+    size = 0
+    with path.open("rb") as stream:
+        while chunk := stream.read(1024 * 1024):
+            digest.update(chunk)
+            size += len(chunk)
+    return digest.hexdigest(), size
+
+
 def write_snapshot(
     path: Path,
     profiles: Mapping[uuid.UUID, Profile] | Iterable[tuple[uuid.UUID, Profile]],
@@ -112,6 +219,7 @@ def write_snapshot(
     deadline: float,
     max_bytes: int = MAX_OBJECT_BYTES,
     budget_factory: Callable[[], AbstractContextManager[CanonicalBudget]] | None = None,
+    audit: bool = False,
 ) -> dict[str, Any]:
     iterator = iter(sorted(profiles.items()) if isinstance(profiles, Mapping) else profiles)
     first = next(iterator, None)
@@ -119,32 +227,42 @@ def write_snapshot(
         raise Rejection("empty_snapshot_not_publishable")
     if not 0 < max_bytes <= MAX_OBJECT_BYTES:
         raise Rejection("invalid_object_budget")
+    fields = schema()
     # Refuse accidental overwrite, even of a caller-provided temporary path.
     with (
         path.open("xb") as output,
         TemporaryDirectory(prefix="parquet-spill-", dir=path.parent) as private_spill,
     ):
         path.chmod(0o600)
-        with pq.ParquetWriter(output, schema(), **WRITER_OPTIONS) as writer:
-            batch: list[dict[str, Any]] = []
+        with pq.ParquetWriter(output, fields, **WRITER_OPTIONS) as writer:
+            pending: list[Any] = []
+            pending_rows = 0
             group_rows = 0
             group_paths: list[Path] = []
             spill_bytes = 0
             group_path = Path(private_spill) / "group-000000.arrow"
             sink = group_path.open("xb")
             group_path.chmod(0o600)
-            ipc = pa.ipc.new_file(sink, schema())
+            ipc = pa.ipc.new_file(sink, fields)
 
-            def spill() -> None:
-                nonlocal group_rows
-                ipc.write_table(pa.Table.from_pylist(batch, schema=schema()))
-                group_rows += len(batch)
-                batch.clear()
+            def spill(final: bool) -> None:
+                # The writer sees BATCH_ROWS-row IPC batches counted from the group start,
+                # whatever the profile boundaries: Parquet page cuts depend on chunk edges.
+                nonlocal group_rows, pending_rows
+                take = pending_rows if final else pending_rows - pending_rows % BATCH_ROWS
+                if not take:
+                    return
+                combined = pa.concat_tables(pending).combine_chunks()
+                ipc.write_table(combined.slice(0, take), max_chunksize=BATCH_ROWS)
+                group_rows += take
+                pending[:] = [combined.slice(take)] if take < pending_rows else []
+                pending_rows -= take
                 if spill_bytes + sink.tell() > 10 * 1024**3:
                     raise Rejection("snapshot_spill_limit")
 
             def flush_group() -> None:
                 nonlocal group_rows, sink, ipc, spill_bytes, group_path
+                spill(True)
                 ipc.close()
                 sink.close()
                 # Zero-copy chunked buffers remain backed by private disk files.
@@ -164,42 +282,292 @@ def write_snapshot(
                 group_path = Path(private_spill) / f"group-{len(group_paths):06d}.arrow"
                 sink = group_path.open("xb")
                 group_path.chmod(0o600)
-                ipc = pa.ipc.new_file(sink, schema())
+                ipc = pa.ipc.new_file(sink, fields)
 
+            def feed(block: Any) -> None:
+                nonlocal pending_rows
+                offset = 0
+                while offset < block.num_rows:
+                    take = min(ROW_GROUP_ROWS - group_rows - pending_rows, block.num_rows - offset)
+                    pending.append(block.slice(offset, take))
+                    pending_rows += take
+                    offset += take
+                    if group_rows + pending_rows == ROW_GROUP_ROWS:
+                        flush_group()
+                    elif pending_rows >= BATCH_ROWS:
+                        spill(False)
+
+            previous: uuid.UUID | None = None
+            aliases: set[str] = set()
+            profile_count = rows_total = row_bytes = 0
             try:
                 for identifier, profile in chain((first,), iterator):
-                    for row in rows(identifier, profile):
+                    if time.monotonic() >= deadline:
+                        raise Rejection("snapshot_deadline")
+                    parts = _Parts(
+                        identifier,
+                        profile.source_profile_id,
+                        profile.content_hash,
+                        _header(profile),
+                        level_table(profile),
+                    )
+                    count = parts.levels.num_rows
+                    if not count:
+                        continue
+                    # Order and alias uniqueness follow from the input, which the Arrow
+                    # equality below proves is what the file holds.
+                    if previous is not None:
+                        if identifier == previous:
+                            raise Rejection("snapshot_profile_inconsistency")
+                        if identifier < previous:
+                            raise Rejection("snapshot_identity_order")
+                    previous = identifier
+                    if parts.alias is not None:
+                        if parts.alias in aliases:
+                            raise Rejection("duplicate_snapshot_alias")
+                        aliases.add(parts.alias)
+                    profile_count += 1
+                    rows_total += count
+                    if profile_count > 100000:
+                        raise Rejection("snapshot_profile_limit")
+                    if rows_total > 100_000_000:
+                        raise Rejection("snapshot_level_limit")
+                    sizes = pc.binary_length(parts.levels["canonical_level"])
+                    _check_limits(parts, sizes)
+                    row = len(parts.header) + pc.max(sizes).as_py() + BLOCK_ROW_OVERHEAD
+                    row_bytes = max(row_bytes, row)
+                    step = max(BATCH_ROWS, BLOCK_BYTES // row // BATCH_ROWS * BATCH_ROWS)
+                    for start in range(0, count, step):
                         if time.monotonic() >= deadline:
                             raise Rejection("snapshot_deadline")
-                        batch.append(row)
-                        if len(batch) >= min(BATCH_ROWS, ROW_GROUP_ROWS - group_rows):
-                            spill()
-                        if group_rows == ROW_GROUP_ROWS:
-                            flush_group()
-                if batch:
-                    spill()
+                        feed(_block(parts, start, min(start + step, count), fields))
+                spill(True)
                 if group_rows:
                     flush_group()
             finally:
-                ipc.close()
-                sink.close()
+                if not sink.closed:  # flush_group closes both before it can reject
+                    ipc.close()
+                    sink.close()
         if output.tell() > max_bytes:
             raise Rejection("object_size_limit")
         output.flush()
-        verified = verify_snapshot(path, deadline=deadline, budget_factory=budget_factory)
+        verified, comparison = _verify_written(path, group_paths, deadline, row_bytes)
+        if audit:
+            # Periodic audit: the independent row-by-row re-decode of the same file.
+            audited = verify_snapshot(path, deadline=deadline, budget_factory=budget_factory)
+            if audited != verified:
+                raise Rejection("object_validation_mismatch")
+        digest, byte_count = _file_digest(path)
+        if time.monotonic() >= deadline:
+            raise Rejection("snapshot_deadline")
+        certificate = PublicationSnapshotVerifier(
+            digest,
+            byte_count,
+            verified,
+            deadline=deadline,
+            budget_factory=budget_factory or (lambda: nullcontext(CanonicalBudget())),
+            certified=True,
+        )
+        return {
+            **verified,
+            "storage_comparison": comparison,
+            "writer_options": WRITER_OPTIONS,
+            "verification": VERIFICATION,
+            "certificate": certificate,
+        }
+
+
+def _frame(header: str) -> tuple[str, str]:
+    """Canonical text around the level list, from the stored header (keys sort around "levels")."""
+    content = json.loads(header)
+    before = json.dumps(
+        {key: value for key, value in content.items() if key < "levels"},
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    )
+    after = json.dumps(
+        {key: value for key, value in content.items() if key > "levels"},
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    )
+    return (
+        before[:-1] + ("," if len(before) > 2 else "") + '"levels":[',
+        "]" + ("," + after[1:-1] if len(after) > 2 else "") + "}",
+    )
+
+
+def _uniform(column: Any, start: int, length: int) -> bool:
+    part = column.slice(start, length)
+    if part.null_count:
+        return bool(part.null_count == length)
+    return bool(pc.all(pc.equal(part, part[0])).as_py())
+
+
+def _mismatch(actual: Any, expected: Any) -> str:
+    """Name a failed Arrow equality by the first differing column, as verify_snapshot would."""
+    if actual.num_rows != expected.num_rows:
+        return "storage_comparison_mismatch"
+    for field in expected.schema:
+        if not actual[field.name].equals(expected[field.name]):
+            if field.name in ("profile_id", "source_profile_id", "profile_hash", "level_index"):
+                return "snapshot_profile_inconsistency"
+            if field.name in ("profile_content", "canonical_level"):
+                return "snapshot_scientific_hash_mismatch"
+            if pa.types.is_floating(field.type):
+                return "snapshot_numeric_mismatch"
+            return "snapshot_level_mismatch"
+    return "storage_comparison_mismatch"
+
+
+class _Scan:
+    """One pass over the stored batches: per-profile hash and consistency, then equality.
+
+    The canonical text of a profile is its stored header around the concatenated
+    canonical_level strings, hashed without decoding a single level. Arrow equality
+    with the spilled rows runs per batch, but its verdict is raised only after every
+    profile's hash has been checked, so a corrupted file reports the finer category.
+    """
+
+    def __init__(self) -> None:
+        self.rows = 0
+        self.membership: list[dict[str, Any]] = []
+        self.failure: str | None = None
+        self.identifier: str | None = None
+        self.header = self.digest = self.suffix = ""
+        self.alias: str | None = None
+        self.levels = 0
+        self.hasher = hashlib.sha256()
+
+    def batch(self, batch: Any, expected: Any) -> None:
+        size = batch.num_rows
+        if not size:
+            return
+        self.rows += size
+        ids = batch.column("profile_id")
+        starts = [0]
+        if size > 1:
+            changed = pc.indices_nonzero(pc.not_equal(ids.slice(1), ids.slice(0, size - 1)))
+            starts.extend(index + 1 for index in changed.to_pylist())
+        starts.append(size)
+        for begin, end in zip(starts, starts[1:], strict=False):
+            self.segment(batch, begin, end)
+        if self.failure is None:
+            actual = pa.Table.from_batches([batch])
+            if not actual.equals(expected):
+                self.failure = _mismatch(actual, expected)
+
+    def segment(self, batch: Any, begin: int, end: int) -> None:
+        length = end - begin
+        identifier = batch.column("profile_id")[begin].as_py()
+        header = batch.column("profile_content")[begin].as_py()
+        digest = batch.column("profile_hash")[begin].as_py()
+        alias = batch.column("source_profile_id")[begin].as_py()
+        if identifier != self.identifier:
+            self.finish()
+            uuid.UUID(identifier)
+            self.identifier, self.header, self.digest, self.alias = (
+                identifier,
+                header,
+                digest,
+                alias,
+            )
+            prefix, self.suffix = _frame(header)
+            self.hasher = hashlib.sha256(prefix.encode())
+            self.levels = 0
+        elif (header, digest, alias) != (self.header, self.digest, self.alias):
+            raise Rejection("snapshot_profile_inconsistency")
+        if not all(
+            _uniform(batch.column(name), begin, length)
+            for name in ("profile_content", "profile_hash", "source_profile_id")
+        ) or not batch.column("level_index").slice(begin, length).equals(
+            pa.array(range(self.levels, self.levels + length), pa.int32())
+        ):
+            raise Rejection("snapshot_profile_inconsistency")
+        texts = ",".join(batch.column("canonical_level").slice(begin, length).to_pylist())
+        self.hasher.update(("," + texts if self.levels else texts).encode())
+        self.levels += length
+
+    def finish(self) -> None:
+        if self.identifier is None:
+            return
+        self.hasher.update(self.suffix.encode())
+        actual = self.hasher.hexdigest()
+        if actual != self.digest:
+            raise Rejection("snapshot_scientific_hash_mismatch")
+        self.membership.append(
+            {"profile_id": str(uuid.UUID(self.identifier)), "hash": actual, "levels": self.levels}
+        )
+
+
+def _verify_written(
+    path: Path, group_paths: list[Path], deadline: float, row_bytes: int
+) -> tuple[dict[str, int | str], dict[str, Any]]:
+    """Arrow-equality verification (arrow-equality-v4) of the file just written.
+
+    Reads the Parquet back with pyarrow, checks schema and row-group bounds, compares
+    every stored batch with the spilled rows the writer was given and recomputes each
+    profile's scientific hash from the stored header and canonical_level strings.
+    """
+    try:
+        file = _open_written(path)
+        if not file.schema_arrow.equals(schema(), check_metadata=True):
+            raise Rejection("parquet_schema_mismatch")
+        if file.metadata.num_rows > 100_000_000:
+            raise Rejection("snapshot_level_limit")
+        for group in range(file.num_row_groups):
+            if time.monotonic() >= deadline:
+                raise Rejection("snapshot_deadline")
+            if file.metadata.row_group(group).num_rows > ROW_GROUP_ROWS:
+                raise Rejection("parquet_row_group_limit")
+        batch_rows = max(
+            BATCH_ROWS, min(VERIFY_BATCH_ROWS, VERIFY_BATCH_BYTES // max(row_bytes, 1))
+        )
         with ExitStack() as stack:
             tables = []
             for item in group_paths:
                 mapped = stack.enter_context(pa.memory_map(str(item), "r"))
                 tables.append(pa.ipc.open_file(mapped).read_all())
+            if file.num_row_groups != len(tables) or any(
+                file.metadata.row_group(group).num_rows != table.num_rows
+                for group, table in enumerate(tables)
+            ):
+                raise Rejection("storage_comparison_mismatch")
+            scan = _Scan()
+            for group, expected in enumerate(tables):
+                position = 0
+                for batch in file.iter_batches(
+                    batch_size=batch_rows, row_groups=[group], use_threads=False
+                ):
+                    if time.monotonic() >= deadline:
+                        raise Rejection("snapshot_deadline")
+                    scan.batch(batch, expected.slice(position, batch.num_rows))
+                    position += batch.num_rows
+                if position != expected.num_rows:
+                    raise Rejection("storage_comparison_mismatch")
+            scan.finish()
+            if scan.failure is not None:
+                raise Rejection(scan.failure)
+            if not scan.membership:
+                raise Rejection("empty_snapshot_not_publishable")
+            manifest = json.dumps(scan.membership, sort_keys=True, separators=(",", ":")).encode()
+            verified: dict[str, int | str] = {
+                "schema_sha256": schema_hash(),
+                "rows": scan.rows,
+                "profiles": len(scan.membership),
+                "membership_sha256": hashlib.sha256(manifest).hexdigest(),
+            }
             table = pa.concat_tables(tables)
             comparison = storage_comparison(table, path.stat().st_size)
             if comparison["rows"] != verified["rows"]:
                 raise Rejection("storage_comparison_mismatch")
             del table, tables
-        if time.monotonic() >= deadline:
-            raise Rejection("snapshot_deadline")
-        return {**verified, "storage_comparison": comparison, "writer_options": WRITER_OPTIONS}
+        return verified, comparison
+    except Rejection:
+        raise
+    except (ValueError, KeyError, TypeError, OSError, pa.ArrowException):
+        raise Rejection("invalid_parquet") from None
 
 
 def storage_comparison(table: Any, parquet_bytes: int) -> dict[str, Any]:
@@ -381,10 +749,12 @@ def verify_snapshot(
 class PublicationSnapshotVerifier:
     """One-publication certificate for scientifically verified immutable bytes.
 
-    First payload receives the full scientific/scalar/hash verification. Every
-    later payload is independently byte-count/SHA/schema/row-group/count checked;
-    equal whole-object SHA proves identical certified profile membership/content.
-    No payload/rows are cached. New intent/process/recovery must certify again.
+    Uncertified, the first payload receives the full scientific/scalar/hash
+    verification. write_snapshot returns a verifier already certified for the exact
+    digest and byte count it verified, so every payload is only byte-count/SHA/schema/
+    row-group/count checked; equal whole-object SHA proves identical certified profile
+    membership/content. No payload/rows are cached. New intent/process/recovery must
+    certify again: the certificate does not cross a process.
     """
 
     def __init__(
@@ -395,6 +765,7 @@ class PublicationSnapshotVerifier:
         *,
         deadline: float,
         budget_factory: Callable[[], AbstractContextManager[CanonicalBudget]],
+        certified: bool = False,
     ) -> None:
         self.digest, self.byte_count = digest, byte_count
         self.expected = {
@@ -402,7 +773,7 @@ class PublicationSnapshotVerifier:
             for name in ("schema_sha256", "rows", "profiles", "membership_sha256")
         }
         self.deadline, self.budget_factory = deadline, budget_factory
-        self._certified = False
+        self._certified = certified
 
     def __call__(self, payload: bytes) -> dict[str, int | str]:
         if time.monotonic() >= self.deadline:
@@ -426,6 +797,8 @@ class PublicationSnapshotVerifier:
                     for group in range(file.num_row_groups)
                 ):
                     raise Rejection("object_validation_mismatch")
+            except Rejection:
+                raise
             except (OSError, ValueError, pa.ArrowException):
                 raise Rejection("invalid_parquet") from None
         return dict(self.expected)

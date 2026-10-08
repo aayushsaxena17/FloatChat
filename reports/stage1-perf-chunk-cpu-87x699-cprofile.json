@@ -1,0 +1,111 @@
+{
+  "kind": "stage1_offline_chunk_cpu_profile",
+  "scope": "Synthetic clone of authentic 1901094_109 core profile; CPU stages only, no HTTP/MinIO/PostgreSQL; multiplicities read from code at e1ba4f0",
+  "basis": "tests/fixtures/argovis/recorded/6a8ffa52f6db4954b974c449e68c54bc",
+  "profiles": 87,
+  "levels_per_profile": 699,
+  "raw_profile_payload_bytes": 1815778,
+  "raw_inventory_payload_bytes": 55768,
+  "python": "3.12.12",
+  "canonical_bytes_per_profile": 854393,
+  "canonical_bytes_per_level": 1222,
+  "canonical_bytes_chunk": 74332191,
+  "parquet_bytes": 4107550,
+  "parquet_rows": 60813,
+  "staging_ndjson_bytes": 143764696,
+  "stages": {
+    "sanitize_raw(profile payload)": {
+      "wall_s": 8.902,
+      "cpu_s": 8.813
+    },
+    "validate_raw(profile payload) x1": {
+      "wall_s": 2.502,
+      "cpu_s": 2.501
+    },
+    "sanitize_raw(inventory payload)": {
+      "wall_s": 0.022,
+      "cpu_s": 0.022
+    },
+    "validate_raw(inventory payload) x1": {
+      "wall_s": 0.01,
+      "cpu_s": 0.011
+    },
+    "sha256(profile payload)": {
+      "wall_s": 0.003,
+      "cpu_s": 0.003
+    },
+    "documents() decode profile payload x1": {
+      "wall_s": 6.46,
+      "cpu_s": 6.472
+    },
+    "documents() decode inventory payload x1": {
+      "wall_s": 0.016,
+      "cpu_s": 0.016
+    },
+    "map_profile + budget.encode (all profiles)": {
+      "wall_s": 27.278,
+      "cpu_s": 26.858
+    },
+    "spool.add (all)": {
+      "wall_s": 0.589,
+      "cpu_s": 0.59
+    },
+    "spool.prepare (restore+certify, no DB)": {
+      "wall_s": 20.165,
+      "cpu_s": 19.793
+    },
+    "spool.membership(slot)": {
+      "wall_s": 2.893,
+      "cpu_s": 2.878
+    },
+    "spool.profiles(slot) re-read (receipts pass)": {
+      "wall_s": 4.36,
+      "cpu_s": 4.321
+    },
+    "write_snapshot (write+verify+storage_comparison)": {
+      "wall_s": 52.482,
+      "cpu_s": 50.535
+    },
+    "  write_snapshot: verify_snapshot (local read-back)": {
+      "wall_s": 35.176
+    },
+    "  write_snapshot: storage_comparison (to_pandas)": {
+      "wall_s": 0.473
+    },
+    "  write_snapshot: writer loop (rows+ipc spill+parquet)": {
+      "wall_s": 16.833
+    },
+    "sha256(parquet file)": {
+      "wall_s": 0.028,
+      "cpu_s": 0.028
+    },
+    "publish_verified (certificate full verify + 2 light verifies; memory store)": {
+      "wall_s": 32.45,
+      "cpu_s": 32.201
+    },
+    "spool.write_candidates (NDJSON for COPY)": {
+      "wall_s": 6.542,
+      "cpu_s": 6.425
+    }
+  },
+  "sum_measured_wall_s": 164.702,
+  "multiplicity_per_chunk_from_code": {
+    "profile payload sanitize_raw": 1,
+    "profile payload validate_raw (publish_verified: payload, temporary, final)": 3,
+    "profile payload documents() decode in processor (inventory_accounting x2, inventory, metadata loop, map)": 5,
+    "canonical encode per profile (map, spool certify, verify_snapshot in write_snapshot, certificate first payload)": 4,
+    "parquet full read-back (write_snapshot verify, certificate first call)": 2,
+    "parquet light read (certificate temporary+final)": 2,
+    "spool.profiles(slot) restores (membership, write_snapshot, receipts)": 3
+  },
+  "max_rss_mib": 688.8,
+  "cprofile_top": {
+    "sanitize_raw(profile payload)": "         16152928 function calls (15412904 primitive calls) in 8.782 seconds\n\n   Ordered by: cumulative time\n   List reduced from 115 to 14 due to restriction <14>\n\n   ncalls  tottime  percall  cumtime  percall filename:lineno(function)\n        1    0.001    0.001    8.898    8.898 /home/floatchat/FloatChat-perf/scripts/stage1_perf_profile.py:130(<lambda>)\n        1    0.055    0.055    8.898    8.898 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/raw.py:35(sanitize_raw)\n       88    0.247    0.003    6.720    0.076 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/json_stream.py:10(documents)\n       87    0.621    0.007    6.472    0.074 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:118(decode_json)\n       87    0.002    0.000    5.631    0.065 /home/floatchat/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/json/__init__.py:299(loads)\n       87    0.001    0.000    5.627    0.065 /home/floatchat/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/json/decoder.py:333(decode)\n       87    0.205    0.002    5.625    0.065 /home/floatchat/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/json/decoder.py:344(raw_decode)\n   365400    0.411    0.000    5.419    0.000 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/raw.py:22(__new__)\n   365400    0.726    0.000    4.850    0.000 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:53(exact_number)\n   365400    1.020    0.000    3.068    0.000 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:68(decimal_text)\n370098/87    0.508    0.000    1.656    0.019 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/raw.py:82(encode)\n   365922    0.410    0.000    1.155    0.000 {method 'join' of 'str' objects}\n   743503    0.636    0.000    1.081    0.000 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/raw.py:76(write)\n  1557822    0.746    0.000    0.746    0.000 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:74(<genexpr>)\n\n\n",
+    "documents() decode profile payload x1": "         9812922 function calls in 6.448 seconds\n\n   Ordered by: cumulative time\n   List reduced from 37 to 14 due to restriction <14>\n\n   ncalls  tottime  percall  cumtime  percall filename:lineno(function)\n        1    0.000    0.000    6.448    6.448 /home/floatchat/FloatChat-perf/scripts/stage1_perf_profile.py:138(<lambda>)\n       88    0.265    0.003    6.448    0.073 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/json_stream.py:10(documents)\n       87    0.658    0.008    6.182    0.071 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:118(decode_json)\n       87    0.002    0.000    5.296    0.061 /home/floatchat/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/json/__init__.py:299(loads)\n       87    0.001    0.000    5.289    0.061 /home/floatchat/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/json/decoder.py:333(decode)\n       87    0.193    0.002    5.287    0.061 /home/floatchat/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/json/decoder.py:344(raw_decode)\n   365400    0.973    0.000    5.094    0.000 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:53(exact_number)\n   365400    1.089    0.000    2.957    0.000 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:68(decimal_text)\n   365400    0.441    0.000    0.895    0.000 {method 'join' of 'str' objects}\n   365400    0.255    0.000    0.726    0.000 /home/floatchat/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/re/__init__.py:199(split)\n   365400    0.296    0.000    0.530    0.000 {method 'as_tuple' of 'decimal.Decimal' objects}\n  1557822    0.455    0.000    0.455    0.000 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:74(<genexpr>)\n   365400    0.316    0.000    0.316    0.000 {method 'fullmatch' of 're.Pattern' objects}\n  1837005    0.316    0.000    0.316    0.000 {built-in method builtins.isinstance}\n\n\n",
+    "map_profile + budget.encode (all profiles)": "         32940702 function calls (32940327 primitive calls) in 26.965 seconds\n\n   Ordered by: cumulative time\n   List reduced from 137 to 14 due to restriction <14>\n\n   ncalls  tottime  percall  cumtime  percall filename:lineno(function)\n        1    0.205    0.205   27.275   27.275 /home/floatchat/FloatChat-perf/scripts/stage1_perf_profile.py:147(<lambda>)\n       87    3.145    0.036   27.069    0.311 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/argovis.py:241(map_profile)\n       87    0.799    0.009   16.008    0.184 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:271(encode)\n   129804    0.201    0.000   14.460    0.000 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:347(_canonical_pieces)\n    60813    5.931    0.000   12.218    0.000 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:310(_small_json_bound)\n   182613    1.135    0.000    6.463    0.000 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:213(scientific_number)\n   182613    0.909    0.000    4.465    0.000 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:68(decimal_text)\n   243513    0.399    0.000    2.841    0.000 {method 'join' of 'str' objects}\n   851390    1.524    0.000    2.729    0.000 {method 'extend' of 'list' objects}\n  1191987    2.442    0.000    2.442    0.000 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:74(<genexpr>)\n    60900    0.169    0.000    1.833    0.000 /home/floatchat/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/json/encoder.py:183(encode)\n    63075    1.619    0.000    1.660    0.000 /home/floatchat/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/json/encoder.py:205(iterencode)\n   243513    0.595    0.000    1.588    0.000 {built-in method builtins.all}\n  6359961    1.106    0.000    1.106    0.000 {method 'pop' of 'list' objects}\n\n\n",
+    "spool.prepare (restore+certify, no DB)": "         26155161 function calls (26154813 primitive calls) in 19.356 seconds\n\n   Ordered by: cumulative time\n   List reduced from 90 to 14 due to restriction <14>\n\n   ncalls  tottime  percall  cumtime  percall filename:lineno(function)\n        1    0.245    0.245   20.161   20.161 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/spool.py:204(prepare)\n       87    0.126    0.001   18.683    0.215 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/spool.py:161(restore)\n       87    0.409    0.005   18.553    0.213 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/spool.py:40(restore_profile)\n       87    0.636    0.007   15.669    0.180 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:271(encode)\n   129804    0.217    0.000   14.546    0.000 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:347(_canonical_pieces)\n    60813    5.922    0.000   12.085    0.000 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:310(_small_json_bound)\n   851382    1.525    0.000    2.834    0.000 {method 'extend' of 'list' objects}\n    60813    0.168    0.000    1.646    0.000 /home/floatchat/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/json/encoder.py:183(encode)\n    62988    1.421    0.000    1.514    0.000 /home/floatchat/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/json/encoder.py:205(iterencode)\n   243252    0.596    0.000    1.374    0.000 {built-in method builtins.all}\n      174    0.002    0.000    1.214    0.007 /home/floatchat/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/json/__init__.py:299(loads)\n      262    1.200    0.005    1.200    0.005 {method 'execute' of 'sqlite3.Connection' objects}\n      174    0.003    0.000    1.182    0.007 /home/floatchat/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/json/decoder.py:333(decode)\n      174    1.177    0.007    1.177    0.007 /home/floatchat/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/json/decoder.py:344(raw_decode)\n\n\n",
+    "write_snapshot (write+verify+storage_comparison)": "         35493493 function calls (35492838 primitive calls) in 51.808 seconds\n\n   Ordered by: cumulative time\n   List reduced from 639 to 14 due to restriction <14>\n\n   ncalls  tottime  percall  cumtime  percall filename:lineno(function)\n        1    0.010    0.010   52.466   52.466 /home/floatchat/FloatChat-perf/scripts/stage1_perf_profile.py:187(<lambda>)\n        1    0.576    0.576   52.456   52.456 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/parquet.py:108(write_snapshot)\n        2    0.008    0.004   35.649   17.825 /home/floatchat/FloatChat-perf/scripts/stage1_perf_profile.py:174(wrapper)\n        1    7.729    7.729   35.172   35.172 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/parquet.py:243(verify_snapshot)\n       88    0.003    0.000   16.087    0.183 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/parquet.py:266(finish)\n       87    0.687    0.008   16.079    0.185 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:271(encode)\n   129804    0.198    0.000   14.889    0.000 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:347(_canonical_pieces)\n    60813    6.116    0.000   12.714    0.000 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:310(_small_json_bound)\n    61161    0.116    0.000    7.411    0.000 /home/floatchat/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/json/__init__.py:299(loads)\n    61161    0.197    0.000    7.198    0.000 /home/floatchat/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/json/decoder.py:333(decode)\n    61161    6.829    0.000    6.829    0.000 /home/floatchat/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/json/decoder.py:344(raw_decode)\n      951    5.083    0.005    5.494    0.006 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/parquet.py:138(spill)\n   182439    1.210    0.000    5.339    0.000 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:213(scientific_number)\n        1    0.670    0.670    3.750    3.750 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/parquet.py:146(flush_group)\n\n\n",
+    "publish_verified (certificate full verify + 2 light verifies; memory store)": "         34120213 function calls (34119853 primitive calls) in 32.134 seconds\n\n   Ordered by: cumulative time\n   List reduced from 117 to 14 due to restriction <14>\n\n   ncalls  tottime  percall  cumtime  percall filename:lineno(function)\n        1    0.000    0.000   32.446   32.446 /home/floatchat/FloatChat-perf/scripts/stage1_perf_profile.py:217(<lambda>)\n        1    0.001    0.001   32.445   32.445 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/objects.py:52(publish_verified)\n        3    0.009    0.003   32.399   10.800 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/parquet.py:407(__call__)\n        1    7.351    7.351   32.373   32.373 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/parquet.py:243(verify_snapshot)\n       88    0.003    0.000   16.003    0.182 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/parquet.py:266(finish)\n       87    0.667    0.008   15.996    0.184 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:271(encode)\n   129804    0.187    0.000   14.804    0.000 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:347(_canonical_pieces)\n    60813    5.970    0.000   12.390    0.000 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:310(_small_json_bound)\n   182439    1.189    0.000    4.424    0.000 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:213(scientific_number)\n    60900    0.110    0.000    3.239    0.000 /home/floatchat/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/json/__init__.py:299(loads)\n    60900    0.193    0.000    3.088    0.000 /home/floatchat/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/json/decoder.py:333(decode)\n   851382    1.548    0.000    2.831    0.000 {method 'extend' of 'list' objects}\n    60900    2.729    0.000    2.729    0.000 /home/floatchat/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/json/decoder.py:344(raw_decode)\n   182439    0.814    0.000    2.353    0.000 /home/floatchat/FloatChat-perf/packages/core/src/floatchat_core/ingestion/numeric.py:68(decimal_text)\n\n\n"
+  },
+  "finished_at_utc": "2026-10-08T12:35:15.126269+00:00"
+}

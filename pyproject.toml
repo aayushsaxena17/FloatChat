@@ -32,7 +32,7 @@ plugins = ["pydantic.mypy"]
 files = ["packages/core/src", "apps/api/src", "workers/src"]
 
 [[tool.mypy.overrides]]
-module = ["celery.*", "boto3.*", "botocore.*", "pyarrow.*", "pandas.*"]
+module = ["boto3.*", "botocore.*", "pyarrow.*", "pandas.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

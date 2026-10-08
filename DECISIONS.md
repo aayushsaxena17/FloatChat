@@ -730,3 +730,692 @@ landing and in the pre-commit outcome evidence. `missing_location`, `missing_tim
 any repeated or unknown warning, a missing identity or schema drift keep the strict
 whole-chunk quarantine, because ownership cannot be established without a real
 position and time. The processor probe covers all five cases.
+
+## ADR-0047 - PostgreSQL work queue with acquire and process pools; per-environment concurrency
+
+Decision under ADR-0039 per the owner decisions of 2026-10-08 recorded in
+`docs/stage1-v4-execution-design.md`; contract version stage1-v4. Summarizes
+`docs/v4-packages/D.md` (queue, controller, worker pools, migration 0012) and
+`docs/v4-packages/H.md` (acceptance topology and memory sampler). Amends contract §8.1
+(acquire-to-process hand-over), the §9 concurrency/memory row, the §9 retry paragraph
+(Celery autoretry, opaque task IDs) and §10 (Celery Beat). Supersedes ADR-0043's deferral of
+two worker containers, the "two workers" part of ADR-0041 decision 3 and the
+single-container reading of ADR-0042's criterion.
+
+Measured inputs:
+
+- The serial pipeline is one worker alternating between 90-100% of one core and 10-40% while
+  it waits on the upstream or the database (`reports/stage1-perf-live-cpu-sample.txt`,
+  `docs/ingestion-performance-review.md` §3.1). The census-weighted serial model is
+  3.14-4.47 h: HTTP selection 1.12-2.45 h, metadata 0.55 h, worker CPU 1.14 h, COPY and
+  commit 0.33 h (`reports/stage1-perf-run-model.json`).
+- Celery and Redis overhead was measured as negligible (planned-to-fetching 0.1-5 s with an
+  idle worker in session c9af101a). This change is therefore not a speed measure; the owner
+  decision of 2026-10-08 is its authority.
+- One worker's anonymous peak was 280-335 MiB in live runs (`reports/stage1-live-memory-*.json`);
+  the 3.7 GB host carried the six live containers at about 1.0-1.3 GB with 2.1 GB available
+  (review §3.6). No measurement exists for the two-container topology: package H ran no
+  Docker command.
+
+Decisions:
+
+1. Queue. `app.processing_ticket` gains `kind` (`acquire` or `process`), `claimed_by`,
+   `claimed_at` and `created_at`; it is unique on `(chunk_id, fence, kind)` and has a partial
+   index on unstarted tickets. `app.claim_ticket(kind, worker)` claims the oldest ticket with
+   `FOR UPDATE ... SKIP LOCKED` and returns only a ticket that `app.start_worker` would accept:
+   matching epoch and fence, live chunk and controller leases, open and uncancelled run, before
+   the work deadline, chunk not terminal. A claimed ticket whose worker never started is handed
+   out again after two minutes; `started` still admits exactly one executor
+   (`duplicate_delivery`). Tickets carry opaque IDs only, as Celery tasks did. Celery, Celery
+   Beat and Redis are removed from the workers and the acceptance Compose project.
+2. Two worker kinds. One acquire process per environment runs `Processor.land()` in N threads
+   (ADR-0048). A pool of M single-use spawn-context processes runs `Processor.process()` with
+   sources that must find existing landings (`require_existing`); the parent claims the ticket,
+   a killed child frees its slot at once and prints `worker_lost`, and its chunk lease expires
+   into recovery. Only the acquire process ever holds the Argovis key.
+3. Hand-over under one claim. After `land()` returns `landed`, the acquire worker creates the
+   `process` ticket under the same epoch and fence, so normal phase progress still consumes no
+   extra claim (§8.1) and a healthy chunk costs one claim. The controller issues tickets by
+   phase only for recovery claims: `acquire` for planned and fetching chunks, `process` for
+   landed, validating and publishing chunks. If the hand-over fails or the acquire worker dies
+   between `landed` and the hand-over, the lease lapses and the chunk is re-queued under a new
+   budgeted claim.
+4. Leases while waiting. Every controller tick calls `app.extend_unstarted_leases(run, epoch)`,
+   which renews the 10-minute lease of nonterminal chunks whose newest fence has an unstarted
+   ticket. It never revives a lapsed lease and never touches a started or superseded ticket, so
+   queue wait spends no processing claim and a worker that dies after starting is still
+   recovered by a claim. Consequence: when no worker consumes a queue, the waiting chunks stay
+   leased and count against `max_active_chunks`, and the run ends at its work deadline
+   (`deadline_expired`) or by cancellation instead of `recovery_budget_exhausted` after four
+   lapses.
+5. Per-environment concurrency. `ingestion_environment.max_active_chunks` (default 8, range
+   1-64) replaces the constant 2 in `app.claim_chunk` and in the controller; chunks that wait
+   `landed` for the process pool count against it. `ingestion_environment.upstream_slots`
+   (default 4, range 1-16) is the ceiling for `acquire --slots`; a larger request exits with
+   `acquire_slots_exceed_environment`. Process workers come from `INGESTION_PROCESS_WORKERS`
+   (design default `min(4, cpu)`), acquire threads from `INGESTION_ACQUIRE_SLOTS`. The
+   acceptance Compose defaults are 4 acquire slots and 2 process workers on this 3.7 GB host;
+   the documented production sizing for an 8 GB host is 4 process workers in a 4 GiB container.
+   The defaults 8 and 4, the two-minute re-claim, the 1 s idle poll, the 30 s backoff cap and
+   the 3,600 s default `compact` budget were chosen without a measurement behind them.
+6. Memory. Each process worker is bounded to 1 GiB. `bounded_worker_memory` accepts a cgroup
+   `memory.max` of at most 1 GiB, otherwise lowers the soft `RLIMIT_DATA` to
+   `INGESTION_WORKER_MEMORY_BYTES` (default 1 GiB, accepted range 128 MiB to 1 GiB, so
+   configuration can reduce the bound but not raise it). It never uses `RLIMIT_AS`, which breaks
+   pyarrow's allocator (design §2); design §4.4 still says `RLIMIT_AS` and is the inconsistent
+   text. One acquire process shares a single data limit across its threads.
+7. ADR-0042 criterion for the two-container topology (package H). The memory report passes only
+   if both an acquire (or live-acquire) container and a process container were sampled and every
+   container shows zero `oom` and `oom_kill` events and an anonymous peak below its own
+   `memory.max`. `memory.max` must equal exactly 1 GiB for the acquire containers; for the
+   process container it must only be finite (2 GiB here, 4 GiB in production). The per-worker
+   1 GiB bound inside the process container is `RLIMIT_DATA`, which the cgroup counters cannot
+   see; the report therefore proves the container, not each worker.
+8. Scheduling. `floatchat schedule` replaces Celery Beat: one UTC-daily admission run by cron or
+   a systemd timer, serialized by advisory lock `(164993423, 2)`. Outcomes `created`, `existing`,
+   `recover`, `overlap_skip`, `live_ingestion_disabled` and `schedule_already_running` exit 0;
+   `acceptance_schedule_disabled` exits 2; `scheduling_failed_no_sensitive_diagnostics` exits 5.
+   `beat_scheduler_already_running` is renamed `schedule_already_running`. The §10 admission
+   lease, overlap record, watermark and live-disabled flag rules are unchanged.
+9. Redis. Stage 1 workers and the acceptance project need no Redis. The Stage 0 API still
+   requires it (`redis_url` configuration and the readiness check), so the dev Compose keeps
+   `redis`; it no longer starts a worker service.
+
+Rejected: issuing the `process` ticket only after the lease expires (a landed chunk would idle
+up to 10 minutes and spend one of four processing claims per chunk); `multiprocessing.Pool`
+(never completes a task whose worker was killed, which leaks the slot on an OOM kill); each
+child claiming its own ticket (an idle queue would cost an interpreter start per poll); keeping
+Celery on a speed argument (negligible overhead); two workers inside one 1 GiB cgroup (ADR-0043).
+
+Unchanged: control epochs, fencing, 10-minute leases with 60-second heartbeats, the four
+controller, processing and publication claims, the §8.1 recovery table, the state machine, run
+bounds, credential handling, the 12-hour bound.
+
+Verified on the integrated head (2026-10-08): migration 0012 applies on the foundation image and
+`tests/stage1/test_queue_sql.py` passes inside the stage1 integration suite (114 passed, 0
+failed, `docs/v4-packages/INTEGRATION-1.md`); offline, 160 tests passed for the queue,
+controller, CLI and worker. Not verified: the acceptance Compose topology and the memory-sampler
+wiring have not run under Docker (the next `prepare` is their first run); nothing watches the
+process container during `execute`, so a dead parent stalls chunks until the run deadline;
+tickets that lost their fence stay in the table (inert, bounded by claims).
+
+## ADR-0048 - Adaptive upstream concurrency and thread-safe transport
+
+Decision under ADR-0039 per the owner decisions of 2026-10-08 (adaptive parallel Argovis
+requests on one key, start at 4, back off on HTTP 429, no multi-key rotation) recorded in
+`docs/stage1-v4-execution-design.md`; contract version stage1-v4. Summarizes
+`docs/v4-packages/E.md`. Amends the §9 concurrency/memory row ("1 credentialed upstream request
+in flight"), the §9 I/O deadlines row and the §9 retry paragraph. The review
+(`docs/ingestion-performance-review.md` candidate 10) asked that the owner check the Argovis
+usage terms first; no report on this branch records that check or any Argovis-side rate limit.
+
+Measured inputs:
+
+- HTTP selection is 1.12-2.45 h of the serial 3.14-4.47 h run and metadata 0.55 h
+  (`reports/stage1-perf-run-model.json`; role means from
+  `reports/stage1-live-transport-8e8da1d4.json`: inventory_before 24.6 s, data=all 12.2 s,
+  inventory_after 2.9 s). With one request in flight the optimistic floor for Jan-Mar through
+  Argovis is about 0.8-1.1 h (review §1).
+- No measurement of the effect of concurrency exists. `reports/stage1-v4-bench-E.json` uses a
+  fake transport; the 33 thread tests in `tests/stage1/test_transport_threads.py` use
+  socketpairs; the acquire threads were exercised only through fakes. The real Argovis
+  behaviour at 4 requests in flight, including during a slow episode (ADR-0045), is unmeasured.
+
+Decisions:
+
+1. Up to N credentialed requests may be in flight, where N is the acquire process's `--slots`
+   and at most `ingestion_environment.upstream_slots` (default 4). Each permit maps to advisory
+   lock `(164993423, slot)` through `Repository.upstream_slot(authority, deadline, slot)`, so a
+   second acquire process cannot exceed N. One key is used; there is no key rotation.
+2. `UpstreamGovernor(permits, pause=60, restore_after=20)` paces the requests in process.
+   `acquire` blocks and returns the lowest free slot; on HTTP 429 the permits halve (floor 1;
+   a burst of in-flight 429s can go 4, 2, 1) and no new request starts for the larger of
+   Retry-After and 60 s; every 20 consecutive non-429 completions restore one permit up to N.
+   Only 429 reduces permits. Timeouts, 5xx and transport failures count as completions toward
+   restoration. This is the stated behaviour, and the review's warning that concurrent requests
+   amplify retries during a slow episode is not mitigated by the governor itself; the backoff of
+   ADR-0045 is.
+3. The governor is advisory pacing, not a retry owner. The durable controller and owner stay the
+   only retry owner: at most four attempts per logical request, equal-jitter delays over maxima
+   60, 180 and 300 s, Retry-After capped at 300 s (ADR-0045). Retry-After additionally lengthens
+   the governor's pause.
+4. The permit and the advisory lock cover the request only. They are released before any retry
+   delay and before sanitization, publication and `finish_attempt`, which now run after the
+   lock.
+5. The transport is thread-safe and no longer uses a POSIX alarm. DNS, connect and TLS share the
+   10 s budget; the 110 s idle read is re-armed with `settimeout(min(110, left))` before each
+   read; the 120 s attempt bound (or the run bound) is checked after each read. Connect-phase
+   timeouts and errors after the bound map to `io_deadline`; idle-read timeouts and other socket
+   errors map to `upstream_transport_failure`; both stay retryable. `empty_receipt` lets
+   `io_deadline` through instead of making it a permanent 404. One process-wide TLS context
+   replaces one per connection. The numeric bounds of §9 are unchanged.
+6. Known gaps of the timing model: `getaddrinfo` has no timeout, so a DNS overrun is rejected as
+   `io_deadline` only after it returns; a single `read(65536)` that dribbles bytes inside the
+   idle timeout cannot be interrupted until it returns, so the 120 s bound is exact between
+   reads, not inside one; object writes are bounded per socket operation, not in total. Reads
+   from the object store check the bound between 64 KiB parts (ADR-0050).
+7. Each acquire thread owns its `Repository`, budget repository, `RequestOwner` and `Processor`;
+   only the governor and the TLS context are shared.
+
+Rejected: key rotation (owner decision); reusing HTTPS connections to the pinned address (review
+candidate 14, not implemented: still `Connection: close`); single-flight per metadata pointer
+(two threads that miss the same float both fetch it; the cache upsert only moves forward, so
+this is harmless).
+
+Unchanged: the pinned host, port 443, address validation and no redirects (§9), the credential
+rules, the 16 MiB response bound, 50,000 HTTP attempts per run, the retry counts.
+
+Not verified: the governor's counters (`snapshot()`: observed 429s, lowest permits, restored
+permits) exist in process only; no report or persisted evidence carries them (package H did not
+implement it), so a live run cannot show whether the governor engaged. Two acquire processes
+both start at slot 1 and wait on its lock instead of trying slot 2 (correct, not optimal). No
+wall-clock claim is made for this ADR.
+
+## ADR-0049 - Float-metadata cache with per-chunk cache-origin manifests
+
+Decision under ADR-0039 per the owner decisions of 2026-10-08 recorded in
+`docs/stage1-v4-execution-design.md`; contract version stage1-v4. Summarizes
+`docs/v4-packages/E.md` (cache logic) and `docs/v4-packages/D.md` (migration 0012 table and
+function). Amends contract §3.2 (metadata pointer resolution), the §9 requests/data row and the
+§11 raw-evidence rule that identical blobs may serve many attempts.
+
+Measured inputs:
+
+- About 2,000 `/argo/meta` requests per Jan-Mar run at a 0.99 s mean (103 samples) are 0.55 h of
+  serial time, and each request costs four object-store operations and three or four database
+  transactions: about 8,000 and 6,000 per run (review §3.5 and §4.4,
+  `reports/stage1-perf-run-model.json`).
+- `reports/stage1-v4-bench-E.json` (fake transport, 12 chunks, 16 distinct floats, 5 metadata
+  requests per chunk, 3 selection requests per chunk): HTTP attempts in one run fall from 96 (60
+  metadata) to 52 (16 metadata) with 44 attempts of origin `cache`; a second run created 20 days
+  later needs 36 (no metadata request); a second run created 45 days later needs 52 again.
+  The 16-of-60 repeat ratio is fixed by the scenario. The real share of repeated floats in a
+  Jan-Mar run has not been measured, so the saving at 2,000 requests is unknown.
+
+Decisions:
+
+1. `app.float_metadata_cache(environment_id, pointer, raw_manifest_id, run_id, retrieved_at)`,
+   primary key `(environment_id, pointer)`, restrictive foreign keys to the environment, raw
+   manifest and run. `app.metadata_cache_put` upserts only forward in time and refuses a manifest
+   that is not this run's in this environment (`invalid_metadata_cache_entry`). The application
+   role has no privilege on the table. Only `/argo/meta?id=` requests of role `metadata` are
+   cached.
+2. Reuse predicate: a cache row is usable when `retrieved_at >= created_at_actual_utc - 30 days`
+   of the current run, with no upper bound, where the anchor is the run row's actual creation time
+   read once per owner. The reference time T bounds scientific eligibility, not evidence
+   freshness: a first version bounded by T almost never hit, because chunks are fetched after T
+   and an acceptance run's T (2025-04-01) lies a year before a live fetch. The design brief's
+   wording (within 30 days before T) is replaced by this predicate. The 30 days are a policy value
+   chosen pending measurement; the stated reason (metadata rarely changes) is not measured.
+3. A hit is still a per-chunk landing. The owner reads the cached object back and verifies length,
+   SHA-256 and versions, records an attempt with origin `cache` (`recorded_reserve`), and finishes
+   it as `verified_raw` with a new manifest id that points at the same immutable object
+   (`sanitization.input_origin = "cache"`, the cache manifest and inherited validation). No
+   request, no object write and no `validate_raw` happen. Every chunk therefore owns a
+   `verified_raw` attempt per metadata request, `verified_landing` finds it on reload, and replay,
+   which resolves each chunk's own manifest by logical request key, keeps its identity. An
+   unverifiable cache entry is a miss (refetch and replace), not `landing_unavailable`.
+4. A hit is not an HTTP attempt: the 50,000 HTTP attempts per run count real requests only, and
+   reports show hits as origin `cache` in `payload_accounting`.
+5. Fixture and replay inputs and the GDAC source never consult the cache. Replay still resolves
+   predecessor manifests.
+6. A metadata raw manifest may point at an object landed by another chunk or another run
+   (objects are content-addressed), which §11 already allows.
+
+Rejected: bounding reuse by T (nearly never hits); reusing an object without a per-chunk attempt
+(replay would fail with `replay_selection_unavailable`); caching the three selection roles
+(only metadata is stable enough to share; the selections are the data).
+
+Unchanged: the metadata bytes, canonical output and hashes (metadata affects `platform` only),
+`argovis-core-v1` mapping, the four attempts per logical request.
+
+Verified on the integrated head (2026-10-08): migration 0012 (table, function, `cache` origin)
+applies on the foundation image and `request_owner_probe.verify_metadata_cache` executed inside
+the combined processor integration case (`tests/stage1/processor_probe.py`, passed). Open:
+`Repository.metadata_cache_get` returns no stored `sanitization`, so a hit manifest carries a
+synthesized one rather than a copy of the original evidence.
+
+## ADR-0050 - Verification by hash: write-once Parquet, Arrow-equality verification, checksum-verified upload, sampled audit
+
+Decision under ADR-0039 per the owner decisions of 2026-10-08 recorded in
+`docs/stage1-v4-execution-design.md`; contract version stage1-v4. Summarizes
+`docs/v4-packages/C.md` (Parquet, objects, MinIO) and the validate-once part of
+`docs/v4-packages/E.md`. Amends contract §7 publication steps 3-5 and the S1-RESOURCE-2
+implementation note; keeps ADR-0037's certification reuse rule (the first payload is now the one
+`write_snapshot` verified).
+
+Measured inputs (87 profiles x 699 levels = 60,813 levels, synthetic clone, memory store, shared
+host, so absolute times are noisy):
+
+- stage1-v3 baseline (`reports/stage1-v3-bench-chunk-baseline.json`): `write_snapshot` 17.69 s of
+  which `verify_snapshot` 10.85 s; `publish_verified` 9.83 s; `validate_raw` 2.05 s.
+- stage1-v4 (`reports/stage1-v4-bench-chunk.json`): `write_snapshot` 3.117 s including a 1.065 s
+  Arrow-equality scan; `publish_verified` 0.011 s; `validate_raw` 0.215 s.
+- Package C (`reports/stage1-v4-bench-C.json`): `write_snapshot` 25.6 s to a best of three of
+  2.75 s (the same code ranged 1.7-14.7 s under neighbours' load; interleaved in one session the
+  v3 module took at least 16.29 s and the new one at least 2.12 s); `publish_verified` 12.0 s to
+  0.013 s. Informational: an uncertified verifier call 9.4 s and `write_snapshot(audit=True)`
+  10.2 s.
+- Package C's offline emulation of the 1 GiB writer proof input (4 and 2 profiles of 10,000
+  levels with a 65,536-byte sampling header) peaked at 257 and 290 MiB anonymous (v3 writer, 2
+  profiles: 212 MiB) with identical Parquet bytes; this was a scratch run, not a report, and the
+  integration test itself was not run.
+
+Decisions:
+
+1. `write_snapshot` builds Arrow arrays once (the mapper's `level_table` plus the per-profile
+   columns) and writes with the unchanged `WRITER_OPTIONS`. The Parquet bytes, the
+   `normalised/sha256/<hex>` keys, `membership_sha256`, `schema_sha256` and `storage_comparison`
+   are identical to the stage1-v3 writer (permanent test
+   `test_arrow_rows_equal_rows_oracle_and_file_bytes_equal_v3`). The spilled Arrow batches are
+   re-cut to 64 rows from each row-group start, because Parquet page cuts depend on Arrow chunk
+   edges.
+2. Verification method `arrow-equality-v4` replaces the row-by-row first verification. The file
+   is reopened and checked: schema equality including metadata, the total-row and row-group
+   bounds, row-group sizes equal to the spill's, profile segments and their constant header,
+   hash and alias, `level_index` equal to position, the profile hash recomputed from the stored
+   header re-framed around the concatenated `canonical_level` strings (never re-encoded from
+   dicts), and `Table.equals` against the spilled rows per batch. The verdict is raised after
+   every profile hash has been checked and is named by the first differing column. Identity
+   order, alias uniqueness and the resource bounds are applied while writing, from the strings in
+   hand. Rejection categories keep their meaning.
+3. Two checks of the old row-by-row pass now run only in the audit: each numeric column value
+   re-derived from its exact text, and each level's embedded `level_index` against its column.
+   On the Arrow path they hold by construction, because the float columns and the canonical text
+   are both outputs of one `map_profile`/`level_table` and the read-back must equal those
+   columns. A mapper that emitted a float column inconsistent with its canonical text would be
+   caught by the audit only.
+4. Certificate: `write_snapshot` returns a `PublicationSnapshotVerifier` certified for the file's
+   exact SHA-256 and byte count. A certified verifier runs the light check (SHA-256, length,
+   schema, row groups, counts); an uncertified one still performs the full first call. There is no
+   payload cache, a certificate does not cross a process or an intent, and recovery or a rebuild
+   writes and certifies a new file.
+5. `publish_verified` validates the payload once, then `write_immutable`: one conditional PUT
+   (`If-None-Match: *`) with `ChecksumAlgorithm=SHA256` and the payload digest, which the server
+   verifies. `stat` (HEAD with checksum mode) must then report the byte count and, when the store
+   returns one, the same SHA-256 (`object_checksum_mismatch`). No `tmp/<intent>/<id>` object is
+   written any more and the temporary-to-final copy with a second read-back is gone; a
+   `temporary_key` is still validated. A 412 (key exists) is not trusted: `stat` must agree on
+   size and stored checksum, and when the server holds no SHA-256 the bytes are read back and
+   hashed, which closes the equal-length hole of a length-only comparison. An existing key is
+   never overwritten. The codes `BadDigest`, `InvalidDigest`, `XAmzContentChecksumMismatch` and
+   `XAmzContentSHA256Mismatch` mean the bytes did not match and never fall back. A server that
+   refuses the parameters (HTTP 501, `NotImplemented`, or a 400 naming the checksum) disables
+   checksums for the life of the store and every later plain write is verified by a full
+   read-back.
+6. Raw objects use the same path. `raw` widens from a boolean to `.json` (true) or `"nc"`
+   (`raw/sha256/<hex>.nc`, used by ADR-0052). Raw bytes are decoded by `validate_raw` once per
+   landing; reloading an existing landing trusts the stored bytes, SHA-256 and versions. In the
+   12-chunk scenario of `reports/stage1-v4-bench-E.json` the `validate_raw` calls fall from 384
+   (baseline) to 156 (package E's modules) and to 52 (with package C's objects as well).
+7. Audit. `write_snapshot(audit=True)` additionally runs `verify_snapshot` row by row and
+   requires its four evidence values to equal the Arrow ones (`object_validation_mismatch`);
+   `publish_verified(audit=True)` additionally reads the object back and revalidates. The review
+   proposed running this on every Nth chunk or on every chunk in acceptance mode. This ADR does
+   not set the cadence, no measurement supports a value, and nothing calls `audit=True` today
+   (no processor setting exists): the periodic audit is a capability, not a running control, until
+   the cadence is decided and wired.
+8. The default path no longer charges the run counter for a verification re-encode (one fewer
+   encode per profile); `audit=True` charges as before. Every canonical conversion actually
+   performed is still charged (ADR-0037).
+9. Categories. New or surfaced: `object_stat_failure` (added to `FAILURES`, so a transient HEAD
+   failure after the PUT fails the chunk instead of quarantining it), `invalid_object_checksum`,
+   and `io_deadline` from `MinioStore.read`, whose stream loop now checks the bound before every
+   64 KiB part. The light certificate check reports `parquet_schema_mismatch` or
+   `object_validation_mismatch` where it used to say `invalid_parquet`. `write_snapshot` no longer
+   masks `object_size_limit` or `snapshot_deadline` at a group edge with a closed-file error.
+
+Rejected: keeping the temporary object and its copy (two extra round trips for a proof the server
+checksum now gives); a length-only comparison on an existing key; trusting a 412 without a stat;
+dropping verification of the stored object (the stat after the PUT is required).
+
+Unchanged: SHA-256 of the actual object bytes as the content checksum, immutable
+content-addressed keys, raw verification, database fencing and the single atomic commit, the
+Parquet schema (`core-parquet-v1`) and writer options.
+
+Verified on the integrated head (2026-10-08): the pinned MinIO release
+(`RELEASE.2025-10-15T17-29-55Z`) accepts `If-None-Match: *` together with the SHA-256 checksum,
+rejects a wrong checksum and stores nothing, and returns the checksum on HEAD
+(`tests/stage1/test_minio.py` integration case running `tests/stage1/minio_probe.py`, passed);
+the 1 GiB cgroup writer proof in `tests/stage1/test_resources.py` passed on the v4 writer
+(`reports/stage1-parquet-resource.json`). The chunk benchmark records `write_snapshot` 3.1 s and
+`publish_verified` 0.011 s on 87x699 (`reports/stage1-v4-bench-chunk.json`).
+
+## ADR-0051 - Per-chunk publication parts, slim staging with binary level COPY, jsonb-free commit, compaction, in-memory candidates
+
+Decision under ADR-0039 per the owner decisions of 2026-10-08 recorded in
+`docs/stage1-v4-execution-design.md`; contract version stage1-v4. Summarizes
+`docs/v4-packages/F.md` (migration 0013, repository, spool, processor publish path, selector,
+compaction) and its downstream effects on `docs/v4-packages/D.md` (`compact` command). Amends
+contract §7 (the definition of a generation, publication steps 6-8), §7.2 (selection),
+§9 (certified spool reuse), §11 (stored-snapshot reconciliation) and ADR-0044 (the commit-time
+level content check). Supersedes ADR-0034's certified spool reuse for candidate bytes produced
+in the same process.
+
+Measured inputs:
+
+- Review §3.2 and §3.4: staging repeated every level, 143.8 MB of NDJSON for 74.3 MB of canonical
+  content (87 x 699); COPY 4.0 s; commit 16.5 s into an empty partition but 34.0 s into one
+  already holding 15,378 rows (unexplained); a successor chunk in a populated slot paid a 19.9 s
+  retained read-back (`reports/stage1-perf-db-probe.json`,
+  `reports/stage1-perf-db-probe-87-alone.json`).
+- Offline, no database (`reports/stage1-v3-bench-chunk-baseline.json` against
+  `reports/stage1-v4-bench-chunk.json`): staged bytes 143,764,696 to 83,222,450;
+  `spool.prepare` 4.852 s to 0.006 s; `spool.membership` 1.863 s to 0.0 s; the 2.359 s
+  `spool.profiles` re-read no longer exists; `spool.write_candidates` 4.449 s replaced by
+  `spool.candidates` 0.378 s plus `spool.level_tables` 0.263 s.
+- Package F's scratch script (not under `reports/`): client side of the binary COPY 2.7-4.1 CPU-s
+  and a 487 MiB peak RSS for 87 x 699.
+- Not measured: the commit on the new path. It needs PostgreSQL, and `test_publication_scale.py`
+  (10,000-level profile and an 87 x 699 chunk under 10 s) has not run. The expectation, from the
+  work removed, is a commit under 10 s that does not grow with the retained slot size.
+
+Decisions:
+
+1. Parts. A chunk publishes one Parquet part per changed slot containing only its accepted
+   profiles; the retained population is not read back. `dataset_partition` gains `kind`
+   (`part` or `snapshot`) and `part_ordinal`; the unique `one_active_generation` index becomes
+   `one_active_snapshot` (at most one active snapshot per slot) plus a non-unique active index.
+   The catalogue state of a slot is its membership manifest together with the active parts and
+   the at most one snapshot that hold those rows; this replaces §7's "a generation contains the
+   full currently accepted stored profile/level set". Generations are allocated as
+   `max(generation) + 1` per slot for parts and snapshots and no longer equal `slot_version`,
+   because compaction adds a generation without a membership change. Every commit or compaction
+   re-stamps all active objects of the slot with the new `slot_version`, so
+   `committed_active_partitions` keeps its predicate and a stale object still never selects.
+2. Incremental manifest. `commit_publication` edits `logical_partition_slot.membership_manifest`
+   (drops replaced and moved-out ids, adds the chunk's entries, orders by profile id) and checks
+   it against the stored population with the index-backed `app.audit_slot_manifest`. For every
+   changed slot the generation must declare exactly this chunk's accepted profiles in the slot
+   (`stored_snapshot_membership_mismatch` otherwise). Nothing is superseded except a slot whose
+   manifest becomes empty (§7 outcome 3). Slots of generations and receipts are locked in one
+   ordered statement, which removes a deadlock class between concurrent chunk commits.
+3. Slim staging. `ingestion_staging.candidate` holds identity fields, `content_hash`,
+   `revision`, `raw_manifest_id`, the canonical text and `level_count`, with no `levels` array.
+   Levels go through binary `COPY` into the UNLOGGED `app.measurement_staging` (key run, chunk,
+   fence, occurrence, level; 36 value columns; one statement-level trigger asserts the fenced
+   authority per COPY instead of per row). The commit inserts levels set-based from that table
+   with no jsonb expansion, then deletes them; `core_measurement.canonical_level` and
+   `app.canonical_level_values` are dropped. UNLOGGED is deliberate: the rows are transient and
+   every staging call restages both candidates and levels.
+4. Rule change to ADR-0044. Stored floats are the staged Python values, not values re-derived from
+   the canonical text in SQL. ADR-0044's positive-zero rule holds because `scientific_number`
+   normalizes zero in Python. The per-level content comparison (`measurement_content_mismatch`)
+   leaves the commit and becomes the sampled audit `app.audit_levels(chunk, sample)`; the
+   commit keeps `level_set_mismatch` and `invalid_level_index`. As a result nothing in the commit
+   path compares each stored float with its canonical text. `Repository.audit_levels` exists; no
+   worker calls it, and its sample size and cadence are not decided here.
+5. Selection and readers. `select_active_partitions` returns every active part and snapshot of a
+   slot plus `Selection.manifests[slot]`; one unreadable object is a gap for the whole slot. A
+   reader keeps a row of a part or snapshot only if its `(profile_id, profile_hash)` is in the
+   manifest; the same pair in two objects (a profile reverted to older content) has identical
+   rows, keep one. Rows of replaced or moved profiles stay in older parts until compaction. This
+   binds Stage 2.
+6. Compaction. `app.compact_slot`, `Repository.compact` and `floatchat compact` merge a slot's
+   active objects into one snapshot in one transaction that proves the base version, manifest
+   equality and that the active objects are exactly the superseded set. The snapshot row inherits
+   `intent_id`, `run_id` and `chunk_id` from the newest part it replaces (the columns stay NOT
+   NULL). Compaction reads all active objects of the slot (guard: 256 MiB), rebuilds profiles
+   from Parquet rows with hash-checked `restore_profile`, charges no canonical budget (it has no
+   run authority) and is CPU-heavy in Python. Nothing schedules it yet.
+7. In-memory candidates. `ProfileSpool` keeps the module and class names but holds the chunk's
+   candidates in memory: no SQLite, no re-encoding, no retained read-back. Canonical bytes
+   produced by `map_profile` in the process are reused without a round-trip certification, which
+   ADR-0034's certified reuse (§9) had required; stored profiles are compared by hash
+   (`science_hashes`) and charge no budget. The certification cache of §9 no longer exists
+   because no retained population is read. The Parquet part is verified by hash (ADR-0050).
+8. Receipts. Python predicts the post-commit population (stored now, minus departures, plus
+   arrivals) and reads stored counts only where unsure; SQL rechecks. Changed slots are protected
+   by the generation base check and receipt-only slots by a new `base_version`; a mismatch
+   rebuilds (`publication_base_changed`, four publication attempts) instead of quarantining as
+   `coverage_disposition_mismatch`.
+9. Failure classification. `SAFE_DATABASE_CATEGORIES` now contains every `RAISE EXCEPTION` name
+   of migrations 0012 and 0013. Those used to surface as `database_failure` (chunk failed); none
+   of them is in `FAILURES`, so `terminal()` now classifies them as quarantined. Whether
+   `landing_retry_exhausted` or others should fail instead is open.
+10. Reports. `reconciliation_snapshot` reads members from the manifest (parts overlap after a
+    replacement); the persisted report adds `active_partitions`, `active_part_count` and
+    `active_snapshot_count`.
+
+Rejected: weekly slices (ADR-0041); nullable ids with a `LEFT JOIN` view for snapshots (kept the
+columns NOT NULL and inherit); keeping jsonb levels in staging; reading back the retained
+population at publish time.
+
+Unchanged: per-profile hashes and canonical bytes, `core-parquet-v1`, identity resolution,
+revision comparison, outcomes, coverage receipts, fences and leases, the one fenced transaction
+per chunk.
+
+Verified on the integrated head (2026-10-08): migration 0013 applies on the foundation image;
+the v4 cases of `test_database.py`, `test_publication_scale.py` (87x699 chunk committed under
+10 s), `repository_probe.py`, `processor_probe.py` and `capacity_probe.py` (five parts compacted
+into one 40-profile snapshot, `reports/stage1-publication-capacity.json`) pass in the stage1
+integration suite. Measured in a disposable database (`reports/stage1-v4-perf-db-probe.json`):
+87x699 staging COPY 3.8 s plus commit 3.2 s against 4.0 s plus 16.5-34 s before (ADR-0044 path);
+pooled COPY+commit 107 µs per level against 408; the successor chunk's slot reads take
+milliseconds against the 20 s retained read-back. Memory: the in-memory set holds level dictionaries of about 2 KB per level, so at
+the contractual cap (256 MiB canonical, 2,000,000 levels) a chunk would exceed the 1 GiB worker
+bound and end in `MemoryError` or a cgroup kill rather than a clean category; the caps are
+unchanged here and lowering them or staging Arrow instead of dictionaries needs a decision.
+Existing slots must have manifests equal to their stored population or the commit fails with
+`stored_snapshot_membership_mismatch`. `compact` enumerates slots with its own SQL against the
+0013 view, which is unverified; `Repository.compactable_slots` is the alternative list.
+
+## ADR-0052 - GDAC NetCDF bulk source with the gdac-core-v1 exact-text rule
+
+Decision under ADR-0039 per the owner decisions of 2026-10-08 (build the GDAC bulk source now;
+downloads from data-argo.ifremer.fr allowed) recorded in `docs/stage1-v4-execution-design.md`;
+contract version stage1-v4. Summarizes `docs/v4-packages/G.md`; mapper hooks are in
+`docs/v4-packages/B.md`. Amends contract §9 (the approved host and routes), §11 (fixtures and
+evidence) and §3.2 (completeness and the three roles). Adds a second source population; the
+Argovis source is unchanged.
+
+Observed inputs (package G, 2026-10-08, scratch scripts, not recorded under `reports/`):
+
+- The listing `https://data-argo.ifremer.fr/geo/indian_ocean/2025/01/` has one file per UTC day,
+  `YYYYMMDD_prof.nc`, 31 files for January and 28 for February 2025, 2.8-8.0 MB each. The global
+  index `ar_index_global_prof.txt.gz` is 58,734,918 bytes and 3,418,915 lines. The 2025 daily files
+  were last modified between 2026-09-08 and 2026-10-07: they are regenerated upstream, not
+  immutable.
+- Download rates from this WSL host were 5-47 KB/s (the index took about 26 minutes, a daily file
+  2-3 minutes); the production host is unmeasured, and a one-year backfill (about 365 files,
+  1.8 GB) would take many hours at those rates.
+- A basin file is larger than the project region: 79 of 97 (2025-01-15) and 61 of 77 (2025-02-14)
+  profiles lie inside `[-60,30] x [20,120]`. For both fixture days the index rows equal the
+  NetCDF profiles per tile for all 100 tiles.
+- Offline cost: converting one 97-profile file 3.0 s; mapping its 97 profiles 10.6 s (about 0.11 s
+  and 0.7-1.5 MB of canonical bytes per profile); scanning a synthetic 3.4M-line index for one
+  month 6.4 s.
+- The review (§4.9) could not verify the file layout, the download policy or the mirror choice
+  offline. The layout is now observed for this one host. No report records a download-policy
+  check beyond the attribution string, and no other mirror was examined.
+
+Decisions:
+
+1. Population. GDAC profiles are a separate source population: `source = 'gdac'`, mapping
+   `gdac-core-v1`, hash `scientific-json-v2`, specification `gdac-netcdf`, logical keys
+   `gdac/core/<yyyy-mm>/<west>:<south>/indian-ocean-v1/gdac-core-v1/scientific-json-v2`.
+   Because `source` is a canonical field, a GDAC profile never hashes equal to the Argovis
+   profile of the same observation. No cross-source identity rule is defined; Stage 2 must treat
+   them as two populations or define one. Argovis stays the daily-increment source.
+2. Acquisition. Month x tile chunks as before. The daily basin files are downloaded once into a
+   cache shared by all tiles (an `flock` serializes each file) together with the global index
+   used for completeness. The NetCDF files are preserved as `raw/sha256/<sha>.nc` through
+   `publish_verified(raw="nc")`, once per file for all tiles (a `stat` first skips an existing
+   object); they have no `raw_manifest` row and are referenced from the landing manifest
+   (`derived_from`). Each chunk lands an Argovis-shaped wire array so the unchanged landing and
+   inventory code runs.
+3. Transport. A second pinned host, `data-argo.ifremer.fr`, HTTPS port 443, with its own path
+   allow-list (the index, a month directory listing, a daily basin file), the same address
+   validation and pinned connection with SNI check, no proxy, no redirect, no cookie, identity
+   encoding, a streaming size limit (128 MiB default, `gdac_file_size_limit`) and an attempt bound
+   of 3,600 s with a 60 s idle read. The Argovis credential is never sent. `gdac.fetch_file`
+   reimplements the pinning because the `transport.py` versions are hard-wired to Argovis and
+   capped at 16 MiB.
+4. The exact-text rule. The "exact" text of a stored value is
+   `numpy.format_float_positional(value, unique=True, trim="-")` of the stored numpy scalar: the
+   shortest decimal that round-trips float32 (pressure, temperature, salinity and their errors)
+   or float64 (latitude, longitude). `Decimal(text)` feeds `scientific_number`, `-0` becomes `0`,
+   and the `rounded` flag is expected on most float32 measurements (shown on 3,000 random
+   float32 values). The declared `_FillValue` (99999.0) becomes the token `99999` and `argo_fill`;
+   stored NaN and Inf become the quoted nonfinite tokens of §5.1.
+5. Remaining gdac-core-v1 rules. The canonical document has exactly the `argovis-core-v1` profile
+   and level keys. Trailing levels where all six core arrays are fill are dropped; a profile with
+   no non-fill level is excluded with a count (Argovis would quarantine a zero-level profile).
+   The profile `DATA_MODE` (R, A, D) is the mode of all three variables: R maps the original
+   columns, A and D the adjusted columns, with `*_ADJUSTED_ERROR` to `*_error` (non-null for A and
+   D, a divergence from Argovis, which carries no errors); a blank or unknown mode with the
+   variable present is `unknown_data_mode`. Source unit spellings map through the same table as
+   Argovis. A blank QC becomes `""`. Time is `JULD` days since 1950-01-01 UTC rounded to
+   microseconds. Identity is `gdac:<platform>_<cycle><direction>`. Revision is
+   `Revision("gdac-date-update-v1", (("file", DATE_UPDATE),))`. Profiles with fill position or
+   time are excluded and counted. Ownership uses `Tile.owns` and `Interval.contains` on the exact
+   text, with no epsilon polygon, so GDAC chunks produce no `overlap_duplicate`. Every index row
+   of the Indian Ocean owned by the tile and interval must exist among the chunk's profiles
+   (`incomplete_inventory` otherwise); profiles absent from the index are tolerated.
+   `profile_count_limit` and `decompressed_size_limit` split chunks as for Argovis.
+6. Migration 0014 relaxes the `source` CHECKs (`argo_float`, `argo_profile`, `ingestion_scope`),
+   makes the `(source, mapping_version)` pair `(argovis, argovis-core-v1)` or
+   `(gdac, gdac-core-v1)`, lets `raw_manifest.object_key` end in `.json` or `.nc`, adds attempt
+   origin `gdac` while keeping `cache` (ADR-0049) and input kind `gdac`, lets
+   `app.reserve_recorded_attempt` accept `gdac`, and adds `app.gdac_owner_slot`.
+7. Fixtures and attribution (§11). `tests/fixtures/gdac/` (10,590,378 bytes, under the 12 MB
+   limit): `20250115_prof.nc` (5,632,396 bytes), `20250214_prof.nc` (4,402,816 bytes), an index
+   excerpt `ar_index_indian_2025q1.txt` (555,166 bytes, 5,970 lines: 8 comment lines, the header
+   and 5,961 rows of lat -60..30, lon 20..120, 2025-01-01..2025-03-31) and `manifest.json` with
+   URL, SHA-256, size and retrieval time, created once by `scripts/gdac_fixtures.py`.
+   2025-02-14 replaces the planned 2025-02-15, which is 8.0 MB and would have exceeded the budget.
+   Re-running the script fetches the then-current upstream files, so the committed bytes are the
+   baseline. Attribution: "Argo (2000). Argo float data and metadata from Global Data Assembly
+   Centre (Argo GDAC). SEANOE. https://doi.org/10.17882/42182".
+
+Rejected: reusing the Argovis mapper on GDAC data (the wire schemas differ; `map_profile` reads
+revisions as `argovis-source-vector-v1` and requires `basin` and `date_updated_argovis`); the
+per-profile index `date_update` as revision (the brief asked for the file stamp; not used);
+using GDAC as a landing accelerator for the Argovis mapping (review §4.9 option b, not possible).
+
+Unchanged: the Argovis source, `argovis-core-v1`, the canonical encoder and hash, the geometry
+and ownership rules, the pinned Argovis host and its credential rules.
+
+Not wired end to end (a grep of `processor.py`, `source.py` and `workers/` finds no GDAC
+reference at this commit): `Processor.map` still calls the Argovis `map_profile`; routing for
+`gdac` inputs to `gdac_map_profile`, the `ingest --source gdac` command and admission with
+`prepare_cache`, the admission functions of migrations 0005 and 0010 (they hard-code the Argovis
+scope row), and the publication SQL (it looks up `source = 'argovis'`, checks
+`mapping_version = 'argovis-core-v1'` and calls the Argovis `app.owner_slot`) all still need
+changes, as do the Python key builders in `objects`, `catalogue`, `coverage` and `reporting`,
+which were not checked. The classification of GDAC rejection categories (for example
+`gdac_index_changed`, `invalid_netcdf`) between failed and quarantined is undecided. Migration
+0014 and the GDAC source have not run against PostgreSQL or a live host. Known risks: `DATE_UPDATE`
+is a file-level stamp, so an upstream regeneration advances the revision of every profile in the
+file; `DATA_MODE` is per profile, so a profile with mixed per-parameter modes would be
+mis-selected (the merged files carry no `PARAMETER_DATA_MODE`); several profiles of one cycle in
+one file would quarantine the chunk as `duplicate_inventory_id` (not seen in the two fixture
+days); one `fetch_file` can block up to 3,600 s without a heartbeat (the source heartbeats per
+file and in retry waits, so prefetch with `prepare_cache` before admitting a run); each acquire
+thread may hold about three times 128 MiB of wire pieces; netCDF4/HDF5 parses downloaded files in
+process, so a malformed file could crash it.
+
+## ADR-0053 - Fast decode, encode and mapper; byte identity proven by tests/stage1/test_byte_identity.py
+
+Decision under ADR-0039 per the owner decisions of 2026-10-08 recorded in
+`docs/stage1-v4-execution-design.md`; contract version stage1-v4. Summarizes
+`docs/v4-packages/A.md` (exact decode, sanitization, encoder) and `docs/v4-packages/B.md`
+(mapper, `level_table`). Amends the S1-RESOURCE-2 implementation note in contract §7 and the §9
+numeric/canonical output row (how the preflight is computed). Supersedes the "conservative
+output preflight" and "allocates no unbounded encoded profile" wording of ADR-0037 for the
+encoder. No scientific rule, limit or rejection category changes.
+
+Measured inputs:
+
+- `reports/stage1-v4-bench-A.json` (30 x 699 = 20,970 levels, 126,000 number tokens, interleaved
+  best of 15, output identical to the vendored pre-v4 code asserted): `CanonicalBudget.encode`
+  0.797 s to 0.251 s (3.17x); `exact_number` 0.267 to 0.053 (5.03x); `decimal_text` 0.139 to
+  0.019 (7.21x); structural scan 0.066 to 0.004 (17x); `decode_json` of one document 0.011 to
+  0.002 (5.29x); `documents()` 0.392 to 0.070 (5.64x); `sanitize_raw` 0.659 to 0.175 (3.77x).
+- `reports/stage1-v4-bench-B.json`: the `map_profile` plus `budget.encode` stage, 87 x 699, went
+  from 8.25 s (baseline given) or 8.661 s (measured at the start) to 5.368 s with the old
+  encoder, 1.54x and 1.61x. Mapper-only figures of 4-5x on the tiled clone and 2.9x on data with
+  every value distinct come from package B's scratch harness, not a report. Real profiles repeat
+  fewer values than the clone (a recorded profile has 238 distinct of 501 salinity values and 472
+  of 501 temperatures), so the memo helps less on real data.
+- Whole chunk (`reports/stage1-v3-bench-chunk-baseline.json` to
+  `reports/stage1-v4-bench-chunk.json`, 87 x 699, synthetic): `sanitize_raw` 2.329 s to 0.418 s;
+  `validate_raw` 2.05 s to 0.215 s; one `documents()` decode 2.301 s to 0.507 s; map plus encode
+  9.963 s to 4.617 s.
+
+Decisions:
+
+1. Rule. The execution model may change; the scientific rules may not. `scientific-json-v2`
+   canonical bytes and hashes, `argovis-core-v1` semantics, `raw-sanitization-v1` output, the
+   exact-decimal rules (§5, §5.1, §6) and every rejection category and its precedence are
+   unchanged. The proof is `tests/stage1/test_byte_identity.py` against
+   `tests/fixtures/golden/stage1_v3_goldens.json`, generated at `90e1e67` by
+   `scripts/stage1_goldens.py` and never regenerated for these changes. It runs six tests: four
+   recorded Argovis bundles (5 profiles, 30 labelled mutations) compare the input and sanitized
+   SHA-256, canonical SHA-256 and length, content hash, level hash, identity, revision, owner
+   slot and rejection category; two synthetic 3 x 699 clones (core6 and bgc24) additionally
+   compare the Parquet snapshot's `membership_sha256`, `schema_sha256`, rows and profiles. It
+   must pass after every package. Golden regeneration needs an ADR that changes a scientific
+   rule.
+2. Beyond the goldens, each rewrite is proven by a differential test against a verbatim copy of
+   the pre-v4 code kept in the test file: package A for `exact_number` (6,000 tokens),
+   `decimal_text` (20,000 random decimals), `decode_json` (8,000 generated and damaged documents,
+   60,000 structural fuzz cases), the document splitter, `sanitize_raw` (every recorded fixture
+   with and without a credential, 3,000 generated documents) and the encoder (every limit from 1
+   to total plus 2, three scopes, seven contents); package B for `map_profile` against a verbatim
+   stage1-v3 copy (42 tests, 1,500 seeded documents under both Argovis contracts).
+3. Numeric preflight (§5.1: preflight length before expansion). A token without an exponent skips
+   the normalized-length check because its normalized text cannot exceed the token (at most 128
+   bytes), so the 512-byte check cannot fail. A token with an exponent has the normalized length
+   computed arithmetically from `Decimal.as_tuple()`, without building the text. Grammar, bounds,
+   precedence and the `canonical_output_limit` evidence are unchanged.
+4. Structural prepass. A C-speed filter clears an input only when it proves the old byte loop
+   would not raise; anything else goes to the old loop verbatim, which raises the old category in
+   the old order. Three implementation thresholds choose the path and never an outcome: 262,144
+   quotes and brackets, 8 MiB, and a peeling budget of four scans. `decode_json` and `documents`
+   now require `bytes` (a `str` raises `TypeError`; the old loop silently did nothing).
+5. Encoder. Each level is C-encoded in full and yielded if its length fits the remaining
+   allowance; otherwise the level is streamed with `iterencode` so the first exceeding piece
+   raises with the old scope, `used_bytes` and `requested_bytes`. `TypeError`, `ValueError` and
+   `RecursionError` from the C call fall back to the stream. Charged bytes and precedence are
+   identical at every boundary. This replaces ADR-0037's preflight before encoding: one level's
+   C-encoded text (at most about six times its in-memory size) is now allocated even when it is
+   then rejected, bounded by the object the caller already built; no further guard was added.
+   `_small_json_bound` and the test that forbade C encoding before the limit are deleted.
+6. Sanitization. Numbers are captured as `RawNumber` tokens, a `str` subclass; the sanitizer's
+   decoder is `raw.raw_number`, and a numeric credential cannot match number digits because
+   `clean` and `encode` test the type before `str`. Output bytes, the 128 MiB cap and
+   `credential_in_source_content` precedence are unchanged.
+7. Mapper. Per profile the mapper builds, once, the first level-independent rejection (in the
+   original order), the columns and a level template that already has the final key order. Per
+   profile memos for `scientific_number` and `qc` are keyed so the result is fully determined
+   (QC by exact token text, because `qc(Decimal("1.5"))` and `qc(Decimal("1.50"))` differ);
+   `True`, `1`, floats, `Decimal` subclasses and signaling NaN bypass the memo; rejections are
+   never memoized; checks run in the original order. Canonical number dictionaries are shared
+   between levels and only the encoder reads them. `budget.encode` still runs before
+   `source_revision`, so `canonical_output_limit` keeps precedence. The mapper's garbage-collector
+   pause was removed at integration: collector policy belongs to the worker process.
+8. `argovis.level_table(profile)` returns the Parquet level columns (38 columns, same Arrow types)
+   with `canonical_level` cut from `profile.canonical_bytes` at checked level boundaries, with a
+   `json.loads`/`json.dumps` fallback identical to `parquet.rows()`. `gdac-core-v1` is accepted
+   as a source contract by the column helpers; its `policy_versions` entry carries no
+   `specification_sha256` because no GDAC specification digest is pinned (ADR-0052).
+
+Rejected: vectorized mapping with Polars or Arrow (review candidate 15; Polars is not in the lock
+file and the exact-decimal path is per token); dropping the structural prepass or the numeric
+preflight; weakening any limit to gain speed.
+
+Unchanged: all numeric, string, depth, array, profile, chunk and run bounds of §9, canonical field
+set and order, hash version, rejection categories.
+
+Decode once: the integrator added `Processor.documents_of(role)` (commit 65eb3fc) so each landed
+payload is decoded once per role and reused by inventory accounting, the inventory triple,
+metadata resolution and mapping; payloads above 8 MiB stream as before (the census maximum
+chunk was 2.66 MB; decoded exact-decimal objects are several times the raw size and share the
+process with the candidate set), and the cache is cleared when `process()` returns. The chunk benchmark
+(`reports/stage1-v4-bench-chunk.json`) records 4.75 s single-counted for 87x699 against 58.2 s
+for stage1-v3 (`reports/stage1-v3-bench-chunk-baseline.json`), and the run model
+(`reports/stage1-v4-run-model.json`) projects 126.2 µs per level of worker CPU against 1,425.4,
+worker CPU 0.10 h and captured replay 0.19 h for Jan-Mar 2025; the review's 650 µs target was a
+no-ADR estimate, not a measurement. Package A reported that `test_canonical_encoding_certificate.py` needed an edit for
+the new encoder; the tree no longer contains `_small_json_bound` or the test it named.
