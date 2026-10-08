@@ -72,8 +72,8 @@ Advisor agreement for these ADRs is not recorded here.
   --source gdac`, publication SQL parameterised by source), the audit cadence (`audit=True`,
   `app.audit_levels`), persisted governor counters, and a decision on memory at the contractual
   chunk cap.
-- [ ] ADR numbers: the live checkout has an uncommitted ADR-0046 (`missing_basin`), so these are
-  ADR-0047..0053; its uncommitted PROGRESS bullets for live runs 3-5 are not reconciled here.
+- [x] ADR-0046 (`missing_basin` informational warning, codex/stage-1 50dbdbc) merged into this
+  branch; the v4 ADRs are ADR-0047..0053.
 
 ## Stage 1 - stage1-v3 implemented (ADR-0040..0042), 2026-10-08
 
