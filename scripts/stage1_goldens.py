@@ -16,8 +16,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-from stage1_perf_profile import BASES, synthetic_chunk  # noqa: E402
-
 from floatchat_core.ingestion.argovis import map_profile  # noqa: E402
 from floatchat_core.ingestion.json_stream import documents  # noqa: E402
 from floatchat_core.ingestion.numeric import CanonicalBudget, Rejection, decode_json  # noqa: E402
@@ -25,6 +23,7 @@ from floatchat_core.ingestion.parquet import write_snapshot  # noqa: E402
 from floatchat_core.ingestion.raw import sanitize_raw  # noqa: E402
 from floatchat_core.ingestion.spool import revision_json  # noqa: E402
 from floatchat_core.ingestion.workflow import owner_slot  # noqa: E402
+from stage1_perf_profile import BASES, synthetic_chunk  # noqa: E402
 
 RECORDED = ROOT / "tests/fixtures/argovis/recorded"
 
@@ -40,7 +39,9 @@ def profile_record(profile):
         ).hexdigest(),
         "identity": profile.identity,
         "revision": revision_json(profile.revision),
-        "owner_slot": owner_slot(profile) if 20 <= float(profile.longitude.value or 0) <= 120 else None,
+        "owner_slot": owner_slot(profile)
+        if 20 <= float(profile.longitude.value or 0) <= 120
+        else None,
     }
 
 
@@ -78,10 +79,19 @@ def mutations(document):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output", type=Path, default=ROOT / "tests/fixtures/golden/stage1_v3_goldens.json")
+    parser.add_argument(
+        "--output", type=Path, default=ROOT / "tests/fixtures/golden/stage1_v3_goldens.json"
+    )
     args = parser.parse_args()
-    commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=ROOT).stdout.strip()
-    goldens = {"kind": "stage1_v3_scientific_goldens", "commit": commit, "bundles": {}, "synthetic": {}}
+    commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=ROOT
+    ).stdout.strip()
+    goldens = {
+        "kind": "stage1_v3_scientific_goldens",
+        "commit": commit,
+        "bundles": {},
+        "synthetic": {},
+    }
     for bundle in sorted(RECORDED.iterdir()):
         manifest = json.loads((bundle / "manifest.json").read_text())
         metadata = {}
@@ -110,7 +120,9 @@ def main():
                             map_profile(mutated, metadata, CanonicalBudget())
                         )
                     except Rejection as error:
-                        entry["mutations"][document["_id"] + ":" + label] = {"rejection": error.category}
+                        entry["mutations"][document["_id"] + ":" + label] = {
+                            "rejection": error.category
+                        }
         goldens["bundles"][bundle.name] = entry
     for label, basis in BASES.items():
         payload, inventory, metadata = synthetic_chunk(3, 699, basis=basis)
@@ -128,7 +140,9 @@ def main():
             "payload_sha256": hashlib.sha256(payload).hexdigest(),
             "sanitized_sha256": hashlib.sha256(sanitize_raw(payload).payload).hexdigest(),
             "profiles": [profile_record(p) for p in profiles],
-            "snapshot": {k: verified[k] for k in ("schema_sha256", "rows", "profiles", "membership_sha256")},
+            "snapshot": {
+                k: verified[k] for k in ("schema_sha256", "rows", "profiles", "membership_sha256")
+            },
         }
     args.output.write_text(json.dumps(goldens, indent=1, sort_keys=True) + "\n")
     print(args.output, commit)
