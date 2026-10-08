@@ -1,8 +1,11 @@
-"""Durable controller/supervisor ticks. Broker messages carry only opaque IDs.
+"""Durable controller/supervisor ticks. Queue tickets carry only opaque IDs.
 
 Ticks do no HTTP work. An independent supervisor calls them every ten seconds;
 workers receive the already-persisted chunk claim, not a new retry budget. Any
 database error escapes and cannot be converted into an apparent successful run.
+A recovered chunk is queued by its persisted phase: `acquire` for planned/fetching,
+`process` for landed/validating/publishing. Normal phase progress (acquire to process)
+is handed over by the acquire worker under the same claim and never reaches this tick.
 """
 
 import uuid
@@ -12,13 +15,14 @@ from typing import Any, Protocol
 
 from .numeric import Rejection
 from .repository import Authority
-from .states import TERMINAL
+from .states import TERMINAL, ticket_kind
 
 
 class ControlStore(Protocol):
     def run(self, identifier: uuid.UUID) -> dict[str, Any]: ...
     def start_controller(self, run: uuid.UUID, instance: uuid.UUID) -> int | None: ...
     def controller_heartbeat(self, run: uuid.UUID, epoch: int) -> None: ...
+    def environment(self, identifier: uuid.UUID) -> dict[str, Any]: ...
     def input(self, run: uuid.UUID) -> dict[str, Any] | None: ...
     def persist_plan(self, run: uuid.UUID, epoch: int) -> None: ...
     def chunks(self, run: uuid.UUID) -> tuple[dict[str, Any], ...]: ...
@@ -31,7 +35,7 @@ class Controller:
         self,
         store: ControlStore,
         run: uuid.UUID,
-        dispatch: Callable[[Authority], None],
+        dispatch: Callable[[Authority, str], None],
         *,
         instance: uuid.UUID | None = None,
         clock: Callable[[], datetime] = lambda: datetime.now(UTC),
@@ -79,6 +83,8 @@ class Controller:
         leaves = [chunk for chunk in chunks if chunk["leaf"]]
         if leaves and all(chunk["state"] in TERMINAL for chunk in leaves):
             return self.store.finalize(self.run_id)
+        # The environment's persisted bound; app.claim_chunk enforces the same number.
+        limit = int(self.store.environment(row["environment_id"])["max_active_chunks"])
         active = sum(
             chunk["state"] not in TERMINAL
             and chunk["control_epoch"] == self.epoch
@@ -98,14 +104,15 @@ class Controller:
                 continue
             if chunk["processing_claims"] >= 4:
                 return self.store.finalize(self.run_id, "recovery_budget_exhausted")
-            if active >= 2:
+            if active >= limit:
                 continue
+            kind = ticket_kind(chunk["state"])
             authority = self.store.claim(self.run_id, chunk["id"], self.epoch)
             if authority is None:
                 continue
             active += 1
             try:
-                self.dispatch(authority)
+                self.dispatch(authority, kind)
             except Exception:
                 # A send failure has an unknown delivery outcome. Leave the
                 # durable lease in place, never dispatch/claim it twice now.
@@ -119,7 +126,7 @@ class Supervisor:
     def __init__(
         self,
         store: ControlStore,
-        dispatch: Callable[[Authority], None],
+        dispatch: Callable[[Authority, str], None],
         *,
         clock: Callable[[], datetime] = lambda: datetime.now(UTC),
     ) -> None:

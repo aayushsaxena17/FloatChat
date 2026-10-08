@@ -16,32 +16,35 @@ from floatchat_core.ingestion.repository import Authority
 from floatchat_core.ingestion.states import exit_code
 
 from .ingestion import Configuration, live_enabled
+from .queue import issue
 
 
-def dispatch(authority: Authority) -> None:
-    from .app import app
-
+def dispatch(authority: Authority, kind: str) -> None:
+    # Creating the ticket row is the dispatch: a worker claims it from the PostgreSQL queue.
     configuration = Configuration.load()
     repository = configuration.repository()
     try:
-        ticket = repository.ticket(authority)
+        issue(repository, authority, kind)
     finally:
         repository.close()
-    app.send_task(
-        "floatchat.ingest_chunk",
-        args=[str(authority.run), str(authority.chunk), str(ticket)],
-        queue=configuration.queue,
-        retry=False,
-    )
 
 
 def scheduled_admission() -> str:
+    """One UTC-daily admission, serialized by the environment advisory lock (164993423,2)."""
     if not live_enabled():
         return "live_ingestion_disabled"
     repository = None
+    locked = False
     try:
         configuration = Configuration.load()
         repository = configuration.repository()
+        if repository.environment(configuration.environment)["mode"] != "normal":
+            return "acceptance_schedule_disabled"
+        with repository.transaction() as cursor:
+            cursor.execute("SELECT pg_try_advisory_lock(164993423,2) AS acquired")
+            locked = bool(cursor.fetchone()["acquired"])
+        if not locked:
+            return "schedule_already_running"
         result = repository.admit(
             configuration.environment,
             uuid.uuid4(),
@@ -57,7 +60,51 @@ def scheduled_admission() -> str:
         return "scheduling_failed_no_sensitive_diagnostics"
     finally:
         if repository is not None:
+            if locked:
+                try:
+                    with repository.transaction() as cursor:
+                        cursor.execute("SELECT pg_advisory_unlock(164993423,2)")
+                except Exception:
+                    pass  # closing the session below releases the lock
             repository.close()
+
+
+def schedule_exit(outcome: str) -> int:
+    """Timer exit status: an expected skip is success; only real faults fail the unit."""
+    if outcome == "acceptance_schedule_disabled":
+        return 2
+    return 5 if outcome == "scheduling_failed_no_sensitive_diagnostics" else 0
+
+
+def compact_slots(repository: Any, configuration: Configuration, seconds: int) -> dict[str, int]:
+    """Merge every slot that has publication parts (package F's Repository.compact per slot).
+
+    One shared time budget; a slot a commit touched meanwhile is left for the next run.
+    """
+    compact = getattr(repository, "compact", None)
+    if compact is None:
+        raise Rejection("compact_unavailable")
+    with repository.transaction(readonly_snapshot=True) as cursor:
+        cursor.execute(
+            "SELECT DISTINCT logical_key FROM app.committed_active_partitions "
+            "WHERE environment_id=%s AND kind='part' ORDER BY logical_key",
+            (configuration.environment,),
+        )
+        keys = [row["logical_key"] for row in cursor.fetchall()]
+    totals = {"compacted": 0, "unchanged": 0, "retry_later": 0, "not_attempted": 0}
+    store, deadline = configuration.store(), time.monotonic() + seconds
+    for key in keys:
+        if time.monotonic() >= deadline:
+            totals["not_attempted"] += 1
+            continue
+        try:
+            outcome = str(compact(configuration.environment, key, store, deadline))
+            totals[outcome] = totals.get(outcome, 0) + 1
+        except Rejection as error:
+            if error.category != "publication_base_changed":
+                raise
+            totals["retry_later"] += 1
+    return totals
 
 
 def fixture_descriptor(value: str) -> dict[str, Any]:
@@ -93,6 +140,13 @@ def parser() -> argparse.ArgumentParser:
         if name == "report":
             command.add_argument("--format", choices=("json", "markdown"), default="json")
     sub.add_parser("supervise")
+    sub.add_parser("schedule")
+    compact = sub.add_parser("compact")
+    compact.add_argument("--seconds", type=int, default=3600)
+    acquire = sub.add_parser("acquire")
+    acquire.add_argument("--slots", type=int)
+    process = sub.add_parser("process")
+    process.add_argument("--workers", type=int)
     return result
 
 
@@ -100,7 +154,22 @@ def main(arguments: list[str] | None = None) -> int:
     args = parser().parse_args(arguments)
     repository = None
     try:
+        if args.command == "schedule":
+            # Cron/systemd timer entrypoint; scheduled_admission loads its own configuration.
+            outcome = scheduled_admission()
+            print(outcome)
+            return schedule_exit(outcome)
         configuration = Configuration.load()
+        if args.command == "acquire":
+            from .acquire import main as acquire_main
+
+            return acquire_main(configuration.acquire_slots if args.slots is None else args.slots)
+        if args.command == "process":
+            from .process import main as process_main
+
+            return process_main(
+                configuration.process_workers if args.workers is None else args.workers
+            )
         repository = configuration.repository()
         if args.command == "supervise":
             supervisor = Supervisor(repository, dispatch)
@@ -108,9 +177,16 @@ def main(arguments: list[str] | None = None) -> int:
                 try:
                     supervisor.tick(repository.open_runs())
                 except Rejection:
-                    # Database/broker loss neither succeeds nor creates new budgets.
+                    # Database loss neither succeeds nor creates new budgets.
                     print("supervisor_recovery_required", flush=True)
                 time.sleep(10)
+        if args.command == "compact":
+            if not 1 <= args.seconds <= 43200:
+                raise Rejection("invalid_compaction_bound")
+            print(
+                json.dumps(compact_slots(repository, configuration, args.seconds), sort_keys=True)
+            )
+            return 0
         if args.command == "ingest":
             interval = month_interval(args.first, args.last)
             descriptor: dict[str, Any]

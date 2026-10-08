@@ -1,12 +1,13 @@
-"""Opaque-ticket worker entrypoint. Celery owns no ingestion retry budget."""
+"""Opaque-ticket worker entrypoint. The PostgreSQL queue owns no ingestion retry budget."""
 
 import os
+import resource
 import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
-from urllib.parse import urlsplit
+from typing import Any
 
 from floatchat_core.ingestion.argovis import policy_versions
 from floatchat_core.ingestion.landing import RequestOwner
@@ -14,9 +15,21 @@ from floatchat_core.ingestion.minio import MinioStore
 from floatchat_core.ingestion.numeric import Rejection
 from floatchat_core.ingestion.private import private_directory
 from floatchat_core.ingestion.processor import Processor
-from floatchat_core.ingestion.repository import Repository
+from floatchat_core.ingestion.repository import Authority, Repository
 from floatchat_core.ingestion.source import RecordedSource, Source
-from floatchat_core.ingestion.states import TERMINAL
+from floatchat_core.ingestion.states import ACQUIRE_STATES, PROCESS_STATES, TERMINAL
+
+from .queue import issue
+
+GIB = 1024**3
+KINDS = ("acquire", "process", "execute")
+
+
+def bounded_integer(name: str, default: int, low: int, high: int) -> int:
+    value = int(os.environ.get(name, default))
+    if not low <= value <= high:
+        raise ValueError(name)
+    return value
 
 
 @dataclass(frozen=True, repr=False)
@@ -26,39 +39,35 @@ class Configuration:
     bucket: str
     queue: str
     project: str
-    broker_url: str = field(repr=False)
     endpoint: str
     access_key: str = field(repr=False)
     secret_key: str = field(repr=False)
     application_commit: str
     private: Path
+    acquire_slots: int = 4
+    process_workers: int = 1
+    worker_memory_bytes: int = GIB
 
     @classmethod
     def load(cls) -> "Configuration":
         # The upstream key is deliberately absent. Only a live request can load
         # it; argument/configuration diagnostics never contain environment input.
         try:
-            broker = os.environ["INGESTION_REDIS_URL"]
-            parsed = urlsplit(broker)
-            if (
-                parsed.scheme != "redis"
-                or parsed.hostname not in ("redis", "localhost", "127.0.0.1", "::1")
-                or parsed.query
-                or parsed.fragment
-            ):
-                raise ValueError
             return cls(
                 os.environ["INGESTION_DATABASE_URL"],
                 uuid.UUID(os.environ["INGESTION_ENVIRONMENT_ID"]),
                 os.environ["INGESTION_BUCKET"],
                 os.environ["INGESTION_QUEUE_NAMESPACE"],
                 os.environ["COMPOSE_PROJECT_NAME"],
-                broker,
                 os.environ["OBJECT_STORAGE_ENDPOINT"],
                 os.environ["OBJECT_STORAGE_ACCESS_KEY"],
                 os.environ["OBJECT_STORAGE_SECRET_KEY"],
                 os.environ["INGESTION_APPLICATION_COMMIT"],
                 Path.home() / "private/floatchat-stage1",
+                bounded_integer("INGESTION_ACQUIRE_SLOTS", 4, 1, 16),
+                bounded_integer("INGESTION_PROCESS_WORKERS", min(4, os.cpu_count() or 1), 1, 64),
+                # Contract section 9: configuration may reduce the 1 GiB worker bound, not raise it.
+                bounded_integer("INGESTION_WORKER_MEMORY_BYTES", GIB, 128 * 1024**2, GIB),
             )
         except (KeyError, ValueError):
             raise Rejection("invalid_ingestion_configuration") from None
@@ -103,13 +112,25 @@ def live_enabled() -> bool:
     return os.environ.get("FLOATCHAT_LIVE_INGESTION_ENABLED", "false") == "true"
 
 
-def bounded_worker_memory() -> None:
+def bounded_worker_memory(limit: int = GIB) -> None:
+    """A cgroup `memory.max` of at most 1 GiB, or else RLIMIT_DATA at `limit` bytes.
+
+    RLIMIT_AS is never used: it counts address space, which pyarrow's allocator reserves far
+    beyond what it touches. The soft limit is only ever lowered, so repeated calls in one
+    process (every acquire thread) are idempotent.
+    """
     try:
         value = Path("/sys/fs/cgroup/memory.max").read_text().strip()
-        if value == "max" or not 0 < int(value) <= 1024**3:
-            raise ValueError
+        if value != "max" and 0 < int(value) <= GIB:
+            return
     except (OSError, ValueError):
-        raise Rejection("worker_requires_one_gib_cgroup") from None
+        pass
+    try:
+        soft, hard = resource.getrlimit(resource.RLIMIT_DATA)
+        if soft == resource.RLIM_INFINITY or soft > limit:
+            resource.setrlimit(resource.RLIMIT_DATA, (limit, hard))
+    except (OSError, ValueError):
+        raise Rejection("worker_memory_bound_unavailable") from None
 
 
 def upstream_credential() -> str:
@@ -119,11 +140,42 @@ def upstream_credential() -> str:
     return credential
 
 
-def process_ticket(run_id: str, chunk_id: str, ticket_id: str) -> str:
+def hand_over(repository: Repository, authority: Authority) -> None:
+    """Queue the landed chunk for the process pool under the claim that landed it.
+
+    Normal phase progress consumes no processing claim (contract 8.1), so the process ticket
+    reuses the acquire ticket's epoch and fence. Best effort: if it is not created, the
+    chunk lease lapses and the controller re-queues the chunk by phase under a new claim.
+    """
+    try:
+        issue(repository, authority, "process")
+    except Exception:
+        # Fixed category only: exception text never leaves the worker boundary.
+        print("process_handover_unavailable", flush=True)
+
+
+def process_ticket(
+    run_id: str,
+    chunk_id: str,
+    ticket_id: str,
+    kind: str = "process",
+    *,
+    governor: Any | None = None,
+    slot: int = 1,
+) -> str:
+    """Run one ticket and return the chunk state reached (or a recognition marker).
+
+    `acquire` lands the chunk (Processor.land) and hands it to the process queue; `process`
+    validates and publishes a landed chunk from existing landings only (Processor.process);
+    `execute` is the serial stage1-v3 path (land then process) for offline probes. A
+    `governor` and `slot` (1..N) belong to one acquire thread and only reach a live source.
+    """
     repository: Repository | None = None
     budget: Repository | None = None
     authority = None
     try:
+        if kind not in KINDS:
+            raise Rejection("invalid_ticket_kind")
         run, chunk, ticket = (uuid.UUID(value) for value in (run_id, chunk_id, ticket_id))
         configuration = Configuration.load()
         repository = configuration.repository()
@@ -134,7 +186,10 @@ def process_ticket(run_id: str, chunk_id: str, ticket_id: str) -> str:
         # enablement. A completed scientific transaction is never repeated.
         if row["state"] in TERMINAL:
             return str(row["state"])
-        bounded_worker_memory()
+        if kind == "process" and row["state"] in ACQUIRE_STATES:
+            # Nothing has landed; a process worker may never reach the upstream source.
+            raise Rejection("ticket_phase_mismatch")
+        bounded_worker_memory(configuration.worker_memory_bytes)
         authority = repository.start_worker(run, chunk, ticket)
         if authority is None:
             return "duplicate_delivery"
@@ -153,7 +208,11 @@ def process_ticket(run_id: str, chunk_id: str, ticket_id: str) -> str:
         private = private_directory(configuration.private / str(run) / str(chunk) / ticket.hex)
         store = configuration.store()
         source: Source
+        existing = kind == "process" or (kind == "execute" and row["state"] in PROCESS_STATES)
         if inputs["kind"] == "live":
+            threaded: dict[str, Any] = (
+                {} if governor is None else {"governor": governor, "slot": slot}
+            )
             source = RequestOwner(
                 repository,
                 store,
@@ -163,7 +222,8 @@ def process_ticket(run_id: str, chunk_id: str, ticket_id: str) -> str:
                 enabled=live_enabled,
                 credential=upstream_credential,
                 originals=private / "originals",
-                require_existing=row["state"] in ("landed", "validating", "publishing"),
+                require_existing=existing,
+                **threaded,
             )
         else:
             source = RecordedSource(
@@ -173,12 +233,20 @@ def process_ticket(run_id: str, chunk_id: str, ticket_id: str) -> str:
                 inputs["descriptor"],
                 deadline=deadline,
                 application_commit=configuration.application_commit,
-                require_existing=row["state"] in ("landed", "validating", "publishing"),
+                require_existing=existing,
             )
         budget = configuration.repository()
-        return Processor(
+        processor = Processor(
             repository, budget, store, source, authority, private, deadline=deadline
-        ).execute()
+        )
+        if kind == "execute":
+            return processor.execute()
+        if kind == "process":
+            return processor.process()
+        state = processor.land()
+        if state == "landed":
+            hand_over(repository, authority)
+        return state
     except Exception as error:
         # No exception text/traceback, task result, argument or environment secret
         # leaves this boundary. A failed evidence write leaves recoverable work.
