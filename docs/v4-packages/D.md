@@ -274,7 +274,7 @@ New or rewritten:
   two-minute re-claim, no claim of an invalid ticket (7 invalidations), oldest first, SKIP LOCKED
   against a real second session, `max_active_chunks` 1/2/3 and the default 8, claim budget and
   `claim_denied` preserved, attempt origin `cache`, cache upsert forward-only and refusals,
-  restrictive foreign keys, ingestor/application privileges, and `extend_unstarted_leases`
+  restrictive foreign keys, role privileges for the ingestor and the application role, and `extend_unstarted_leases`
   (renews a waiting chunk; covers a claimed-unstarted ticket and the same-fence hand-over;
   ignores a started ticket, a superseded fence, a lapsed lease, a terminal chunk, a foreign
   epoch, a cancelled run or a dead controller lease; counts every waiting chunk; privileges).
