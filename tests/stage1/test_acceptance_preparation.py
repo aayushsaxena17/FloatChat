@@ -5,6 +5,7 @@ import hashlib
 import json
 import signal
 import sys
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -12,6 +13,19 @@ import yaml
 
 from scripts import stage1_acceptance as acceptance
 from scripts import stage1_acceptance_runtime as runtime
+
+CHECKOUT = Path(__file__).resolve().parents[2]
+
+
+@pytest.fixture(autouse=True)
+def checkout_paths(monkeypatch):
+    # The real commands are pinned to the WSL checkout path; tests read this
+    # repository's files and run from wherever it is checked out (e.g. CI).
+    monkeypatch.setattr(acceptance, "ROOT", CHECKOUT)
+    monkeypatch.setattr(acceptance, "COMPOSE", CHECKOUT / "infra/docker-compose.acceptance.yml")
+    monkeypatch.setattr(
+        acceptance, "LIVE_COMPOSE", CHECKOUT / "infra/docker-compose.acceptance-live.yml"
+    )
 
 
 def test_prepare_environment_excludes_credentials_and_compose_overrides(monkeypatch):
