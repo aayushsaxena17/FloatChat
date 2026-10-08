@@ -1,0 +1,23 @@
+{
+  "kind": "stage1_offline_encoding_experiments",
+  "scope": "Scratch variants measured against the current encoder on a synthetic clone chunk; byte-identical canonical output asserted; not an implementation or a contract change",
+  "profiles": 30,
+  "levels_per_profile": 699,
+  "levels": 20970,
+  "canonical_bytes": 25631790,
+  "raw_payload_bytes": 626131,
+  "best_of_3_seconds": {
+    "encode: current _canonical_pieces (bound walk + C per level)": 0.888,
+    "encode: variant A, C-encode level then length check": 0.4275,
+    "encode: variant B, one json.dumps per profile + sha256 (bound on gains)": 0.233,
+    "decode: current documents() (exact_number with decimal_text preflight)": 0.577,
+    "decode: variant C, Decimal only (no normalized-text preflight)": 0.3856,
+    "decode: json.loads with binary floats (lower bound, not contract-conformant)": 0.0135,
+    "decode: json.loads with parse_float=str/parse_int=str (token capture only)": 0.0141
+  },
+  "byte_identical": {
+    "variant_A": true,
+    "variant_B_hashes": true
+  },
+  "finished_at_utc": "2026-10-08T12:53:10.283609+00:00"
+}
