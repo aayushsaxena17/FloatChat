@@ -43,6 +43,7 @@ BASIS = BASES["core6"]
 class MemoryStore:
     def __init__(self):
         self.data = {}
+        self.sha256 = {}
 
     def write_temporary(self, key, data, deadline):
         self.data[key] = data
@@ -52,6 +53,13 @@ class MemoryStore:
 
     def publish_if_absent(self, temporary, final, deadline):
         self.data.setdefault(final, self.data[temporary])
+
+    def write_immutable(self, key, data, sha256_hex, deadline):
+        self.data[key] = data
+        self.sha256[key] = sha256_hex
+
+    def stat(self, key, deadline):
+        return {"bytes": len(self.data[key]), "sha256": self.sha256.get(key) or None}
 
 
 def synthetic_chunk(profiles: int, levels: int, offset: int = 0, basis: Path = BASIS):
@@ -104,29 +112,21 @@ class Timer:
         return result
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--profiles", type=int, default=87)
-    parser.add_argument("--levels", type=int, default=699)
-    parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--work", type=Path, required=True)
-    parser.add_argument("--cprofile", action="store_true")
-    parser.add_argument("--basis", choices=sorted(BASES), default="core6")
-    args = parser.parse_args()
-    args.work.mkdir(parents=True, exist_ok=True)
+def profile_chunk(
+    profiles: int, levels: int, work: Path, *, basis: str = "core6", cprofile: bool = False
+) -> dict:
+    work.mkdir(parents=True, exist_ok=True)
     timer = Timer()
-    payload, inventory, metadata = synthetic_chunk(
-        args.profiles, args.levels, basis=BASES[args.basis]
-    )
+    payload, inventory, metadata = synthetic_chunk(profiles, levels, basis=BASES[basis])
     meta_map = {m["_id"]: m for m in decode_json(json.dumps(metadata).encode())}
     report = {
         "kind": "stage1_offline_chunk_cpu_profile",
         "scope": "Synthetic clone of authentic 1901094_109 core profile; CPU stages only, "
         "no HTTP/MinIO/PostgreSQL; multiplicities read from code at e1ba4f0",
-        "basis": str(BASES[args.basis].relative_to(ROOT)),
-        "basis_label": args.basis,
-        "profiles": args.profiles,
-        "levels_per_profile": args.levels,
+        "basis": str(BASES[basis].relative_to(ROOT)),
+        "basis_label": basis,
+        "profiles": profiles,
+        "levels_per_profile": levels,
         "raw_profile_payload_bytes": len(payload),
         "raw_inventory_payload_bytes": len(inventory),
         "python": sys.version.split()[0],
@@ -135,7 +135,7 @@ def main():
 
     # --- landing side (per raw landing of the profile role) ---
     cleaned = timer.run(
-        "sanitize_raw(profile payload)", lambda: sanitize_raw(payload), profile=args.cprofile
+        "sanitize_raw(profile payload)", lambda: sanitize_raw(payload), profile=cprofile
     )
     timer.run("validate_raw(profile payload) x1", lambda: validate_raw(cleaned.payload))
     timer.run("sanitize_raw(inventory payload)", lambda: sanitize_raw(inventory))
@@ -146,32 +146,32 @@ def main():
     docs = timer.run(
         "documents() decode profile payload x1",
         lambda: list(documents(cleaned.payload)),
-        profile=args.cprofile,
+        profile=cprofile,
     )
     timer.run("documents() decode inventory payload x1", lambda: list(documents(inventory)))
 
     # --- map + canonical encode #1 ---
     budget = CanonicalBudget()
-    profiles = timer.run(
+    mapped = timer.run(
         "map_profile + budget.encode (all profiles)",
         lambda: [map_profile(doc, meta_map, budget) for doc in docs],
-        profile=args.cprofile,
+        profile=cprofile,
     )
-    canonical_bytes = sum(len(p.canonical_bytes) for p in profiles)
-    report["canonical_bytes_per_profile"] = canonical_bytes // len(profiles)
-    report["canonical_bytes_per_level"] = canonical_bytes // (len(profiles) * args.levels)
+    canonical_bytes = sum(len(p.canonical_bytes) for p in mapped)
+    report["canonical_bytes_per_profile"] = canonical_bytes // len(mapped)
+    report["canonical_bytes_per_level"] = canonical_bytes // (len(mapped) * levels)
     report["canonical_bytes_chunk"] = canonical_bytes
 
     # --- spool add + prepare (restore certification = canonical encode #2) ---
     raw_id = uuid.uuid4()
-    spool = ProfileSpool(args.work / (uuid.uuid4().hex + ".sqlite"))
-    timer.run("spool.add (all)", lambda: [spool.add(p, raw_id, i) for i, p in enumerate(profiles)])
+    spool = ProfileSpool(work / (uuid.uuid4().hex + ".sqlite"))
+    timer.run("spool.add (all)", lambda: [spool.add(p, raw_id, i) for i, p in enumerate(mapped)])
     timer.run(
         "spool.prepare (restore+certify, no DB)",
         lambda: spool.prepare(lambda p: (), identity_lookup=lambda p: (), load_science=None),
-        profile=args.cprofile,
+        profile=cprofile,
     )
-    slot = owner_slot(profiles[0])
+    slot = owner_slot(mapped[0])
     assert spool.changed_slots == {slot}
     timer.run("spool.membership(slot)", lambda: spool.membership(slot))
     timer.run("spool.profiles(slot) re-read (receipts pass)", lambda: list(spool.profiles(slot)))
@@ -192,13 +192,15 @@ def main():
 
     parquet.verify_snapshot = timed("verify_snapshot", original_verify)
     parquet.storage_comparison = timed("storage_comparison", original_compare)
-    file = args.work / (uuid.uuid4().hex + ".parquet")
-    verified = timer.run(
-        "write_snapshot (write+verify+storage_comparison)",
-        lambda: write_snapshot(file, spool.profiles(slot), deadline=deadline),
-        profile=args.cprofile,
-    )
-    parquet.verify_snapshot, parquet.storage_comparison = original_verify, original_compare
+    file = work / (uuid.uuid4().hex + ".parquet")
+    try:
+        verified = timer.run(
+            "write_snapshot (write+verify+storage_comparison)",
+            lambda: write_snapshot(file, spool.profiles(slot), deadline=deadline),
+            profile=cprofile,
+        )
+    finally:
+        parquet.verify_snapshot, parquet.storage_comparison = original_verify, original_compare
     timer.stages["  write_snapshot: verify_snapshot (local read-back)"] = {
         "wall_s": round(sub["verify_snapshot"], 3)
     }
@@ -239,11 +241,11 @@ def main():
             deadline=deadline,
             temporary_key=f"tmp/{intent.hex}/{uuid.uuid4().hex}",
         ),
-        profile=args.cprofile,
+        profile=cprofile,
     )
 
     # --- staging NDJSON (candidate = canonical string + float levels, again) ---
-    staged = args.work / (uuid.uuid4().hex + ".ndjson")
+    staged = work / (uuid.uuid4().hex + ".ndjson")
     timer.run("spool.write_candidates (NDJSON for COPY)", lambda: spool.write_candidates(staged))
     report["staging_ndjson_bytes"] = staged.stat().st_size
     spool.connection.close()
@@ -265,10 +267,29 @@ def main():
     report["max_rss_mib"] = round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024, 1)
     report["cprofile_top"] = timer.profiles
     report["finished_at_utc"] = datetime.now(UTC).isoformat()
-    args.output.write_text(json.dumps(report, indent=2) + "\n")
-    for name, value in timer.stages.items():
+    return report
+
+
+def print_table(report: dict) -> None:
+    for name, value in report["stages"].items():
         print(f"{value['wall_s']:9.3f}s  {name}")
-    print("sum", round(total, 2), "s; rss", report["max_rss_mib"], "MiB")
+    print("sum", round(report["sum_measured_wall_s"], 2), "s; rss", report["max_rss_mib"], "MiB")
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--profiles", type=int, default=87)
+    parser.add_argument("--levels", type=int, default=699)
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--work", type=Path, required=True)
+    parser.add_argument("--cprofile", action="store_true")
+    parser.add_argument("--basis", choices=sorted(BASES), default="core6")
+    args = parser.parse_args()
+    report = profile_chunk(
+        args.profiles, args.levels, args.work, basis=args.basis, cprofile=args.cprofile
+    )
+    args.output.write_text(json.dumps(report, indent=2) + "\n")
+    print_table(report)
 
 
 if __name__ == "__main__":

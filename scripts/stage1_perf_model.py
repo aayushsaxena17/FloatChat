@@ -15,9 +15,19 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--cpu",
+        type=Path,
+        default=ROOT / "reports/stage1-perf-chunk-cpu-87x699.json",
+        help="chunk CPU profile JSON (relative paths are resolved from the cwd)",
+    )
     args = parser.parse_args()
     census = json.loads((ROOT / "reports/stage1-inventory-census.json").read_text())
-    cpu = json.loads((ROOT / "reports/stage1-perf-chunk-cpu-87x699.json").read_text())
+    cpu = json.loads(args.cpu.read_text())
+    cpu_path = args.cpu.resolve()
+    cpu_label = (
+        cpu_path.relative_to(ROOT).as_posix() if cpu_path.is_relative_to(ROOT) else str(cpu_path)
+    )
     db = json.loads((ROOT / "reports/stage1-perf-db-probe.json").read_text())
     transport = json.loads((ROOT / "reports/stage1-live-transport-8e8da1d4.json").read_text())
     slots = census["slot_profiles"]
@@ -168,7 +178,7 @@ def main():
         "not a measurement of a live run",
         "inputs": {
             "census": "reports/stage1-inventory-census.json",
-            "cpu": "reports/stage1-perf-chunk-cpu-87x699.json",
+            "cpu": cpu_label,
             "db": [
                 "reports/stage1-perf-db-probe.json",
                 "reports/stage1-perf-db-probe-87-alone.json",
