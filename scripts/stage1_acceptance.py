@@ -542,7 +542,7 @@ def execute(identifier, opt_in):
         compose(identifier, "up", "-d", "--pull", "never", "--no-build", "supervisor")
         for phase in ("live", "replay"):
             print(
-                f"acceptance_{phase}_starting; per_run_budget_seconds=21600; "
+                f"acceptance_{phase}_starting; per_run_budget_seconds=43200; "
                 "Ctrl+C stops services and preserves committed science",
                 flush=True,
             )
@@ -574,7 +574,7 @@ def execute(identifier, opt_in):
                 print_progress(identifier, manifest[phase + "_request_id"], phase)
 
             result = compose(
-                identifier, *args, timeout=21900, check=False, progress_callback=progress_update
+                identifier, *args, timeout=43500, check=False, progress_callback=progress_update
             )
             admission = json_line(result.stdout)
             run = admission["run_id"]

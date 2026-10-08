@@ -831,8 +831,8 @@ version. MiB/GiB are binary units.
 | Plan/chunks | Initial time slices: whole UTC calendar months clipped to the request in plan v2 (stage1-v3, ADR-0041; stage1-v2 <=7 days split at months), 10-degree tiles; at most 16,384 total persisted plan slots including split parents. Split down to 1 hour and 1-degree tiles, then fail if still too large. |
 | Requests/data | 50,000 HTTP attempts per run including retries and metadata; 10 GiB cumulative raw received bytes including unsuccessful attempts. |
 | Concurrency/memory | At most 2 active chunk workers per environment and 1 credentialed upstream request in flight; 1 GiB memory per worker, streaming/spill before bulk staging. stage1-v3 compliance (ADR-0042): worker cgroup `memory.max` = 1 GiB enforced, zero `oom`/`oom_kill` events and pipeline anonymous RSS peak <1 GiB; page-cache-inclusive `memory.peak` is recorded, not the pass criterion. |
-| Wall time | Default/hard maximum 6 hours from actual run creation, including queue/waits/retries/recovery; frozen reduced limits must exceed 60s. D_work = D minus 60s (5h59m at default); final 60s reserved for fenced terminal evidence. |
-| I/O deadlines | DNS/connect/TLS <=10 s, idle read <=20 s, whole HTTP attempt <=120 s; object operation <=120 s; DB lock wait <=5 s and transaction <=60 s, each capped by remaining run budget. |
+| Wall time | Default 6 hours, hard maximum 12 hours (stage1-v3, ADR-0043; stage1-v2: 6 hours) from actual run creation, including queue/waits/retries/recovery; frozen reduced limits must exceed 60s. D_work = D minus 60s; final 60s reserved for fenced terminal evidence. |
+| I/O deadlines | DNS/connect/TLS <=10 s, idle read <=60 s (stage1-v3, ADR-0043; stage1-v2: 20 s), whole HTTP attempt <=120 s; object operation <=120 s; DB lock wait <=5 s and transaction <=60 s, each capped by remaining run budget. |
 | Retry/recovery | <=4 HTTP attempts per logical request, <=4 controller claims per run, <=4 processing claims per chunk and <=4 publication attempts per chunk, all including the initial claim/attempt and persisted across deliveries. |
 
 The durable ingestion controller is the only retry owner. HTTP library automatic

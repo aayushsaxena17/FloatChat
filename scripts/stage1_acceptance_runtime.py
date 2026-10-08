@@ -26,7 +26,7 @@ def configure_broker():
     from floatchat_workers.app import app
 
     prefix = os.environ["ACCEPTANCE_REDIS_PREFIX"]
-    app.conf.broker_transport_options = {"global_keyprefix": prefix, "visibility_timeout": 21600}
+    app.conf.broker_transport_options = {"global_keyprefix": prefix, "visibility_timeout": 43200}
     app.conf.result_backend_transport_options = {"global_keyprefix": prefix}
     return app
 
@@ -111,7 +111,7 @@ def proof():
         assert (
             identity["login"] == "acceptance_ingestion" and identity["role"] == "floatchat_ingestor"
         )
-        assert revision == "0009_stage1_v3" and counts == {
+        assert revision == "0010_stage1_v3_runtime" and counts == {
             "runs": 0,
             "profiles": 0,
             "levels": 0,
@@ -283,7 +283,7 @@ def main():
                     "--to",
                     "2025-03",
                     "--execution-seconds",
-                    "21600",
+                    "43200",
                     "--request-id",
                     args.request_id,
                 ]

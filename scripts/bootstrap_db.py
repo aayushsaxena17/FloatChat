@@ -39,7 +39,18 @@ STAGE1_TABLES = frozenset(
 )
 
 
+def ensure_application_role(cursor: psycopg.Cursor[tuple[object, ...]]) -> None:
+    cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s", ("floatchat_app",))
+    if cursor.fetchone() is None:
+        cursor.execute("CREATE ROLE floatchat_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE")
+
+
 def main() -> None:
+    # Stage 1 migrations revoke privileges from floatchat_app, so a fresh database
+    # needs the role before migrating, not only afterwards.
+    with psycopg.connect(os.environ["DATABASE_ADMIN_URL"], connect_timeout=3) as connection:
+        with connection.cursor() as cursor:
+            ensure_application_role(cursor)
     subprocess.run(
         ["alembic", "-c", "infra/alembic.ini", "upgrade", "head"],
         check=True,
@@ -48,11 +59,7 @@ def main() -> None:
     )
     with psycopg.connect(os.environ["DATABASE_ADMIN_URL"], connect_timeout=3) as connection:
         with connection.cursor() as cursor:
-            cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s", ("floatchat_app",))
-            if cursor.fetchone() is None:
-                cursor.execute(
-                    "CREATE ROLE floatchat_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE"
-                )
+            ensure_application_role(cursor)
             cursor.execute(
                 sql.SQL("ALTER ROLE floatchat_app PASSWORD {}").format(
                     sql.Literal(os.environ["DB_APP_PASSWORD"])

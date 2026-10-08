@@ -28,8 +28,8 @@ def test_F06_B01_spilled_100000_row_groups_zstd3_under_one_gib():
                 "run",
                 "--pull=never",
                 "--network=none",
-                "--memory=896m",
-                "--memory-swap=896m",
+                "--memory=1g",
+                "--memory-swap=1g",
                 "--name",
                 name,
                 "--user",
@@ -48,7 +48,7 @@ def test_F06_B01_spilled_100000_row_groups_zstd3_under_one_gib():
         assert result.returncode == 0, result.stderr.decode(errors="replace")[-3000:]
         evidence = json.loads(result.stdout)
         assert evidence["row_groups"] == [100000, 1]
-        assert evidence["peak_rss_bytes"] < evidence["maximum_memory_budget_bytes"]
+        assert evidence["anonymous_peak_bytes"] < evidence["maximum_memory_budget_bytes"]
         (ROOT / "reports/stage1-parquet-resource.json").write_text(
             json.dumps(evidence, indent=2) + "\n"
         )

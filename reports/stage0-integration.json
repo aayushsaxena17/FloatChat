@@ -1,10 +1,10 @@
 {
-  "project": "floatchat-stage0-test-00890240b8bf",
+  "project": "floatchat-stage0-test-e84e06463677",
   "complete": true,
   "checks": [
     {
       "check": "empty-volume-startup",
-      "seconds": 23.157347261001632
+      "seconds": 24.782817645999785
     },
     {
       "check": "postgis-metadata-permissions-and-repeat-bootstrap",
@@ -28,7 +28,7 @@
     },
     {
       "check": "repeat-startup-persistence",
-      "seconds": 21.148697655000433
+      "seconds": 18.158021700000063
     },
     {
       "check": "worker-storage-migrations-browser",

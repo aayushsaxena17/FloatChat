@@ -114,7 +114,7 @@ def main(arguments: list[str] | None = None) -> int:
         if args.command == "ingest":
             interval = month_interval(args.first, args.last)
             descriptor: dict[str, Any]
-            if not 61 <= args.execution_seconds <= 21600:
+            if not 61 <= args.execution_seconds <= 43200:
                 raise Rejection("invalid_execution_bound")
             if args.live_opt_in:
                 if not live_enabled():

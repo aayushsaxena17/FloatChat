@@ -4,6 +4,7 @@ import hashlib
 import json
 import resource
 import tempfile
+import threading
 import time
 import uuid
 from pathlib import Path
@@ -22,7 +23,7 @@ def main():
     wire["vertical_sampling_scheme"] = "s" * 65536
     original_columns = wire["data"]
     cgroup_limit = int(Path("/sys/fs/cgroup/memory.max").read_text())
-    assert cgroup_limit == 896 * 1024**2
+    assert cgroup_limit == 1024**3  # contract worker bound (ADR-0042)
 
     def profiles():
         for index in range(11):
@@ -37,6 +38,21 @@ def main():
             )
             yield uuid.UUID(int=index + 1), profile
 
+    # ADR-0042: anonymous memory is sampled; ru_maxrss and memory.peak also count
+    # file-backed pages (the read-back Parquet file) and are recorded, not judged.
+    anon_peak = 0
+    sampling = threading.Event()
+
+    def sample_anon() -> None:
+        nonlocal anon_peak
+        while not sampling.is_set():
+            for line in Path("/sys/fs/cgroup/memory.stat").read_text().splitlines():
+                if line.startswith("anon "):
+                    anon_peak = max(anon_peak, int(line.split()[1]))
+            sampling.wait(0.02)
+
+    sampler = threading.Thread(target=sample_anon, daemon=True)
+    sampler.start()
     start = time.monotonic()
     with tempfile.TemporaryDirectory() as directory:
         path = Path(directory) / "snapshot.parquet"
@@ -56,7 +72,9 @@ def main():
         events = dict(
             line.split() for line in Path("/sys/fs/cgroup/memory.events").read_text().splitlines()
         )
-        assert rss < 1024**3 and peak < 1024**3, (rss, peak)
+        sampling.set()
+        sampler.join()
+        assert anon_peak < 1024**3, (anon_peak, rss, peak)
         assert int(events["oom"]) == int(events["oom_kill"]) == 0
         print(
             json.dumps(
@@ -72,6 +90,8 @@ def main():
                     "parquet_bytes": path.stat().st_size,
                     "parquet_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
                     "verification": result,
+                    "anonymous_peak_bytes": anon_peak,
+                    "criterion": "ADR-0042: anonymous peak < 1 GiB and zero oom/oom_kill",
                     "peak_rss_bytes": rss,
                     "cgroup_memory_peak_bytes": peak,
                     "cgroup_limit_bytes": cgroup_limit,
