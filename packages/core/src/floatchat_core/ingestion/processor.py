@@ -4,6 +4,7 @@ import hashlib
 import json
 import time
 import uuid
+from collections.abc import Iterable
 from datetime import UTC, datetime
 from decimal import Decimal
 from functools import partial
@@ -22,6 +23,8 @@ from .source import Source
 from .spool import ProfileSpool, revision_json
 from .states import TERMINAL
 from .workflow import evidence_json, snapshot_certificate
+
+DECODE_CACHE_BYTES = 32 * 1024**2
 
 SPLITTABLE = frozenset(
     {
@@ -85,6 +88,10 @@ class Processor:
         ) = 0
         self.meta: dict[str, Path] = {}
         self.raw_paths: dict[str, Path] = {}
+        # Landed payloads are decoded once per role (exact-decimal decoding is the
+        # second-largest CPU item); payloads above the cache bound stream as before.
+        self.decoded: dict[str, list[dict[str, Any]]] = {}
+        self.meta_rows: dict[str, dict[str, Any]] = {}
         self.inventory_verified = False
         row = repository.chunk(authority.chunk)
         self.plan = PlannedChunk(
@@ -113,6 +120,7 @@ class Processor:
             output.write(result.payload)
         self.raw_ids[role] = str(result.manifest["id"])
         self.raw_statuses[role] = int(result.manifest.get("http_status", 200))
+        self.decoded.pop(role, None)
         return file
 
     def metadata(self, document: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -124,15 +132,28 @@ class Processor:
             pointer = bounded_text(pointer, 512, "invalid_metadata_pointer")
             if pointer not in self.meta:
                 self.meta[pointer] = self.landing("/argo/meta", {"id": pointer}, "metadata")
-            rows = list(documents(self.meta[pointer].read_bytes(), max_documents=1))
-            if len(rows) != 1 or rows[0].get("_id") != pointer:
-                raise Rejection("unresolved_metadata")
-            result[pointer] = rows[0]
+                self.meta_rows.pop(pointer, None)
+            if pointer not in self.meta_rows:
+                rows = list(documents(self.meta[pointer].read_bytes(), max_documents=1))
+                if len(rows) != 1 or rows[0].get("_id") != pointer:
+                    raise Rejection("unresolved_metadata")
+                self.meta_rows[pointer] = rows[0]
+            result[pointer] = self.meta_rows[pointer]
         return result
 
-    def inventory(self, path: Path) -> frozenset[str]:
+    def documents_of(self, role: str) -> Iterable[dict[str, Any]]:
+        """The landed documents of a role, decoded once and kept while they fit the bound."""
+        if role in self.decoded:
+            return self.decoded[role]
+        path = self.raw_paths[role]
+        if path.stat().st_size > DECODE_CACHE_BYTES:
+            return documents(path.read_bytes())
+        self.decoded[role] = list(documents(path.read_bytes()))
+        return self.decoded[role]
+
+    def inventory(self, role: str) -> frozenset[str]:
         identities = set()
-        for doc in documents(path.read_bytes()):
+        for doc in self.documents_of(role):
             self.pulse()
             observed = timestamp(doc.get("timestamp", ""))
             point = doc.get("geolocation", {})
@@ -187,7 +208,7 @@ class Processor:
     def inventory_accounting(self) -> None:
         self.outcomes = []
         self.observed_profiles = self.known_levels = self.unknown_level_profiles = 0
-        for index, doc in enumerate(documents(self.raw_paths["profile"].read_bytes())):
+        for index, doc in enumerate(self.documents_of("profile")):
             self.pulse()
             self.observed_profiles += 1
             arrays = doc.get("data")
@@ -220,7 +241,7 @@ class Processor:
             self.outcomes.append(outcome)
 
     def map(self, spool: ProfileSpool) -> None:
-        for index, doc in enumerate(documents(self.raw_paths["profile"].read_bytes())):
+        for index, doc in enumerate(self.documents_of("profile")):
             self.pulse()
             outcome = self.outcomes[index]
             outcome["outcome"] = "structurally_quarantined"
@@ -325,9 +346,9 @@ class Processor:
                         "/argo", request_parameters(self.plan, inventory=role != "profile"), role
                     )
                 self.inventory_accounting()
-                before = self.inventory(self.raw_paths["inventory_before"])
-                current = self.inventory(self.raw_paths["profile"])
-                after = self.inventory(self.raw_paths["inventory_after"])
+                before = self.inventory("inventory_before")
+                current = self.inventory("profile")
+                after = self.inventory("inventory_after")
                 # S1-SOURCE-2: an empty-delivery 404 counts only as a coherent triple;
                 # a mixed 200/404 selection is retried like a changing inventory.
                 coherent = len({self.raw_statuses[r] for r in self.raw_paths}) == 1
@@ -338,11 +359,13 @@ class Processor:
                     raise Rejection("incomplete_inventory")
                 self.source.restart_selection()
                 self.meta.clear()
+                self.meta_rows.clear()
                 self.raw_paths.clear()
+                self.decoded.clear()
                 self.raw_statuses.clear()
             self.inventory_verified = True
             # Resolve every profile's metadata before declaring the landing complete.
-            for document in documents(self.raw_paths["profile"].read_bytes()):
+            for document in self.documents_of("profile"):
                 self.metadata(document)
             phase = self.repository.chunk(self.authority.chunk)["state"]
             if phase == "fetching":
@@ -383,7 +406,7 @@ class Processor:
                 "/argo", request_parameters(self.plan, inventory=role != "profile"), role
             )
         self.inventory_verified = True
-        for document in documents(self.raw_paths["profile"].read_bytes()):
+        for document in self.documents_of("profile"):
             self.metadata(document)
 
     def terminal(self, error: Rejection) -> str:
