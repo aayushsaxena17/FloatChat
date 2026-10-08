@@ -95,6 +95,14 @@ def command(arguments, *, timeout=120, check=True, progress_callback=None):
     return result
 
 
+def git_head():
+    """Short commit recorded with each session; the source hash binds the exact files."""
+    head = command(["git", "rev-parse", "--short=12", "HEAD"]).stdout.strip()
+    if re.fullmatch(r"[0-9a-f]{12}", head) is None:
+        raise PreparationFailure("invalid_git_head")
+    return head
+
+
 def session_directory(identifier):
     if re.fullmatch(r"[a-f0-9]{16}", identifier) is None:
         raise PreparationFailure("invalid_acceptance_session")
@@ -355,7 +363,7 @@ def prepare():
         "OBJECT_STORAGE_SECRET_KEY": secrets.token_hex(24),
         "MINIO_ROOT_USER": "acceptance-admin-" + identifier,
         "MINIO_ROOT_PASSWORD": secrets.token_hex(24),
-        "INGESTION_APPLICATION_COMMIT": "619411a+worktree:" + source_hash(),
+        "INGESTION_APPLICATION_COMMIT": git_head() + "+worktree:" + source_hash(),
         **{"ACCEPTANCE_" + key + "_IMAGE": image for key, image in IMAGES.items()},
     }
     env_file = directory / "environment.env"
