@@ -68,10 +68,14 @@ Advisor agreement for these ADRs is not recorded here.
   under Docker.
 - [ ] Redis is still required by the Stage 0 API (`redis_url`, readiness check) and stays in the dev
   stack; only the Stage 1 workers dropped it.
-- [ ] Not implemented: GDAC wiring end to end (source selection in `process_ticket`, `ingest
-  --source gdac`, publication SQL parameterised by source), the audit cadence (`audit=True`,
-  `app.audit_levels`), persisted governor counters, and a decision on memory at the contractual
-  chunk cap.
+- [x] GDAC wired end to end ([G2](docs/v4-packages/G2.md)): `ingest --source gdac` with
+  `prepare_cache`, source-aware admission and policy versions, `GdacSource` in `process_ticket`,
+  `gdac_map_profile` routing, migration 0015 (`app.run_source`, `app.profile_slot`, source-aware
+  `admit_run`/`ensure_slot`/`commit_publication`); offline fixture run publishes gdac profiles;
+  `test_gdac_sql.py` 6 integration cases pass. Not done: skipping the synthetic metadata landings,
+  gdac replay, Parquet schema metadata still names `argovis-core-v1`.
+- [ ] Not implemented: the audit cadence (`audit=True`, `app.audit_levels`), persisted governor
+  counters, and a decision on memory at the contractual chunk cap.
 - [x] ADR-0046 (`missing_basin` informational warning, codex/stage-1 50dbdbc) merged into this
   branch; the v4 ADRs are ADR-0047..0053.
 
