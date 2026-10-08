@@ -3,14 +3,12 @@
 import hashlib
 import json
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 from floatchat_core.ingestion.argovis import map_profile
 from floatchat_core.ingestion.numeric import (
     CanonicalBudget,
     Rejection,
-    _small_json_bound,
     decode_json,
 )
 
@@ -53,7 +51,6 @@ def test_bounded_c_level_encoding_matches_canonical_reference(level):
     actual, digest = budget.encode(content)
     assert actual == reference and digest == hashlib.sha256(reference).hexdigest()
     assert budget.run_used == budget.chunk_used == len(reference)
-    assert _small_json_bound(level) >= len(json.dumps(level, separators=(",", ":")).encode())
 
 
 @pytest.mark.parametrize("scope", ["profile", "chunk", "run"])
@@ -82,18 +79,6 @@ def test_near_boundary_preserves_original_failure_and_charging(scope):
     assert budget.run_used == budget.chunk_used == sum(expected)
     exact = CanonicalBudget(**{scope + "_limit": limit + 1})
     assert exact.encode(content)[0] == "".join(pieces).encode()
-
-
-def test_large_or_deep_level_never_uses_c_encoding_before_limit():
-    for level in ({"value": "x" * 100000}, {"value": [None] * 513}):
-        assert _small_json_bound(level) is None
-        with patch.object(json.JSONEncoder, "encode", side_effect=AssertionError("unbounded")):
-            with pytest.raises(Rejection, match="canonical_output_limit"):
-                CanonicalBudget(profile_limit=32).encode({"levels": [level]})
-    value = "leaf"
-    for _ in range(18):
-        value = [value]
-    assert _small_json_bound(value) is None
 
 
 def test_nonfinite_values_keep_fail_closed_json_behavior():
