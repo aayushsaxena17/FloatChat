@@ -21,7 +21,7 @@ from .argovis import Profile
 from .identity import StoredIdentity
 from .numeric import CanonicalBudget, Rejection
 from .parquet import PublicationSnapshotVerifier
-from .planning import GEOMETRY_VERSION, Tile, month_start, timestamp
+from .planning import GEOMETRY_VERSION, MAPPINGS, Tile, month_start, timestamp
 from .revisions import Revision
 
 _PARAMETERS = ("pressure", "temperature", "salinity")
@@ -52,8 +52,11 @@ STAGING_SCHEMA = pa.schema(
 )
 
 
-def slot_key(observed: datetime, longitude: Decimal, latitude: Decimal) -> str:
-    """The `app.owner_slot` expression: UTC month x 10-degree tile of the exact position."""
+def slot_key(
+    observed: datetime, longitude: Decimal, latitude: Decimal, source: str = "argovis"
+) -> str:
+    """The `app.owner_slot` (or `app.gdac_owner_slot`) expression: UTC month x 10-degree tile
+    of the exact position."""
     if not (20 <= longitude <= 120 and -60 <= latitude <= 30):
         raise Rejection("candidate_outside_region")
     west = 110 if longitude == 120 else int((longitude - 20) // 10) * 10 + 20
@@ -61,16 +64,17 @@ def slot_key(observed: datetime, longitude: Decimal, latitude: Decimal) -> str:
     tile = Tile(west, south)
     month = month_start(observed).strftime("%Y-%m")
     return (
-        f"argovis/core/{month}/{tile.west}:{tile.south}/{GEOMETRY_VERSION}/"
-        "argovis-core-v1/scientific-json-v2"
+        f"{source}/core/{month}/{tile.west}:{tile.south}/{GEOMETRY_VERSION}/"
+        f"{MAPPINGS[source]}/scientific-json-v2"
     )
 
 
-def owner_slot(profile: Profile) -> str:
+def owner_slot(profile: Profile, source: str = "argovis") -> str:
     return slot_key(
         timestamp(profile.observed_at),
         Decimal(profile.longitude.exact or "NaN"),
         Decimal(profile.latitude.exact or "NaN"),
+        source,
     )
 
 
@@ -140,9 +144,12 @@ class StoredState:
 
     @property
     def slot(self) -> str:
+        return self.slot_of("argovis")
+
+    def slot_of(self, source: str) -> str:
         if self.longitude is None or self.latitude is None:
             raise Rejection("candidate_outside_region")
-        return slot_key(self.observed_at, self.longitude, self.latitude)
+        return slot_key(self.observed_at, self.longitude, self.latitude, source)
 
 
 def evidence_json(verified: dict[str, Any]) -> dict[str, Any]:

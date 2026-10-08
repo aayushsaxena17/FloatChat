@@ -1260,13 +1260,14 @@ def _staged_levels(levels, *, occurrence=0, chunk=CHUNK, fence=1):
     )
 
 
-def _publishing(profile, candidate, *, levels=None, base=0):
+def _publishing(profile, candidate, *, levels=None, base=0, source="argovis"):
     """SQL component fixture: object evidence is synthetic, not a MinIO acceptance proof.
 
     levels overrides the typed level rows staged for the candidate (default: the profile's);
-    base is the slot version the part is built on.
+    base is the slot version the part is built on; source selects the population (and key).
     """
-    slot = owner_slot(profile)
+    slot = owner_slot(profile, source)
+    tile_key = "70:10" if source == "argovis" else slot.split("/")[3]
     profile_id = candidate["proposed_profile_id"]
     digest = "d" * 64
     key = f"normalised/sha256/{digest}.parquet"
@@ -1315,7 +1316,7 @@ def _publishing(profile, candidate, *, levels=None, base=0):
     SELECT app.transition_chunk('{RUN}','{CHUNK}',1,1,'publishing','test');
     {PARTITION}
     INSERT INTO app.logical_partition_slot(environment_id,logical_key,observation_month,tile_key)
-      VALUES('{ENV}','{slot}','2025-01-01','70:10') ON CONFLICT DO NOTHING;
+      VALUES('{ENV}','{slot}','2025-01-01','{tile_key}') ON CONFLICT DO NOTHING;
     INSERT INTO app.publication_intent VALUES('{INTENT}','{CHUNK}',1,1,'prepared',now(),
       {_literal([key])},{_literal({slot: base})},'{{}}',NULL);
     INSERT INTO app.ingestion_staging VALUES('{RUN}','{CHUNK}',1,0,{_literal(candidate)});

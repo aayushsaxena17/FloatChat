@@ -22,7 +22,7 @@ from psycopg import sql
 
 # Alembic head the isolated database must reach (tests/stage1/test_acceptance_preparation.py
 # keeps this equal to the newest file in infra/migrations/versions).
-MIGRATION_HEAD = "0014_gdac_source"
+MIGRATION_HEAD = "0015_gdac_wiring"
 
 
 def initialize():
@@ -259,6 +259,8 @@ def main():
     parser.add_argument("--request-id")
     parser.add_argument("--replay-run")
     parser.add_argument("--seconds", type=int)
+    parser.add_argument("--source", choices=("argovis", "gdac"), default="argovis")
+    parser.add_argument("--gdac-cache")
     args = parser.parse_args()
     if args.stdin_key:
         # Only the acquire process may hold the upstream credential; the process pool,
@@ -305,7 +307,14 @@ def main():
                 "--request-id",
                 args.request_id,
             ]
-            arguments += ["--replay-run", args.replay_run] if args.replay_run else ["--live-opt-in"]
+            if args.source == "gdac":
+                # The GDAC bulk source has no live opt-in: the cache is filled before admission.
+                arguments += ["--source", "gdac"]
+                arguments += ["--gdac-cache", args.gdac_cache] if args.gdac_cache else []
+            else:
+                arguments += (
+                    ["--replay-run", args.replay_run] if args.replay_run else ["--live-opt-in"]
+                )
         raise SystemExit(cli(arguments))
 
 

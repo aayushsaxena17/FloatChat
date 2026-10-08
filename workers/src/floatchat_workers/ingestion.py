@@ -9,7 +9,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from floatchat_core.ingestion.argovis import policy_versions
+from floatchat_core.ingestion.argovis import GDAC_SOURCE_CONTRACT, SOURCE_CONTRACT, policy_versions
+from floatchat_core.ingestion.gdac import GdacSource
 from floatchat_core.ingestion.landing import RequestOwner
 from floatchat_core.ingestion.minio import MinioStore
 from floatchat_core.ingestion.numeric import Rejection
@@ -196,15 +197,17 @@ def process_ticket(
         current = repository.run(run)
         if current["environment_id"] != configuration.environment:
             raise Rejection("unsafe_environment")
-        if current["policy_versions"] != policy_versions():
+        inputs = repository.input(run)
+        if inputs is None:
+            raise Rejection("missing_input_descriptor")
+        # A run is checked against the contract of its own source (the input kind).
+        contract = GDAC_SOURCE_CONTRACT if inputs["kind"] == "gdac" else SOURCE_CONTRACT
+        if current["policy_versions"] != policy_versions(contract):
             raise Rejection("unsupported_policy_versions")
         remaining = (current["work_deadline"] - datetime.now(UTC)).total_seconds()
         if remaining <= 0:
             raise Rejection("work_deadline")
         deadline = time.monotonic() + remaining
-        inputs = repository.input(run)
-        if inputs is None:
-            raise Rejection("missing_input_descriptor")
         private = private_directory(configuration.private / str(run) / str(chunk) / ticket.hex)
         store = configuration.store()
         source: Source
@@ -224,6 +227,17 @@ def process_ticket(
                 originals=private / "originals",
                 require_existing=existing,
                 **threaded,
+            )
+        elif inputs["kind"] == "gdac":
+            # Derived from the cached daily files; the Argovis key is never loaded.
+            source = GdacSource(
+                repository,
+                store,
+                authority,
+                inputs["descriptor"],
+                deadline=deadline,
+                application_commit=configuration.application_commit,
+                require_existing=existing,
             )
         else:
             source = RecordedSource(

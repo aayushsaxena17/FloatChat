@@ -21,7 +21,7 @@ import pyarrow.parquet as pq
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
-from .argovis import Profile, policy_versions
+from .argovis import GDAC_SOURCE_CONTRACT, SOURCE_CONTRACT, Profile, policy_versions
 from .coverage import Receipt, resolve
 from .identity import StoredIdentity
 from .numeric import CanonicalBudget, Rejection, ScientificNumber
@@ -52,6 +52,9 @@ from .workflow import (
     evidence_json,
     snapshot_certificate,
 )
+
+# SQL owner-slot function of each source population (never interpolated from input).
+OWNER_FUNCTIONS = {"argovis": "app.owner_slot", "gdac": "app.gdac_owner_slot"}
 
 SAFE_DATABASE_CATEGORIES = frozenset(
     {
@@ -217,6 +220,8 @@ class Repository:
         input_kind: str | None = None,
         descriptor: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
+        # A gdac run carries the gdac-core-v1 contract; the SQL derives the scope from it.
+        contract = GDAC_SOURCE_CONTRACT if input_kind == "gdac" else SOURCE_CONTRACT
         with self.transaction() as cursor:
             cursor.execute(
                 "SELECT app.admit_run(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) AS result",
@@ -229,7 +234,7 @@ class Repository:
                     None if interval is None else interval.end,
                     limits["execution_seconds"],
                     GEOMETRY_SHA256,
-                    Jsonb(policy_versions()),
+                    Jsonb(policy_versions(contract)),
                     Jsonb({**limits, **RUN_POLICY}),
                 ),
             )
@@ -250,8 +255,15 @@ class Repository:
             return dict(row)
 
     def validate_replay(
-        self, environment: uuid.UUID, mode: str, interval: Interval, predecessor: uuid.UUID
+        self,
+        environment: uuid.UUID,
+        mode: str,
+        interval: Interval,
+        predecessor: uuid.UUID,
+        source_contract: str = SOURCE_CONTRACT,
     ) -> None:
+        """The predecessor must be complete and carry the policy versions of its own source
+        contract (the new run's contract, Argovis by default)."""
         row = self.run(predecessor)
         if (
             not row["closed"]
@@ -260,7 +272,7 @@ class Repository:
             or row["mode"] != mode
             or row["requested_start"] != interval.start
             or row["requested_end"] != interval.end
-            or row["policy_versions"] != policy_versions()
+            or row["policy_versions"] != policy_versions(source_contract)
             or row["geometry_sha256"] != GEOMETRY_SHA256
         ):
             raise Rejection("invalid_replay_predecessor")
@@ -653,17 +665,18 @@ class Repository:
             key,
         )
 
-    def identities(self, profile: Profile) -> tuple[StoredIdentity, ...]:
+    def identities(self, profile: Profile, source: str = "argovis") -> tuple[StoredIdentity, ...]:
         with self.transaction(readonly_snapshot=True) as cursor:
             cursor.execute(
                 "SELECT p.id,p.source_profile_id,p.cycle_number,p.direction,p.fallback_complete,"
                 "p.identity_observed_at,p.observation_segment,f.platform_number "
                 "FROM app.argo_profile p "
-                "JOIN app.argo_float f ON f.id=p.float_id WHERE p.source='argovis' AND "
+                "JOIN app.argo_float f ON f.id=p.float_id WHERE p.source=%s AND "
                 "((%s::text IS NOT NULL AND p.source_profile_id=%s) OR "
                 "(f.platform_number=%s AND p.cycle_number=%s AND p.direction=%s)) "
                 "ORDER BY p.id LIMIT 100001",
                 (
+                    source,
                     profile.source_profile_id,
                     profile.source_profile_id,
                     profile.platform,
@@ -677,7 +690,7 @@ class Repository:
             return tuple(self.identity_row(dict(row)) for row in rows)
 
     def identities_batch(
-        self, profiles: Sequence[Profile]
+        self, profiles: Sequence[Profile], source: str = "argovis"
     ) -> dict[str, tuple[StoredIdentity, ...]]:
         """Stored identities matching each profile (stable id or platform/cycle/direction).
 
@@ -693,11 +706,11 @@ class Repository:
                 "SELECT p.id,p.source_profile_id,p.cycle_number,p.direction,p.fallback_complete,"
                 "p.identity_observed_at,p.observation_segment,f.platform_number "
                 "FROM app.argo_profile p "
-                "JOIN app.argo_float f ON f.id=p.float_id WHERE p.source='argovis' AND "
+                "JOIN app.argo_float f ON f.id=p.float_id WHERE "
                 "(p.source_profile_id=ANY(%s) OR (f.platform_number,p.cycle_number,p.direction) "
                 "IN (SELECT * FROM unnest(%s::text[],%s::bigint[],%s::text[]))) "
-                "ORDER BY p.id LIMIT 100001",
-                (stable, [k[0] for k in keys], [k[1] for k in keys], [k[2] for k in keys]),
+                "AND p.source=%s ORDER BY p.id LIMIT 100001",
+                (stable, [k[0] for k in keys], [k[1] for k in keys], [k[2] for k in keys], source),
             )
             rows = cursor.fetchall()
         if len(rows) > 100000:
@@ -756,6 +769,7 @@ class Repository:
         piece: Any,
         *,
         counts: Iterable[str] = (),
+        source: str = "argovis",
     ) -> dict[str, SlotState]:
         """Versions of the slots (the publication bases) and, for `counts`, the stored
         population now: all profiles of the slot and those inside the chunk selection.
@@ -786,7 +800,9 @@ class Repository:
                     "AND (p.scientific_content#>>'{latitude,exact}')::numeric>=%s "
                     "AND ((p.scientific_content#>>'{latitude,exact}')::numeric<%s OR "
                     "(%s=30 AND (p.scientific_content#>>'{latitude,exact}')::numeric=30))"
-                    ") AS selected FROM app.argo_profile p WHERE app.owner_slot(p.observed_at,"
+                    ") AS selected FROM app.argo_profile p WHERE p.source=%s AND "
+                    + OWNER_FUNCTIONS[source]
+                    + "(p.observed_at,"
                     "(p.scientific_content->'longitude'->>'exact')::numeric,"
                     "(p.scientific_content->'latitude'->>'exact')::numeric)=%s",
                     (
@@ -798,6 +814,7 @@ class Repository:
                         tile.south,
                         tile.south + tile.height,
                         tile.south + tile.height,
+                        source,
                         slot,
                     ),
                 )
@@ -1077,6 +1094,7 @@ class Repository:
         *,
         tiles: tuple[Tile, ...] | None = None,
         max_seconds: float = 60,
+        source: str = "argovis",
     ) -> CatalogueSnapshot:
         """One consistent snapshot resolves committed fetch and stored-domain evidence."""
         if not 0 < max_seconds <= 60:
@@ -1150,15 +1168,23 @@ class Repository:
             def members(piece: Interval, slot: str) -> int:
                 cursor.execute(
                     "SELECT count(*) AS n FROM app.argo_profile p "
-                    "WHERE p.observed_at>=%s AND p.observed_at<%s AND "
-                    "app.owner_slot(p.observed_at,(p.scientific_content->'longitude'->>'exact')::numeric,"
+                    "WHERE p.source=%s AND p.observed_at>=%s AND p.observed_at<%s AND "
+                    + OWNER_FUNCTIONS[source]
+                    + "(p.observed_at,(p.scientific_content->'longitude'->>'exact')::numeric,"
                     "(p.scientific_content->'latitude'->>'exact')::numeric)=%s",
-                    (piece.start, piece.end, slot),
+                    (source, piece.start, piece.end, slot),
                 )
                 return int(cursor.fetchone()["n"])
 
             result = resolve(
-                interval, records, versions, receipts, members, tiles=tiles, deadline=deadline
+                interval,
+                records,
+                versions,
+                receipts,
+                members,
+                tiles=tiles,
+                deadline=deadline,
+                source=source,
             )
             # Manifests only for the slots the selection returns; readers filter part rows by them.
             cursor.execute(

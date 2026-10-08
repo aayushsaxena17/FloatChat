@@ -604,6 +604,11 @@ def verify_inventory(before: Any, data: Any, after: Any, interval: Interval) -> 
         raise Rejection("incomplete_inventory")
 
 
+def source_of(versions: dict[str, Any]) -> str:
+    """The source population a run's policy versions belong to (mirror of app.run_source)."""
+    return "gdac" if versions.get("mapping") == GDAC_SOURCE_CONTRACT else "argovis"
+
+
 def policy_versions(source_contract: str = SOURCE_CONTRACT) -> dict[str, str]:
     if source_contract == GDAC_SOURCE_CONTRACT:
         return {

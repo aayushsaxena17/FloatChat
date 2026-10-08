@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from .numeric import Rejection
 from .objects import CatalogueRecord, CatalogueSnapshot
-from .planning import GEOMETRY_VERSION, Interval, Tile, month_start, shift_months
+from .planning import GEOMETRY_VERSION, MAPPINGS, Interval, Tile, month_start, shift_months
 
 
 @dataclass(frozen=True)
@@ -74,6 +74,7 @@ def resolve(
     *,
     tiles: tuple[Tile, ...] | None = None,
     deadline: float,
+    source: str = "argovis",
 ) -> CatalogueSnapshot:
     if len(receipts) > 16384:
         raise Rejection("selector_receipt_limit")
@@ -112,8 +113,8 @@ def resolve(
         piece = Interval(max(month, interval.start), min(shift_months(month, 1), interval.end))
         for tile in tiles:
             slot = (
-                f"argovis/core/{month:%Y-%m}/{tile.west}:{tile.south}/{GEOMETRY_VERSION}/"
-                "argovis-core-v1/scientific-json-v2"
+                f"{source}/core/{month:%Y-%m}/{tile.west}:{tile.south}/{GEOMETRY_VERSION}/"
+                f"{MAPPINGS[source]}/scientific-json-v2"
             )
             relevant = tuple(receipt for receipt in receipts if receipt.logical_key == slot)
             if not covers(piece, tile, relevant, deadline=deadline):

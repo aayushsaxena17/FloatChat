@@ -419,10 +419,13 @@ class FakeRepository:
     def canonical_budget(self, authority):
         yield CanonicalBudget()
 
+    def input(self, run):
+        return {"kind": "captured", "descriptor": {}}
+
     def heartbeat(self, authority):
         self.calls.append("heartbeat")
 
-    def identities_batch(self, profiles):
+    def identities_batch(self, profiles, source="argovis"):
         self.calls.append("identities_batch")
         return self.database.identities(profiles)
 
@@ -443,7 +446,7 @@ class FakeRepository:
         self.calls.append("ensure_slot")
         return owner_slot_for(month, tile)
 
-    def slot_state(self, authority, slots, piece, *, counts=()):
+    def slot_state(self, authority, slots, piece, *, counts=(), source="argovis"):
         self.calls.append(("slot_state", tuple(slots), tuple(counts)))
         return {
             slot: SlotState(
@@ -735,6 +738,7 @@ def test_P01_identities_batch_assigns_each_profile_only_its_own_matches(wire, li
         [first.platform, first.platform],
         [first.cycle, second.cycle],
         ["A", "A"],
+        "argovis",
     )
     assert repository_over(FakeCursor()).identities_batch([]) == {}
 

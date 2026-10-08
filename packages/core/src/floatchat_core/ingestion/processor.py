@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from .argovis import VARIABLES, bounded_text, integer, map_profile, request_parameters
+from .gdac import gdac_map_profile
 from .json_stream import documents
 from .numeric import Rejection, scientific_number
 from .objects import ObjectStore, publish_verified
@@ -60,6 +61,14 @@ FAILURES = frozenset(
         "live_ingestion_disabled",
         "publication_budget_exhausted",
         "private_spool_size_limit",
+        # GDAC (G2): download side (an upstream file over its bound) and run configuration
+        # (descriptor, cache pin, request shape). Never data defects: nothing is quarantined.
+        "gdac_file_size_limit",
+        "gdac_index_changed",
+        "invalid_gdac_descriptor",
+        "unapproved_cache_path",
+        "invalid_request_parameters",
+        "invalid_request_role",
     }
 )
 
@@ -106,6 +115,9 @@ class Processor:
             run["run_reference_time_utc"], run["mode"], str(run["environment_id"])
         )
         self.environment = run["environment_id"]
+        # The input kind selects the mapper and the slot namespace (read once per chunk run).
+        inputs = repository.input(authority.run)
+        self.source_name = "gdac" if inputs is not None and inputs["kind"] == "gdac" else "argovis"
 
     def pulse(self) -> None:
         now = time.monotonic()
@@ -268,7 +280,11 @@ class Processor:
                 informational = "missing_basin" in warnings
                 doc = {**doc, "data_warning": []}
             with self.budget_repository.canonical_budget(self.authority) as budget:
-                value = map_profile(doc, self.metadata(doc), budget)
+                value = (
+                    gdac_map_profile(doc, budget, self.metadata(doc))
+                    if self.source_name == "gdac"
+                    else map_profile(doc, self.metadata(doc), budget)
+                )
             self.canonical_input += len(value.canonical_bytes)
             if self.canonical_input > 256 * 1024**2 or self.known_levels > 2_000_000:
                 raise Rejection("chunk_scientific_resource_limit")
@@ -290,7 +306,7 @@ class Processor:
                 and self.policy.mode == "normal"
                 and value.source_profile_id is not None
             ):
-                for identity in self.repository.identities(value):
+                for identity in self.repository.identities(value, self.source_name):
                     if identity.source_profile_id == value.source_profile_id:
                         previous = self.repository.science_hashes([identity.id]).get(identity.id)
                         if previous is None:
@@ -471,10 +487,13 @@ class Processor:
         for attempt in range(4):
             self.inventory_accounting()
             self.canonical_input = 0
-            with ProfileSpool() as spool:
+            with ProfileSpool(self.source_name) as spool:
                 self.map(spool)
                 try:
-                    spool.prepare(self.repository.identities_batch, self.repository.science_hashes)
+                    spool.prepare(
+                        partial(self.repository.identities_batch, source=self.source_name),
+                        self.repository.science_hashes,
+                    )
                 except Rejection:
                     for index, key, result, levels in spool.outcomes:
                         self.outcomes[index].update(identity=key, outcome=result, levels=levels)
@@ -506,6 +525,7 @@ class Processor:
                     sorted(spool.changed_slots | {own}),
                     self.plan,
                     counts=self.counted(spool, own),
+                    source=self.source_name,
                 )
                 bases = {slot: states[slot].version for slot in spool.changed_slots}
                 intent = uuid.uuid4()

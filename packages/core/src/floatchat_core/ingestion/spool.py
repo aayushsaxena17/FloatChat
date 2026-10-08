@@ -192,7 +192,8 @@ class ProfileSpool:
     only the last accepted version is this chunk's content for its slot.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, source: str = "argovis") -> None:
+        self.source = source
         self.entries: list[_Entry] = []
         self.by_identity: dict[str, _Entry] = {}
         self.incoming_bytes = self.incoming_levels = 0
@@ -300,11 +301,11 @@ class ProfileSpool:
             self.outcomes.append((entry.ordinal, profile.identity, outcome, len(profile.levels)))
             if outcome in ("insert", "newer"):
                 if stored_state is not None:
-                    self.changed_slots.add(stored_state.slot)
+                    self.changed_slots.add(stored_state.slot_of(self.source))
                     self.replaced.setdefault(identifier, stored_state)
                 if local is not None and local.slot is not None:
                     self.changed_slots.add(local.slot)
-                entry.slot = owner_slot(profile)
+                entry.slot = owner_slot(profile, self.source)
                 self.changed_slots.add(entry.slot)
                 self.accepted[identifier] = entry
 
@@ -317,7 +318,7 @@ class ProfileSpool:
 
     def departed(self, slot: str) -> list[StoredState]:
         """Stored profiles of the slot that an accepted candidate replaces or moves away."""
-        return [state for state in self.replaced.values() if state.slot == slot]
+        return [state for state in self.replaced.values() if state.slot_of(self.source) == slot]
 
     def candidates(self) -> Iterator[dict[str, Any]]:
         for entry in self.entries:

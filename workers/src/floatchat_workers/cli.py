@@ -8,6 +8,7 @@ import uuid
 from pathlib import Path
 from typing import Any, cast
 
+from floatchat_core.ingestion import gdac
 from floatchat_core.ingestion.controller import ControlStore, Supervisor
 from floatchat_core.ingestion.numeric import Rejection
 from floatchat_core.ingestion.planning import month_interval
@@ -151,10 +152,13 @@ def parser() -> argparse.ArgumentParser:
     ingest.add_argument("--region", choices=("indian-ocean",), default="indian-ocean")
     ingest.add_argument("--from", dest="first", required=True)
     ingest.add_argument("--to", dest="last", required=True)
-    inputs = ingest.add_mutually_exclusive_group(required=True)
+    ingest.add_argument("--source", choices=("argovis", "gdac"), default="argovis")
+    # Required for --source argovis (checked in main); --source gdac takes none of them.
+    inputs = ingest.add_mutually_exclusive_group()
     inputs.add_argument("--fixture-index")
     inputs.add_argument("--replay-run", type=uuid.UUID)
     inputs.add_argument("--live-opt-in", action="store_true")
+    ingest.add_argument("--gdac-cache", type=Path)
     ingest.add_argument("--request-id", type=uuid.UUID)
     ingest.add_argument("--execution-seconds", type=int, default=21600)
     for name in ("status", "report", "cancel"):
@@ -215,7 +219,19 @@ def main(arguments: list[str] | None = None) -> int:
             descriptor: dict[str, Any]
             if not 61 <= args.execution_seconds <= 43200:
                 raise Rejection("invalid_execution_bound")
-            if args.live_opt_in:
+            if args.source == "gdac":
+                if args.fixture_index or args.replay_run or args.live_opt_in:
+                    raise Rejection("unsupported_gdac_input")
+                cache = args.gdac_cache or configuration.private / "gdac-cache"
+                # Downloads the index and the daily files (only data-argo.ifremer.fr) once;
+                # an already filled cache is not fetched again.
+                kind, descriptor = (
+                    "gdac",
+                    gdac.prepare_cache(cache, interval, time.monotonic() + args.execution_seconds),
+                )
+            elif not (args.live_opt_in or args.fixture_index or args.replay_run):
+                raise Rejection("missing_ingest_input")
+            elif args.live_opt_in:
                 if not live_enabled():
                     raise Rejection("live_ingestion_disabled")
                 kind, descriptor = "live", {"live_opt_in": True}
