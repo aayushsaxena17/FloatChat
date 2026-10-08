@@ -6,17 +6,40 @@ import json
 import time
 import uuid
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
-from floatchat_core.ingestion.controller import Supervisor
+from floatchat_core.ingestion.controller import ControlStore, Supervisor
 from floatchat_core.ingestion.numeric import Rejection
 from floatchat_core.ingestion.planning import month_interval
 from floatchat_core.ingestion.reporting import markdown_report, persisted_report
-from floatchat_core.ingestion.repository import Authority
+from floatchat_core.ingestion.repository import Authority, Repository
 from floatchat_core.ingestion.states import exit_code
 
 from .ingestion import Configuration, live_enabled
 from .queue import issue
+
+
+class ControlConnection:
+    """The Repository as the supervisor's ControlStore (one connection, all calls delegated).
+
+    Controller ticks call extend_unstarted_leases. Until Repository carries that method
+    (package F, see the package report) this class runs the same one statement itself, then
+    defers to the Repository method as soon as it exists.
+    """
+
+    def __init__(self, repository: Repository) -> None:
+        self.repository = repository
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self.repository, name)
+
+    def extend_unstarted_leases(self, run: uuid.UUID, epoch: int) -> int:
+        method = getattr(self.repository, "extend_unstarted_leases", None)
+        if method is not None:
+            return int(method(run, epoch))
+        with self.repository.transaction() as cursor:
+            cursor.execute("SELECT app.extend_unstarted_leases(%s,%s) AS n", (run, epoch))
+            return int(cursor.fetchone()["n"])
 
 
 def dispatch(authority: Authority, kind: str) -> None:
@@ -172,7 +195,7 @@ def main(arguments: list[str] | None = None) -> int:
             )
         repository = configuration.repository()
         if args.command == "supervise":
-            supervisor = Supervisor(repository, dispatch)
+            supervisor = Supervisor(cast(ControlStore, ControlConnection(repository)), dispatch)
             while True:
                 try:
                     supervisor.tick(repository.open_runs())

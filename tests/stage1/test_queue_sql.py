@@ -315,6 +315,143 @@ def test_claim_ticket_skips_a_locked_row_instead_of_waiting_for_it(postgres):
         )
 
 
+# extend_unstarted_leases ---------------------------------------------------------------
+
+SHORT_LEASE = (
+    "UPDATE app.ingestion_chunk SET lease_until=clock_timestamp()+interval '1 minute' "
+    f"WHERE id='{CHUNK}';"
+)
+EXTEND = f"app.extend_unstarted_leases('{RUN}',1)"
+
+
+def lease_extended(chunk_id=CHUNK):
+    """yes when the chunk's lease is now about a full 10 minute TTL, no when it is untouched."""
+    return yes(
+        f"(SELECT lease_until FROM app.ingestion_chunk WHERE id='{chunk_id}')"
+        " > clock_timestamp()+interval '9 minutes'"
+    )
+
+
+@pytest.mark.integration
+def test_extend_unstarted_leases_renews_a_chunk_waiting_for_a_worker(postgres):
+    result = postgres(f"""BEGIN;
+      {CLAIM}
+      SELECT {ticket("acquire")};
+      {SHORT_LEASE}
+      SELECT 'before|'||{lease_extended()};
+      SELECT 'count|'||{EXTEND};
+      SELECT 'after|'||{lease_extended()};
+      SELECT 'claims|'||processing_claims||'|fence|'||fence FROM app.ingestion_chunk
+        WHERE id='{CHUNK}';
+      ROLLBACK;""")
+    assert result.splitlines()[-4:] == ["before|no", "count|1", "after|yes", "claims|1|fence|1"]
+
+
+@pytest.mark.integration
+def test_extend_unstarted_leases_covers_a_claimed_ticket_nobody_started_and_the_handover(postgres):
+    result = postgres(f"""BEGIN;
+      {CLAIM}
+      CREATE TEMP TABLE acquired AS SELECT {ticket("acquire")} AS id;
+      SELECT app.claim_ticket('acquire','a');
+      SELECT 'start|'||{yes("app.start_worker((SELECT id FROM acquired))")};
+      SELECT {ticket("process")};
+      {SHORT_LEASE}
+      SELECT 'count|'||{EXTEND};
+      SELECT 'after|'||{lease_extended()};
+      ROLLBACK;""")
+    # The acquire ticket is started, the same-fence process ticket is waiting: still extended.
+    assert result.splitlines()[-3:] == ["start|yes", "count|1", "after|yes"]
+
+
+@pytest.mark.integration
+def test_extend_unstarted_leases_ignores_a_started_ticket(postgres):
+    result = postgres(f"""BEGIN;
+      {CLAIM}
+      CREATE TEMP TABLE issued AS SELECT {ticket("acquire")} AS id;
+      SELECT app.start_worker((SELECT id FROM issued));
+      {SHORT_LEASE}
+      SELECT 'count|'||{EXTEND};
+      SELECT 'after|'||{lease_extended()};
+      ROLLBACK;""")
+    assert result.splitlines()[-2:] == ["count|0", "after|no"]
+
+
+@pytest.mark.integration
+def test_extend_unstarted_leases_ignores_a_ticket_of_a_superseded_fence(postgres):
+    result = postgres(f"""BEGIN;
+      {CLAIM}
+      SELECT {ticket("acquire")};
+      {EXPIRE_LEASE}
+      SELECT app.claim_chunk('{RUN}','{CHUNK}',1);
+      {SHORT_LEASE}
+      SELECT 'fence|'||fence FROM app.ingestion_chunk WHERE id='{CHUNK}';
+      SELECT 'count|'||{EXTEND};
+      SELECT 'after|'||{lease_extended()};
+      ROLLBACK;""")
+    # Only the fence-1 ticket exists; the chunk is at fence 2.
+    assert result.splitlines()[-3:] == ["fence|2", "count|0", "after|no"]
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    "invalidate",
+    [
+        # a lapsed lease is recovered by a budgeted claim, never revived
+        EXPIRE_LEASE,
+        f"UPDATE app.ingestion_chunk SET state='failed' WHERE id='{CHUNK}';",
+        f"UPDATE app.ingestion_chunk SET control_epoch=2 WHERE id='{CHUNK}';",
+        f"UPDATE app.ingestion_run SET control_epoch=2 WHERE id='{RUN}';",
+        "UPDATE app.ingestion_run SET cancellation_requested_at=clock_timestamp() "
+        f"WHERE id='{RUN}';",
+        "UPDATE app.ingestion_run SET controller_lease_until=clock_timestamp()"
+        f"-interval '1 second' WHERE id='{RUN}';",
+    ],
+)
+def test_extend_unstarted_leases_never_revives_or_extends_what_authority_would_refuse(
+    postgres, invalidate
+):
+    result = postgres(f"""BEGIN;
+      {CLAIM}
+      SELECT {ticket("acquire")};
+      {SHORT_LEASE}
+      {invalidate}
+      SELECT 'count|'||{EXTEND};
+      SELECT 'after|'||{lease_extended()};
+      ROLLBACK;""")
+    assert result.splitlines()[-2:] == ["count|0", "after|no"]
+
+
+@pytest.mark.integration
+def test_extend_unstarted_leases_counts_every_waiting_chunk_of_the_run(postgres):
+    result = postgres(f"""BEGIN;
+      {chunk(OTHER, "second")}
+      {CLAIM}
+      SELECT app.claim_chunk('{RUN}','{OTHER}',1);
+      SELECT {ticket("acquire")};
+      SELECT {ticket("acquire", OTHER)};
+      UPDATE app.ingestion_chunk SET lease_until=clock_timestamp()+interval '1 minute';
+      SELECT 'count|'||{EXTEND};
+      SELECT 'both|'||{lease_extended()}||{lease_extended(OTHER)};
+      ROLLBACK;""")
+    assert result.splitlines()[-2:] == ["count|2", "both|yesyes"]
+
+
+@pytest.mark.integration
+def test_extend_unstarted_leases_privileges(postgres):
+    result = postgres(f"""BEGIN;
+      {CLAIM}
+      SELECT {ticket("acquire")};
+      SET LOCAL ROLE floatchat_ingestor;
+      SELECT 'ingestor|'||{EXTEND};
+      ROLLBACK;""")
+    assert result.splitlines()[-1] == "ingestor|1"
+    postgres(
+        "BEGIN; GRANT USAGE ON SCHEMA app TO floatchat_app; "
+        f"SET LOCAL ROLE floatchat_app; SELECT {EXTEND};",
+        expected=3,
+    )
+
+
 # claim_chunk and the environment bound -------------------------------------------------
 
 

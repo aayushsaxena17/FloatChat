@@ -97,6 +97,37 @@ BEGIN
   RETURN t;
 END $body$;
 
+-- Keeps the lease of a chunk whose current-fence ticket nobody has started yet (queued, or
+-- claimed by a worker that has not reached start_worker). Waiting for a worker is not a worker
+-- death, so it must not burn a processing claim after one idle lease. Called by the controller
+-- every tick. Mirrors assert_authority: only an open, uncancelled run before its work deadline
+-- under a live controller of this epoch, only a nonterminal chunk of this epoch whose lease is
+-- still live (a lapsed lease is never revived: that is the budgeted recovery) and whose newest
+-- fence has an unstarted ticket (a superseded or started ticket extends nothing). The wait is
+-- bounded by the run's work deadline. Returns the number of chunks extended.
+CREATE FUNCTION app.extend_unstarted_leases(p_run uuid,p_epoch bigint) RETURNS integer
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,app AS $body$
+DECLARE extended integer;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM app.ingestion_run r WHERE r.id=p_run AND NOT r.closed
+      AND r.cancellation_requested_at IS NULL
+      AND r.state NOT IN ('complete','partial','quarantined','failed')
+      AND r.control_epoch=p_epoch AND r.controller_lease_until>clock_timestamp()
+      AND r.work_deadline>clock_timestamp()) THEN
+    RETURN 0;
+  END IF;
+  WITH waiting AS (
+    UPDATE app.ingestion_chunk c SET lease_until=clock_timestamp()+interval '10 minutes'
+    WHERE c.run_id=p_run AND c.control_epoch=p_epoch
+      AND c.state NOT IN ('complete','quarantined','failed')
+      AND c.lease_until>clock_timestamp()
+      AND EXISTS (SELECT 1 FROM app.processing_ticket t WHERE t.chunk_id=c.id
+        AND t.fence=c.fence AND t.control_epoch=c.control_epoch AND NOT t.started)
+    RETURNING c.id)
+  SELECT count(*) INTO extended FROM waiting;
+  RETURN extended;
+END $body$;
+
 -- Same body as 0003 except the concurrency bound, read from the environment (was constant 2).
 CREATE OR REPLACE FUNCTION app.claim_chunk(p_run uuid, p_chunk uuid, p_epoch bigint) RETURNS bigint
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, app AS $body$
@@ -164,7 +195,8 @@ END $body$;
 
 REVOKE ALL ON FUNCTION app.processing_ticket(uuid,uuid,bigint,bigint,text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION app.claim_ticket(text,text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION app.extend_unstarted_leases(uuid,bigint) FROM PUBLIC;
 REVOKE ALL ON FUNCTION app.metadata_cache_put(uuid,text,uuid,uuid,timestamptz) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION app.processing_ticket(uuid,uuid,bigint,bigint,text),
-  app.claim_ticket(text,text),app.metadata_cache_put(uuid,text,uuid,uuid,timestamptz)
-  TO floatchat_ingestor;
+  app.claim_ticket(text,text),app.extend_unstarted_leases(uuid,bigint),
+  app.metadata_cache_put(uuid,text,uuid,uuid,timestamptz) TO floatchat_ingestor;

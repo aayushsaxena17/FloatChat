@@ -7,23 +7,51 @@ from floatchat_core.ingestion.controller import Controller, Supervisor
 from floatchat_core.ingestion.numeric import Rejection
 from floatchat_core.ingestion.planning import timestamp
 from floatchat_core.ingestion.repository import Authority
-from floatchat_core.ingestion.states import ticket_kind
+from floatchat_core.ingestion.states import TERMINAL, ticket_kind
 
 NOW = timestamp("2026-10-06T12:00:00Z")
 RUN = uuid.uuid4()
 ENVIRONMENT = uuid.uuid4()
 
 
-def recorder():
-    """dispatch(authority, kind) callback and the (authority, kind) calls it recorded."""
+def recorder(store=None):
+    """dispatch(authority, kind) callback and the (authority, kind) calls it recorded.
+
+    With a store, each dispatch also creates the queue ticket (chunk, fence) the real
+    dispatch would, so extend_unstarted_leases has something to look at.
+    """
     calls = []
-    return calls, lambda authority, kind: calls.append((authority, kind))
+
+    def dispatch(authority, kind):
+        calls.append((authority, kind))
+        if store is not None:
+            store.tickets[(authority.chunk, authority.fence)] = {"kind": kind, "started": False}
+
+    return calls, dispatch
+
+
+class Time:
+    """A clock the test moves; the fake store follows it."""
+
+    def __init__(self, store):
+        self.store, self.now = store, NOW
+        store.now = NOW
+
+    def __call__(self):
+        return self.now
+
+    def advance(self, minutes):
+        self.now += timedelta(minutes=minutes)
+        self.store.now = self.now
 
 
 class Store:
     def __init__(self, count=3, limit=2):
         # limit is ingestion_environment.max_active_chunks (2 keeps the stage1-v3 bound).
         self.limit = limit
+        self.now = NOW
+        self.tickets = {}  # (chunk, fence) -> {"kind", "started"}
+        self.events = []
         self.row = {
             "state": "planned",
             "environment_id": ENVIRONMENT,
@@ -56,9 +84,9 @@ class Store:
 
     def start_controller(self, identifier, instance):
         if self.owner is not None and self.owner != instance:
-            if self.row["controller_lease_until"] > NOW:
+            if self.row["controller_lease_until"] > self.now:
                 return None
-        if self.row["controller_lease_until"] <= NOW:
+        if self.row["controller_lease_until"] <= self.now:
             self.row["control_epoch"] += 1
             self.row["controller_claims"] += 1
         self.owner = instance
@@ -67,7 +95,27 @@ class Store:
     def controller_heartbeat(self, identifier, epoch):
         assert epoch == self.row["control_epoch"]
         self.heartbeats += 1
-        self.row["controller_lease_until"] = NOW + timedelta(minutes=10)
+        self.events.append("heartbeat")
+        self.row["controller_lease_until"] = self.now + timedelta(minutes=10)
+
+    def extend_unstarted_leases(self, identifier, epoch):
+        """app.extend_unstarted_leases: live lease, newest fence, ticket not started."""
+        self.events.append("extend")
+        assert epoch == self.row["control_epoch"]
+        count = 0
+        for row in self.items:
+            ticket = self.tickets.get((row["id"], row["fence"]))
+            if (
+                row["state"] not in TERMINAL
+                and row["control_epoch"] == epoch
+                and row["lease_until"] is not None
+                and row["lease_until"] > self.now
+                and ticket is not None
+                and not ticket["started"]
+            ):
+                row["lease_until"] = self.now + timedelta(minutes=10)
+                count += 1
+        return count
 
     def environment(self, identifier):
         assert identifier == ENVIRONMENT
@@ -87,7 +135,7 @@ class Store:
         row["fence"] += 1
         row["processing_claims"] += 1
         row["control_epoch"] = epoch
-        row["lease_until"] = NOW + timedelta(minutes=10)
+        row["lease_until"] = self.now + timedelta(minutes=10)
         return Authority(identifier, chunk, epoch, row["fence"])
 
     def finalize(self, identifier, reason=None):
@@ -231,6 +279,104 @@ def test_dispatch_failure_preserves_unknown_delivery_lease_and_consumed_claim():
     assert "private" not in str(error.value)
     assert store.items[0]["processing_claims"] == 1 and store.items[0]["lease_until"] > NOW
     assert not store.row["closed"]
+
+
+def tick_every(controller, clock, minutes, until):
+    """Tick every `minutes` minutes of test time until `until` minutes have passed."""
+    for _ in range(0, until, minutes):
+        clock.advance(minutes)
+        controller.tick()
+
+
+def test_unstarted_ticket_keeps_its_lease_across_ticks_without_spending_a_claim():
+    store = Store(count=1)
+    dispatches, dispatch = recorder(store)
+    clock = Time(store)
+    controller = Controller(store, RUN, dispatch, clock=clock)
+    controller.tick()
+    first = store.items[0]["lease_until"]
+    # Far beyond one 10 minute lease with no worker having started the ticket.
+    tick_every(controller, clock, 5, 60)
+    row = store.items[0]
+    assert len(dispatches) == 1 and row["processing_claims"] == 1 and row["fence"] == 1
+    assert row["lease_until"] > clock.now and row["lease_until"] > first
+    assert store.final_reason is None
+
+
+def test_started_ticket_is_not_extended_and_a_dead_worker_is_recovered_by_claim():
+    store = Store(count=1)
+    dispatches, dispatch = recorder(store)
+    clock = Time(store)
+    controller = Controller(store, RUN, dispatch, clock=clock)
+    controller.tick()
+    store.tickets[(store.items[0]["id"], 1)]["started"] = True  # a worker took it, then died
+    lease = store.items[0]["lease_until"]
+    clock.advance(5)
+    controller.tick()
+    assert store.items[0]["lease_until"] == lease and len(dispatches) == 1
+    clock.advance(6)  # past the unextended lease
+    controller.tick()
+    row = store.items[0]
+    assert len(dispatches) == 2 and row["processing_claims"] == 2 and row["fence"] == 2
+
+
+def test_fenced_ticket_is_not_extended():
+    store = Store(count=1)
+    dispatches, dispatch = recorder(store)
+    row = store.items[0]
+    # Re-claimed once (fence 2); only the superseded fence-1 ticket is still unstarted.
+    row.update(state="fetching", fence=2, processing_claims=2)
+    row["lease_until"] = NOW + timedelta(minutes=5)
+    store.tickets[(row["id"], 1)] = {"kind": "acquire", "started": False}
+    Controller(store, RUN, dispatch, clock=Time(store)).tick()
+    assert row["lease_until"] == NOW + timedelta(minutes=5) and dispatches == []
+
+
+def test_a_lapsed_lease_is_recovered_by_claim_not_revived_by_a_waiting_ticket():
+    store = Store(count=1)
+    dispatches, dispatch = recorder(store)
+    row = store.items[0]
+    row.update(state="fetching", fence=1, processing_claims=1, lease_until=NOW)
+    store.tickets[(row["id"], 1)] = {"kind": "acquire", "started": False}
+    Controller(store, RUN, dispatch, clock=Time(store)).tick()
+    assert row["fence"] == 2 and row["processing_claims"] == 2 and len(dispatches) == 1
+
+
+def test_a_landed_chunk_waiting_for_the_process_pool_keeps_its_lease():
+    store = Store(count=1)
+    dispatches, dispatch = recorder(store)
+    clock = Time(store)
+    row = store.items[0]
+    row.update(state="landed", fence=1, processing_claims=1)
+    row["lease_until"] = NOW + timedelta(minutes=10)
+    # The acquire worker's hand-over: the process ticket under the same fence, unstarted.
+    store.tickets[(row["id"], 1)] = {"kind": "process", "started": False}
+    controller = Controller(store, RUN, dispatch, clock=clock)
+    controller.tick()
+    tick_every(controller, clock, 5, 45)
+    assert dispatches == [] and row["processing_claims"] == 1 and row["fence"] == 1
+
+
+def test_leases_are_extended_after_the_heartbeat_on_every_tick_before_claims():
+    store = Store(count=1)
+    _, dispatch = recorder(store)
+    controller = Controller(store, RUN, dispatch, clock=Time(store))
+    controller.tick()
+    controller.tick()  # within 60 s: no second heartbeat, but the extension still runs
+    assert store.events == ["heartbeat", "extend", "extend"]
+
+
+@pytest.mark.parametrize("closing", ["cancelled", "deadline", "busy"])
+def test_no_lease_extension_for_a_closing_or_foreign_run(closing):
+    store = Store()
+    if closing == "cancelled":
+        store.row["cancellation_requested_at"] = NOW
+    elif closing == "deadline":
+        store.row["work_deadline"] = NOW
+    else:
+        store.owner = uuid.uuid4()
+    Controller(store, RUN, lambda *_: None, clock=lambda: NOW).tick()
+    assert store.events == []
 
 
 def test_supervisor_never_steals_live_incumbent_controller():

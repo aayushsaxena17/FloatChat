@@ -171,8 +171,35 @@ def test_supervise_dispatches_through_the_ticket_queue(monkeypatch):
 
     monkeypatch.setattr(cli.time, "sleep", sleep)
     assert cli.main(["supervise"]) == 5  # stopping the supervisor is process loss
-    assert built == [(repository, cli.dispatch)] and sleeps == [10]
+    ((store, dispatch),) = built
+    assert dispatch is cli.dispatch and store.repository is repository and sleeps == [10]
     assert repository.closed == 1
+
+
+def test_control_connection_delegates_and_extends_unstarted_leases_itself(monkeypatch):
+    run = uuid.uuid4()
+    repository = Repository(chunks=lambda identifier: ())
+    store = cli.ControlConnection(repository)
+    assert store.chunks(run) == ()  # everything else is the Repository's
+    statements = []
+
+    @contextmanager
+    def transaction(**options):
+        class Cursor:
+            def execute(self, statement, parameters=None):
+                statements.append((statement, parameters))
+
+            def fetchone(self):
+                return {"n": 3}
+
+        yield Cursor()
+
+    repository.transaction = transaction
+    assert store.extend_unstarted_leases(run, 2) == 3
+    assert statements == [("SELECT app.extend_unstarted_leases(%s,%s) AS n", (run, 2))]
+    # Once Repository has the method, it is used instead of the fallback statement.
+    repository.extend_unstarted_leases = lambda identifier, epoch: 7
+    assert store.extend_unstarted_leases(run, 2) == 7 and len(statements) == 1
 
 
 def test_D02_schedule_command_prints_the_outcome_and_exits_zero_when_disabled(monkeypatch, capsys):

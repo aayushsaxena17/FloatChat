@@ -6,6 +6,8 @@ database error escapes and cannot be converted into an apparent successful run.
 A recovered chunk is queued by its persisted phase: `acquire` for planned/fetching,
 `process` for landed/validating/publishing. Normal phase progress (acquire to process)
 is handed over by the acquire worker under the same claim and never reaches this tick.
+Each tick also keeps the lease of chunks whose current ticket is still unstarted: waiting for
+a worker is not a worker death and must not spend a processing claim.
 """
 
 import uuid
@@ -22,6 +24,7 @@ class ControlStore(Protocol):
     def run(self, identifier: uuid.UUID) -> dict[str, Any]: ...
     def start_controller(self, run: uuid.UUID, instance: uuid.UUID) -> int | None: ...
     def controller_heartbeat(self, run: uuid.UUID, epoch: int) -> None: ...
+    def extend_unstarted_leases(self, run: uuid.UUID, epoch: int) -> int: ...
     def environment(self, identifier: uuid.UUID) -> dict[str, Any]: ...
     def input(self, run: uuid.UUID) -> dict[str, Any] | None: ...
     def persist_plan(self, run: uuid.UUID, epoch: int) -> None: ...
@@ -75,6 +78,8 @@ class Controller:
         if self.last_heartbeat is None or (now - self.last_heartbeat).total_seconds() >= 60:
             self.store.controller_heartbeat(self.run_id, self.epoch)
             self.last_heartbeat = now
+        # A chunk waiting for a worker is not a lost worker: keep its lease (no claim burned).
+        self.store.extend_unstarted_leases(self.run_id, self.epoch)
         if not self.store.chunks(self.run_id):
             if self.store.input(self.run_id) is None:
                 return self.store.finalize(self.run_id, "execution_failed")

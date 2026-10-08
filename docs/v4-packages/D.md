@@ -54,6 +54,26 @@ processes publishes them.
      `repository.ticket(authority)` at `:203` (the SQL function only knows `acquire` and
      `process`; the default `process` ticket is fine for the serial `execute` path).
 
+5. **`Repository.extend_unstarted_leases` (package F's file, one method).** The controller now
+   calls `store.extend_unstarted_leases(run, epoch)` on every tick right after the controller
+   heartbeat, to keep the lease of chunks whose ticket nobody has started (SQL function in
+   0012, below). Add to `Repository` in
+   `packages/core/src/floatchat_core/ingestion/repository.py`, next to `controller_heartbeat`
+   (currently line 368):
+   ```python
+   def extend_unstarted_leases(self, run: uuid.UUID, epoch: int) -> int:
+       with self.transaction() as cursor:
+           cursor.execute("SELECT app.extend_unstarted_leases(%s,%s) AS n", (run, epoch))
+           return int(cursor.fetchone()["n"])
+   ```
+   Until it exists, `floatchat supervise` still works: `cli.ControlConnection` (the supervisor's
+   `ControlStore`) runs the same statement itself and switches to the `Repository` method as
+   soon as there is one, so nothing needs removing afterwards (it can be deleted for tidiness:
+   `Supervisor(repository, dispatch)` then type-checks). **Any other caller that hands a bare
+   `Repository` to `Controller` fails with `AttributeError` on its first tick until the method
+   is added**: `tests/stage1/split_replay_probe.py:207` (`Controller(repository, target,
+   dispatch)`).
+
 ## What changed and why
 
 ### Queue design decisions (for the ADR writer)
@@ -124,8 +144,12 @@ processes publishes them.
   (`:25`), `dispatch: Callable[[Authority, str], None]`, active bound from
   `environment(row["environment_id"])["max_active_chunks"]` (`:87`, replaces the constant 2),
   ticket kind by phase before the claim (`:109`) and `self.dispatch(authority, kind)` (`:115`).
-  Claim budget (4), fencing, epochs and finalization are untouched. The real `Repository`
-  already has `environment()`, so no new `Repository` method is needed for the bound.
+  `ControlStore.extend_unstarted_leases` (`:27`), called every tick right after the
+  controller heartbeat and before the chunks are read (`:82`). Claim budget (4), fencing,
+  epochs and finalization are untouched. The real `Repository` already has `environment()`,
+  so the bound needs no new method; the lease extension needs the one in item 5 above.
+- `workers/src/floatchat_workers/cli.py`: `ControlConnection` wraps the repository as the
+  supervisor's `ControlStore` (delegates everything; supplies `extend_unstarted_leases`).
 - `workers/src/floatchat_workers/queue.py` (new): `claim`, `issue`, `ticket_arguments`,
   `worker_name`, `poll` (1 s idle wait, doubling backoff to 30 s on `database_failure` or
   `database_deadline`, other rejections propagate, `ready` gate, interruptible by an `Event`).
@@ -169,6 +193,17 @@ processes publishes them.
 - `app.claim_ticket(kind, worker) RETURNS app.processing_ticket`: SKIP LOCKED, oldest first,
   eligibility and re-claim rules above; an empty queue returns a row of NULLs, which
   `Repository.claim_ticket` already maps to `None`.
+- `app.extend_unstarted_leases(run, epoch) RETURNS integer`: for every nonterminal chunk of the
+  run under that control epoch whose lease is still live and whose newest fence has an
+  unstarted ticket (`NOT started`, whether or not a worker has claimed it), sets
+  `lease_until = clock_timestamp() + 10 minutes` and returns the count. Guards mirror
+  `assert_authority`: run open, not cancelled, controller lease live, before the work
+  deadline, run epoch equal to the argument. It never revives a lapsed lease (that stays the
+  budgeted recovery claim) and never touches a started or superseded ticket. (The follow-up
+  request described the condition as "claimed but not yet started (`claimed_by IS NULL`)";
+  that is contradictory, so I implemented the stated outcome, any unstarted ticket of the
+  current fence; a claimed-but-dead worker is covered too, since its ticket is re-handed out
+  after two minutes.)
 - `app.claim_chunk`: `CREATE OR REPLACE`, identical to 0003 except the concurrency bound is the
   environment's `max_active_chunks` (the error category `environment_concurrency_limit`, the
   claim budget of 4 and the fencing are unchanged).
@@ -202,7 +237,12 @@ cd /home/floatchat/FloatChat-perf && flock /tmp/claude-1000/perf-test.lock nice 
 Result (last full run): see "Results" at the end of this file.
 
 New or rewritten:
-- `tests/stage1/test_controller.py`: fakes take `dispatch(authority, kind)` and
+- `tests/stage1/test_controller.py`: lease extension (unstarted ticket keeps its lease for an
+  hour of ticks with one claim, a landed chunk waiting for the process pool too, a started
+  ticket is not extended and the dead worker is recovered by claim, a superseded fence and a
+  lapsed lease are not extended or revived, extension runs after the heartbeat on every tick
+  and never for a closing or foreign run; both "keeps its lease" tests were checked to fail
+  without the extension); fakes take `dispatch(authority, kind)` and
   `environment()`; bound = environment `max_active_chunks` (1, 2, 8), landed chunks count against
   it, kind by phase (new claim and recovery), `ticket_kind` for terminal/unknown phases.
 - `tests/stage1/test_broker.py`: queue semantics with an in-memory stand-in for the atomic
@@ -224,7 +264,7 @@ New or rewritten:
   (cgroup, `RLIMIT_DATA`, never `RLIMIT_AS`, idempotent, failure).
 - `tests/stage1/test_worker_cli.py`: no app/scheduler modules and no removed names in
   `workers/src`; `dispatch` writes the ticket of its kind and sends nothing; `supervise` uses
-  it; `schedule` (disabled, lock order, peer holds lock, acceptance refusal, overlap, sanitized
+  it through `ControlConnection`, which delegates and supplies `extend_unstarted_leases`; `schedule` (disabled, lock order, peer holds lock, acceptance refusal, overlap, sanitized
   failure and unlock); `acquire`/`process` take sizes from arguments or configuration and open no
   command connection; `compact` (unavailable, per-slot merge, time budget, real faults, bound);
   parser.
@@ -234,7 +274,10 @@ New or rewritten:
   two-minute re-claim, no claim of an invalid ticket (7 invalidations), oldest first, SKIP LOCKED
   against a real second session, `max_active_chunks` 1/2/3 and the default 8, claim budget and
   `claim_denied` preserved, attempt origin `cache`, cache upsert forward-only and refusals,
-  restrictive foreign keys, ingestor/application privileges.
+  restrictive foreign keys, ingestor/application privileges, and `extend_unstarted_leases`
+  (renews a waiting chunk; covers a claimed-unstarted ticket and the same-fence hand-over;
+  ignores a started ticket, a superseded fence, a lapsed lease, a terminal chunk, a foreign
+  epoch, a cancelled run or a dead controller lease; counts every waiting chunk; privileges).
 - `tests/stage1/broker_fault_app.py`, `broker_probe.py`: rewritten for the queue, only compiled
   and linted (never executed). The fault app is now an entry point (`main`) that wraps the real
   CLI; pool children import `broker_fault_app.run_ticket`, so they install the same barriers.
@@ -291,22 +334,22 @@ above remain.
 - Section 9/10 "Celery carries only opaque IDs", "one Celery Beat scheduler per environment":
   opaque IDs in a PostgreSQL ticket; Beat replaced by a timer-driven `schedule` command under
   the same advisory lock.
+- Section 8.1 / section 9 retry-recovery row: a chunk waiting for a worker (acquire or process
+  queue) has its lease kept alive by the controller every tick, so queue wait never spends a
+  processing claim. Only a lease that lapses (dead worker, controller outage) costs a claim.
 - New policy values chosen without measurement: re-claim after 2 minutes, queue poll 1 s,
   backoff cap 30 s, default `compact` budget 3600 s.
 
 ## Open items and risks
-1. **Lease while a claimed chunk waits for a worker.** Nothing heartbeats a chunk between
-   `claim_chunk` (or the acquire worker's last pulse) and the next worker's first pulse. That
-   covers both queues: chunks claimed but waiting for an *acquire* thread (with the default
-   `max_active_chunks` 8 and `--slots 4`, up to four are always waiting; under governor
-   back-off after a 429 the wait grows by the 60 s pauses) and landed chunks waiting for a
-   *process* worker. If the wait outlasts the remaining lease (up to 10 minutes), the
-   controller re-claims the chunk (one claim, new fence; the waiting ticket becomes inert)
-   and issues a fresh ticket of the phase's kind; four such claims end the run with
-   `recovery_budget_exhausted`. A remedy, if measurement shows it matters: a small SQL
-   function that extends the lease of chunks whose current-fence ticket is still unstarted,
-   called from the controller tick. The same exposure existed with Celery prefetch; nothing
-   here makes it worse.
+1. **Lease while a claimed chunk waits for a worker: closed** by
+   `app.extend_unstarted_leases` and the per-tick call (item 5 above). Residual behaviour to
+   know: while no worker consumes a queue (acquire process or process pool down), the waiting
+   chunks stay leased and count against `max_active_chunks`, no claim is burned, and the run
+   waits until its work deadline finalizes it (`deadline_expired`) or an operator cancels it;
+   before this change the same outage ended the run after four lease lapses with
+   `recovery_budget_exhausted`. A worker that dies after starting its ticket is not
+   extended and is recovered by a claim as before. If the controller itself is down for
+   longer than a lease, leases lapse and recovery is budgeted as before.
 2. **Dead tickets are not purged.** A ticket that lost its fence stays in the table with
    `started = false` (inert, never handed out, but present in the partial index). Bounded by
    claims (4 per chunk, 16,384 chunks per run). A retention job could mark them.
@@ -333,8 +376,8 @@ Final run in the live worktree (after all edits):
 
 | Check | Result |
 |---|---|
-| `pytest tests/stage1/test_controller.py tests/stage1/test_broker.py tests/stage1/test_worker_cli.py tests/test_worker.py tests/stage1/test_byte_identity.py -m "not integration" -q -p no:cacheprovider` (mandatory form, shared lock) | 150 passed, 1 deselected (the rewritten broker integration test) |
-| `tests/stage1/test_queue_sql.py -m "not integration"` | 1 passed (fragment guard); 29 integration tests deselected, NOT run |
+| `pytest tests/stage1/test_controller.py tests/stage1/test_broker.py tests/stage1/test_worker_cli.py tests/test_worker.py tests/stage1/test_byte_identity.py -m "not integration" -q -p no:cacheprovider` (mandatory form, shared lock) | 160 passed, 1 deselected (the rewritten broker integration test) |
+| `tests/stage1/test_queue_sql.py -m "not integration"` | 1 passed (fragment guard); 41 integration tests deselected, NOT run |
 | `ruff format --check` and `ruff check` on all 15 owned source/test files | clean |
 | `mypy workers/src packages/core/src/floatchat_core/ingestion/controller.py` (strict) | no issues in 7 source files |
 | `py_compile` of `broker_probe.py`, `broker_fault_app.py` | compiled (never executed) |
