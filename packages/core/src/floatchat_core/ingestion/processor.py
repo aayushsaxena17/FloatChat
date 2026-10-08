@@ -24,13 +24,14 @@ from .spool import ProfileSpool, revision_json
 from .states import TERMINAL
 from .workflow import evidence_json, snapshot_certificate
 
-DECODE_CACHE_BYTES = 32 * 1024**2
+DECODE_CACHE_BYTES = 8 * 1024**2  # census maximum was 2.66 MB; decoded objects are several x
 
 SPLITTABLE = frozenset(
     {
         "compressed_size_limit",
         "decompressed_size_limit",
         "profile_count_limit",
+        "measurement_count_limit",
         "chunk_scientific_resource_limit",
     }
 )
@@ -388,6 +389,10 @@ class Processor:
             return self.publish()
         except Rejection as error:
             return self.terminal(error)
+        finally:
+            # Decoded payloads are not kept beyond the chunk's processing.
+            self.decoded.clear()
+            self.meta_rows.clear()
 
     def reload_landing(self) -> None:
         """Recover this chunk's verified landing without any upstream request.

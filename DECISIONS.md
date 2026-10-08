@@ -1386,7 +1386,9 @@ set and order, hash version, rejection categories.
 
 Decode once: the integrator added `Processor.documents_of(role)` (commit 65eb3fc) so each landed
 payload is decoded once per role and reused by inventory accounting, the inventory triple,
-metadata resolution and mapping; payloads above 32 MiB stream as before. The chunk benchmark
+metadata resolution and mapping; payloads above 8 MiB stream as before (the census maximum
+chunk was 2.66 MB; decoded exact-decimal objects are several times the raw size and share the
+process with the candidate set), and the cache is cleared when `process()` returns. The chunk benchmark
 (`reports/stage1-v4-bench-chunk.json`) records 4.75 s single-counted for 87x699 against 58.2 s
 for stage1-v3 (`reports/stage1-v3-bench-chunk-baseline.json`), and the run model
 (`reports/stage1-v4-run-model.json`) projects 126.2 µs per level of worker CPU against 1,425.4,
