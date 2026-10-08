@@ -1,0 +1,15 @@
+# Used only by the separately opted-in owner command. No key in Compose or argv.
+services:
+  live-worker:
+    extends:
+      file: /home/floatchat/FloatChat-stage1/infra/docker-compose.acceptance.yml
+      service: worker
+    command: [python, scripts/stage1_acceptance_runtime.py, worker, --stdin-key]
+    environment:
+      FLOATCHAT_LIVE_INGESTION_ENABLED: "true"
+    networks: [default, upstream]
+    profiles: [live]
+
+networks:
+  upstream:
+    internal: false
