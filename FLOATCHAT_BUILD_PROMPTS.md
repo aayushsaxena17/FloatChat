@@ -13,11 +13,18 @@ Use these with Astra (or any long-running coding agent) together with `FLOATCHAT
 
 ### What you need ready
 
+Stage 1 had an implementation NO-GO with explicit P1/P2 findings in
+`docs/stage1-gate.md`. Under ADR-0039 the advisor model replaced the Astra review gate;
+stage1-v3 (ADR-0040-ADR-0042) activates S1-SOURCE-2, monthly plan v2 and a 40 GiB run
+canonical cap. Review the persisted evidence before closing the Stage 1 gate or moving to
+Stage 2. A small owner-run parser capture is documented there; it is distinct from complete
+Stage 1 acceptance.
+
 | Item | Needed by | Notes |
 |---|---|---|
 | New Gemini API key | Stage 4 | Fresh key; never commit it |
-| Argovis API key | Stage 1 | Free registration on the Argovis site |
-| Cloudflare account (Pages + R2) | Stage 8 (R2 can start in Stage 5) | Free tier is enough to start |
+| Argovis API key | Stage 1 live acceptance only | Owner-provided credential in restricted configuration; contract hardening and offline CI need none |
+| Cloudflare account (Pages + R2) | Stage 8 deployment planning | Earlier stages use local MinIO; no cloud provisioning in Stage 1 |
 | Ubuntu VM (≥4 vCPU, 8–16 GB RAM) | Stage 8 | Any VPS or free-tier cloud VM |
 | Domain or subdomain | Stage 8 | Optional but looks better on applications |
 | OIDC provider tenant (Auth0, Clerk or Keycloak) | Stage 7 | Free tier |
@@ -31,7 +38,12 @@ Use these with Astra (or any long-running coding agent) together with `FLOATCHAT
 You are the lead engineer building FloatChat from the attached specification
 FLOATCHAT_PRD_v2.md ("the PRD"). Read the whole PRD before writing code.
 §0 overrides later sections. §29 defines the build stages, §30 the evaluation
-plan, §31 the repository layout and conventions.
+plan, §31 the repository layout and conventions. Stage 1's explicit contract in
+docs/stage1-contract.md (stage1-v3, amending stage1-v2 via ADR-0040-ADR-0042) and
+ADR-0018–ADR-0032 override ambiguous Stage 1 wording.
+The owner confirmed Astra GO for stage1-v2 and separately authorized Stage 1
+implementation; ADR-0039 replaced Astra with advisor review. Stop at the implementation
+gate (the advisor's recorded agreement) before starting Stage 2.
 
 The repository already contains a hackathon prototype (notebook, python.py, a
 Parquet sample). It is being rebuilt from scratch into the system the PRD
@@ -54,8 +66,10 @@ WORKING RULES
 5. Never invent results. Every number you report (accuracy, latency, MASE, row
    counts, sizes) must come from a script you ran, with its output saved under
    reports/. If you could not run something, say so plainly.
-6. Never commit secrets. Use .env (gitignored) and keep .env.example complete.
-   When you need a real value from me, ask for it by variable name.
+6. Never commit secrets. Preserve Stage 0 restricted, non-synced external
+   configuration; .env.example contains placeholders only. Credentials never
+   enter task arguments, raw fixtures, logs, exceptions or reports. Offline CI
+   needs no upstream credential.
 7. Use real Argo data from Argovis, with recorded fixtures for tests. Respect
    rate limits; tests must never call upstream services.
 8. Prefer the PRD's chosen tools. No new framework, service or paid dependency
@@ -136,50 +150,119 @@ Stop at the gate.
 
 ## Stage 1: Data foundation
 
-```text
-STAGE 1 - Data foundation (PRD §6, §7)
+**Current authorization: Stage 1 implementation.** Astra accepted stage1-v2 and the
+owner instructed implementation on 2026-10-06; ADR-0039 (2026-10-07) authorizes operating
+the live acceptance and replaces Astra review with advisor review. Use only the fresh sanitized WSL
+checkout; never merge or publish archival Windows ancestry. The owner additionally
+authorized a minimum bounded live fixture capture, only if ARGOVIS_API_KEY is available
+through restricted configuration. The owner keeps the key in a private terminal and
+performs bounded captures there; never inspect it or private originals.
+Recorded raw-fixture acceptance remains pending. This does not authorize the full
+Jan-Mar live ingestion. No cloud provisioning or destructive lifecycle actions.
 
-Goal: real Argo data flows from Argovis into validated Parquet and PostgreSQL,
-with provenance, idempotently.
+The following is the approved implementation scope:
+
+```text
+STAGE 1 - Data foundation (PRD §6, §7; docs/stage1-contract.md)
+
+Goal: an internal validated scientific ingestion foundation with persisted evidence.
+Read the entire contract and its review cross-check; do not substitute older prompts.
 
 Scope
-1. Migrations for argo_float, argo_profile, core_measurement, bgc_measurement
-   (created, unused in v1), ingestion_run and dataset_partition, with the
-   keys, constraints and indexes in §6.
-2. The ArgoSourceAdapter protocol (§7.1) and an Argovis adapter with plan,
-   fetch, parse and source_revision. Implement the chunking in §7.2 with
-   timeouts, exponential backoff with jitter, attempt limits, response-size
-   limits and rate-limit handling.
-3. The publication pipeline in §7.6, end to end: raw landing (hashed),
-   canonical normalisation (§7.4), structural and scientific validation
-   (§7.5), quarantine for unknown schemas, Parquet written to a temporary key,
-   read back and verified, promoted to a content-addressed key, then the
-   catalogue commit.
-4. Bulk-load rows inside the rolling 12-month window with COPY into staging
-   tables, then an idempotent merge into the target tables.
-5. CLI: `floatchat ingest --region indian-ocean --from 2025-01 --to 2025-03`.
-   Start with the Indian Ocean and core variables (pressure, temperature,
-   practical salinity).
-6. A daily scheduled ingestion with an overlap window (§7.7) using Celery
-   beat.
-7. Tests using recorded Argovis fixtures:
-   - parsing and field mapping
-   - schema drift goes to quarantine
-   - re-ingesting the same data creates zero duplicates
-   - a Parquet object without a committed catalogue record is not queryable
-8. reports/ingestion_<date>.md with profile and measurement counts per stage,
-   quarantine counts, timings, and Parquet size versus in-memory DataFrame
-   size.
+1. Portable additive PostgreSQL migrations for core identity/science, run/chunk/
+   attempts, publication/catalogue and evidence. Apply all key/FK/nullability/
+   month/deletion constraints in contract §4. Preserve Stage 0 data/extensions;
+   COPY FROM STDIN to controlled staging, restricted worker merge privileges.
+   No BGC ingestion or user-facing historical-job schema.
+2. Pinned documented Argovis adapter and sanitized recorded raw JSON, inventory
+   and metadata fixtures. Implement name-based scientific mapping and precise
+   original/adjusted/QC/error/unit/mode availability; no invented wire format.
+   Apply contract §3.2's exact two-name translator supplement with pinned revision/hash,
+   raw non-core preservation, aligned columns and rejection of other unknown fields.
+   Retain old manifest versions. Apply §11 F01-2/ADR-0033: authentic core R/A/D and
+   ascending remain mandatory; descending/core-null authentic requirements are owner-waived
+   and unobserved. Labelled admitted-fixture derivatives must prove direction/identity and
+   present-core-null parser/canonical/database/Parquet behavior. Keep authentic limitations
+   separate from passing tests. Repeated-pressure derivatives and normalized-error tests
+   remain labelled synthetic, never authentic error parser proof. Do not discover/capture
+   further descending/core-null examples under this amended acceptance obligation.
+   Persist real HTTP-failure status/disposition before retry decisions. Actual --replay-run
+   clones a validated complete predecessor split tree and immutable raw bindings;
+   test temporal/spatial splits with upstream access denied and unchanged science/generations.
+3. Immutable per-run UTC reference time. Normal mode uses actual UTC and only
+   its rolling 12-month PostgreSQL interval. Jan-Mar 2025 acceptance uses only
+   an isolated disposable environment at 2025-04-01T00:00:00Z. Full stored
+   snapshots retain older accepted observations; reconcile that population
+   separately from this run's eligibility-filtered population.
+4. Stable upstream identity with database-enforced fallback. Compare source
+   revision vectors/canonical hashes conservatively; quarantine conflicts,
+   skip stale retries, replace complete newer level sets transactionally.
+5. Verified temporary-to-immutable final publication using byte SHA-256.
+   After final verification, one transaction commits science, catalogue
+   activation/supersession and chunk completion. Implement crash recovery
+   and fencing; an object listing never establishes successful publication.
+   A late equal-revision/different-hash conflict rolls back publication, then
+   enters quarantined through a fenced evidence-only transaction, abandoning
+   unpublished intents with their references preserved.
+6. Internal select_active_partitions function proving active committed verified
+   catalogue selection and explicit gaps. Empty initial fetch, source absence
+   over retained science and accepted last-profile ownership correction have
+   separate receipt/selector outcomes. No Stage 2 query API or DuckDB engine.
+7. Durable state machine, zero tolerated quarantine for success, documented CLI
+   exits and terminal evidence for every planned chunk. Enforce every resource,
+   deadline, security and single-owner retry bound in contract §8-§9.
+   Process loss recovers every nonterminal phase in the same run and budgets;
+   cancellation/deadline revoke authority, preserve complete chunks and fence
+   late publication. overlap_skip is an admission event/no new run, manual exit 6.
+8. One UTC Beat scheduler at 02:00, live disabled by default, 14-day overlap,
+   bounded 31-day catch-up and lease/fencing protection. No destructive rolling
+   retention, orphan deletion, dashboard refresh or semantic re-embedding.
+9. Reproducible machine-readable/Markdown reports from persisted evidence:
+   payload/profile/level equations, exclusions, duplicate/quarantine/revision
+   outcomes (stage1-v3: S1-SOURCE-2 receipts and `excluded_source_loss` ledger, ADR-0040),
+   scientific and active-generation deltas, provenance and measured
+   equivalent Parquet/DataFrame sizes with pinned compression settings.
+   Full stored membership and fixed-T eligible projections must each compare
+   identical populations; empty source refreshes cannot erase accepted science.
+10. Bounded exact decimal parsing/canonical output and scientific-json-v2
+    hashes: numeric token <=128 bytes, exponent magnitude <=400, normalized
+    numeric text <=512 bytes; per-profile/chunk/run output caps in §5.1.
+    Convert binary64 nearest/ties-even; quarantine overflow/nonzero underflow.
+    Exact quoted nonfinite measurement tokens map to declared null/kinds;
+    bare NaN/Infinity and other quoted numeric strings quarantine.
 
-Acceptance criteria
-- Jan-Mar 2025 Indian Ocean data ingests end to end on my machine.
-- Running the same ingest again produces zero new rows.
-- Counts reconcile across raw, normalised, Parquet and PostgreSQL in the report.
-
-Stop at the gate.
+Acceptance
+- Execute all 86 contract §12 planned offline cases, including both Astra reviews,
+  plus required lint/types/security/CI checks without upstream network access.
+- Separately opt in to Ubuntu 24.04 WSL2 live acceptance with an owner-provided
+  Argovis credential and isolated database/buckets/queue/configuration.
+- Future CLI:
+  floatchat ingest --mode acceptance --region indian-ocean --from 2025-01 --to 2025-03
+  This is [2025-01-01T00:00:00Z, 2025-04-01T00:00:00Z), not production history loading.
+- Demonstration and captured-input replay complete with exit 0, no quarantine,
+  no missing coverage and evidence-based three-unit reconciliation. stage1-v3 plans
+  whole UTC months (`indian-ocean-plan-v2`), caps run canonical work at 40 GiB
+  (ADR-0041), accepts only the strict 404 empty-delivery receipt and whole-profile
+  `degenerate_levels` exclusions (reported as `acceptance_qualified_with_source_exclusions`,
+  never `scientific_source_complete`, ADR-0040) and judges worker memory by cgroup
+  `memory.max` 1 GiB, zero oom events and anonymous RSS <1 GiB (ADR-0042).
+- Identical captured input changes no scientific entities/level sets or active
+  partition generations; run/attempt/audit rows may increase. A second live
+  download is a refresh and may legitimately contain newer source revisions.
+- Stage 0 local PostgreSQL/PostGIS/pgvector, MinIO, Redis and Celery remain.
+  Supabase/Azure/other cloud provisioning waits for deployment planning.
+- Produce the persisted-evidence gate report and stop for advisor implementation
+  review (ADR-0039; formerly Astra) before Stage 2. Never claim live acceptance if credentials/data are unavailable.
 ```
 
-**Your gate checklist:** run the ingest command twice and check the second run adds nothing. Open the report. Spot-check one float against the Argovis website.
+**Contract gate checklist:** Review the exact decisions and test IDs in
+[stage1-contract.md](docs/stage1-contract.md), including the original review and five-blocker follow-up cross-check.
+The contract gate has passed; implementation acceptance remains pending.
+
+**Later implementation gate checklist:** Inspect persisted reports, verify isolated
+environment/reference time, rerun identical captured inputs, check scientific hashes
+and active generation IDs separately from attempts/audits, and review fault-test/CI
+evidence. Use live source spot-checks only in the separately authorized live run.
 
 ---
 

@@ -13,6 +13,37 @@
 
 This revision keeps the architecture in §1–§28 and changes how it is delivered. Where this section conflicts with a later section, this section wins.
 
+**Stage 1 amendment (Astra-approved contract):** [docs/stage1-contract.md](docs/stage1-contract.md)
+stage1-v2 (amended to stage1-v3 by ADR-0040–ADR-0042) and ADR-0018–ADR-0032 define the explicit Stage 1 policies and override ambiguous
+Stage 1 wording below. Astra returned GO for stage1-v2 and the owner separately
+authorized Stage 1 implementation on 2026-10-06. Implementation acceptance remains pending.
+Current implementation evidence and unresolved P1/P2 findings are recorded in
+`docs/stage1-gate.md`; component results do not certify the Stage 1 gate.
+Under ADR-0039 the owner replaced the Astra review gate with advisor review: the advisor's
+recorded agreement gates pushing, closing Stage 1 and starting Stage 2. stage1-v3 activates
+S1-SOURCE-2 (ADR-0040: 404 empty-delivery receipt and whole-profile `degenerate_levels`
+exclusion; qualified delivered population, never `scientific_source_complete`), monthly
+plan v2 with a 40 GiB run canonical cap (ADR-0041) and the cgroup memory criterion (ADR-0042).
+Keep the accepted Stage 0 local services and fresh sanitized checkout. Normal ingestion
+uses actual UTC; Jan–Mar 2025 uses an isolated disposable acceptance environment at
+2025-04-01T00:00:00Z. No Stage 1 cloud provisioning or destructive rolling retention.
+The later product architecture remains the target for its existing stages.
+The v2 amendment resolves the follow-up Astra NO-GO: full retained snapshots and
+run-eligible accounting are separate, empty upstream refreshes cannot delete science,
+publication-time conflicts quarantine, and recovery/cancellation/overlap/numeric
+conversion have explicit bounded semantics.
+The implementation-review amendments in contract §3.2/§11 recognize only the exact
+translator-backed fluorescence/QC additions as preserved non-core raw fields and pin
+the supplemented source version. Owner amendment F01-2/ADR-0033 retains authentic core
+R/A/D and ascending evidence (including 501 A-mode levels from 2904014_040). Authentic
+descending and present-core-value null evidence is waived, remains unobserved and requires
+labelled authentic-derived direction/identity and null parser/canonical/database/Parquet
+tests. Repeated pressure uses labelled derivatives; supplied errors use normalized-model/
+storage tests, without authentic parser claims. Waivers never become authentic witnesses.
+Actual captured replay preserves validated split topology and predecessor bindings.
+HTTP failure dispositions persist before bounded retry handling. These amendments do
+not grant implementation GO or authorize historical acceptance preparation.
+
 | # | Change | Where | Why |
 |---|---|---|---|
 | 1 | The undefined "six phases" are replaced by nine build stages (0–8), each with exit criteria | §29 | A builder (human or agent) needs explicit gates |
@@ -82,7 +113,7 @@ The dashboard presents the most recent available Argo data and makes its coverag
 - Source timestamp and FloatChat ingestion timestamp
 - Export action for the currently filtered dataset
 
-The initial tested dataset is January 2025 Indian Ocean data. Production is designed around a rolling 12-month PostgreSQL window and a rolling three-month Parquet hot tier.
+The Stage 0 processed sample originates from January 2025 data. The Stage 1 Jan–Mar 2025 demonstration is isolated from production with fixed reference time 2025-04-01T00:00:00Z; it is not evidence of current production coverage. Normal ingestion captures actual UTC once per run and admits only the rolling 12-calendar-month PostgreSQL window. The three-calendar-month Parquet hot tier is classified from that same reference time; Stage 1 performs no destructive retention. Previously accepted out-of-window observations remain in stored snapshots; run eligibility affects new/changed inputs and accounting, not retained snapshot membership.
 
 ### 2.2 Conversational research interface
 
@@ -243,7 +274,7 @@ The query engine does not guess that data is cached because a similarly named fi
 - Schema version
 - Object-store URI
 - Row count and file statistics
-- Checksum/ETag
+- SHA-256 content checksum; optional ETag is transport metadata, never the content hash
 - Creation and validation timestamps
 - Lifecycle state
 - Last access time and retention class
@@ -400,12 +431,15 @@ exports/      User-facing downloadable files with expiry policies
 quarantine/   Invalid or schema-incompatible source payloads
 ```
 
-Normalised layout example:
+Stage 1 immutable physical layout:
 
 ```text
-normalised/source=argovis/dataset=core/year=2025/month=01/region=indian-ocean/
-  part-00000-<content-hash>.parquet
+normalised/sha256/<sha256-of-actual-object-bytes>.parquet
 ```
+
+Logical month/tile/region/version membership lives in the PostgreSQL catalogue,
+with one active full snapshot per logical slot. Do not derive catalogue coverage
+from object names or bucket listings. Stage 1 lifecycle cleanup is dry-run only.
 
 Partition fields are selected from common high-selectivity access patterns. The system avoids partitioning by high-cardinality fields such as individual platform number because that would create many small files.
 
@@ -545,56 +579,57 @@ Key fields:
 - `metadata_json`
 - `created_at`, `updated_at`
 
-Unique constraint: `(source, platform_number)`.
+Unique constraint: `(source, platform_number)`, both non-null; UUID primary key. Profile foreign keys restrict float deletion; immutable identity is separate from revisable metadata.
 
 ### 6.2 `argo_profile`
 
-One record per vertical profile/cycle/direction.
+One unpartitioned identity registry row per source profile, with database-enforced
+identity and monthly measurement references. The implementable schema is in
+[Stage 1 contract §4](docs/stage1-contract.md#4-scientific-identity-and-relational-constraints).
 
-Key fields:
+Required fields: UUID `id`, `source`, `float_id` FK, `observed_at`,
+`observation_month`, valid WGS84 `position`, scientific SHA-256/hash version,
+level count and committed provenance. Source profile ID, cycle, direction,
+position/time QC, data mode and source revision retain their declared optionality.
 
-- `id`
-- `float_id`
-- `source_profile_id`
-- `cycle_number`
-- `direction`
-- `observed_at`
-- `position geography(Point, 4326)`
-- `position_qc`
-- `time_qc`
-- `data_mode`
-- `source_updated_at`
-- `ingestion_run_id`
+Prefer opaque upstream `_id` with a partial unique (source, source_profile_id) index.
+The complete fallback key is source, float identity, cycle, A/D direction,
+immutable identity_observed_at and observation_segment; enforce it with a partial
+unique index and completeness CHECK. Retrieval and source-update times are not identity.
+Unknown direction is allowed only with a stable upstream ID. Alias conflicts quarantine.
 
-A source-stable ID is preferred. If unavailable, the natural identity is formed from source, platform, cycle, direction, and source timestamp. The application never assumes pressure alone uniquely identifies a measurement.
-
-Indexes:
-
-- B-tree on `observed_at`
-- B-tree on `(float_id, cycle_number)`
-- GiST on `position`
-- Recent partial indexes where workload evidence supports them
+Registry UNIQUE(id, observation_month) and a UTC month CHECK support monthly measurement
+FKs. Float deletion is RESTRICT; authorized profile deletion cascades only to measurements,
+and provenance/catalogue/run deletion remains RESTRICT. Worker privileges prohibit
+ordinary profile deletion. Index observed_at, float/cycle and position (GiST).
+Revision comparison and complete level replacement follow contract §5.
 
 ### 6.3 `core_measurement`
 
-Wide table for frequently accessed physical variables.
+Wide table for pressure, temperature and practical salinity. Stage 1 requires:
 
-Key fields:
+| Parameter | Original | Adjusted | Original QC | Adjusted QC | Error | Unit | Mode |
+|---|---|---|---|---|---|---|---|
+| Pressure | pressure | pressure_adjusted | pressure_qc | pressure_adjusted_qc | pressure_error | pressure_unit | pressure_data_mode |
+| Temperature | temperature | temperature_adjusted | temperature_qc | temperature_adjusted_qc | temperature_error | temperature_unit | temperature_data_mode |
+| Salinity | salinity | salinity_adjusted | salinity_qc | salinity_adjusted_qc | salinity_error | salinity_unit | salinity_data_mode |
 
-- `profile_id`
-- `level_index`
-- `pressure`, `pressure_adjusted`, `pressure_qc`, `pressure_error`
-- `temperature`, `temperature_adjusted`, `temperature_qc`, `temperature_error`
-- `salinity`, `salinity_adjusted`, `salinity_qc`, `salinity_error`
-- `data_mode`
+Optional scientific fields are nullable where absent upstream. Retain source units,
+QC tokens, missingness flags and separately supplied original errors; never manufacture
+an absent original/adjusted counterpart. Argovis R maps to original and A/D to adjusted
+according to its documented merge policy. Name-based array mapping, units, modes,
+fill/nonfinite handling and validation severity are specified in contract §6.
 
-Primary key: `(profile_id, level_index)`.
-
-The source level index is retained because repeated or nearly repeated pressures can exist. Original and adjusted values are preserved; the selected scientific policy determines which one is used in a result.
+Monthly RANGE partition on observation_month; PK (observation_month, profile_id,
+level_index), composite FK to argo_profile(id, observation_month), non-negative
+level index, exact UTC month bounds and no default partition. Pressure is not a key.
+A newer revision replaces the entire level set atomically; shortened profiles leave
+no obsolete levels. Client-streamed COPY into controlled staging and restricted merge
+procedures are mandatory; workers receive no database administration or server-file access.
 
 ### 6.4 `bgc_measurement`
 
-Long-form table for variable BGC parameters.
+Long-form target table for variable BGC parameters. BGC ingestion and UI are deferred beyond v1; Stage 1 core acceptance does not depend on it. A later unused schema must use the same monthly profile FK, non-null parameter/level key and explicit deletion/nullable-value policy as the core schema.
 
 Key fields:
 
@@ -611,34 +646,44 @@ Key fields:
 
 This avoids schema migrations for every additional BGC parameter. Commonly used BGC variables can later receive materialised views or specialised tables if measurements show a need.
 
-### 6.5 `ingestion_run`
+### 6.5 `ingestion_run`, `ingestion_chunk` and `ingestion_attempt`
 
-Records source request, client version, requested coverage, chunk plan, attempt count, timestamps, result counts, checksum summary, validation report, error category, and status.
+Durable internal ingestion records are distinct from Stage 5 user jobs. Store immutable
+run reference time, environment/mode, request and complete chunk plan, state transitions,
+attempt/retry budgets, leases/fencing tokens, raw hashes, revision outcomes, three-unit
+reconciliation and committed publication evidence. Every planned chunk reaches a
+recorded terminal state. Process loss without persisted cancellation is recoverable in
+every nonterminal phase under the same run/reference/counters. Operator cancellation
+or work-deadline expiry fences unfinished work; already complete chunks stay complete. Complete/partial/quarantined/failed exits and zero tolerated
+quarantine are defined in contract §8. Unknown-schema level counts remain unknown. An overlap_skip is a persisted scheduling_attempt
+admission event with no ingestion_run or chunk, manual exit 6 and unchanged watermark.
+Cancellation exits 130 only after persisted closing/final evidence; deadline returns
+the aggregate 3/5, and an already-complete cancellation returns 0 (contract §8).
 
-It answers: “Exactly how did these records enter FloatChat?”
+A captured-input replay adds no scientific entities or active generations, while runs,
+attempts and audit rows may increase. Reports use persisted evidence only (contract §11).
 
 ### 6.6 `dataset_partition`
 
-Represents every usable Parquet partition.
+Represents a full immutable scientific snapshot for an environment/source/month/tile/
+geometry/schema logical slot, with at most one active generation. Full stored membership
+includes retained out-of-window observations until authorized lifecycle action; exclude
+superseded revisions only. Reconcile full stored PostgreSQL and Parquet manifests against
+that same committed population, and run eligibility against equally filtered projections. Store final object URI,
+SHA-256, optional ETag, byte/level/distinct-profile counts, exact coverage receipts,
+schema/mapping/hash/policy versions, run/publication references, verification timestamps
+and lifecycle state. Catalogue states are pending, active, superseded and quarantined.
+Fetch receipts distinguish verified_empty_fetch from source_absence_over_retained.
+Neither deactivates retained generations. Stored-domain evidence carries a monotonic
+logical-slot version so old empty evidence cannot hide later accepted science.
+Only an accepted last-profile ownership
+correction records empty_stored_domain and atomically supersedes the old active slot.
 
-Key fields:
-
-- `id`
-- `source`, `dataset_family`
-- `time_start`, `time_end`
-- `coverage_geometry`
-- `variables`
-- `qc_policy`
-- `object_uri`
-- `content_hash`, `etag`
-- `row_count`, `profile_count`
-- `schema_version`
-- `status`
-- `retention_class`
-- `last_accessed_at`
-- `expires_at`
-
-Only `validated` partitions participate in query planning.
+Only committed verified active records are selectable through Stage 1's internal
+selector. Pending, failed/uncommitted and superseded versions never enter the current
+dataset. Final-object verification precedes one transaction committing scientific
+replacement, activation/supersession and chunk completion. See contract §7 for
+concurrent publication, crashes, missing/corrupt objects and dry-run orphan reconciliation.
 
 ### 6.7 `analysis_job` and `analysis_job_chunk`
 
@@ -665,31 +710,35 @@ class ArgoSourceAdapter(Protocol):
     def plan(self, request: SourceRequest) -> list[SourceChunk]: ...
     def fetch(self, chunk: SourceChunk) -> RawPayload: ...
     def parse(self, payload: RawPayload) -> NormalisedBatch: ...
-    def source_revision(self, payload: RawPayload) -> str | None: ...
+    def source_revision(self, payload: RawPayload) -> RevisionMetadata | None: ...
 ```
 
-The Argovis adapter supports the current direct JSON flow. An argopy/GDAC adapter can process xarray or NetCDF while emitting the same normalised batch contract. Argopy officially supports region, float, and profile access and multiple upstream sources; see the [Argopy fetching guide](https://argopy.readthedocs.io/en/latest/user-guide/fetching-argo-data/index.html).
+The Stage 1 Argovis adapter follows the pinned documented GET /argo contract, encoded closed lon/lat polygon, UTC dates and data=all (contract §3). It uses sanitized recorded raw JSON/inventory/metadata fixtures; processed Parquet alone is insufficient. Structured source revision vectors and hash fallback follow contract §5. It supports the direct JSON flow. An argopy/GDAC adapter can process xarray or NetCDF while emitting the same normalised batch contract. Argopy officially supports region, float, and profile access and multiple upstream sources; see the [Argopy fetching guide](https://argopy.readthedocs.io/en/latest/user-guide/fetching-argo-data/index.html).
 
 The internally maintained client is not described as “reverse-engineered” in the production boundary. It is a tested adapter that follows a documented HTTP contract. It must have contract tests against representative source responses and alerts for schema drift.
 
 ### 7.2 Chunking strategy
 
-Large requests are divided by bounded time windows and, if required, geographic tiles. Chunk size adapts using observed row counts and payload size. A ten-year request is never one upstream request.
+Stage 1 (stage1-v3, plan `indian-ocean-plan-v2`, ADR-0041) plans whole UTC calendar
+months clipped to the request and 10-degree tiles in indian-ocean-v1 (stage1-v2 used
+<=7-day slices split at month boundaries). Local half-open time filters and deterministic
+tile ownership remove fetch-edge overlaps. Persist the complete bounded plan; adaptive
+splits preserve coverage and parent/child evidence. Missing pages, truncation, inventory
+mismatches and exhausted retries are non-success, never empty coverage. Only the strict
+S1-SOURCE-2 receipt (three role-consistent 404 `application/json` empty-array responses,
+ADR-0040) counts as an empty delivery; it proves no service-returned documents, not no
+source science.
 
-Chunking provides:
-
-- Smaller retries
-- Progress reporting
-- Parallelism within upstream limits
-- Bounded memory
-- Easier checksum and validation
-- Partial completion when one chunk fails
-
-The source adapter applies connection and read timeouts, exponential backoff with jitter, maximum attempt limits, response-size limits, and explicit handling for rate-limit responses. Longer timeouts alone are not considered reliability.
+Contract §9 bounds compressed/decompressed bytes, profile/level/array counts, plan slots,
+memory (cgroup 1 GiB, ADR-0042), the 40 GiB run canonical-work cap (ADR-0041),
+concurrency, request count and six-hour wall time. One durable controller owns
+retries; HTTP/Celery automatic retries are disabled. Authentication, destination validation,
+redaction and all I/O deadlines are part of the same contract. Ten-year user retrieval
+remains Stage 5.
 
 ### 7.3 Raw landing
 
-The source response or its reproducibility metadata is written to the raw zone before transformation, subject to source terms and retention policy. It receives a content hash and ingestion-run reference.
+Stage 1 lands bounded sanitized raw response bytes, inventory and metadata evidence before transformation, subject to source terms. Record SHA-256, sanitized request/retrieval/revision-or-absence, specification/parser/policy versions and application commit. Reproducibility metadata alone does not substitute for raw JSON fixture coverage. No credential is retained in raw evidence.
 
 Raw landing allows FloatChat to:
 
@@ -708,6 +757,7 @@ All source-specific names map to canonical names and units. Normalisation includ
 - Platform and cycle identity
 - Explicit direction and data mode
 - Original, adjusted, QC, and error values when available
+- Bounded exact-decimal scientific-json-v2 hashes and explicit float64 rounding/flags
 - Stable level index
 - Standard parameter codes and units
 - Source and ingestion provenance
@@ -738,35 +788,56 @@ Scientific checks:
 - Null and adjusted-value coverage
 - Profile completeness
 
-Plausibility checks flag or quarantine data; they do not silently rewrite authoritative observations.
+Stage 1 severity is explicit in contract §6: structural/schema/mode/unit/identity/revision conflicts quarantine the whole chunk; poor or unknown QC and finite plausibility/pressure-order diagnostics are retained with warnings. Fill/nonfinite values become null with source evidence and reasons. No success override ignores quarantine; scientific results are never silently rewritten. stage1-v3 (ADR-0040) excludes only a whole profile whose sole warning is `degenerate_levels` (source `_id`, rest of schema valid) as `excluded_source_loss`, never published and recorded in an exclusion ledger; any other or additional warning still quarantines the chunk, and the run reports `acceptance_qualified_with_source_exclusions`.
+
+Contract §5.1 sets 128-byte numeric tokens, absolute written exponent <=400, normalized
+numeric output <=512 bytes, streamed canonical output limits and binary64 nearest/ties-even.
+Overflow and nonzero-to-zero underflow quarantine; finite rounding/subnormals retain
+source decimals and flags in hashes. Only exact quoted NaN/Infinity spellings in scientific
+value/error cells map to null; bare nonstandard JSON tokens quarantine. Parser/DB defaults
+cannot choose these outcomes.
 
 ### 7.6 Write and publication sequence
 
-1. Fetch raw chunk.
-2. Hash and record raw payload.
-3. Parse into a normalised batch.
-4. Run validation.
-5. Write Parquet to a temporary object key.
-6. Read the written file back and verify schema, count, and checksum.
-7. Promote to its content-addressed final key.
-8. Bulk-load recent rows into PostgreSQL staging tables when they fall within the rolling window.
-9. Merge idempotently into target tables.
-10. Commit the `dataset_partition` catalogue record.
-11. Mark the chunk complete.
+The precise Stage 1 protocol is [contract §7](docs/stage1-contract.md#7-publication-catalogue-selection-and-recovery):
 
-A Parquet object that exists without a committed validated catalogue record is not queryable. A catalogue record is not marked validated until its object has been verified.
+1. Land bounded raw evidence and classify validated scientific revisions.
+2. Persist a fenced publication intent and build complete candidate partition snapshots.
+3. Write temporary objects, read back bytes and verify SHA-256, schema, identity manifests and counts.
+4. Copy/publish to immutable content-addressed final keys and verify the final bytes again.
+5. In one PostgreSQL transaction, lock/recheck revision and generation state, merge identities,
+   replace complete level sets, activate/supersede catalogue generations and mark the chunk complete.
+6. On retry, recognize committed completion from the database; an object alone proves nothing.
+   Recheck run control/cancellation/work deadline as well as revisions/generations.
+   A late revision conflict rolls back scientific publication, then a separate fenced
+   evidence transaction changes publishing -> quarantined and abandons the unpublished
+   intent with its object references preserved. Terminal cancellation/deadline fences
+   prohibit late publication; complete chunks remain complete.
+
+Before commit, crashes may leave unreferenced objects but no new queryable science.
+After commit, lost task acknowledgement must not reapply science. The internal selector
+proves committed active catalogue control without implementing Stage 2 query endpoints.
+Orphan reconciliation is dry-run, with a 48-hour minimum age and all-reference/in-flight
+checks. ETag is never a substitute for SHA-256. Verified empty initial fetches, empty
+refreshes over retained science and accepted last-profile ownership corrections have
+the three distinct selector outcomes in contract §7; absence alone never supersedes.
 
 ### 7.7 Daily ingestion
 
-The scheduler requests an overlap window rather than only “yesterday,” because upstream records may arrive late or be revised. Stable natural keys and source revision metadata make re-ingestion safe.
+Future Stage 1 configures one UTC Celery Beat scheduler, daily at 02:00, live ingestion
+disabled by default. Environment/source/region lease and fencing prevent overlaps.
+Each run captures actual UTC T once, requests a 14-day overlap, and processes at most
+31 days of oldest eligible catch-up per daily tick; partial runs never advance the
+contiguous coverage watermark. Occupied scope admission records overlap_skip without
+creating a run (manual exit 6); expired ownership resumes the incumbent under fenced
+controller supervision, rather than resetting its budgets. Contract §§8-10 define recovery
+of planned/fetching/landed/validating/publishing, termination and disable behavior.
 
-Maintenance also:
-
-- Detaches or archives PostgreSQL partitions older than 12 months according to policy
-- Ensures latest-three-month Parquet partitions are pinned
-- Refreshes coverage and dashboard aggregates
-- Re-embeds changed semantic metadata
-- Produces a data-freshness report
+The Jan–Mar acceptance environment has Beat disabled and a fixed isolated reference time.
+Stage 1 records lifecycle eligibility only; destructive rolling retention, partition
+detachment, expiry and orphan deletion require separate lifecycle acceptance. Dashboard
+aggregates belong to Stage 3 and semantic re-embedding to Stage 4. Stage 1 does not
+execute those maintenance actions.
 
 ---
 
@@ -1473,6 +1544,8 @@ The v1 deployment runs the same container images as §19.2 on low-cost infrastru
 
 ## 20. Testing strategy
 
+Stage 1's explicit fixture, fault, schema, migration, reconciliation and reporting test matrix is in contract §12. CI remains fully offline with local ephemeral services; live acceptance is a separate opt-in WSL2 run requiring owner-provided Argovis credentials. These are future implementation criteria, not executed results of contract hardening.
+
 ### 20.1 Unit tests
 
 - Source parsers and field mappings
@@ -1825,7 +1898,7 @@ Each stage ends at a gate: tests and CI are green, `PROGRESS.md` and `DECISIONS.
 | Stage | Name | Main sections | Exit criteria |
 |---|---|---|---|
 | 0 | Foundations and repo hygiene | §16.1, §19.1, §31 | Monorepo runs locally with one command; CI green; secrets remediated; health endpoints live |
-| 1 | Data foundation | §6, §7 | Jan–Mar 2025 Indian Ocean data ingested end to end; idempotent re-ingestion; counts reconcile; ingestion report saved |
+| 1 | Data foundation | §6, §7; stage1-contract | Astra-approved explicit contract (stage1-v3 amendment, advisor review per ADR-0039) first; later offline tests/CI and separate isolated Jan–Mar 2025 WSL2 acceptance at fixed T; captured-input scientific/active-generation replay invariance; persisted reconciliation/report and internal selector; no destructive retention/cloud/Stage 2+ scope |
 | 2 | Query engine and API | §8, §13 | Validated query plans compile to parameterised SQL and DuckDB; coverage routing works; OpenAPI and typed client generated |
 | 3 | Web dashboard | §2.1, §14 | Map, profiles, T–S diagram, time series and provenance working against local data; e2e tests green |
 | 4 | Natural-language assistant and benchmark | §9.2, §10, §30.2–§30.3 | Chat produces validated plans with an interpretation panel; golden benchmark and ablation report generated |
@@ -1905,4 +1978,3 @@ floatchat/
 - **Frontend:** Node LTS, `pnpm`, ESLint, Vitest, React Testing Library, Playwright.
 - **Git:** one branch and pull request per stage, conventional-commit messages, CI required to merge.
 - **Decisions:** any deviation from this document gets an ADR in `DECISIONS.md`.
-
