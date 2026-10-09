@@ -436,7 +436,10 @@ def fetch(
                 left = absolute - time.monotonic()
                 if left <= 0:
                     raise Rejection("io_deadline")
-                sock.settimeout(min(IDLE_READ, left))
+                # A "Connection: close" response closes the socket once its body is
+                # consumed; there is no further read to bound.
+                if sock.fileno() != -1:
+                    sock.settimeout(min(IDLE_READ, left))
 
             tick()
             connection.request(

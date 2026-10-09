@@ -160,6 +160,17 @@ def test_E01_empty_delivery_404_and_nonempty_404_keep_their_meaning(wire_fake):
     assert isinstance(error, HTTPFailure) and error.status == 429 and error.retry_after == "7"
 
 
+def test_E01_connection_close_response_is_read_after_the_socket_closes(wire_fake):
+    # Argovis answers "Connection: close": http.client closes the socket at the end of
+    # the body, and the per-read timeout refresh must not turn that into a failure.
+    parameters = {"startDate": "a", "endDate": "b", "polygon": "[]"}
+    for body, status, wanted in ((BODY, "200 OK", 200), (b"[\n\n]\n", "404 Not Found", 404)):
+        wire_fake.serve(body, status, "Connection: close\r\n")
+        box = in_thread(fetch_once, parameters)
+        assert "error" not in box, box.get("error")
+        assert box["value"].status == wanted and box["value"].payload == body
+
+
 def test_E01_redirect_and_live_flag_are_checked_without_signals(wire_fake):
     wire_fake.serve(b"", "302 Found", "Location: https://elsewhere.invalid/?k=secret\r\n")
     error = in_thread(fetch_once)["error"]
