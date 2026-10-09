@@ -17,7 +17,13 @@ Stage 2 merged into `main` as `cf0e58b` (PR #6). The two risks named in the gate
   the same plans take 9.6-30.0 s on the PostgreSQL route against 1.7-7.6 s on DuckDB.
 - [x] Tests: 521 offline Stage 2 tests (7 new for the fill statistics, warm-up, retry, start-up
   hook and the check's comparison) and 12 integration cases (warm-up on the seeded server).
-- [ ] CI on the pushed head; pull request into `main`.
+- [x] Pull request [#7](https://github.com/aayushsaxena17/FloatChat/pull/7) opened 2026-10-09. CI's
+  four non-Docker jobs pass; the three image-building jobs hit Docker Hub's anonymous pull rate
+  limit (HTTP 429) on both pushed heads and are re-run as the quota window moves. Local evidence
+  for the blocked `integration` job: `scripts/integration.py` passed on this host
+  ([report](reports/stage0-integration.json), project `floatchat-stage0-test-556f84c33457`,
+  empty-volume start-up 55.6 s, Stage 2 catalogue check on the empty database passed).
+- [ ] CI green on the pull-request head (blocked only by the registry rate limit).
 - [ ] Owner confirmation of ADR-0057, ADR-0059 and ADR-0060 (not recorded by the merge of PR #6).
 
 ## Stage 2 - plan reviewed and authorized (ADR-0056..0060), 2026-10-09
