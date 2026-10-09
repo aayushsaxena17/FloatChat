@@ -2,7 +2,7 @@
 
 **Superseded status (2026-10-09):** the live and captured-replay acceptance passed on session
 `302412131a7c99fb`; see [the Stage 1 gate](stage1-gate.md). The text below is historical. Current
-values: per-run budget 43,200 s (ADR-0043), migration head `0015_gdac_wiring`.
+values: per-run budget 43,200 s (ADR-0043), migration head `0016_query_access` (Stage 2 additive views).
 
 Current coverage review: **NO-GO for another live attempt or certification**.
 All 44 HTTP 404s are inventory_before gaps, four source-warning chunks contain

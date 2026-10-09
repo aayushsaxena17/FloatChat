@@ -48,25 +48,61 @@ def initialize_configuration() -> None:
     template = directory / ".env.example"
     if not template.exists():
         shutil.copyfile(ROOT / ".env.example", template)
-    bootstrap_env(directory)
+    shutil.copyfile(ROOT / ".env.example", directory / ".env.example")
+    if not bootstrap_env(directory):
+        append_missing_keys(directory)
+
+
+GENERATED_SECRETS = [
+    "DB_ADMIN_PASSWORD",
+    "DB_APP_PASSWORD",
+    "DB_QUERY_PASSWORD",
+    "MINIO_ROOT_PASSWORD",
+    "OBJECT_STORAGE_SECRET_KEY",
+]
+
+
+def _generated(values: str) -> str:
+    for name in GENERATED_SECRETS:
+        values = values.replace(f"{name}=GENERATE_LOCALLY", f"{name}={secrets.token_hex(24)}")
+    return values
 
 
 def bootstrap_env(root: Path = ROOT) -> bool:
     destination = root / ".env"
     if destination.exists():
         return False
-    values = (root / ".env.example").read_text()
-    for name in [
-        "DB_ADMIN_PASSWORD",
-        "DB_APP_PASSWORD",
-        "MINIO_ROOT_PASSWORD",
-        "OBJECT_STORAGE_SECRET_KEY",
-    ]:
-        values = values.replace(f"{name}=GENERATE_LOCALLY", f"{name}={secrets.token_hex(24)}")
+    values = _generated((root / ".env.example").read_text())
     descriptor = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as output:
         output.write(values)
     return True
+
+
+def append_missing_keys(root: Path = ROOT) -> list[str]:
+    """Add keys a newer .env.example introduces to an existing .env (Stage 2: the query role).
+
+    Existing lines are never rewritten; only absent keys are appended, secrets generated.
+    """
+    destination = root / ".env"
+    if not destination.exists():
+        return []
+    present = {
+        line.split("=", 1)[0].strip()
+        for line in destination.read_text().splitlines()
+        if "=" in line and not line.lstrip().startswith("#")
+    }
+    added = []
+    for line in (root / ".env.example").read_text().splitlines():
+        if "=" not in line or line.lstrip().startswith("#"):
+            continue
+        key = line.split("=", 1)[0].strip()
+        if key not in present:
+            added.append(_generated(line))
+    if added:
+        with destination.open("a", encoding="utf-8", newline="\n") as output:
+            output.write("\n".join(["", *added]) + "\n")
+    return [line.split("=", 1)[0] for line in added]
 
 
 def compose(*args: str, timeout: int = 300) -> None:

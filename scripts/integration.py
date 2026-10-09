@@ -91,6 +91,22 @@ def main() -> None:
             wait_ready(ready_url, 5)
             assert time.monotonic() - start <= 300
             evidence.append({"check": "empty-volume-startup", "seconds": time.monotonic() - start})
+            # Stage 2: the catalogue answers on an empty database; coverage reports the absence
+            # of an ingestion environment as a registered error, never a stack trace.
+            with urllib.request.urlopen(
+                f"http://127.0.0.1:{api_port}/v1/catalog/parameters", timeout=10
+            ) as response:
+                assert response.status == 200
+                assert json.loads(response.read())["plan_schema"] == "stage2-plan-v1"
+            try:
+                urllib.request.urlopen(
+                    f"http://127.0.0.1:{api_port}/v1/catalog/coverage", timeout=10
+                )
+                raise AssertionError("coverage answered without an environment")
+            except urllib.error.HTTPError as error:
+                assert error.code == 422
+                assert json.loads(error.read())["error"]["code"] == "coverage_missing"
+            evidence.append({"check": "stage2-catalogue-on-empty-database", "passed": True})
             compose("run", "--rm", "db-init")
             compose(
                 "run",
