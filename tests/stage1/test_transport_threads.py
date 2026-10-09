@@ -610,14 +610,14 @@ def cache_world(tmp_path):
 
     retrieved = CREATED + timedelta(minutes=5)  # landed during this run
 
-    def owner(chunk=None, *, require_existing=False, transport=transport):
+    def owner(chunk=None, *, require_existing=False, transport=transport, enabled=lambda: True):
         return RequestOwner(
             repository,
             store,
             Authority(RUN, chunk or uuid.uuid4(), 1, 1),
             deadline=time.monotonic() + 60,
             application_commit="offline-test",
-            enabled=lambda: True,
+            enabled=enabled,
             credential=lambda: SENTINEL,
             transport=transport,
             jitter=lambda: 0,
@@ -714,6 +714,28 @@ def test_E04_verified_landing_finds_a_cache_hit_on_reload_without_the_cache(cach
     # A chunk without its own manifest cannot borrow the cache on reload.
     with pytest.raises(Rejection, match="landing_unavailable"):
         cache_world.owner(uuid.uuid4(), require_existing=True, transport=refuse).obtain(*META)
+
+
+def test_E04_process_pool_reload_needs_no_live_flag(cache_world):
+    # The process pool runs with live ingestion disabled; its reload reads only the
+    # chunk's persisted landings, while an acquiring owner still stops when disabled.
+    chunk = uuid.uuid4()
+    hit = cache_world.owner(chunk).obtain(*META)
+
+    def refuse(*args, **kwargs):
+        pytest.fail("Reload must not request")
+
+    disabled = lambda: False  # noqa: E731
+    reload = cache_world.owner(
+        chunk, require_existing=True, transport=refuse, enabled=disabled
+    ).obtain(*META)
+    assert reload.manifest["id"] == hit.manifest["id"]
+    with pytest.raises(Rejection, match="landing_unavailable"):
+        cache_world.owner(
+            uuid.uuid4(), require_existing=True, transport=refuse, enabled=disabled
+        ).obtain(*META)
+    with pytest.raises(Rejection, match="live_ingestion_disabled"):
+        cache_world.owner(chunk, transport=refuse, enabled=disabled).obtain(*META)
 
 
 def test_E04_entries_from_earlier_runs_hit_within_thirty_days_and_stale_ones_are_replaced(

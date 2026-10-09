@@ -195,7 +195,9 @@ class RequestOwner:
         self.repository.restart_selection(self.authority)
 
     def obtain(self, path: str, parameters: dict[str, str], role: str) -> Landing:
-        if not self.enabled():
+        # A require_existing reload (the process pool, which never holds the live flag or
+        # the credential) only reads persisted landings and can never reach upstream.
+        if not self.require_existing and not self.enabled():
             raise Rejection("live_ingestion_disabled")
         key = logical_request(path, parameters, role)
         existing = self.repository.verified_landing(self.authority, key)
