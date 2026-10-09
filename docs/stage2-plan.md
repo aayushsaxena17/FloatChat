@@ -294,6 +294,7 @@ with `aggregate`, `median` with `unit = measurement` over DuckDB when unsupporte
 | PostgreSQL aggregate budget | 1,000,000 estimated levels |
 | DuckDB aggregate budget | 5,000,000 estimated levels |
 | Object bytes fetched per query | 512 MiB |
+| Object fetch time per query | 120 s, 4 parallel downloads (separate from the query timeout) |
 | Nearest | radius 2,000 km, k 100 |
 | Chart | 5,000 points per series, 20 series |
 | Statement timeout | 15 s (role) and 10 s per query (API) |

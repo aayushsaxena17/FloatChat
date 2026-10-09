@@ -1577,7 +1577,9 @@ Decision:
    identifiers and functions and every value bound; `text()` and formatted SQL are forbidden in the
    query package by a test.
 3. The DuckDB route runs in the API process, bounded (memory limit, two threads, per-query
-   interrupt, byte budget). Parts are fetched through boto3 into a content-addressed cache
+   interrupt, byte budget, and a separate time budget with parallel downloads for the object
+   fill, so a cold cache does not consume the execution deadline). Parts are fetched through
+   boto3 into a content-addressed cache
    (`<sha256>.parquet`), verified by length and SHA-256 against `app.dataset_partition` before an
    atomic rename, and read by `pyarrow.dataset` registered into a DuckDB connection configured with
    `enable_external_access = false`, no extension autoload or autoinstall, and a locked

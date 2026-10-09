@@ -720,8 +720,14 @@ def load_dataset_report(path: Path) -> dict[str, Any]:
         raise Failure(f"dataset report {path} is not a JSON object")
     digest = document.get("digest") or document.get("stream_sha256") or document.get("dump_sha256")
     session = document.get("session")
-    if not isinstance(session, str) or not isinstance(digest, str):
-        raise Failure(f"dataset report {path} has no session and digest")
+    if not isinstance(session, str):
+        raise Failure(f"dataset report {path} has no session")
+    objects = document.get("objects")
+    active = objects.get("active_partitions") if isinstance(objects, dict) else None
+    if not isinstance(digest, str):
+        # A resumed import reuses an earlier database phase and carries no stream digest;
+        # the object inventory (count|bytes of verified parts) still identifies the copy.
+        digest = f"objects {active}" if isinstance(active, str) else "unavailable"
     counts = document.get("row_counts")
     counts = counts if isinstance(counts, dict) else {}
     return {
