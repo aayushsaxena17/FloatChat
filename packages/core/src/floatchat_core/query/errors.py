@@ -35,6 +35,7 @@ REGISTRY = MappingProxyType(
         "cost_over_budget": (422, "The estimated cost of this request exceeds the budget."),
         "coverage_missing": (422, "No committed coverage exists for the requested scope."),
         "not_found": (404, "The requested resource does not exist."),
+        "method_not_allowed": (405, "The method is not allowed on this resource."),
         "invalid_cursor": (400, "The pagination cursor is invalid."),
         "invalid_parameter": (400, "A query parameter is invalid; see details."),
         "payload_too_large": (413, "The request body exceeds the configured limit."),

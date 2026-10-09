@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from floatchat_core.config import Settings
@@ -21,6 +23,7 @@ def create_app(
         "plans compiled to parameterised SQL or bounded DuckDB (Stage 2).",
     )
     install(app, QueryRuntime(service=query_service))
+    _configure_logging()
 
     @app.get("/v1/health/live")
     async def live() -> dict[str, str]:
@@ -44,6 +47,16 @@ def create_app(
         )
 
     return app
+
+
+def _configure_logging() -> None:
+    """Query execution records (plan hash, route, timings) reach stdout under uvicorn."""
+    logger = logging.getLogger("floatchat")
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter("%(asctime)s %(name)s %(levelname)s %(message)s"))
+        logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
 
 
 app = create_app()

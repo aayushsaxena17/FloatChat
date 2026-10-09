@@ -23,6 +23,7 @@ import tempfile
 import time
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -229,6 +230,82 @@ def ordered_for_restore(container: str, database: str, tables: list[str]) -> lis
     return ordered
 
 
+def stream_table(
+    source: str, source_database: str, target: str, table: str, predicate: str, digest: Any
+) -> int:
+    """COPY one table (or one month of it) in binary form from source to target."""
+    reader = subprocess.Popen(
+        [
+            "docker",
+            "exec",
+            source,
+            "psql",
+            "-X",
+            "-q",
+            "-U",
+            "floatchat_admin",
+            "-d",
+            source_database,
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-c",
+            f"COPY (SELECT * FROM app.{table} WHERE {predicate}) TO STDOUT (FORMAT binary)",
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    writer = subprocess.Popen(
+        [
+            "docker",
+            "exec",
+            "-i",
+            target,
+            "psql",
+            "-X",
+            "-q",
+            "-U",
+            "floatchat_admin",
+            "-d",
+            "floatchat",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-c",
+            "SET session_replication_role = replica",
+            "-c",
+            f"COPY app.{table} FROM STDIN (FORMAT binary)",
+        ],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+    )
+    assert reader.stdout is not None and writer.stdin is not None
+    total = 0
+    try:
+        while True:
+            block = reader.stdout.read(1 << 20)
+            if not block:
+                break
+            digest.update(block)
+            total += len(block)
+            writer.stdin.write(block)
+    except BrokenPipeError:
+        pass
+    finally:
+        try:
+            writer.stdin.close()
+        except BrokenPipeError:
+            pass
+    reader_status = reader.wait(timeout=3600)
+    writer_status = writer.wait(timeout=3600)
+    if reader_status != 0:
+        error = reader.stderr.read().decode(errors="replace") if reader.stderr else ""
+        raise Failure(f"COPY out of app.{table} ({predicate}) failed: {error[-600:]}")
+    if writer_status != 0:
+        error = writer.stderr.read().decode(errors="replace") if writer.stderr else ""
+        raise Failure(f"COPY into app.{table} ({predicate}) failed: {error[-600:]}")
+    return total
+
+
 def copy_objects(
     network: str, env: dict[str, str], listing: list[dict[str, object]], objects: Path, mode: str
 ) -> dict[str, object]:
@@ -363,64 +440,26 @@ def import_session(session: str, report_path: Path | None) -> None:
 
         work_root = configuration_root().parent / "stage2-dataset" / session
         work_root.mkdir(parents=True, exist_ok=True)
-        dump_path = work_root / "science.sql"
-        table_args: list[str] = []
-        for table in tables:
-            table_args += ["--table", f"app.{table}"]
-        table_args += ["--table", "app.core_measurement_*"]
-        with dump_path.open("wb") as output:
-            dump = subprocess.run(
-                [
-                    "docker",
-                    "exec",
-                    source_db,
-                    "pg_dump",
-                    "-U",
-                    "floatchat_admin",
-                    "-d",
-                    source_database,
-                    "--data-only",
-                    "--no-owner",
-                    "--no-privileges",
-                    "--disable-triggers",
-                    "--load-via-partition-root",
-                    *table_args,
-                ],
-                stdout=output,
-                stderr=subprocess.PIPE,
-                timeout=3600,
-            )
-        if dump.returncode != 0:
-            raise Failure("pg_dump failed: " + dump.stderr.decode(errors="replace")[-800:])
-        dump_sha256 = hashlib.sha256()
-        with dump_path.open("rb") as handle:
-            for block in iter(lambda: handle.read(1 << 20), b""):
-                dump_sha256.update(block)
-        with dump_path.open("rb") as handle:
-            restore = subprocess.run(
-                [
-                    "docker",
-                    "exec",
-                    "-i",
-                    target_db,
-                    "psql",
-                    "-X",
-                    "-q",
-                    "-U",
-                    "floatchat_admin",
-                    "-d",
-                    "floatchat",
-                    "-v",
-                    "ON_ERROR_STOP=1",
-                    "--single-transaction",
-                ],
-                stdin=handle,
-                stderr=subprocess.PIPE,
-                stdout=subprocess.DEVNULL,
-                timeout=7200,
-            )
-        if restore.returncode != 0:
-            raise Failure("restore failed: " + restore.stderr.decode(errors="replace")[-800:])
+        # Streamed binary COPY, table by table and month by month for the two large tables:
+        # no temp file on the host, bounded memory on both servers, FK triggers off on the
+        # target for the duration (session_replication_role = replica, superuser only).
+        stream_sha256 = hashlib.sha256()
+        copied_bytes = 0
+        for table in [*tables, "core_measurement"]:
+            predicates = ["TRUE"]
+            if table in ("argo_profile", "core_measurement"):
+                predicates = [f"observation_month = '{month}'" for month in months]
+            for predicate in predicates:
+                copied_bytes += stream_table(
+                    source_db, source_database, target_db, table, predicate, stream_sha256
+                )
+        psql(
+            target_db,
+            "floatchat_admin",
+            "floatchat",
+            "; ".join(f"ANALYZE app.{table}" for table in [*tables, "core_measurement"]),
+            timeout=1800,
+        )
 
         objects = work_root / "objects"
         objects.mkdir(exist_ok=True)
@@ -486,8 +525,8 @@ def import_session(session: str, report_path: Path | None) -> None:
         "tables": tables,
         "row_counts": target_counts,
         "measurement_months": months,
-        "dump_sha256": dump_sha256.hexdigest(),
-        "dump_bytes": dump_path.stat().st_size,
+        "stream_sha256": stream_sha256.hexdigest(),
+        "stream_bytes": copied_bytes,
         "objects": {"downloaded": downloaded, "uploaded": uploaded, "active_partitions": active},
         "git_head": run(["git", "rev-parse", "--short=12", "HEAD"], timeout=30).strip(),
         "completed_at_utc": datetime.now(UTC).isoformat(),
@@ -498,7 +537,6 @@ def import_session(session: str, report_path: Path | None) -> None:
     report_path = report_path or ROOT / "reports" / f"stage2-dataset-{session}.json"
     report_path.write_text(json.dumps(report, indent=2) + "\n")
     shutil.rmtree(objects, ignore_errors=True)
-    dump_path.unlink(missing_ok=True)
     print(
         f"imported session {session} into {dev_project}: {target_counts['argo_profile']} profiles, "
         f"{target_counts['core_measurement']} levels, objects {active}; "

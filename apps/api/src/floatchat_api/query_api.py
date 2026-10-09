@@ -18,6 +18,7 @@ import boto3
 from botocore.config import Config
 from fastapi import APIRouter, FastAPI, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
+from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from floatchat_core.config import Settings
 from floatchat_core.query.cache import PartCache
@@ -27,6 +28,7 @@ from floatchat_core.query.limits import QueryLimits
 from floatchat_core.query.plan import BoundingBox, DepthRange, NamedRegion
 from floatchat_core.query.router import QueryService
 from pydantic import BaseModel, ConfigDict, Field
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 log = logging.getLogger("floatchat.api")
 CORRELATION_HEADER = "X-Correlation-ID"
@@ -198,7 +200,7 @@ def _fetcher(settings: Settings) -> Callable[[str, int], bytes]:
 
 def correlation_id(request: Request) -> str:
     supplied = request.headers.get(CORRELATION_HEADER, "")
-    if CORRELATION_TOKEN.match(supplied):
+    if CORRELATION_TOKEN.fullmatch(supplied):
         return supplied
     return str(uuid.uuid4())
 
@@ -231,12 +233,20 @@ def _depth(depth_min: float | None, depth_max: float | None) -> DepthRange | Non
     if depth_min is None and depth_max is None:
         return None
     try:
-        return DepthRange(min=depth_min or 0.0, max=depth_max if depth_max is not None else 12000.0)
+        depth = DepthRange(
+            min=depth_min or 0.0, max=depth_max if depth_max is not None else 12000.0
+        )
     except ValueError:
         raise QueryError(
             "invalid_parameter",
             (Detail("depth", "invalid_depth_range", "invalid depth range"),),
         ) from None
+    if depth.min >= depth.max:
+        raise QueryError(
+            "invalid_parameter",
+            (Detail("depth", "invalid_depth_range", "min must be below max"),),
+        )
+    return depth
 
 
 def _aware(name: str, value: datetime | None) -> datetime | None:
@@ -372,17 +382,62 @@ def install(app: FastAPI, runtime: QueryRuntime) -> None:
             profile_id, qc_policy=qc_policy, depth=_depth(depth_min, depth_max)
         )
 
-    @router.post("/query", response_model=QueryResponse)
-    async def query(request: Request, body: QueryRequest) -> Any:
+    @router.post(
+        "/query",
+        response_model=QueryResponse,
+        openapi_extra={
+            "requestBody": {
+                "required": True,
+                "content": {
+                    "application/json": {"schema": {"$ref": "#/components/schemas/QueryRequest"}}
+                },
+            }
+        },
+    )
+    async def query(request: Request) -> Any:
+        # The body is read raw so that the size bound and the plan validator see every request;
+        # a typed parameter would let FastAPI answer first with a different error shape.
         payload = await request.body()
         if len(payload) > runtime.limits.request_bytes:
             raise QueryError("payload_too_large")
         try:
             document = json.loads(payload)
         except ValueError:
+            document = None
+        if not isinstance(document, dict):
             raise QueryError(
                 "plan_invalid", (Detail("plan", "invalid_value", "JSON object required"),)
-            ) from None
+            )
         return runtime.service().query(document)
 
+    @app.exception_handler(StarletteHTTPException)
+    async def http_error(request: Request, error: StarletteHTTPException) -> JSONResponse:
+        identifier = getattr(request.state, "correlation_id", None) or correlation_id(request)
+        code = {404: "not_found", 405: "method_not_allowed"}.get(
+            error.status_code, "internal_error"
+        )
+        body = QueryError(code).as_dict(identifier)
+        return JSONResponse(
+            body, status_code=QueryError(code).status, headers={CORRELATION_HEADER: identifier}
+        )
+
     app.include_router(router)
+
+    def openapi_with_plan_schema() -> dict[str, Any]:
+        """The request body of ``POST /v1/query`` is documented as the ``QueryRequest`` model."""
+        if app.openapi_schema:
+            return app.openapi_schema
+        schema = get_openapi(
+            title=app.title,
+            version=app.version,
+            description=app.description,
+            routes=app.routes,
+        )
+        components = schema.setdefault("components", {}).setdefault("schemas", {})
+        components["QueryRequest"] = QueryRequest.model_json_schema(
+            ref_template="#/components/schemas/{model}"
+        )
+        app.openapi_schema = schema
+        return schema
+
+    app.openapi = openapi_with_plan_schema  # type: ignore[method-assign]

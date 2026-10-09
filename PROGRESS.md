@@ -16,8 +16,23 @@ reviewed the findings before the rewrite and agreed with the rewritten plan and 
 - [x] ADR-0056 (scope, branch, population, router reference time), ADR-0057 (`qc-policy-v1`, owner
   to confirm), ADR-0058 (`floatchat_query`, views, DuckDB over a verified cache), ADR-0059 (dataset
   copy from session `302412131a7c99fb`, owner to confirm), ADR-0060 (IHO Sea Areas v3 regions).
-- [ ] W1 dataset copy and local environment; W2 migration 0016; W3 query package; W4 API; W5
-  TypeScript client; W6 tests and CI; W7 latency report; W8 documents and gate.
+- [x] W2 migration `0016_query_access`: `floatchat_query` login, `app.query_*` views,
+  `app.named_region` (7 regions from IHO Sea Areas v3 through `scripts/build_named_regions.py`,
+  0.05 degree simplification, parts and holes under 50 km² removed, 337 KB fixture), indexes
+  `profile_float_time` and `profile_position_geog`.
+- [x] W3 `floatchat_core.query`: plan model with registered rejections, `qc-policy-v1`, geography and
+  tiles, SQLAlchemy Core compiler, catalogue coverage on the query login, SHA-256-verified part
+  cache, bounded DuckDB compiler with the manifest semi-join, router, sanitiser, chart contract,
+  provenance. `docs/stage2-query-engine.md` shows the compiled statements.
+- [x] W4 API routes with correlation IDs, closed error registry, request bound; W1 bootstrap, dev
+  configuration (additive keys), Compose cache volume, `scripts/stage2_dataset.py` (streamed binary
+  COPY per month, verified object mirror).
+- [x] Integration suite `tests/stage2/test_integration.py` (11 cases on a disposable PostGIS server:
+  migration, read-only login, regions, coverage labelling without job creation, pagination,
+  geodesic nearest with the geography index, PostgreSQL and DuckDB agreement, manifest exclusion,
+  float and profile reads, charts and provenance) passes locally.
+- [ ] W5 TypeScript client, OpenAPI artefact and CI wiring; W6 unit suites; W7 latency report on the
+  imported dataset; W8 gate report with measured numbers, CI on the pushed head, advisor agreement.
 - [ ] Needs from Aayush: confirm ADR-0057, ADR-0059 and the region definitions in ADR-0060.
 
 ## Stage 1 - live and captured-replay acceptance passed on stage1-v4 (ADR-0054, ADR-0055), 2026-10-09

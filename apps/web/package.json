@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "generate:api": "openapi-typescript ../api/openapi.json -o src/api/schema.d.ts",
     "test:e2e": "playwright test",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

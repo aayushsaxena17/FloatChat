@@ -25,7 +25,7 @@ jobs:
             STAGE1_POSTGRES_IMAGE=floatchat-stage1-postgres-offline \
             STAGE1_API_IMAGE=floatchat-stage1-api-offline \
             STAGE1_MINIO_IMAGE=floatchat-stage1-minio-offline \
-            "$PWD/.venv/bin/python" -m pytest tests/stage1 -q \
+            "$PWD/.venv/bin/python" -m pytest tests/stage1 tests/stage2 -q \
             --junitxml=reports/stage1-ci-components.xml
       - uses: actions/upload-artifact@v4
         if: always()
@@ -51,6 +51,7 @@ jobs:
       - run: uv run --all-packages --frozen ruff check .
       - run: uv run --all-packages --frozen ruff format --check .
       - run: uv run --all-packages --frozen mypy
+      - run: uv run --all-packages --frozen python scripts/export_openapi.py --check
       - run: uv run --all-packages --frozen python -m pytest -m 'not integration'
   web:
     name: web
@@ -62,6 +63,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '24.15.0' }
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @floatchat/web generate:api
+      - run: git diff --exit-code apps/web/src/api
       - run: pnpm lint
       - run: pnpm format:check
       - run: pnpm typecheck

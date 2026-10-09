@@ -219,7 +219,7 @@ def _catalogue_rows(parts: dict[str, bytes]) -> str:
             f"INSERT INTO app.ingestion_chunk(id,run_id,logical_chunk_key,requested_start,"
             f"requested_end,tile,plan_version,state,completed_at) VALUES('{chunk}','{RUN}','{key}',"
             f"'{month}T00:00:00Z',('{month}'::date+interval '1 month'),"
-            f"'{{\"west\":{west},\"south\":{south},\"width\":10,\"height\":10}}','v2','complete',now());"
+            f'\'{{"west":{west},"south":{south},"width":10,"height":10}}\',\'v2\',\'complete\',now());'
         )
         statements.append(
             f"INSERT INTO app.publication_intent(id,chunk_id,fence,control_epoch,status,"
