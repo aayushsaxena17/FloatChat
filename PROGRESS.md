@@ -1,5 +1,23 @@
 # Stage progress
 
+## Stage 1 - live and captured-replay acceptance passed on stage1-v4 (ADR-0054, ADR-0055), 2026-10-09
+
+`codex/stage-1-perf` merged into `codex/stage-1` (PR #4, `6c88a0a`). Gate report:
+[docs/stage1-gate.md](docs/stage1-gate.md).
+
+- [x] Session `302412131a7c99fb` on `499b821`: live run 270/270 complete in 23.1 min (5,814
+  profiles, 4,144,346 levels, 31 source exclusions, 64 receipts per role, 0 HTTP 429), captured
+  replay 270/270 with scientific and active-partition no-change in 13.5 min; memory evidence
+  passes (acquire 237 MiB, process 673 MiB anonymous peak, 0 OOM).
+- [x] Five live-only defects found and fixed with regression tests: `222f437`, `7bec2c0`,
+  `d0e6565`, `b426f62`, `499b821` (ADR-0054); CI green on each pushed head.
+- [x] Advisor review of ADR-0047..0053 with dispositions for audit cadence, governor counters and
+  memory at the chunk cap (ADR-0055).
+- [x] v3 and v4 live runs agree byte for byte on all 5,792 shared profiles; full level audit of the
+  acceptance population passed.
+- [ ] Follow-ups listed under "Known limitations" in the gate report.
+- [ ] Stage 2 per [docs/stage2-plan.md](docs/stage2-plan.md).
+
 ## Stage 1 - stage1-v4 execution rewrite implemented offline (ADR-0047..0053), 2026-10-08
 
 Branch `codex/stage-1-perf` from `e1ba4f0`. Scientific rules are unchanged (ADR-0053,

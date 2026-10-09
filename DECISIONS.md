@@ -1419,3 +1419,90 @@ for stage1-v3 (`reports/stage1-v3-bench-chunk-baseline.json`), and the run model
 worker CPU 0.10 h and captured replay 0.19 h for Jan-Mar 2025; the review's 650 µs target was a
 no-ADR estimate, not a measurement. Package A reported that `test_canonical_encoding_certificate.py` needed an edit for
 the new encoder; the tree no longer contains `_small_json_bound` or the test it named.
+
+## ADR-0054 - stage1-v4 live-only defects found by the first live sessions
+
+Status: accepted (owner authority, ADR-0039); 2026-10-09.
+
+The first three live Jan-Mar 2025 sessions on the merged stage1-v4 code (`6c88a0a`) each exposed
+one defect that the offline fakes could not show. Each session was stopped through the wrapper's
+interrupt path, with science, objects and the database preserved and persisted budgets unchanged.
+
+1. `689a21527ccf01de` (run `402c6eda`): every attempt ended as `upstream_transport_failure`.
+   Argovis answers `Connection: close`, so `http.client` closes the socket once the body is read;
+   the per-read idle-timeout refresh then called `settimeout` on the closed socket (EBADF).
+   Fixed in `222f437`: the refresh skips a closed socket; the attempt bound is still checked.
+   The fake wire now sends `Connection: close`.
+2. `610e1592a7c98390`: every landed chunk failed as `live_ingestion_disabled` in the process pool.
+   `RequestOwner.obtain` checked the live flag before the persisted-landing lookup, and the
+   process pool runs with live ingestion disabled (ADR-0047). Fixed in `7bec2c0`: an owner built
+   with `require_existing`, which cannot reach upstream, does not need the flag; an acquiring
+   owner still stops when it is disabled.
+3. `716d72e226e49f75`: 58 leaves (1,144 profiles, 884,135 levels) published in about 9 minutes
+   with no quarantine, then three acquire chunks failed as `database_failure`.
+   `commit_publication` holds the `ingestion_run` row from its first `assert_authority` to
+   COMMIT; one 40-profile commit held it for at least 10 s while acquire threads waited on the
+   same row for per-read byte accounting, past the fixed 5 s `lock_timeout`. Fixed in
+   `d0e6565`: `lock_timeout` equals the transaction's existing statement and transaction bound
+   (at most 60 s). PostgreSQL deadlock detection is independent of it. The restricted repository
+   probe now waits behind a 7 s lock.
+
+4. `a34ff8267e859b85`: 268 of 270 leaves complete in about 54 minutes (10:11 to 11:05 UTC),
+   5,788 profiles and 4,124,043 levels committed, 27 source exclusions, 64 empty-delivery
+   receipts per role, no quarantine; 1,529 verified HTTP payloads plus 1,464 metadata cache hits
+   (stage1-v3 run `7153be63`: 3,009 HTTP attempts in 3.79 h). Two acquire chunks in
+   transport-retry back-off failed together as `worker_execution_failed` at 10:53:12 UTC, the
+   moment a publication commit released the run row: `RequestOwner.wait` heartbeated past the
+   end of the retry delay and passed a negative interval to `time.sleep` (ValueError). Fixed in
+   `b426f62`: the remaining sleep is clamped at zero. The run's 26 transport failures were
+   spread through the run (connect-phase `io_deadline` at 10 s and idle reads near 116 s with no
+   bytes received), all retried; these upstream slow episodes under four concurrent requests are
+   not 429s, so the governor (ADR-0048) does not react to them.
+5. The same session left no ADR-0042 memory evidence: both cgroup samplers exited at 10:23 UTC
+   when one `docker ps` exceeded its 20 s timeout under load. Fixed in `499b821`: a failed listing
+   keeps sampling the known containers and is counted as `missed_container_listings`.
+
+Not changed: `assert_authority` locking, the per-read accounting cadence and the position of the
+run-row update in `commit_publication`. Shortening the run-row hold is a follow-up if acquire
+attempts start to reach `io_deadline` while waiting.
+
+## ADR-0055 - Review of ADR-0047 through ADR-0053, deferred items and the contract label
+
+Status: accepted (owner authority, ADR-0039; advisor review recorded 2026-10-09).
+
+The advisor reviewed ADR-0047 through ADR-0053 against the live sessions of 2026-10-09 and agreed
+to each, with the dispositions below. Evidence is session `302412131a7c99fb` (live run
+`edebccd8`, replay run `8562e75d`) on `499b821`, see `docs/stage1-gate.md`.
+
+1. ADR-0047: verified under Docker by sessions `716d72e2`, `a34ff826` and `30241213`. Open: no
+   watchdog observes the process container during `execute`, so a dead pool parent stalls chunks
+   until the run deadline.
+2. ADR-0048: the first live measurement of four requests in flight. Runs `a34ff826` and
+   `30241213` saw no HTTP 429; upstream slow episodes appeared as connect-phase `io_deadline`
+   and idle reads near 116 s, which the governor does not react to, and all were retried.
+3. ADR-0049: the live run of `30241213` resolved 2,194 metadata requests, 1,470 (67 %) from the
+   cache and 724 over HTTP. Open: a cache hit manifest carries a synthesized `sanitization`, not
+   a copy of the original evidence.
+4. ADR-0050 and ADR-0051, audit: deferred. No cadence is wired. The property the audit guards
+   (each stored float equals its canonical text) holds for this code because the float columns
+   and canonical text are two outputs of one `map_profile`/`level_table` call, proven by byte
+   identity (ADR-0053) and Arrow-equality verification (ADR-0050 decision 2); the audit guards
+   future mapper changes. It was executed once on the acceptance population: `app.audit_levels`
+   over all 206 committed chunks of `30241213` checked 5,814 profiles and 4,144,346 levels with
+   no mismatch, at about 0.6 ms per level, too slow to run on every commit as written.
+5. ADR-0048, governor counters: deferred; with no 429 observed there was nothing to count.
+6. ADR-0051, memory at the chunk cap: deferred and recorded as a known limit. The largest
+   Jan-Mar chunk held 87 profiles and 52,238 levels against the 2,000,000-level cap; the
+   process container peaked at 673 MiB anonymous for two workers (limit 2 GiB). At the cap a
+   chunk would exceed the 1 GiB worker bound. Decision 9 of ADR-0051 (new SQL categories
+   quarantine rather than fail) stays open.
+7. ADR-0052: the GDAC source is a capability outside this acceptance and stays uncertified; the
+   source-aware SQL of migrations 0014 and 0015 (`admit_run`, `ensure_slot`,
+   `commit_publication`) is verified by the Argovis acceptance run. ADR-0052's "Not wired end to
+   end" paragraph predates package G2.
+8. ADR-0053: shown on live data. All 5,792 profiles of the stage1-v3 live run `7153be63` have
+   identical content hashes in `30241213`; the 22 further profiles are the leaf that `7153be63`
+   quarantined for `missing_basin` (ADR-0046).
+9. Contract label. Reports, `planning.RUN_POLICY` and the acceptance validator keep
+   `contract = "stage1-v3"`: the scientific contract is unchanged and the canonical bytes are
+   identical. `stage1-v4` names the execution amendment in `docs/stage1-contract.md` §1.
