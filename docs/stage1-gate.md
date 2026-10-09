@@ -87,3 +87,32 @@ Details of the five live-only defects: ADR-0054.
 The stage1-v1 to stage1-v3 reviews, the original session's terminalization and the stage1-v3 live
 runs are recorded in [PROGRESS.md](../PROGRESS.md), DECISIONS.md (ADR-0033 to ADR-0046) and the
 reports they link. The previous NO-GO text of this file is superseded by this gate.
+
+## Commit IDs after the 2026-10-09 history rewrite
+
+Commit messages on this branch were rewritten to drop co-author trailers; authors, dates and
+every tree are unchanged (`git rev-parse <old>^{tree}` equals the new commit's tree). Reports,
+ADRs and this document cite the original IDs; they map as follows.
+
+| Original | Current | Subject |
+|---|---|---|
+| `1cecd46` | `74ef714` | chore: add delegation agents and ignore local Claude settings |
+| `03ba2cd` | `eec2dc2` | feat(stage1): add ingestion migrations 0002-0009 |
+| `db5febb` | `118bd86` | feat(stage1): ingestion core, worker runtime and stage1-v3 policy |
+| `82968db` | `b4e4031` | feat(stage1): acceptance, terminalization, census and probe scripts |
+| `5c4a2ac` | `5b1dbea` | test(stage1): offline, database and processor coverage incl. stage1-v3 |
+| `5ebb758` | `3a642a8` | docs(stage1): stage1-v3 contract, ADR-0033..0042 and progress |
+| `59021c9` | `8c283e2` | chore(stage1): persisted evidence reports |
+| `09bf91d` | `9441156` | fix(stage1): preparation expects migration head 0009 and records git HEAD |
+| `03fe835` | `4834e32` | test(stage1): run acceptance-wrapper tests from any checkout path |
+| `ccecfd2` | `f20ca1f` | fix(stage1): 12 h run bound, 60 s idle read and CI portability |
+| `35ce9e1` | `d699397` | perf(stage1): set-based publication commit and owner-slot index (ADR-0044) |
+| `e1ba4f0` | `f4c8708` | fix(stage1): retry window that outlasts upstream slow episodes (ADR-0045) |
+| `50dbdbc` | `9223445` | fix(stage1): missing_basin is an informational source warning (ADR-0046) |
+| `6c88a0a` | `e0f7a58` | stage1-v4: parallel acquire/process pipeline, verify-once publication, GDAC source (#4) |
+| `222f437` | `6365049` | fix(stage1-v4): idle-read refresh must not fail a Connection: close response |
+| `7bec2c0` | `daf9952` | fix(stage1-v4): process-pool reload must not require the live flag |
+| `d0e6565` | `1ec3875` | fix(stage1-v4): bound run-row lock waits by the transaction bound, not 5 s |
+| `b426f62` | `d1482df` | fix(stage1-v4): retry wait never sleeps a negative interval |
+| `499b821` | `48a7a21` | fix(stage1): memory sampler survives a stalled docker listing |
+| `1a7deb9` | `9502c3d` | docs(stage1): acceptance gate passed on stage1-v4 (ADR-0054, ADR-0055) |
