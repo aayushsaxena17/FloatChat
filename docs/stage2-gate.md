@@ -173,7 +173,9 @@ the latency matrix return the same rows on both routes, maximum relative differe
 - Cross-route agreement (PostgreSQL versus DuckDB) is test-proven on the seeded integration rows
   and, since the post-gate fixes, by the committed `scripts/stage2_route_check.py` on the imported
   4.14 M levels: [reports/stage2-route-check_2026-10-09.md](../reports/stage2-route-check_2026-10-09.md),
-  10 of 10 plans agree, maximum relative difference 5.8e-14.
+  10 of 10 plans agree, maximum relative difference 5.8e-14. The per-plan timings in that report
+  are not latency measurements: both routes ran in one process, so its DuckDB times include
+  contention from the PostgreSQL route; the latency reports above are the timing evidence.
 - No authentication, quotas or rate limits (Stage 7); the API binds to loopback only.
 - `tests/test_refetch.py` HTTPS deadline tests are load-sensitive on this host (observed failing
   under the import and three concurrent test runs, passing in isolation).

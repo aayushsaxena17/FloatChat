@@ -185,7 +185,7 @@ class QueryRuntime:
             cache = PartCache(
                 Path(settings.query_object_cache_dir),
                 self.limits.object_cache_bytes,
-                _fetcher(settings),
+                object_fetcher(settings),
             )
         return QueryService(
             QueryCatalogue(engine, self.limits),
@@ -195,7 +195,8 @@ class QueryRuntime:
         )
 
 
-def _fetcher(settings: Settings) -> Callable[[str, int], bytes]:
+def object_fetcher(settings: Settings) -> Callable[[str, int], bytes]:
+    """Verified part download for the cache; also used by scripts/stage2_route_check.py."""
     # One client for the service: boto3 clients are thread-safe and creation is not free.
     client = boto3.client(
         "s3",

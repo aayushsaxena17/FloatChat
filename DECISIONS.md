@@ -1595,7 +1595,9 @@ execution that exceeds its deadline immediately after a cold fill is retried onc
 files. Reason: run 1 of the latency matrix saw one cache-cold whole-quarter call exceed the 10 s
 deadline on the 3.7 GB host, and every dashboard start would otherwise begin cold.
 `scripts/stage2_route_check.py` makes the cross-route agreement on the dev dataset a committed,
-reproducible check instead of a hand observation.
+reproducible check instead of a hand observation. Known and accepted: a request that arrives
+while the warm-up is still filling may download a part the warm-up is also downloading; both
+writes are verified and identical, so only bandwidth is spent twice.
 
 Alternatives: reuse `floatchat_app` with per-connection options (rejected, privileges are the only
 real read-only guarantee and the API will need a writable role later); DuckDB `httpfs` to MinIO

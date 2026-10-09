@@ -126,7 +126,7 @@ def duckdb_plans() -> list[dict[str, Any]]:
 
 
 def run_inner(plans: list[dict[str, Any]], rel_tol: float, abs_tol: float) -> dict[str, Any]:
-    from floatchat_api.query_api import _fetcher
+    from floatchat_api.query_api import object_fetcher
     from floatchat_core.config import Settings
     from floatchat_core.query.cache import PartCache
     from floatchat_core.query.catalogue import QueryCatalogue, engine_from_url
@@ -142,7 +142,9 @@ def run_inner(plans: list[dict[str, Any]], rel_tol: float, abs_tol: float) -> di
         limits = QueryLimits(query_timeout_seconds=600, **overrides)
         engine = engine_from_url(settings.query_database_url.get_secret_value(), limits)
         cache = PartCache(
-            Path(settings.query_object_cache_dir), limits.object_cache_bytes, _fetcher(settings)
+            Path(settings.query_object_cache_dir),
+            limits.object_cache_bytes,
+            object_fetcher(settings),
         )
         return QueryService(QueryCatalogue(engine, limits), limits, cache, "route-check")
 

@@ -281,3 +281,13 @@ def test_route_check_comparison_and_rendering() -> None:
     plans = module.duckdb_plans()
     assert len(plans) == 10 and all(p["expected_route"] == "duckdb" for p in plans)
     assert datetime.now(UTC).year >= 2026
+
+
+def test_route_check_dependencies_exist() -> None:
+    """The check runs only on demand; a rename of what it imports must fail here, not there."""
+    from floatchat_api import query_api
+    from floatchat_core.query import cache, catalogue, router
+
+    assert callable(query_api.object_fetcher)
+    assert callable(router.QueryService.query) and callable(router.QueryService.warm_cache)
+    assert callable(cache.PartCache.fill) and callable(catalogue.engine_from_url)
