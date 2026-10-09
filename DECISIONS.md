@@ -1622,12 +1622,15 @@ Status: accepted under the owner's authority (ADR-0039); definitions **owner to 
 Source: Flanders Marine Institute (2018), IHO Sea Areas, version 3, Marine Regions,
 https://www.marineregions.org/, DOI 10.14284/323, CC-BY 4.0 (attribution in the API catalogue,
 README and later the UI footer). Geometries are fetched once by `scripts/build_named_regions.py`
-from the gazetteer geometry endpoint by MRGID, simplified with a recorded tolerance (0.01 degree,
-`ST_SimplifyPreserveTopology`), clipped to the `indian-ocean-v1` envelope where they exceed it, and
-committed as WKT with SHA-256 in `named_regions.json`; migration 0016 loads them into
-`app.named_region` and a test verifies the digests in the database. Tests never fetch.
+from the gazetteer geometry endpoint by MRGID, made valid, clipped to the `indian-ocean-v1`
+envelope where they exceed it, simplified with `ST_SimplifyPreserveTopology` at a recorded
+tolerance of 0.05 degree (about 5 km; 0.01 degree kept 72,000 vertices for the IHO Indian Ocean
+and a 2.6 MB fixture), with parts and holes under 50 km² removed (islands and lagoons cannot
+hold an ocean profile), dissolved into one valid multipolygon and committed as WKT with SHA-256 in
+`named_regions.json` (337 KB); migration 0016 loads them into `app.named_region` and a test
+verifies the digests in the database. Tests never fetch.
 
-Regions and versions (`iho-v3-simplified-0.01-v1` unless stated):
+Regions and versions (`iho-v3-simplified-0.05-min50km2-v1` unless stated):
 
 | Name | Kind | Source id | Note |
 |---|---|---|---|

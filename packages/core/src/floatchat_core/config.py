@@ -13,3 +13,8 @@ class Settings(BaseSettings):
     object_storage_bucket: str = "floatchat-dev"
     object_storage_region: str = "us-east-1"
     readiness_timeout_seconds: float = Field(default=4.0, gt=0, le=4.0)
+    # Stage 2 (ADR-0058): the read-only query login and the verified part cache. Both are
+    # optional so the Stage 0 health endpoints keep working on a database without Stage 2.
+    query_database_url: SecretStr | None = None
+    query_object_cache_dir: str | None = None
+    application_commit: str = "unknown"

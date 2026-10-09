@@ -2,7 +2,7 @@
 
 FloatChat is a research workspace for exploring Argo ocean observations through a conversational interface. This repository is being rebuilt from a hackathon prototype into a Python/React monorepo. Stage 0 provides local infrastructure and a tested scaffold; scientific ingestion, query features, and LLM integration belong to later stages.
 
-**Status: under construction. Stage 0 corrective review in progress. Stage 1 has not started.**
+**Status: under construction. Stage 1 (Argovis ingestion, Jan-Mar 2025 Indian Ocean acceptance) is accepted and merged; Stage 2 (query engine and API) is in progress on `codex/stage-2`.**
 
 ## Local development
 
@@ -29,6 +29,29 @@ make dev
 ```
 
 Open http://127.0.0.1:5173. API health endpoints are http://127.0.0.1:8000/v1/health/live and http://127.0.0.1:8000/v1/health/ready.
+
+### Stage 2 query API
+
+The API documents itself at http://127.0.0.1:8000/docs (OpenAPI at `/openapi.json`, committed as
+`apps/api/openapi.json`; the TypeScript client in `apps/web/src/api/` is generated from it with
+`pnpm --filter @floatchat/web generate:api`). Endpoints: `GET /v1/catalog/parameters`,
+`GET /v1/catalog/coverage`, `GET /v1/floats`, `GET /v1/floats/{platform_number}`,
+`GET /v1/profiles`, `GET /v1/profiles/{profile_id}` and `POST /v1/query`, which takes one
+validated `stage2-plan-v1` document and compiles it to parameterised PostgreSQL or bounded DuckDB
+(no raw SQL anywhere; see [docs/stage2-plan.md](docs/stage2-plan.md) and
+[docs/stage2-query-engine.md](docs/stage2-query-engine.md)). The API reads through the
+`floatchat_query` login (SELECT on the `app.query_*` views only, statement timeout).
+
+A fresh dev stack holds no science. The accepted Jan-Mar 2025 data of the preserved acceptance
+session is copied in with (ADR-0059; the session is started read-only and stopped again):
+
+```bash
+uv run --all-packages --frozen python scripts/stage2_dataset.py import --session 302412131a7c99fb
+```
+
+Named regions (Arabian Sea, Bay of Bengal, Laccadive Sea, Andaman Sea, Indian Ocean (IHO)) come
+from Flanders Marine Institute (2018), IHO Sea Areas, version 3, https://www.marineregions.org/,
+https://doi.org/10.14284/323 (CC-BY 4.0), simplified and recorded per ADR-0060.
 
 The original Windows checkout is preserved with its old Git objects. Its push URL is disabled to prevent contaminated-history publication. Use a fresh Linux clone for development; do not merge its ancestry or push it.
 

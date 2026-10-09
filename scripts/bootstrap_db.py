@@ -40,12 +40,31 @@ STAGE1_TABLES = frozenset(
         "profile_outcome_sequence_seq",
     }
 )
+# Stage 2 read-only reference tables (ADR-0058): the query login reads them through the
+# migration's grants; the application role gets nothing, never blanket DML.
+STAGE2_READ_ONLY_TABLES = frozenset({"named_region"})
+WITHHELD_TABLES = STAGE1_TABLES | STAGE2_READ_ONLY_TABLES
 
 
 def ensure_application_role(cursor: psycopg.Cursor[tuple[object, ...]]) -> None:
     cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s", ("floatchat_app",))
     if cursor.fetchone() is None:
         cursor.execute("CREATE ROLE floatchat_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE")
+
+
+def ensure_query_role(cursor: psycopg.Cursor[tuple[object, ...]]) -> None:
+    """Stage 2 read-only login (ADR-0058). Migration 0016 may have created it NOLOGIN first,
+    so LOGIN and the password are set unconditionally, never only on creation."""
+    cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s", ("floatchat_query",))
+    if cursor.fetchone() is None:
+        cursor.execute("CREATE ROLE floatchat_query NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE")
+    cursor.execute(
+        sql.SQL(
+            "ALTER ROLE floatchat_query LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT "
+            "PASSWORD {}"
+        ).format(sql.Literal(os.environ["DB_QUERY_PASSWORD"]))
+    )
+    cursor.execute("GRANT CONNECT ON DATABASE floatchat TO floatchat_query")
 
 
 def main() -> None:
@@ -63,6 +82,7 @@ def main() -> None:
     with psycopg.connect(os.environ["DATABASE_ADMIN_URL"], connect_timeout=3) as connection:
         with connection.cursor() as cursor:
             ensure_application_role(cursor)
+            ensure_query_role(cursor)
             cursor.execute(
                 sql.SQL("ALTER ROLE floatchat_app PASSWORD {}").format(
                     sql.Literal(os.environ["DB_APP_PASSWORD"])
@@ -121,7 +141,7 @@ def main() -> None:
                 "AND d.deptype = 'e')"
             )
             for name, kind in cursor.fetchall():
-                if name in STAGE1_TABLES or name.startswith("core_measurement_"):
+                if name in WITHHELD_TABLES or name.startswith("core_measurement_"):
                     cursor.execute(
                         sql.SQL("REVOKE ALL ON {} app.{} FROM floatchat_app").format(
                             sql.SQL("SEQUENCE" if kind == "S" else "TABLE"), sql.Identifier(name)

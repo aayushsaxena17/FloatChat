@@ -154,8 +154,10 @@ In dependency order. Paths without a directory are under
 - `plan.py`: `QueryPlan` (Pydantic v2, `extra="forbid"`, `plan_schema = "stage2-plan-v1"`) per
   section 4; `normalize()` returns the canonical plan and `plan_sha256`.
 - `regions.py`: loads the committed fixture; `named_regions.json` carries name, version, kind,
-  MRGID, citation, tolerance, clipped flag, bbox, WKT, SHA-256; `scripts/build_named_regions.py`
-  rebuilds it from the gazetteer geometry endpoint (network, owner-run, never in tests).
+  MRGID, citation, tolerance (0.05 degree) and minimum part area (50 km²), clipped flag, bbox,
+  vertex counts, WKT, SHA-256; `scripts/build_named_regions.py` rebuilds it and the row block of
+  migration 0016 from the gazetteer geometry endpoint through a disposable PostGIS container
+  (network, owner-run, never in tests).
 - `policy.py`: `qc-policy-v1` expressions per variable for SQL and DuckDB (ADR-0057), the depth
   predicate under the same policy, and the aggregation unit.
 - `compile_sql.py`: SQLAlchemy Core over `Table` objects bound to the `app.query_*` views; column

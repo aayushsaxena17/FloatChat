@@ -1,8 +1,8 @@
 import re
 from pathlib import Path
 
-from scripts.bootstrap_db import STAGE1_TABLES
-from scripts.dev import bootstrap_env, published_port
+from scripts.bootstrap_db import STAGE1_TABLES, STAGE2_READ_ONLY_TABLES, WITHHELD_TABLES
+from scripts.dev import append_missing_keys, bootstrap_env, published_port
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -43,5 +43,23 @@ def test_stage1_v4_tables_are_withheld_from_the_application_role() -> None:
         )
     }
     assert {"float_metadata_cache", "measurement_staging"} <= created
-    assert created <= STAGE1_TABLES
+    assert created <= WITHHELD_TABLES
     assert {"processing_ticket", "float_metadata_cache", "measurement_staging"} <= STAGE1_TABLES
+    # Stage 2 reference tables are read by the query login through the migration's grants.
+    assert {"named_region"} == STAGE2_READ_ONLY_TABLES
+    assert "named_region" in created
+
+
+def test_append_missing_keys_is_additive_and_generates_secrets(tmp_path: Path) -> None:
+    (tmp_path / ".env.example").write_text(
+        "DB_APP_PASSWORD=GENERATE_LOCALLY\nDB_QUERY_PASSWORD=GENERATE_LOCALLY\n"
+        "QUERY_DATABASE_URL=postgresql://floatchat_query:${DB_QUERY_PASSWORD}@db:5432/floatchat\n"
+    )
+    (tmp_path / ".env").write_text("DB_APP_PASSWORD=keep-me\n")
+    assert append_missing_keys(tmp_path) == ["DB_QUERY_PASSWORD", "QUERY_DATABASE_URL"]
+    content = (tmp_path / ".env").read_text()
+    assert content.startswith("DB_APP_PASSWORD=keep-me\n")
+    assert "GENERATE_LOCALLY" not in content and "DB_QUERY_PASSWORD=" in content
+    assert "QUERY_DATABASE_URL=postgresql://floatchat_query:${DB_QUERY_PASSWORD}@db" in content
+    assert append_missing_keys(tmp_path) == []
+    assert (tmp_path / ".env").read_text() == content
