@@ -1684,8 +1684,8 @@ Decision:
 3. Pins (PRD §5.1 and §5.10 choices; no new framework): `react-router` 7.18.4 (React Router 8
    requires React 19.2.7 and the repository pins 19.2.0; the declarative API used is identical),
    `@tanstack/react-query` 5.104.1, `maplibre-gl` 6.13.0 (ESM-only, WebGL2-only; headless
-   Chromium provides WebGL2 through SwiftShader on this host and on GitHub runners, probed
-   2026-10-09), `plotly.js-cartesian-dist-min` 4.1.2 with `@types/plotly.js` 3.0.15 (the cartesian
+   Chromium provides WebGL2 through SwiftShader on this host, probed 2026-10-09; the GitHub
+   runner result is observed when CI runs), `plotly.js-cartesian-dist-min` 4.1.2 with `@types/plotly.js` 3.0.15 (the cartesian
    bundle covers `scatter` and `histogram`, every chart kind the contract emits except
    `scattergeo`, which the dashboard renders with MapLibre; Plotly 4 removed the Mapbox traces and
    tightened colour parsing, so colours are hex), `@types/geojson` 7946.0.16. No `react-plotly.js`
@@ -1715,10 +1715,15 @@ Decision:
 2. Profile locations are a MapLibre GeoJSON source with `cluster: true`; clusters show counts;
    unclustered points carry the profile id, float, cycle and time. The selected float's
    trajectory is a line through its profiles in time order.
-3. The map follows `/v1/profiles` pages up to 5,000 points (five pages of the 1,000 page bound)
+3. MapLibre renders text (`symbol` layers) only from a glyph server, which the offline style has
+   none of. Cluster counts, coordinate labels and the selected profile's label are therefore DOM
+   overlays (MapLibre `Marker` and `Popup` elements, HTML positioned by the map), cluster circles
+   are sized by count, and the graticule is line layers only; no `symbol` layer exists in the
+   style.
+4. The map follows `/v1/profiles` pages up to 5,000 points (five pages of the 1,000 page bound)
    for the filters and labels "showing N of more" when truncated (PRD §14.4: bounded features,
    no million-row payloads). Finer selections come from the filters, not from a larger payload.
-4. A list of the plotted profiles sits beside the map with keyboard-reachable buttons that select
+5. A list of the plotted profiles sits beside the map with keyboard-reachable buttons that select
    the same profile; the canvas is never the only way to reach a result (PRD §14.5), and the
    end-to-end test selects through the list. The dashboard never asks the API for the `map`
    chart kind; `/v1/profiles` is the map's source.
