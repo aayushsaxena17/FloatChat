@@ -70,13 +70,17 @@ def _spec(
         "encodings": {
             "x": _axis(x),
             "y": None if y is None else _axis(y, reversed_axis=reversed_y),
-            "series": "name",
+            "series": {"field": "name", "label": "Series", "unit": None, "reversed": False},
         },
         "axis": {"x": _axis(x), "y": None if y is None else _axis(y, reversed_axis=reversed_y)},
         "series": series,
         "missing_value_policy": "null",
         "aggregation": aggregation,
-        "data": {"inline": True, "url": None},
+        "data": {
+            "inline": True,
+            "points": sum(len(trace.get("x", [])) + len(trace.get("lon", [])) for trace in traces),
+            "url": None,
+        },
         "provenance_ref": "provenance",
         "plotly": {
             "traces": traces,

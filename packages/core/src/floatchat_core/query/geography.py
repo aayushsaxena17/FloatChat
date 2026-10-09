@@ -97,9 +97,9 @@ def envelope_tiles(boxes: tuple[Box, ...]) -> tuple[Tile, ...]:
     for west, south, east, north in boxes:
         if east < west0 or west > east0 or north < south0 or south > north0:
             continue
-        first_x = max(0, math.floor((max(west, west0) - west0) / TILE_DEGREES))
+        first_x = min(9, max(0, math.floor((max(west, west0) - west0) / TILE_DEGREES)))
         last_x = min(9, math.floor((min(east, east0) - west0) / TILE_DEGREES))
-        first_y = max(0, math.floor((max(south, south0) - south0) / TILE_DEGREES))
+        first_y = min(8, max(0, math.floor((max(south, south0) - south0) / TILE_DEGREES)))
         last_y = min(8, math.floor((min(north, north0) - south0) / TILE_DEGREES))
         for x in range(first_x, last_x + 1):
             for y in range(first_y, last_y + 1):

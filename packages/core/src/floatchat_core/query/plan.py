@@ -8,6 +8,7 @@ unbounded requests and operation/variable mismatches with one registered detail 
 import base64
 import hashlib
 import json
+import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any, Literal
 
@@ -377,9 +378,7 @@ def decode_cursor(cursor: str, kind: str) -> dict[str, Any]:
                     raise ValueError
                 result[name] = parsed.astimezone(UTC)
             elif name == "id":
-                if len(value) != 36:
-                    raise ValueError
-                result[name] = value
+                result[name] = str(uuid.UUID(value))
             else:
                 if len(value) > 128:
                     raise ValueError

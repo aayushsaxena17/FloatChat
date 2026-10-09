@@ -311,7 +311,9 @@ def copy_objects(
 ) -> dict[str, object]:
     with tempfile.TemporaryDirectory(dir=objects.parent) as scratch:
         work = Path(scratch)
-        (work / "copy.py").write_text(COPY_SCRIPT)
+        (work / "object_copy.py").write_text(
+            COPY_SCRIPT
+        )  # never "copy.py": it would shadow stdlib copy
         (work / "listing.json").write_text(json.dumps(listing))
         env_path = work / "env"
         env_path.write_text("".join(f"{k}={v}\n" for k, v in env.items()))
@@ -334,7 +336,8 @@ def copy_objects(
                 f"{objects}:/objects",
                 API_IMAGE,
                 "python",
-                "/work/copy.py",
+                "-I",
+                "/work/object_copy.py",
                 mode,
                 "/work/listing.json",
                 "/objects",
@@ -363,10 +366,17 @@ def import_session(session: str, report_path: Path | None) -> None:
     if container_state(target_db) != "running" or container_state(target_minio) != "running":
         raise Failure(f"dev project {dev_project} is not running; run make dev first")
     existing = psql(
-        target_db, "floatchat_admin", "floatchat", "SELECT count(*) FROM app.ingestion_environment"
+        target_db,
+        "floatchat_admin",
+        "floatchat",
+        "SELECT string_agg(id::text, ',') FROM app.ingestion_environment",
     )
-    if existing != "0":
-        raise Failure("the dev database already holds an ingestion environment; refusing")
+    database_done = False
+    if existing:
+        if existing != session_env["INGESTION_ENVIRONMENT_ID"]:
+            raise Failure("the dev database already holds another ingestion environment; refusing")
+        # A previous run finished the database phase (counts are re-verified below).
+        database_done = True
     head = psql(
         target_db, "floatchat_admin", "floatchat", "SELECT version_num FROM alembic_version"
     )
@@ -426,7 +436,7 @@ def import_session(session: str, report_path: Path | None) -> None:
         listing = json.loads(listing_text or "[]")
 
         # Partitions first: data-only restores need the monthly children to exist.
-        for month in months:
+        for month in months if not database_done else []:
             name = "core_measurement_" + month.replace("-", "")[:6]
             psql(
                 target_db,
@@ -445,7 +455,7 @@ def import_session(session: str, report_path: Path | None) -> None:
         # target for the duration (session_replication_role = replica, superuser only).
         stream_sha256 = hashlib.sha256()
         copied_bytes = 0
-        for table in [*tables, "core_measurement"]:
+        for table in [*tables, "core_measurement"] if not database_done else []:
             predicates = ["TRUE"]
             if table in ("argo_profile", "core_measurement"):
                 predicates = [f"observation_month = '{month}'" for month in months]
@@ -453,13 +463,14 @@ def import_session(session: str, report_path: Path | None) -> None:
                 copied_bytes += stream_table(
                     source_db, source_database, target_db, table, predicate, stream_sha256
                 )
-        psql(
-            target_db,
-            "floatchat_admin",
-            "floatchat",
-            "; ".join(f"ANALYZE app.{table}" for table in [*tables, "core_measurement"]),
-            timeout=1800,
-        )
+        if not database_done:
+            psql(
+                target_db,
+                "floatchat_admin",
+                "floatchat",
+                "; ".join(f"ANALYZE app.{table}" for table in [*tables, "core_measurement"]),
+                timeout=1800,
+            )
 
         objects = work_root / "objects"
         objects.mkdir(exist_ok=True)
@@ -525,8 +536,9 @@ def import_session(session: str, report_path: Path | None) -> None:
         "tables": tables,
         "row_counts": target_counts,
         "measurement_months": months,
-        "stream_sha256": stream_sha256.hexdigest(),
+        "stream_sha256": None if database_done else stream_sha256.hexdigest(),
         "stream_bytes": copied_bytes,
+        "database_phase": "reused from an earlier run" if database_done else "streamed",
         "objects": {"downloaded": downloaded, "uploaded": uploaded, "active_partitions": active},
         "git_head": run(["git", "rev-parse", "--short=12", "HEAD"], timeout=30).strip(),
         "completed_at_utc": datetime.now(UTC).isoformat(),

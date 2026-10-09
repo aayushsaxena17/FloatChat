@@ -31,7 +31,7 @@ class PartCache:
 
     def path(self, object_key: str, sha256: str, byte_count: int) -> Path:
         """The verified local file for a catalogue part, fetching and verifying if absent."""
-        match = OBJECT_KEY.match(object_key)
+        match = OBJECT_KEY.fullmatch(object_key)
         if match is None or match.group(1) != sha256:
             raise QueryError("execution_failed", message="Catalogue object key is malformed.")
         target = self._path(sha256)
@@ -55,16 +55,17 @@ class PartCache:
             except BaseException:
                 Path(temporary).unlink(missing_ok=True)
                 raise
-            self._evict()
+            self._evict(keep=target)
         return target
 
-    def _evict(self) -> None:
+    def _evict(self, *, keep: Path) -> None:
+        """Least-recently-used eviction above the bound; the part just stored always survives."""
         files = [
             path
             for path in self.directory.iterdir()
-            if path.suffix == ".parquet" and path.is_file()
+            if path.suffix == ".parquet" and path.is_file() and path != keep
         ]
-        total = sum(path.stat().st_size for path in files)
+        total = keep.stat().st_size + sum(path.stat().st_size for path in files)
         for path in sorted(files, key=lambda item: item.stat().st_mtime):
             if total <= self.max_bytes:
                 break

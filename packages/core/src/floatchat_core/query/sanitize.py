@@ -5,7 +5,7 @@ import math
 import re
 import uuid
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import Any
 
@@ -80,6 +80,8 @@ def _scalar(value: Any, spec: ColumnSpec) -> tuple[Any, int]:
     if isinstance(value, datetime):
         if spec.type != "timestamp":
             raise QueryError("internal_error", message="Result sanitisation failed.")
+        if value.tzinfo is not None:
+            value = value.astimezone(UTC)
         return value.isoformat().replace("+00:00", "Z"), 0
     if isinstance(value, date):
         if spec.type != "date":
