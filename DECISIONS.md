@@ -1506,3 +1506,143 @@ to each, with the dispositions below. Evidence is session `302412131a7c99fb` (li
 9. Contract label. Reports, `planning.RUN_POLICY` and the acceptance validator keep
    `contract = "stage1-v3"`: the scientific contract is unchanged and the canonical bytes are
    identical. `stage1-v4` names the execution amendment in `docs/stage1-contract.md` §1.
+
+## ADR-0056 - Stage 2 scope: branch base, one environment and population, reference-time router
+
+Status: accepted (owner authority, ADR-0039; Stage 2 plan review 2026-10-09).
+
+Decision:
+
+1. `codex/stage-2` branches from `main` at `91f7dd5`, the squash merge of PR #5 whose tree equals the
+   Stage 1 head `a4d6a01`; the Stage 2 pull request targets `main`. Branching from `a4d6a01` would
+   put every Stage 1 commit into the Stage 2 diff.
+2. The query service serves the one `app.ingestion_environment` row of its database and only the
+   `argovis` population (`source = 'argovis'`, mapping `argovis-core-v1`); every compiled statement
+   binds that source. GDAC rows (ADR-0052, uncertified) are not visible through the API until a
+   cross-source identity rule exists (`docs/ingestion-performance-review.md` §4.9).
+3. The coverage router takes its reference time from the environment: the `run_reference_time_utc`
+   of the latest completed run (acceptance data: 2025-04-01T00:00:00Z). Hot (3 months) and window
+   (12 months) are labels computed from it and reported in coverage and provenance; routing uses
+   committed coverage and cost, because Stage 1 retains all accepted science in PostgreSQL and in
+   the catalogue with no destructive retention.
+4. Partial coverage is labelled with the missing slots; Stage 2 creates no missing-data chunk, job
+   or upstream request (PRD §8.3 step 6 and §8.4 belong to Stage 5).
+
+Alternatives: branch from the local Stage 1 head (rejected, diff noise); union both populations
+(rejected, different hashes and identities by design); wall-clock windows (rejected, they would
+classify the only accepted data as outside every tier); creating jobs for gaps now (rejected, no
+job schema or worker in Stage 2).
+
+## ADR-0057 - qc-policy-v1 for query value selection and aggregation unit
+
+Status: accepted under the owner's authority (ADR-0039); **owner to confirm**.
+
+Contract §6 fixes two facts: Argovis delivers one variant per variable and data mode (R to the
+original columns, A and D to the adjusted columns; the other variant is absent) and the ingestion QC
+policy `core-good-v1` accepts QC 1 or 2 per value and never substitutes adjusted QC for original QC.
+`qc-policy-v1` builds on them, per variable and per level:
+
+- `science_ready` (default): take the variant the data mode delivered (`R` original, `A`/`D`
+  adjusted); keep the value only if that variant's QC is `1` or `2`; otherwise null. The depth
+  predicate uses pressure under the same rule; a level with a null policy pressure is excluded from
+  depth-filtered operations. QC and mode are returned beside the value.
+- `mode_selected`: the delivered variant with any QC; QC returned for the caller to judge.
+- `raw`: no selection; all stored columns (original, adjusted, QC, errors, units, modes); only for
+  profile reads.
+
+Aggregation unit: `profile` (metrics per profile within the depth band, then across profiles; the
+PRD §12.1 "profile-balanced" rule; `count` counts profiles) or `measurement` (metrics over levels).
+The policy name and version are part of every provenance object; a changed rule is a new version.
+
+Alternatives: prefer adjusted when both variants exist (no-op for this source); QC 1 only
+(stricter, can be a later version); averaging all levels by default (rejected, dense profiles would
+dominate monthly means).
+
+## ADR-0058 - Read-only query access: floatchat_query role, query views, DuckDB over a verified local part cache
+
+Status: accepted (owner authority, ADR-0039).
+
+Decision:
+
+1. A dedicated login `floatchat_query` (created by `scripts/bootstrap_db.py` with
+   `DB_QUERY_PASSWORD`, `NOLOGIN` placeholder created by the migration when absent) with role-level
+   `default_transaction_read_only`, `statement_timeout`, `idle_in_transaction_session_timeout`,
+   `lock_timeout` and `search_path`. It holds `SELECT` on the `app.query_*` views and on
+   `app.named_region` only; views are owned by `floatchat_admin`, so the role needs no privilege on
+   base tables and cannot read ingestion control, raw manifests, staging or evidence tables.
+   `floatchat_app` keeps its Stage 0 privileges; `named_region` joins the bootstrap's withheld set
+   so it receives `SELECT` only.
+2. PostgreSQL compilation is SQLAlchemy Core over `Table` objects bound to the views, with allow-listed
+   identifiers and functions and every value bound; `text()` and formatted SQL are forbidden in the
+   query package by a test.
+3. The DuckDB route runs in the API process, bounded (memory limit, two threads, per-query
+   interrupt, byte budget). Parts are fetched through boto3 into a content-addressed cache
+   (`<sha256>.parquet`), verified by length and SHA-256 against `app.dataset_partition` before an
+   atomic rename, and read by `pyarrow.dataset` registered into a DuckDB connection configured with
+   `enable_external_access = false`, no extension autoload or autoinstall, and a locked
+   configuration. DuckDB never opens a path or a network endpoint. Rows are filtered by a semi-join
+   on `(profile_id, profile_hash)` against the slot membership manifests (contract §7.2, ADR-0051).
+   This deviates from PRD §4.1, which places DuckDB scans in workers, for bounded hot-tier
+   aggregates only; large scans stay with Stage 5 jobs.
+
+Alternatives: reuse `floatchat_app` with per-connection options (rejected, privileges are the only
+real read-only guarantee and the API will need a writable role later); DuckDB `httpfs` to MinIO
+(rejected, extension download at runtime, offline CI, credentials inside DuckDB); DuckDB reading
+local paths with `allowed_directories` (rejected, path allow-listing in DuckDB is a newer and less
+tested boundary than giving it no file access at all); loading parts into Arrow tables in memory
+(rejected, `profile_content` repeats per level and would multiply memory).
+
+## ADR-0059 - Stage 2 development dataset copied from the preserved acceptance session
+
+Status: accepted under the owner's authority (ADR-0039); **owner to confirm**.
+
+The dev stack holds no science and the only copy of the accepted Jan-Mar 2025 data is session
+`302412131a7c99fb` (live run `edebccd8`, 5,814 profiles, 4,144,346 levels, 206 parts,
+301,781,882 bytes), preserved in its stopped `db-1` and `minio-1` containers without host ports.
+`scripts/stage2_dataset.py import --session 302412131a7c99fb` starts only those two containers,
+copies the science and catalogue tables with a data-only `pg_dump` over `docker exec` and the
+committed active objects through a one-off container on the session network, verifies every
+object's length and SHA-256 against the catalogue before and after the copy, restores into the
+dev project as `floatchat_admin`, stops the session containers and writes
+`reports/stage2-dataset-302412131a7c99fb.json` with the source identifiers, counts and digests.
+The copy is derived evidence for development and the latency report; it is read-only for the query
+roles, it is never pushed, and the preserved session is neither migrated nor attached to. The
+`acquire`, `process` and `supervisor` containers are never started.
+
+Alternatives: run the API against the session containers (rejected, migration 0016 would alter
+preserved evidence and the session has no host ports); a fresh live acceptance run for Stage 2
+(deferred, about 23 minutes on the Argovis key for byte-identical data; the fallback if the copy
+fails); synthetic fixtures only (rejected, the latency report must use accepted data).
+
+## ADR-0060 - Named regions from IHO Sea Areas v3 with recorded simplification; operational Indian Ocean definitions
+
+Status: accepted under the owner's authority (ADR-0039); definitions **owner to confirm**.
+
+Source: Flanders Marine Institute (2018), IHO Sea Areas, version 3, Marine Regions,
+https://www.marineregions.org/, DOI 10.14284/323, CC-BY 4.0 (attribution in the API catalogue,
+README and later the UI footer). Geometries are fetched once by `scripts/build_named_regions.py`
+from the gazetteer geometry endpoint by MRGID, simplified with a recorded tolerance (0.01 degree,
+`ST_SimplifyPreserveTopology`), clipped to the `indian-ocean-v1` envelope where they exceed it, and
+committed as WKT with SHA-256 in `named_regions.json`; migration 0016 loads them into
+`app.named_region` and a test verifies the digests in the database. Tests never fetch.
+
+Regions and versions (`iho-v3-simplified-0.01-v1` unless stated):
+
+| Name | Kind | Source id | Note |
+|---|---|---|---|
+| Arabian Sea | IHO Sea Area | MRGID 4268 | inside the envelope |
+| Bay of Bengal | IHO Sea Area | MRGID 4273 | inside the envelope |
+| Laccadive Sea | IHO Sea Area | MRGID 4269 | inside the envelope |
+| Andaman Sea | IHO Sea Area ("Andaman or Burma Sea") | MRGID 4274 | inside the envelope |
+| Indian Ocean (IHO) | IHO Sea Area | MRGID 1904 | clipped to the envelope (IHO extent 20-146.9E, 60S-31.2N); excludes the marginal seas above by IHO definition |
+| Indian Ocean | operational | `indian-ocean-v1` | the Stage 1 ingestion envelope `POLYGON((20 -60,120 -60,120 30,20 30,20 -60))`, same WKT and SHA-256 as the catalogue geometry; the only region whose coverage is exactly the ingested domain |
+| Southern Indian Ocean | operational | `southern-indian-ocean-floatchat-v1` | the envelope south of 30S: `POLYGON((20 -60,120 -60,120 -30,20 -30,20 -60))`; a FloatChat definition, not an IHO area |
+
+Membership is planar `ST_Covers` on geometry, the Stage 1 rule (contract §3.1). A simplified
+polygon differs from the gazetteer polygon within the tolerance at the edges; the response reports
+the region version so a result can be reproduced.
+
+Alternatives: the full IHO polygons (rejected, tens of thousands of vertices per region in the
+fixture and in every query); hand-drawn boxes (rejected, no citation); treating the IHO Indian
+Ocean as "Indian Ocean" (rejected, users expect the marginal seas included, and most of the IHO
+polygon lies outside the ingested envelope).

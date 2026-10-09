@@ -273,6 +273,16 @@ evidence. Use live source spot-checks only in the separately authorized live run
 
 ## Stage 2: Query engine and API
 
+**Current authorization: Stage 2 implementation (ADR-0039; owner instruction 2026-10-09).** The
+Stage 1 gate passed (docs/stage1-gate.md, ADR-0055) and `codex/stage-1` is merged into `main`
+(PR #5). The reviewed plan [docs/stage2-plan.md](docs/stage2-plan.md) and ADR-0056 to ADR-0060
+override ambiguous wording below: migration `0016_query_access` (the head is 0015), the `argovis`
+population only, `qc-policy-v1`, the environment reference time for the router, parts filtered by
+membership manifests on the DuckDB route, a `floatchat_query` login over `app.query_*` views,
+in-process bounded DuckDB over a verified local part cache, IHO Sea Areas v3 regions, and the
+development dataset copied from the preserved acceptance session. No job creation, upstream
+fetch, authentication or cloud resource in Stage 2.
+
 ```text
 STAGE 2 - Query engine and API (PRD §8, §13)
 

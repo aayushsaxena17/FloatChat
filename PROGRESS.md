@@ -1,5 +1,24 @@
 # Stage progress
 
+## Stage 2 - plan reviewed and authorized (ADR-0056..0060), 2026-10-09
+
+`codex/stage-1` merged into `main` by PR #5 (squash `91f7dd5`, tree equal to `a4d6a01`); the remote
+Stage 1 branch is deleted. Stage 2 works on `codex/stage-2` from `main`. The draft plan was reviewed
+against the merged code and rewritten: [docs/stage2-plan.md](docs/stage2-plan.md). The advisor
+reviewed the findings before the rewrite (ADR-0039 convention).
+
+- [x] Plan corrections recorded in the plan's section 0: migration `0016` (not 0010), parts plus
+  membership manifests, the `argovis`-only population, `qc-policy-v1`, the environment reference
+  time, the development dataset copy, the read-only role and views, the geography index,
+  `/v1/floats` scope, partial labelling without jobs, bounded in-process DuckDB, named-region
+  source and definitions, unchanged dev Compose service set.
+- [x] ADR-0056 (scope, branch, population, router reference time), ADR-0057 (`qc-policy-v1`, owner
+  to confirm), ADR-0058 (`floatchat_query`, views, DuckDB over a verified cache), ADR-0059 (dataset
+  copy from session `302412131a7c99fb`, owner to confirm), ADR-0060 (IHO Sea Areas v3 regions).
+- [ ] W1 dataset copy and local environment; W2 migration 0016; W3 query package; W4 API; W5
+  TypeScript client; W6 tests and CI; W7 latency report; W8 documents and gate.
+- [ ] Needs from Aayush: confirm ADR-0057, ADR-0059 and the region definitions in ADR-0060.
+
 ## Stage 1 - live and captured-replay acceptance passed on stage1-v4 (ADR-0054, ADR-0055), 2026-10-09
 
 `codex/stage-1-perf` merged into `codex/stage-1` (PR #4, `6c88a0a`). Gate report:
