@@ -1,0 +1,110 @@
+{
+  "kind": "stage1_v4_package_a_bench",
+  "scope": "Exact decode, sanitize_raw and canonical encoder: the pre-v4 implementation (vendored in the script, copied from 272508b) against the current tree on a synthetic clone chunk; outputs asserted identical; best of N interleaved runs; no network, database or object store",
+  "profiles": 30,
+  "levels_per_profile": 699,
+  "levels": 20970,
+  "number_tokens": 126000,
+  "canonical_bytes": 25631790,
+  "raw_payload_bytes": 626131,
+  "repeat": 15,
+  "results": {
+    "encode: CanonicalBudget.encode over all profiles": {
+      "pre_v4_wall_s": 0.7972,
+      "v4_wall_s": 0.2513,
+      "speedup_wall": 3.17,
+      "pre_v4_cpu_s": 0.7969,
+      "v4_cpu_s": 0.2514,
+      "speedup_cpu": 3.17,
+      "output_identical": true
+    },
+    "decode: exact_number per number token": {
+      "pre_v4_wall_s": 0.2673,
+      "v4_wall_s": 0.0531,
+      "speedup_wall": 5.03,
+      "pre_v4_cpu_s": 0.2669,
+      "v4_cpu_s": 0.053,
+      "speedup_cpu": 5.04,
+      "output_identical": true
+    },
+    "normalize: decimal_text per number (scientific_number calls it once per number)": {
+      "pre_v4_wall_s": 0.1392,
+      "v4_wall_s": 0.0193,
+      "speedup_wall": 7.21,
+      "pre_v4_cpu_s": 0.1388,
+      "v4_cpu_s": 0.0193,
+      "speedup_cpu": 7.19,
+      "output_identical": true
+    },
+    "decode: structural scan of the whole payload (depth/array/string caps)": {
+      "pre_v4_wall_s": 0.0663,
+      "v4_wall_s": 0.0039,
+      "speedup_wall": 17.0,
+      "pre_v4_cpu_s": 0.0661,
+      "v4_cpu_s": 0.0039,
+      "speedup_cpu": 16.95,
+      "output_identical": true
+    },
+    "decode: decode_json of one profile document": {
+      "pre_v4_wall_s": 0.0111,
+      "v4_wall_s": 0.0021,
+      "speedup_wall": 5.29,
+      "pre_v4_cpu_s": 0.0111,
+      "v4_cpu_s": 0.0021,
+      "speedup_cpu": 5.29,
+      "output_identical": true
+    },
+    "decode: documents() over the payload": {
+      "pre_v4_wall_s": 0.3921,
+      "v4_wall_s": 0.0695,
+      "speedup_wall": 5.64,
+      "pre_v4_cpu_s": 0.391,
+      "v4_cpu_s": 0.0693,
+      "speedup_cpu": 5.64,
+      "output_identical": true
+    },
+    "sanitize_raw(profile payload)": {
+      "pre_v4_wall_s": 0.6586,
+      "v4_wall_s": 0.1747,
+      "speedup_wall": 3.77,
+      "pre_v4_cpu_s": 0.6566,
+      "v4_cpu_s": 0.1742,
+      "speedup_cpu": 3.77,
+      "output_identical": true
+    }
+  },
+  "reference_lower_bounds": {
+    "decode: Decimal only, no normalized-text preflight (recorded 'variant C')": {
+      "wall_s": 0.087,
+      "cpu_s": 0.0869
+    },
+    "decode: json.loads with parse_float=str/parse_int=str (token capture only)": {
+      "wall_s": 0.0104,
+      "cpu_s": 0.0104
+    },
+    "encode: one json.dumps per profile + sha256 (recorded 'variant B', bound on gains)": {
+      "wall_s": 0.1705,
+      "cpu_s": 0.17
+    }
+  },
+  "recorded_baseline_file": "reports/stage1-perf-experiments.json",
+  "versus_recorded_baseline": {
+    "encode: CanonicalBudget.encode over all profiles": {
+      "recorded_current_s": 0.888,
+      "recorded_prototype_s": 0.4275,
+      "measured_pre_v4_wall_s": 0.7972,
+      "measured_v4_wall_s": 0.2513
+    },
+    "decode: documents() over the payload": {
+      "recorded_current_s": 0.577,
+      "recorded_prototype_s": 0.3856,
+      "measured_pre_v4_wall_s": 0.3921,
+      "measured_v4_wall_s": 0.0695
+    }
+  },
+  "host": {
+    "python": "3.12.12",
+    "machine": "x86_64"
+  },
+  "finished_at_utc": "2026-10-08T15:21:59.409851+00:00"
+}

@@ -1,0 +1,3 @@
+# False positives of the generic-api-key rule on prose in a package report (no secret).
+1ef47b18d804df865848e35c542aa12d89189e42:docs/v4-packages/D.md:generic-api-key:277
+d00954da90ab391c4e570d27da4d388d07b39e46:docs/v4-packages/D.md:generic-api-key:237

@@ -1,0 +1,56 @@
+{
+    "kind": "stage1_live_commit_deadline_failure",
+    "scope": "Measurement; run stopped after one failed leaf, not acceptance evidence",
+    "session": "5f59c62f122295a7",
+    "chunk_states": {
+        "failed": 1,
+        "planned": 253,
+        "complete": 14,
+        "publishing": 2
+    },
+    "failed_chunk": {
+        "tile": {
+            "west": 100,
+            "south": -60,
+            "width": 10,
+            "height": 10
+        },
+        "start": "2025-01-01T00:00:00+00:00",
+        "events": [
+            {
+                "at": "2026-10-08T10:05:36.666005+00:00",
+                "state": "planned",
+                "reason": "processing_claim"
+            },
+            {
+                "at": "2026-10-08T10:05:36.806576+00:00",
+                "state": "fetching",
+                "reason": "worker_started"
+            },
+            {
+                "at": "2026-10-08T10:07:46.403888+00:00",
+                "state": "landed",
+                "reason": "complete_verified_landing"
+            },
+            {
+                "at": "2026-10-08T10:07:46.407722+00:00",
+                "state": "validating",
+                "reason": "mapping_started"
+            },
+            {
+                "at": "2026-10-08T10:08:00.515321+00:00",
+                "state": "publishing",
+                "reason": "validated_candidate"
+            },
+            {
+                "at": "2026-10-08T10:09:25.113519+00:00",
+                "state": "failed",
+                "reason": "database_deadline"
+            }
+        ],
+        "levels": 42374,
+        "reason": "database_deadline",
+        "profiles": 35
+    },
+    "postgres_log": "2026-10-08 10:09:20.782 UTC ERROR: canceling statement due to lock timeout while locking tuple in relation ingestion_run (controller_heartbeat during the long publication transaction)"
+}

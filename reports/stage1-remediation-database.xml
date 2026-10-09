@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="4" time="21.866" timestamp="2026-10-07T10:10:08.540682+00:00" hostname="Anduril"><testcase classname="tests.stage1.test_database" name="test_N08_restricted_run_limit_scope_and_frozen_safe_reporting" time="6.013" /><testcase classname="tests.stage1.test_database" name="test_B03_SQL_resource_detail_rejects_unknown_text_and_extra_fields" time="1.039" /><testcase classname="tests.stage1.test_database" name="test_P01_P05_R02_B03_F02_F03_F04_F06_F07_combined_processor_publication_replay" time="8.752"><failure message="AssertionError: []Traceback (most recent call last):&#10;  File &quot;/test/tests/stage1/processor_probe.py&quot;, line 273, in &lt;module&gt;&#10;    main()&#10;  File &quot;/test/tests/stage1/processor_probe.py&quot;, line 249, in main&#10;    capacity_evidence = verify_capacity(repository, ENV)&#10;                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/test/tests/stage1/capacity_probe.py&quot;, line 20, in verify_capacity&#10;    profile_bytes = (basis / &quot;02-profile.json&quot;).read_bytes()&#10;                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/usr/local/lib/python3.12/pathlib.py&quot;, line 1019, in read_bytes&#10;    with self.open(mode='rb') as f:&#10;         ^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/usr/local/lib/python3.12/pathlib.py&quot;, line 1013, in open&#10;    return io.open(self, mode, buffering, encoding, errors, newline)&#10;           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;PermissionError: [Errno 13] Permission denied: '/test/tests/fixtures/argovis/recorded/9efe8f4e713c44a1a2964407e52b9a45/02-profile.json'">tests/stage1/test_database.py:423: in test_P01_P05_R02_B03_F02_F03_F04_F06_F07_combined_processor_publication_replay
+    raise AssertionError(str(errors[-5:]) + result.stderr.decode())
+E   AssertionError: []Traceback (most recent call last):
+E     File "/test/tests/stage1/processor_probe.py", line 273, in &lt;module&gt;
+E       main()
+E     File "/test/tests/stage1/processor_probe.py", line 249, in main
+E       capacity_evidence = verify_capacity(repository, ENV)
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/test/tests/stage1/capacity_probe.py", line 20, in verify_capacity
+E       profile_bytes = (basis / "02-profile.json").read_bytes()
+E                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/usr/local/lib/python3.12/pathlib.py", line 1019, in read_bytes
+E       with self.open(mode='rb') as f:
+E            ^^^^^^^^^^^^^^^^^^^^
+E     File "/usr/local/lib/python3.12/pathlib.py", line 1013, in open
+E       return io.open(self, mode, buffering, encoding, errors, newline)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 13] Permission denied: '/test/tests/fixtures/argovis/recorded/9efe8f4e713c44a1a2964407e52b9a45/02-profile.json'</failure></testcase><testcase classname="tests.stage1.test_database" name="test_B09_actual_alembic_repeat_and_refused_downgrade" time="5.852" /></testsuite></testsuites>

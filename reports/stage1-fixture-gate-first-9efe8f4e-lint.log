@@ -1,0 +1,12 @@
+E501 Line too long (104 > 100)
+   --> tests/stage1/test_recorded_fixtures.py:231:101
+    |
+229 |                 "bundle": str(A_MODE.relative_to(ROOT)),
+230 |                 "source_profile_id": "2904014_040",
+231 |                 "scientific_sha256": "a57bfef74f81d4d1344b9002aa14040969af2a75f65de50fdc4b21a87b4bbda3",
+    |                                                                                                     ^^^^
+232 |             }
+233 |         ],
+    |
+
+Found 1 error.

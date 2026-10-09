@@ -1,0 +1,138 @@
+{
+  "reviewed_at_utc": "2026-10-07T09:29:25.817164+00:00",
+  "scope": "fresh offline forensic assertions; not a production integration suite rerun",
+  "review_evidence_sha256": "5c6f2fb11058c21bfd0983f70aa95c28e099fba1fccdfc6204f2810664cdfe48",
+  "checks": [
+    {
+      "name": "official_translator_matches_approved_sha256",
+      "passed": true
+    },
+    {
+      "name": "base_openapi_matches_approved_sha256",
+      "passed": true
+    },
+    {
+      "name": "all_44_HTTP_failures_accounted",
+      "passed": true
+    },
+    {
+      "name": "all_44_distinct_failed_chunks",
+      "passed": true
+    },
+    {
+      "name": "all_HTTP_404_roles_inventory_before",
+      "passed": true
+    },
+    {
+      "name": "HTTP_failure_status_disposition_and_single_attempt",
+      "passed": true
+    },
+    {
+      "name": "all_HTTP_failure_timings_finished",
+      "passed": true
+    },
+    {
+      "name": "HTTP_coverage_windows_23_and_21",
+      "passed": true
+    },
+    {
+      "name": "all_eight_terminal_quarantines_accounted",
+      "passed": true
+    },
+    {
+      "name": "all_quarantine_landing_manifests_checksum_and_sanitization_verified",
+      "passed": true
+    },
+    {
+      "name": "profile_and_two_inventory_landings_present",
+      "passed": true
+    },
+    {
+      "name": "all_18_canonical_candidates_map_offline",
+      "passed": true
+    },
+    {
+      "name": "each_candidate_below_16_MiB",
+      "passed": true
+    },
+    {
+      "name": "each_candidate_level_count_bounded",
+      "passed": true
+    },
+    {
+      "name": "each_candidate_chunk_below_256_MiB",
+      "passed": true
+    },
+    {
+      "name": "canonical_work_exactly_balances_run_counter",
+      "passed": true
+    },
+    {
+      "name": "no_inflight_canonical_reservations",
+      "passed": true
+    },
+    {
+      "name": "remaining_run_allowance_cannot_reserve_one_profile",
+      "passed": true
+    },
+    {
+      "name": "first_canonical_limit_during_publication_three_during_validation",
+      "passed": true
+    },
+    {
+      "name": "three_later_canonical_chunks_have_no_work_ledger",
+      "passed": true
+    },
+    {
+      "name": "four_known_degenerate_level_warning_witnesses",
+      "passed": true
+    },
+    {
+      "name": "warning_quarantine_remains_fail_closed",
+      "passed": true
+    },
+    {
+      "name": "warned_profiles_have_location_timestamp",
+      "passed": true
+    },
+    {
+      "name": "returned_warned_pressure_arrays_have_no_repeated_nonnull_pressure",
+      "passed": true
+    },
+    {
+      "name": "committed_science_and_active_ID_hashes_unchanged",
+      "passed": true
+    },
+    {
+      "name": "committed_counts_match_original_interruption",
+      "passed": true
+    },
+    {
+      "name": "original_deadline_intact",
+      "passed": true
+    },
+    {
+      "name": "no_frozen_final_evidence_inferred",
+      "passed": true
+    },
+    {
+      "name": "no_live_calls_or_credentials_private_originals_accessed",
+      "passed": true
+    }
+  ],
+  "http_roles": {
+    "inventory_before": 44
+  },
+  "canonical_cap_bytes": 10737418240,
+  "canonical_used_bytes": 10721657712,
+  "canonical_remaining_bytes": 15760528,
+  "reservation_bytes": 16777216,
+  "canonical_operations": 12597,
+  "local_candidate_total_bytes": 15227184,
+  "local_candidate_max_bytes": 1244214,
+  "translator_revision": "cbf2bb48ed5d95532c18bb2cd5217e44618356cf",
+  "translator_sha256": "279af8ef7b2adabad38d94ca71de02d86dd11efe28e3c1f174f874b7ed73224f",
+  "decision": "NO_GO_ANOTHER_LIVE_ATTEMPT_OR_CERTIFICATION",
+  "automatic_restart": false,
+  "split_would_restore_run_budget": false
+}

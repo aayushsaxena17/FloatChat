@@ -1,0 +1,17 @@
+[
+  {
+    "_id": "1901094_m0",
+    "data_type": "oceanicProfile",
+    "data_center": "IF",
+    "instrument": "profiling_float",
+    "pi_name": [
+      "Christine Coatanoan"
+    ],
+    "platform": "1901094",
+    "platform_type": "PROVOR",
+    "fleetmonitoring": "https://fleetmonitoring.euro-argo.eu/float/1901094",
+    "oceanops": "https://www.ocean-ops.org/board/wa/Platform?ref=1901094",
+    "positioning_system": "ARGOS",
+    "wmo_inst_type": "841"
+  }
+]

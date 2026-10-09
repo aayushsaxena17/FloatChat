@@ -1,0 +1,316 @@
+{
+  "http_request_owner": [
+    {
+      "run_id": "40c4b5c6-c06d-4a28-bdb1-13d52d8d97fb",
+      "chunk_id": "d30124dd-cd41-4fcf-b4bc-9158dd0e0454",
+      "statuses": [
+        429,
+        503,
+        200
+      ],
+      "dispositions": [
+        "http_failure",
+        "http_failure",
+        "verified_raw"
+      ],
+      "http_retries": 2,
+      "attempts": 3,
+      "timings_finished": true,
+      "positive_elapsed_timings": true,
+      "safe_error_categories": true,
+      "frozen_resource_counters": {
+        "http_attempts": 3,
+        "received_bytes": 2,
+        "canonical_bytes": 0,
+        "controller_claims": 1,
+        "accepted_new_profiles": 0,
+        "accepted_insert_replacement_levels": 0
+      },
+      "state_reasons": [
+        {
+          "events": 1,
+          "reason": "component_request_probe_complete",
+          "new_state": "failed"
+        },
+        {
+          "events": 1,
+          "reason": "run_reduction",
+          "new_state": "failed"
+        },
+        {
+          "events": 1,
+          "reason": "child_phase",
+          "new_state": "fetching"
+        },
+        {
+          "events": 1,
+          "reason": "offline_http_probe",
+          "new_state": "fetching"
+        },
+        {
+          "events": 1,
+          "reason": "processing_claim",
+          "new_state": "planned"
+        },
+        {
+          "events": 1,
+          "reason": "run_admitted_reference_captured",
+          "new_state": null
+        }
+      ],
+      "scientific_no_change": true,
+      "scope": "Real repository/MinIO, mocked HTTP; request-only component",
+      "frozen_reporting_identical_after_later_runs": true
+    },
+    {
+      "run_id": "f68c1f18-a4d2-45c5-ad22-f170b7281933",
+      "chunk_id": "af2fca75-59f5-4331-b325-d54ca64c6dfe",
+      "statuses": [
+        401
+      ],
+      "dispositions": [
+        "http_failure"
+      ],
+      "http_retries": 0,
+      "attempts": 1,
+      "timings_finished": true,
+      "positive_elapsed_timings": true,
+      "safe_error_categories": true,
+      "frozen_resource_counters": {
+        "http_attempts": 1,
+        "received_bytes": 0,
+        "canonical_bytes": 0,
+        "controller_claims": 1,
+        "accepted_new_profiles": 0,
+        "accepted_insert_replacement_levels": 0
+      },
+      "state_reasons": [
+        {
+          "events": 1,
+          "reason": "http_retry_exhausted",
+          "new_state": "failed"
+        },
+        {
+          "events": 1,
+          "reason": "run_reduction",
+          "new_state": "failed"
+        },
+        {
+          "events": 1,
+          "reason": "child_phase",
+          "new_state": "fetching"
+        },
+        {
+          "events": 1,
+          "reason": "offline_http_probe",
+          "new_state": "fetching"
+        },
+        {
+          "events": 1,
+          "reason": "processing_claim",
+          "new_state": "planned"
+        },
+        {
+          "events": 1,
+          "reason": "run_admitted_reference_captured",
+          "new_state": null
+        }
+      ],
+      "scientific_no_change": true,
+      "scope": "Real repository/MinIO, mocked HTTP; request-only component",
+      "frozen_reporting_identical_after_later_runs": true
+    },
+    {
+      "run_id": "5ae239d8-9d09-4a41-b823-1eb76d5cd60c",
+      "chunk_id": "ffa5d13b-7636-45d6-ae80-24f53c232649",
+      "statuses": [
+        403
+      ],
+      "dispositions": [
+        "http_failure"
+      ],
+      "http_retries": 0,
+      "attempts": 1,
+      "timings_finished": true,
+      "positive_elapsed_timings": true,
+      "safe_error_categories": true,
+      "frozen_resource_counters": {
+        "http_attempts": 1,
+        "received_bytes": 0,
+        "canonical_bytes": 0,
+        "controller_claims": 1,
+        "accepted_new_profiles": 0,
+        "accepted_insert_replacement_levels": 0
+      },
+      "state_reasons": [
+        {
+          "events": 1,
+          "reason": "http_retry_exhausted",
+          "new_state": "failed"
+        },
+        {
+          "events": 1,
+          "reason": "run_reduction",
+          "new_state": "failed"
+        },
+        {
+          "events": 1,
+          "reason": "child_phase",
+          "new_state": "fetching"
+        },
+        {
+          "events": 1,
+          "reason": "offline_http_probe",
+          "new_state": "fetching"
+        },
+        {
+          "events": 1,
+          "reason": "processing_claim",
+          "new_state": "planned"
+        },
+        {
+          "events": 1,
+          "reason": "run_admitted_reference_captured",
+          "new_state": null
+        }
+      ],
+      "scientific_no_change": true,
+      "scope": "Real repository/MinIO, mocked HTTP; request-only component",
+      "frozen_reporting_identical_after_later_runs": true
+    },
+    {
+      "run_id": "353edd6d-bd8a-4fe9-a5ed-50f4bfda8127",
+      "chunk_id": "7fc1e749-cc7c-4171-9c3a-ef233bf53e16",
+      "statuses": [
+        503,
+        503,
+        503,
+        503
+      ],
+      "dispositions": [
+        "http_failure",
+        "http_failure",
+        "http_failure",
+        "http_failure"
+      ],
+      "http_retries": 3,
+      "attempts": 4,
+      "timings_finished": true,
+      "positive_elapsed_timings": true,
+      "safe_error_categories": true,
+      "frozen_resource_counters": {
+        "http_attempts": 4,
+        "received_bytes": 0,
+        "canonical_bytes": 0,
+        "controller_claims": 1,
+        "accepted_new_profiles": 0,
+        "accepted_insert_replacement_levels": 0
+      },
+      "state_reasons": [
+        {
+          "events": 1,
+          "reason": "http_retry_exhausted",
+          "new_state": "failed"
+        },
+        {
+          "events": 1,
+          "reason": "run_reduction",
+          "new_state": "failed"
+        },
+        {
+          "events": 1,
+          "reason": "child_phase",
+          "new_state": "fetching"
+        },
+        {
+          "events": 1,
+          "reason": "offline_http_probe",
+          "new_state": "fetching"
+        },
+        {
+          "events": 1,
+          "reason": "processing_claim",
+          "new_state": "planned"
+        },
+        {
+          "events": 1,
+          "reason": "run_admitted_reference_captured",
+          "new_state": null
+        }
+      ],
+      "scientific_no_change": true,
+      "scope": "Real repository/MinIO, mocked HTTP; request-only component",
+      "frozen_reporting_identical_after_later_runs": true
+    }
+  ],
+  "split_replay": {
+    "predecessor_run_id": "77588f11-8c0c-4713-b0b0-a06c26e8924c",
+    "replay_run_id": "0bd245ec-4058-482e-9b15-1eb2b5c1231e",
+    "actual_cli_exit": 0,
+    "input_kind": "replay",
+    "upstream_denied": true,
+    "temporal_split": true,
+    "spatial_split": true,
+    "topology_identical": true,
+    "plan_nodes": 466,
+    "completed_leaves": 458,
+    "scientific_no_change": true,
+    "active_partition_no_change": true,
+    "audit_attempts_increased": true,
+    "active_generation_ids_before": [
+      "33cc8136-99bf-4e54-9b88-1bd5485516ed"
+    ],
+    "active_generation_ids_after": [
+      "33cc8136-99bf-4e54-9b88-1bd5485516ed"
+    ],
+    "full_and_eligible_reconciliation_balanced": true,
+    "attempt_increase": 1375,
+    "audit_increase": 4582,
+    "increase_explanation": "Replay creates a new run, fenced state/ticket events and recorded-origin landing attempts for each complete predecessor leaf; scientific no-ops reuse active generations. HTTP retries remain zero.",
+    "before": {
+      "runs": 11,
+      "floats": 1,
+      "attempts": 1403,
+      "profiles": 2,
+      "audit_rows": 4682,
+      "reconciliation": {
+        "full_stored": {
+          "profiles": 2,
+          "manifest_sha256": "5564c5f9398eb32f4bd2ec6542f5feb209920e66c1e1108b6e10f097260c5567",
+          "measurement_levels": 4
+        },
+        "full_snapshot": {
+          "profiles": 2,
+          "manifest_sha256": "5564c5f9398eb32f4bd2ec6542f5feb209920e66c1e1108b6e10f097260c5567",
+          "measurement_levels": 4
+        },
+        "run_eligible_stored": {
+          "profiles": 2,
+          "manifest_sha256": "5564c5f9398eb32f4bd2ec6542f5feb209920e66c1e1108b6e10f097260c5567",
+          "measurement_levels": 4
+        },
+        "run_eligible_snapshot": {
+          "profiles": 2,
+          "manifest_sha256": "5564c5f9398eb32f4bd2ec6542f5feb209920e66c1e1108b6e10f097260c5567",
+          "measurement_levels": 4
+        }
+      },
+      "active_partitions": 1,
+      "measurement_levels": 4,
+      "profile_manifest_sha256": "5564c5f9398eb32f4bd2ec6542f5feb209920e66c1e1108b6e10f097260c5567",
+      "active_generation_sha256": "09c66f60e78905c41d229974ad5997e8d7d5cfb399603c1556fad44cc2743cec"
+    },
+    "after": {
+      "runs": 11,
+      "floats": 1,
+      "attempts": 2778,
+      "profiles": 2,
+      "audit_rows": 9264,
+      "active_partitions": 1,
+      "measurement_levels": 4,
+      "profile_manifest_sha256": "5564c5f9398eb32f4bd2ec6542f5feb209920e66c1e1108b6e10f097260c5567",
+      "active_generation_sha256": "09c66f60e78905c41d229974ad5997e8d7d5cfb399603c1556fad44cc2743cec"
+    },
+    "scope": "Synthetic complete plan, not live regional acceptance"
+  }
+}

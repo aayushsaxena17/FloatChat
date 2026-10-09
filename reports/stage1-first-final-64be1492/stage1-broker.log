@@ -1,0 +1,22 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___ test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults ____
+tests/stage1/test_broker.py:118: in test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults
+    assert result.returncode == 0, result.stderr.decode(errors="replace")[-5000:]
+E   AssertionError: Traceback (most recent call last):
+E       File "/test/tests/stage1/broker_probe.py", line 613, in <module>
+E         main()
+E       File "/test/tests/stage1/broker_probe.py", line 555, in main
+E         third_beat.wait(timeout=5)
+E       File "/usr/local/lib/python3.12/subprocess.py", line 1264, in wait
+E         return self._wait(timeout=timeout)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/usr/local/lib/python3.12/subprocess.py", line 2045, in _wait
+E         raise TimeoutExpired(self.args, timeout)
+E     subprocess.TimeoutExpired: Command '['/app/.venv/bin/python', '-m', 'celery', '-A', 'floatchat_workers.app:app', 'beat', '--max-interval=1', '--loglevel=WARNING', '--schedule=/tmp/beat-third']' timed out after 5 seconds
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['docker', 'run', '--rm', '--pull=never', '--memory=1g', '--network=container:floatchat-stage1-o...\'beat\', \'--max-interval=1\', \'--loglevel=WARNING\', \'--schedule=/tmp/beat-third\']\' timed out after 5 seconds\n').returncode
+=========================== short test summary info ============================
+FAILED tests/stage1/test_broker.py::test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults
+1 failed in 324.24s (0:05:24)

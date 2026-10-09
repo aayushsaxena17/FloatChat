@@ -1,0 +1,53 @@
+{
+  "by_service": {
+    "live-acquire": {
+      "anon_peak_bytes": 228995072,
+      "containers": 1,
+      "memory_max": 1073741824,
+      "memory_peak_counter_bytes": 252272640,
+      "oom": 0,
+      "oom_kill": 0,
+      "samples": 42
+    },
+    "process": {
+      "anon_peak_bytes": 226258944,
+      "containers": 1,
+      "memory_max": 2147483648,
+      "memory_peak_counter_bytes": 290320384,
+      "oom": 0,
+      "oom_kill": 0,
+      "samples": 44
+    }
+  },
+  "criterion": "ADR-0042 (queue topology): acquire memory.max = 1 GiB, process memory.max finite (each of its workers bounded to 1 GiB by RLIMIT_DATA), zero oom/oom_kill, anonymous peak below the container's memory.max",
+  "finished_at_utc": "2026-10-09T09:49:05.145070+00:00",
+  "interval_seconds": 2.0,
+  "kind": "stage1_worker_memory_evidence",
+  "pass": true,
+  "project": "floatchat-s1-acceptance-610e1592a7c98390",
+  "samples": 86,
+  "scope": "Sampled host cgroup v2 counters; anonymous peak is the maximum sample, memory.peak is the kernel high-water mark including page cache",
+  "started_at_utc": "2026-10-09T09:47:15.633342+00:00",
+  "workers": [
+    {
+      "anon_peak_bytes": 226258944,
+      "container": "process:floatchat-s1-acceptance-610e1592a7c98390-process-1",
+      "memory_max": 2147483648,
+      "memory_peak_counter_bytes": 290320384,
+      "oom": 0,
+      "oom_kill": 0,
+      "samples": 44,
+      "service": "process"
+    },
+    {
+      "anon_peak_bytes": 228995072,
+      "container": "live-acquire:floatchat-s1-acceptance-610e1592a7c98390-live-owner",
+      "memory_max": 1073741824,
+      "memory_peak_counter_bytes": 252272640,
+      "oom": 0,
+      "oom_kill": 0,
+      "samples": 42,
+      "service": "live-acquire"
+    }
+  ]
+}

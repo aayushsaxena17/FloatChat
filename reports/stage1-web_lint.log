@@ -1,0 +1,8 @@
+
+> floatchat@ lint /home/floatchat/FloatChat-stage1
+> pnpm --filter @floatchat/web lint
+
+
+> @floatchat/web@0.0.0 lint /home/floatchat/FloatChat-stage1/apps/web
+> eslint .
+

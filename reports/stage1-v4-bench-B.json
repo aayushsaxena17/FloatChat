@@ -1,0 +1,113 @@
+{
+  "kind": "stage1_offline_chunk_cpu_profile",
+  "scope": "Synthetic clone of authentic 1901094_109 core profile; CPU stages only, no HTTP/MinIO/PostgreSQL; multiplicities read from code at e1ba4f0",
+  "basis": "tests/fixtures/argovis/recorded/6a8ffa52f6db4954b974c449e68c54bc",
+  "basis_label": "core6",
+  "profiles": 87,
+  "levels_per_profile": 699,
+  "raw_profile_payload_bytes": 1815778,
+  "raw_inventory_payload_bytes": 55768,
+  "python": "3.12.12",
+  "canonical_bytes_per_profile": 854393,
+  "canonical_bytes_per_level": 1222,
+  "canonical_bytes_chunk": 74332191,
+  "parquet_bytes": 4107565,
+  "parquet_rows": 60813,
+  "staging_ndjson_bytes": 143764696,
+  "stages": {
+    "sanitize_raw(profile payload)": {
+      "wall_s": 2.475,
+      "cpu_s": 2.461
+    },
+    "validate_raw(profile payload) x1": {
+      "wall_s": 1.382,
+      "cpu_s": 1.375
+    },
+    "sanitize_raw(inventory payload)": {
+      "wall_s": 0.013,
+      "cpu_s": 0.013
+    },
+    "validate_raw(inventory payload) x1": {
+      "wall_s": 0.013,
+      "cpu_s": 0.013
+    },
+    "sha256(profile payload)": {
+      "wall_s": 0.002,
+      "cpu_s": 0.002
+    },
+    "documents() decode profile payload x1": {
+      "wall_s": 1.399,
+      "cpu_s": 1.393
+    },
+    "documents() decode inventory payload x1": {
+      "wall_s": 0.015,
+      "cpu_s": 0.015
+    },
+    "map_profile + budget.encode (all profiles)": {
+      "wall_s": 5.368,
+      "cpu_s": 5.256
+    },
+    "spool.add (all)": {
+      "wall_s": 0.698,
+      "cpu_s": 0.695
+    },
+    "spool.prepare (restore+certify, no DB)": {
+      "wall_s": 5.286,
+      "cpu_s": 5.327
+    },
+    "spool.membership(slot)": {
+      "wall_s": 1.713,
+      "cpu_s": 1.713
+    },
+    "spool.profiles(slot) re-read (receipts pass)": {
+      "wall_s": 3.777,
+      "cpu_s": 3.23
+    },
+    "write_snapshot (write+verify+storage_comparison)": {
+      "wall_s": 21.434,
+      "cpu_s": 20.94
+    },
+    "  write_snapshot: verify_snapshot (local read-back)": {
+      "wall_s": 12.73
+    },
+    "  write_snapshot: storage_comparison (to_pandas)": {
+      "wall_s": 0.223
+    },
+    "  write_snapshot: writer loop (rows+ipc spill+parquet)": {
+      "wall_s": 8.481
+    },
+    "sha256(parquet file)": {
+      "wall_s": 0.01,
+      "cpu_s": 0.01
+    },
+    "publish_verified (certificate full verify + 2 light verifies; memory store)": {
+      "wall_s": 9.409,
+      "cpu_s": 9.395
+    },
+    "spool.write_candidates (NDJSON for COPY)": {
+      "wall_s": 2.903,
+      "cpu_s": 2.866
+    }
+  },
+  "sum_measured_wall_s": 55.897,
+  "multiplicity_per_chunk_from_code": {
+    "profile payload sanitize_raw": 1,
+    "profile payload validate_raw (publish_verified: payload, temporary, final)": 3,
+    "profile payload documents() decode in processor (inventory_accounting x2, inventory, metadata loop, map)": 5,
+    "canonical encode per profile (map, spool certify, verify_snapshot in write_snapshot, certificate first payload)": 4,
+    "parquet full read-back (write_snapshot verify, certificate first call)": 2,
+    "parquet light read (certificate temporary+final)": 2,
+    "spool.profiles(slot) restores (membership, write_snapshot, receipts)": 3
+  },
+  "max_rss_mib": 569.4,
+  "cprofile_top": {},
+  "finished_at_utc": "2026-10-08T14:50:19.162083+00:00",
+  "package": "B",
+  "baseline_seconds": 8.25,
+  "baseline_stage": "map_profile + budget.encode (all profiles)",
+  "baseline_measured_at_start_seconds": 8.661,
+  "after_seconds": 5.368,
+  "speedup_vs_baseline_seconds": 1.54,
+  "speedup_vs_measured_baseline": 1.61,
+  "measurement_note": "After-run executed in an export of HEAD 272508b with only argovis.py replaced (package B), because other packages' in-progress edits break the shared worktree at this moment. Encoder is HEAD's budget.encode (package A's faster encoder not included). Shared host: stage wall times vary with load; the other stages of this run match the start-of-work run within 10 percent, so the stage ratio is like for like."
+}

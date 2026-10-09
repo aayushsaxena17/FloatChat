@@ -7,8 +7,53 @@ import sys
 import psycopg
 from psycopg import sql
 
+STAGE1_TABLES = frozenset(
+    {
+        "ingestion_environment",
+        "ingestion_run",
+        "ingestion_chunk",
+        "ingestion_attempt",
+        "raw_manifest",
+        "argo_float",
+        "argo_profile",
+        "core_measurement",
+        "logical_partition_slot",
+        "publication_intent",
+        "dataset_partition",
+        "coverage_receipt",
+        "ingestion_event",
+        "profile_outcome",
+        "ingestion_scope",
+        "scheduling_attempt",
+        "ingestion_staging",
+        "ingestion_input",
+        "canonical_work",
+        "run_baseline",
+        "run_final_evidence",
+        "chunk_accounting",
+        "processing_ticket",
+        "float_metadata_cache",
+        "replay_chunk_source",
+        "measurement_staging",
+        "landing_reset",
+        "ingestion_event_sequence_seq",
+        "profile_outcome_sequence_seq",
+    }
+)
+
+
+def ensure_application_role(cursor: psycopg.Cursor[tuple[object, ...]]) -> None:
+    cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s", ("floatchat_app",))
+    if cursor.fetchone() is None:
+        cursor.execute("CREATE ROLE floatchat_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE")
+
 
 def main() -> None:
+    # Stage 1 migrations revoke privileges from floatchat_app, so a fresh database
+    # needs the role before migrating, not only afterwards.
+    with psycopg.connect(os.environ["DATABASE_ADMIN_URL"], connect_timeout=3) as connection:
+        with connection.cursor() as cursor:
+            ensure_application_role(cursor)
     subprocess.run(
         ["alembic", "-c", "infra/alembic.ini", "upgrade", "head"],
         check=True,
@@ -17,11 +62,7 @@ def main() -> None:
     )
     with psycopg.connect(os.environ["DATABASE_ADMIN_URL"], connect_timeout=3) as connection:
         with connection.cursor() as cursor:
-            cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s", ("floatchat_app",))
-            if cursor.fetchone() is None:
-                cursor.execute(
-                    "CREATE ROLE floatchat_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE"
-                )
+            ensure_application_role(cursor)
             cursor.execute(
                 sql.SQL("ALTER ROLE floatchat_app PASSWORD {}").format(
                     sql.Literal(os.environ["DB_APP_PASSWORD"])
@@ -31,6 +72,9 @@ def main() -> None:
             cursor.execute("GRANT USAGE ON SCHEMA public TO floatchat_app")
             cursor.execute("CREATE SCHEMA IF NOT EXISTS app AUTHORIZATION floatchat_admin")
             cursor.execute("GRANT USAGE ON SCHEMA app TO floatchat_app")
+            cursor.execute("SELECT to_regclass('app.committed_active_partitions')")
+            if cursor.fetchone()[0] is not None:
+                cursor.execute("GRANT SELECT ON app.committed_active_partitions TO floatchat_app")
             # Remove the previous public-schema defaults and blanket write grants.
             cursor.execute(
                 "ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE SELECT, INSERT, UPDATE, "
@@ -77,6 +121,13 @@ def main() -> None:
                 "AND d.deptype = 'e')"
             )
             for name, kind in cursor.fetchall():
+                if name in STAGE1_TABLES or name.startswith("core_measurement_"):
+                    cursor.execute(
+                        sql.SQL("REVOKE ALL ON {} app.{} FROM floatchat_app").format(
+                            sql.SQL("SEQUENCE" if kind == "S" else "TABLE"), sql.Identifier(name)
+                        )
+                    )
+                    continue
                 privileges = "USAGE" if kind == "S" else "SELECT, INSERT, UPDATE, DELETE"
                 object_type = "SEQUENCE" if kind == "S" else "TABLE"
                 cursor.execute(
@@ -85,11 +136,12 @@ def main() -> None:
                     )
                 )
             cursor.execute(
-                "ALTER DEFAULT PRIVILEGES IN SCHEMA app GRANT SELECT, INSERT, UPDATE, "
-                "DELETE ON TABLES TO floatchat_app"
+                "ALTER DEFAULT PRIVILEGES IN SCHEMA app REVOKE SELECT, INSERT, UPDATE, "
+                "DELETE ON TABLES FROM floatchat_app"
             )
             cursor.execute(
-                "ALTER DEFAULT PRIVILEGES IN SCHEMA app GRANT USAGE ON SEQUENCES TO floatchat_app"
+                "ALTER DEFAULT PRIVILEGES IN SCHEMA app REVOKE USAGE "
+                "ON SEQUENCES FROM floatchat_app"
             )
             cursor.execute("SELECT extname FROM pg_extension WHERE extname IN ('postgis','vector')")
             if {row[0] for row in cursor.fetchall()} != {"postgis", "vector"}:

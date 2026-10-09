@@ -1,0 +1,193 @@
+{
+  "kind": "persisted_sanitized_fixture_audit",
+  "bundle": "tests/fixtures/argovis/recorded/9efe8f4e713c44a1a2964407e52b9a45",
+  "manifest_sha256": "f42b03e44588560ba43151428405eb4b40324a6d26dc3111406a41c56d0ff540",
+  "versions": {
+    "geometry": "indian-ocean-v1",
+    "mapping": "argovis-core-v1",
+    "hash": "scientific-json-v2",
+    "specification": "2.36.2",
+    "specification_sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
+    "qc": "core-good-v1",
+    "source_contract": "argovis-core-2.36.2+ifremer-fluorescence-v1",
+    "translator_revision": "cbf2bb48ed5d95532c18bb2cd5217e44618356cf",
+    "translator_sha256": "279af8ef7b2adabad38d94ca71de02d86dd11efe28e3c1f174f874b7ed73224f"
+  },
+  "attribution": {
+    "provider": "International Argo Program and national contributors, via Argovis",
+    "argo_doi": "https://doi.org/10.17882/42182",
+    "terms_and_acknowledgement": "https://argo.ucsd.edu/data/acknowledging-argo/",
+    "argovis_contract_citation": "https://zenodo.org/records/15708506"
+  },
+  "verified_responses": [
+    {
+      "path": "01-inventory_before.json",
+      "role": "inventory_before",
+      "sha256": "a6fb76a248f7a8dd9e7d50d5e0123959a8fa918debcf7542750f197cbebd277c",
+      "bytes": 1541,
+      "retrieved_at_utc": "2026-10-06T18:56:04.327159+00:00"
+    },
+    {
+      "path": "02-profile.json",
+      "role": "profile",
+      "sha256": "c51989d8f3285a976e64e55fd7dde0c8d95a6a4306bb27607980e2b8d1c8ba4f",
+      "bytes": 65715,
+      "retrieved_at_utc": "2026-10-06T18:56:06.056977+00:00"
+    },
+    {
+      "path": "03-inventory_after.json",
+      "role": "inventory_after",
+      "sha256": "a6fb76a248f7a8dd9e7d50d5e0123959a8fa918debcf7542750f197cbebd277c",
+      "bytes": 1541,
+      "retrieved_at_utc": "2026-10-06T18:56:07.289300+00:00"
+    },
+    {
+      "path": "04-metadata.json",
+      "role": "metadata",
+      "sha256": "0b108edd5db80012cfc7b7860719f81ca43b72d937fa16ac61887b2a9bb5474a",
+      "bytes": 375,
+      "retrieved_at_utc": "2026-10-06T18:56:08.378266+00:00"
+    }
+  ],
+  "profiles": [
+    {
+      "source_profile_id": "2904014_040",
+      "identity": "id:2904014_040",
+      "levels": 501,
+      "scientific_sha256": "a57bfef74f81d4d1344b9002aa14040969af2a75f65de50fdc4b21a87b4bbda3",
+      "direction": "A",
+      "observed_at_utc": "2026-10-04T03:18:17.000000+00:00",
+      "in_indian_ocean_geometry": true,
+      "source_revision_components": 2,
+      "source_columns": [
+        "bbp700",
+        "bbp700_argoqc",
+        "cdom",
+        "cdom_argoqc",
+        "chla",
+        "chla_argoqc",
+        "chla_fluorescence",
+        "chla_fluorescence_qc",
+        "doxy",
+        "doxy_argoqc",
+        "nitrate",
+        "nitrate_argoqc",
+        "ph_in_situ_total",
+        "ph_in_situ_total_argoqc",
+        "pressure",
+        "pressure_argoqc",
+        "salinity",
+        "salinity_argoqc",
+        "salinity_sfile",
+        "salinity_sfile_argoqc",
+        "temperature",
+        "temperature_argoqc",
+        "temperature_sfile",
+        "temperature_sfile_argoqc"
+      ],
+      "source_null_cells_by_column": {
+        "nitrate": 501,
+        "nitrate_argoqc": 501
+      },
+      "supplementary_noncore_columns": {
+        "chla_fluorescence": {
+          "levels": 501,
+          "null_cells": 0,
+          "source_attributes": {
+            "units": "ru",
+            "data_keys_mode": "A"
+          },
+          "disposition": "immutable_raw_only_no_canonical_chlorophyll_mapping"
+        },
+        "chla_fluorescence_qc": {
+          "levels": 501,
+          "null_cells": 0,
+          "source_attributes": {
+            "units": null,
+            "data_keys_mode": null
+          },
+          "disposition": "immutable_raw_only_no_canonical_chlorophyll_mapping"
+        }
+      },
+      "source_null_cells": 1002,
+      "source_core_null_cells": 0,
+      "source_core_value_null_cells": 0,
+      "source_core_qc_null_cells": 0,
+      "repeated_nonnull_pressure": false,
+      "variables": {
+        "pressure": {
+          "modes": [
+            "A"
+          ],
+          "source_column_present": true,
+          "raw_data_keys_modes": [
+            "A"
+          ],
+          "available": {
+            "original": 0,
+            "_adjusted": 501,
+            "_qc": 0,
+            "_adjusted_qc": 501,
+            "_error": 0,
+            "_original_error": 0
+          },
+          "qc_values": [
+            "1"
+          ]
+        },
+        "temperature": {
+          "modes": [
+            "A"
+          ],
+          "source_column_present": true,
+          "raw_data_keys_modes": [
+            "A"
+          ],
+          "available": {
+            "original": 0,
+            "_adjusted": 501,
+            "_qc": 0,
+            "_adjusted_qc": 501,
+            "_error": 0,
+            "_original_error": 0
+          },
+          "qc_values": [
+            "1",
+            "4"
+          ]
+        },
+        "salinity": {
+          "modes": [
+            "A"
+          ],
+          "source_column_present": true,
+          "raw_data_keys_modes": [
+            "A"
+          ],
+          "available": {
+            "original": 0,
+            "_adjusted": 501,
+            "_qc": 0,
+            "_adjusted_qc": 501,
+            "_error": 0,
+            "_original_error": 0
+          },
+          "qc_values": [
+            "1",
+            "4"
+          ]
+        }
+      }
+    }
+  ],
+  "representation_gaps": [
+    "data_mode_R",
+    "data_mode_D",
+    "direction_D",
+    "source_core_measurement_null"
+  ],
+  "F01_representative_corpus": "pending",
+  "regional_completeness": "not_proven_by_profile_id_samples",
+  "live_regional_acceptance": "not_executed",
+  "private_originals": "not_accessed"
+}

@@ -6,7 +6,7 @@ FloatChat is a research workspace for exploring Argo ocean observations through 
 
 ## Local development
 
-Required cloud infrastructure cost: **zero**. PostgreSQL/PostGIS/pgvector, Redis, MinIO, FastAPI, Celery, and React/Vite run locally in Docker. Startup and tests require no LLM calls, Argovis access, production credentials, or cloud services.
+Required cloud infrastructure cost: **zero**. PostgreSQL/PostGIS/pgvector, Redis, MinIO, FastAPI, and React/Vite run locally in Docker. Stage 1 ingestion workers claim work from a PostgreSQL queue instead of Celery (stage1-v4, ADR-0047); Redis remains for the API. Startup and tests require no LLM calls, Argovis access, production credentials, or cloud services.
 
 The supported development environment is WSL2 Ubuntu 24.04 with Docker Desktop's Linux engine and WSL integration. Docker/WSL installation is a prerequisite. Use a separate checkout on the WSL Linux filesystem; do not move or rewrite the preserved dirty Windows checkout. Windows Docker acceptance and the complete Ubuntu Make verification passed. The fresh merged-main clone also passed the full CI-equivalent suite; see the gate report.
 
@@ -91,7 +91,7 @@ flowchart TB
     ORCH --> PG[(PostgreSQL + PostGIS + pgvector)]
     ORCH --> QUEUE[Celery queue / Redis]
 
-    QUEUE --> IW[Ingestion workers]
+    PG -->|PostgreSQL work queue| IW[Ingestion workers]
     QUEUE --> AW[Analysis and export workers]
     QUEUE --> FW[Forecast workers]
 

@@ -1,0 +1,47 @@
+{
+  "provenance": {
+    "kind": "labelled_synthetic_derivative_of_admitted_authentic_fixture",
+    "evidence_version": "F01-2",
+    "basis": {
+      "mode": "R",
+      "bundle": "tests/fixtures/argovis/recorded/25f21e056e7c4db7bc1e21b0a28ea45f",
+      "manifest_sha256": "7127115c0b866861e11f1ab34c3cda5c0d4633e885fa6687ba5d6d4112414dc6",
+      "profile_id": "6990616_100"
+    },
+    "attribution": {
+      "provider": "International Argo Program and national contributors, via Argovis",
+      "argo_doi": "https://doi.org/10.17882/42182",
+      "terms_and_acknowledgement": "https://argo.ucsd.edu/data/acknowledging-argo/",
+      "argovis_contract_citation": "https://zenodo.org/records/15708506"
+    },
+    "source_versions": {
+      "geometry": "indian-ocean-v1",
+      "mapping": "argovis-core-v1",
+      "hash": "scientific-json-v2",
+      "specification": "2.36.2",
+      "specification_sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
+      "qc": "core-good-v1"
+    },
+    "payload_sha256": {
+      "profile": "0abfe6dc9a9bd3418d549842b1c2d7d8d4859f3b3922532dcaf09f6c6d65fbf2",
+      "metadata": "96734e1c036ec56842faea6fc55d656f3dc2c40ec8c7f5b823fdc4a18e220c10"
+    },
+    "mutations": [
+      {
+        "field": "profile_direction",
+        "from": "A",
+        "to": "D"
+      }
+    ],
+    "authentic_representation_claim": false
+  },
+  "passed_assertions": {
+    "direction": "D",
+    "scientific_sha256": "2e607f886ad8501884ef32920f5f823633215c04fd0d9caa01c7d6c139ef058f",
+    "stable_upstream_id_preferred": true,
+    "fallback_directions_do_not_collide": true,
+    "canonical_and_parquet_direction": "D",
+    "rows": 43,
+    "extra_identity_test_mutation": "remove _id in both A/D copies"
+  }
+}

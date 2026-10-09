@@ -1,0 +1,15 @@
+{
+  "source_contract": "argovis-core-2.36.2+ifremer-fluorescence-v1",
+  "base_openapi_release": "2.36.2",
+  "base_specification_sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
+  "translator_repository": "https://github.com/argovis/ifremer-sync",
+  "translator_revision": "cbf2bb48ed5d95532c18bb2cd5217e44618356cf",
+  "translator_path": "util/helpers.py",
+  "translator_sha256": "279af8ef7b2adabad38d94ca71de02d86dd11efe28e3c1f174f874b7ed73224f",
+  "translator_source": "https://github.com/argovis/ifremer-sync/blob/cbf2bb48ed5d95532c18bb2cd5217e44618356cf/util/helpers.py",
+  "exact_additional_noncore_names": ["chla_fluorescence", "chla_fluorescence_qc"],
+  "interpretation": "Distinct from chla/chla_argoqc. Preserve immutable raw values, QC and source attributes; validate scalar columns and common level alignment; perform no canonical chlorophyll mapping. No wildcard or suffix expansion is granted.",
+  "openapi_scope": "Explicit translator-backed supplement; these names are absent from the pinned OpenAPI enumeration.",
+  "request_policy": "data=all; all other unsupported names continue to fail closed",
+  "approval_basis": "Owner-supplied Astra implementation review: S1-G04 resolution B"
+}
