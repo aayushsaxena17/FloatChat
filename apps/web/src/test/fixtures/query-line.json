@@ -1,0 +1,564 @@
+{
+  "chart": {
+    "aggregation": "mean,count of temperature,salinity by day over profiles (profile-balanced) with qc-policy-v1/science_ready, depth 0.0-100.0 dbar, source postgresql",
+    "axis": {
+      "x": {
+        "field": "day",
+        "label": "Day",
+        "reversed": false,
+        "unit": null
+      },
+      "y": {
+        "field": "temperature_mean",
+        "label": "Temperature mean",
+        "reversed": false,
+        "unit": "degree_C"
+      }
+    },
+    "data": {
+      "inline": true,
+      "points": 124,
+      "url": null
+    },
+    "encodings": {
+      "series": {
+        "field": "name",
+        "label": "Series",
+        "reversed": false,
+        "unit": null
+      },
+      "x": {
+        "field": "day",
+        "label": "Day",
+        "reversed": false,
+        "unit": null
+      },
+      "y": {
+        "field": "temperature_mean",
+        "label": "Temperature mean",
+        "reversed": false,
+        "unit": "degree_C"
+      }
+    },
+    "missing_value_policy": "null",
+    "plotly": {
+      "layout": {
+        "xaxis": {
+          "title": "Day"
+        },
+        "yaxis": {
+          "autorange": true,
+          "title": "Temperature mean (degree_C)"
+        }
+      },
+      "traces": [
+        {
+          "mode": "lines+markers",
+          "name": "temperature_mean",
+          "type": "scatter",
+          "x": [
+            "2025-01-01",
+            "2025-01-02",
+            "2025-01-03",
+            "2025-01-04",
+            "2025-01-05",
+            "2025-01-06",
+            "2025-01-07",
+            "2025-01-08",
+            "2025-01-09",
+            "2025-01-10",
+            "2025-01-11",
+            "2025-01-12",
+            "2025-01-13",
+            "2025-01-14",
+            "2025-01-15",
+            "2025-01-16",
+            "2025-01-17",
+            "2025-01-18",
+            "2025-01-19",
+            "2025-01-20",
+            "2025-01-21",
+            "2025-01-22",
+            "2025-01-23",
+            "2025-01-24",
+            "2025-01-25",
+            "2025-01-26",
+            "2025-01-27",
+            "2025-01-28",
+            "2025-01-29",
+            "2025-01-30",
+            "2025-01-31"
+          ],
+          "y": [
+            26.130860478787877, 25.158045510172304, 26.802796020408167,
+            25.6568206285817, 27.219605051146164, 25.70331371315314,
+            27.056579052631577, 26.5735942518797, 25.96870357465345,
+            26.014999333333332, 25.449220370897404, 25.503422319931776,
+            25.271441929770628, 25.199025014583327, 26.156948579167285,
+            25.876102021770237, 25.58261324202127, 26.263281804545457,
+            25.986571719104607, 25.345145636752132, 25.64697028279221,
+            25.205650462726013, 24.215119078018702, 26.285982596513602,
+            25.868212323658728, 26.486971459324007, 25.807075006578952,
+            28.01565, 25.19943109657534, 27.053947340259736, 25.714492063774845
+          ]
+        },
+        {
+          "mode": "lines+markers",
+          "name": "temperature_count",
+          "type": "scatter",
+          "x": [
+            "2025-01-01",
+            "2025-01-02",
+            "2025-01-03",
+            "2025-01-04",
+            "2025-01-05",
+            "2025-01-06",
+            "2025-01-07",
+            "2025-01-08",
+            "2025-01-09",
+            "2025-01-10",
+            "2025-01-11",
+            "2025-01-12",
+            "2025-01-13",
+            "2025-01-14",
+            "2025-01-15",
+            "2025-01-16",
+            "2025-01-17",
+            "2025-01-18",
+            "2025-01-19",
+            "2025-01-20",
+            "2025-01-21",
+            "2025-01-22",
+            "2025-01-23",
+            "2025-01-24",
+            "2025-01-25",
+            "2025-01-26",
+            "2025-01-27",
+            "2025-01-28",
+            "2025-01-29",
+            "2025-01-30",
+            "2025-01-31"
+          ],
+          "y": [
+            3, 9, 1, 6, 6, 7, 1, 3, 4, 1, 6, 6, 3, 2, 8, 7, 2, 2, 6, 3, 4, 6, 2,
+            3, 8, 6, 2, 1, 8, 2, 4
+          ]
+        },
+        {
+          "mode": "lines+markers",
+          "name": "salinity_mean",
+          "type": "scatter",
+          "x": [
+            "2025-01-01",
+            "2025-01-02",
+            "2025-01-03",
+            "2025-01-04",
+            "2025-01-05",
+            "2025-01-06",
+            "2025-01-07",
+            "2025-01-08",
+            "2025-01-09",
+            "2025-01-10",
+            "2025-01-11",
+            "2025-01-12",
+            "2025-01-13",
+            "2025-01-14",
+            "2025-01-15",
+            "2025-01-16",
+            "2025-01-17",
+            "2025-01-18",
+            "2025-01-19",
+            "2025-01-20",
+            "2025-01-21",
+            "2025-01-22",
+            "2025-01-23",
+            "2025-01-24",
+            "2025-01-25",
+            "2025-01-26",
+            "2025-01-27",
+            "2025-01-28",
+            "2025-01-29",
+            "2025-01-30",
+            "2025-01-31"
+          ],
+          "y": [
+            35.64888081590909, 36.36883664164625, 35.53708183673471,
+            36.22942346653608, 36.20062531131663, 35.953094692633904,
+            36.08905326315789, 35.93816160213033, 36.098308631399085,
+            14.935533333333334, 36.07984409278366, 36.398855337024855,
+            36.19579047972266, 35.85319361458333, 36.02288174957145,
+            35.90906166096668, 36.383035221808505, 36.11562104318182,
+            35.93012078064232, 29.033531084249073, 35.86973784171304,
+            36.258433952203426, 36.408271050807826, 35.61277601493764,
+            35.81329626008211, 35.99270445206876, 36.32472609999999,
+            36.10209995000001, 35.845503620217535, 24.274463697402595,
+            35.76764028312155
+          ]
+        },
+        {
+          "mode": "lines+markers",
+          "name": "salinity_count",
+          "type": "scatter",
+          "x": [
+            "2025-01-01",
+            "2025-01-02",
+            "2025-01-03",
+            "2025-01-04",
+            "2025-01-05",
+            "2025-01-06",
+            "2025-01-07",
+            "2025-01-08",
+            "2025-01-09",
+            "2025-01-10",
+            "2025-01-11",
+            "2025-01-12",
+            "2025-01-13",
+            "2025-01-14",
+            "2025-01-15",
+            "2025-01-16",
+            "2025-01-17",
+            "2025-01-18",
+            "2025-01-19",
+            "2025-01-20",
+            "2025-01-21",
+            "2025-01-22",
+            "2025-01-23",
+            "2025-01-24",
+            "2025-01-25",
+            "2025-01-26",
+            "2025-01-27",
+            "2025-01-28",
+            "2025-01-29",
+            "2025-01-30",
+            "2025-01-31"
+          ],
+          "y": [
+            2, 9, 1, 6, 6, 6, 1, 3, 3, 1, 5, 6, 3, 2, 8, 6, 2, 2, 5, 3, 3, 6, 2,
+            3, 8, 6, 2, 1, 7, 2, 3
+          ]
+        }
+      ]
+    },
+    "provenance_ref": "provenance",
+    "series": [
+      "temperature_mean",
+      "temperature_count",
+      "salinity_mean",
+      "salinity_count"
+    ],
+    "type": "line_chart"
+  },
+  "coverage": {
+    "estimated_levels": 185694,
+    "estimated_profiles": 291,
+    "missing": [],
+    "months": ["2025-01"],
+    "partial": false,
+    "requested": {
+      "end": "2025-02-01T00:00:00Z",
+      "start": "2025-01-01T00:00:00Z"
+    },
+    "slots_covered": 9,
+    "slots_empty_verified": 1,
+    "slots_missing": 0,
+    "slots_total": 10,
+    "tiles": [
+      {
+        "south": 0.0,
+        "west": 50.0
+      },
+      {
+        "south": 10.0,
+        "west": 50.0
+      },
+      {
+        "south": 20.0,
+        "west": 50.0
+      },
+      {
+        "south": 0.0,
+        "west": 60.0
+      },
+      {
+        "south": 10.0,
+        "west": 60.0
+      },
+      {
+        "south": 20.0,
+        "west": 60.0
+      },
+      {
+        "south": -10.0,
+        "west": 70.0
+      },
+      {
+        "south": 0.0,
+        "west": 70.0
+      },
+      {
+        "south": 10.0,
+        "west": 70.0
+      },
+      {
+        "south": 20.0,
+        "west": 70.0
+      }
+    ]
+  },
+  "execution": {
+    "elapsed_ms": 74.2,
+    "estimated_levels": 185694,
+    "estimated_profiles": 291,
+    "rows": 31,
+    "source": "postgresql"
+  },
+  "interpretation": {
+    "depth_dbar": {
+      "max": 100.0,
+      "min": 0.0
+    },
+    "geography": {
+      "clipped": false,
+      "kind": "named_region",
+      "name": "Arabian Sea",
+      "sha256": "8f723d4cf663b8ac2634af989a27257a2c993bfffb5333250f93430004548492",
+      "version": "iho-v3-simplified-0.05-min50km2-v1"
+    },
+    "operation": {
+      "depth_bin_size": null,
+      "group_by": ["day"],
+      "kind": "aggregate",
+      "metrics": ["mean", "count"],
+      "unit": "profile"
+    },
+    "presentation": {
+      "bins": null,
+      "kind": "line_chart"
+    },
+    "qc_policy": {
+      "description": "the variant the data mode delivered (R original, A/D adjusted), kept only when that variant's QC is 1 or 2",
+      "name": "science_ready",
+      "version": "qc-policy-v1"
+    },
+    "time_range": {
+      "end": "2025-02-01T00:00:00Z",
+      "start": "2025-01-01T00:00:00Z"
+    },
+    "transformation": "mean,count of temperature,salinity by day over profiles (profile-balanced) with qc-policy-v1/science_ready, depth 0.0-100.0 dbar, source postgresql",
+    "variables": ["temperature", "salinity"]
+  },
+  "missing": [],
+  "next_cursor": null,
+  "partial": false,
+  "plan": {
+    "dataset": "core",
+    "depth_dbar": {
+      "max": 100.0,
+      "min": 0.0
+    },
+    "geography": {
+      "kind": "named_region",
+      "value": "Arabian Sea"
+    },
+    "operation": {
+      "depth_bin_size": null,
+      "group_by": ["day"],
+      "kind": "aggregate",
+      "metrics": ["mean", "count"],
+      "unit": "profile"
+    },
+    "plan_schema": "stage2-plan-v1",
+    "presentation": {
+      "bins": null,
+      "kind": "line_chart"
+    },
+    "qc_policy": "science_ready",
+    "time_range": {
+      "end": "2025-02-01T00:00:00Z",
+      "start": "2025-01-01T00:00:00Z"
+    },
+    "variables": ["temperature", "salinity"]
+  },
+  "provenance": {
+    "application_commit": "3571e0992a0d012427445b8370b5e2c571c16bb8",
+    "attribution": {
+      "argo": "Argo (2000). Argo float data and metadata from Global Data Assembly Centre (Argo GDAC). SEANOE. https://doi.org/10.17882/42182",
+      "argovis": "Tucker, Giglio, Scanderbeg and Shen (2020), Argovis, https://doi.org/10.1175/JTECH-D-19-0041.1"
+    },
+    "coverage": {
+      "estimated_levels": 185694,
+      "estimated_profiles": 291,
+      "missing": [],
+      "months": ["2025-01"],
+      "partial": false,
+      "requested": {
+        "end": "2025-02-01T00:00:00Z",
+        "start": "2025-01-01T00:00:00Z"
+      },
+      "slots_covered": 9,
+      "slots_empty_verified": 1,
+      "slots_missing": 0,
+      "slots_total": 10,
+      "tiles": [
+        {
+          "south": 0.0,
+          "west": 50.0
+        },
+        {
+          "south": 10.0,
+          "west": 50.0
+        },
+        {
+          "south": 20.0,
+          "west": 50.0
+        },
+        {
+          "south": 0.0,
+          "west": 60.0
+        },
+        {
+          "south": 10.0,
+          "west": 60.0
+        },
+        {
+          "south": 20.0,
+          "west": 60.0
+        },
+        {
+          "south": -10.0,
+          "west": 70.0
+        },
+        {
+          "south": 0.0,
+          "west": 70.0
+        },
+        {
+          "south": 10.0,
+          "west": 70.0
+        },
+        {
+          "south": 20.0,
+          "west": 70.0
+        }
+      ]
+    },
+    "environment": {
+      "completed_runs": 2,
+      "hot_tier": {
+        "end": "2025-04-01T00:00:00Z",
+        "start": "2025-01-01T00:00:00Z"
+      },
+      "id": "a21ebf92-ecb9-4508-a67d-c1884f9f89cd",
+      "ingested_at": "2026-10-09T11:59:11.478982Z",
+      "latest_run": "8562e75d-0082-4a22-9e9d-ee31f8ab944e",
+      "mode": "acceptance",
+      "name": "floatchat-s1-acceptance-302412131a7c99fb",
+      "postgresql_window": {
+        "end": "2025-04-01T00:00:00Z",
+        "start": "2024-04-01T00:00:00Z"
+      },
+      "reference_time": "2025-04-01T00:00:00Z",
+      "source_retrieved": {
+        "end": "2026-10-09T11:57:50.913997Z",
+        "start": "2026-10-09T11:35:41.874831Z"
+      }
+    },
+    "execution": {
+      "elapsed_ms": 74.2,
+      "estimated_levels": 185694,
+      "estimated_profiles": 291,
+      "rows": 31,
+      "source": "postgresql"
+    },
+    "geography": {
+      "clipped": false,
+      "kind": "named_region",
+      "name": "Arabian Sea",
+      "sha256": "8f723d4cf663b8ac2634af989a27257a2c993bfffb5333250f93430004548492",
+      "version": "iho-v3-simplified-0.05-min50km2-v1"
+    },
+    "plan_sha256": "f0be022764d744aa5ddccd035c987e04c17517fb3241ee3d3764cd5d2ce55532",
+    "result_sha256": "17efd0104da2b485d74d19c1d9b4e70a1d7662a0f6b0b856e0fcd98c43b804f0",
+    "source": "argovis",
+    "transformation": "mean,count of temperature,salinity by day over profiles (profile-balanced) with qc-policy-v1/science_ready, depth 0.0-100.0 dbar, source postgresql",
+    "versions": {
+      "geometry": "indian-ocean-v1",
+      "hash": "scientific-json-v2",
+      "mapping": "argovis-core-v1",
+      "plan_schema": "stage2-plan-v1",
+      "qc": "core-good-v1",
+      "qc_policy": "qc-policy-v1/science_ready",
+      "region": {
+        "name": "Arabian Sea",
+        "sha256": "8f723d4cf663b8ac2634af989a27257a2c993bfffb5333250f93430004548492",
+        "version": "iho-v3-simplified-0.05-min50km2-v1"
+      },
+      "schema": "core-parquet-v1"
+    }
+  },
+  "result": {
+    "columns": [
+      {
+        "name": "day",
+        "type": "string",
+        "unit": null
+      },
+      {
+        "name": "temperature_mean",
+        "type": "number",
+        "unit": "degree_C"
+      },
+      {
+        "name": "temperature_count",
+        "type": "integer",
+        "unit": null
+      },
+      {
+        "name": "salinity_mean",
+        "type": "number",
+        "unit": "1"
+      },
+      {
+        "name": "salinity_count",
+        "type": "integer",
+        "unit": null
+      }
+    ],
+    "missing_value_policy": "null",
+    "non_finite_values": 0,
+    "row_count": 31,
+    "rows": [
+      ["2025-01-01", 26.130860478787877, 3, 35.64888081590909, 2],
+      ["2025-01-02", 25.158045510172304, 9, 36.36883664164625, 9],
+      ["2025-01-03", 26.802796020408167, 1, 35.53708183673471, 1],
+      ["2025-01-04", 25.6568206285817, 6, 36.22942346653608, 6],
+      ["2025-01-05", 27.219605051146164, 6, 36.20062531131663, 6],
+      ["2025-01-06", 25.70331371315314, 7, 35.953094692633904, 6],
+      ["2025-01-07", 27.056579052631577, 1, 36.08905326315789, 1],
+      ["2025-01-08", 26.5735942518797, 3, 35.93816160213033, 3],
+      ["2025-01-09", 25.96870357465345, 4, 36.098308631399085, 3],
+      ["2025-01-10", 26.014999333333332, 1, 14.935533333333334, 1],
+      ["2025-01-11", 25.449220370897404, 6, 36.07984409278366, 5],
+      ["2025-01-12", 25.503422319931776, 6, 36.398855337024855, 6],
+      ["2025-01-13", 25.271441929770628, 3, 36.19579047972266, 3],
+      ["2025-01-14", 25.199025014583327, 2, 35.85319361458333, 2],
+      ["2025-01-15", 26.156948579167285, 8, 36.02288174957145, 8],
+      ["2025-01-16", 25.876102021770237, 7, 35.90906166096668, 6],
+      ["2025-01-17", 25.58261324202127, 2, 36.383035221808505, 2],
+      ["2025-01-18", 26.263281804545457, 2, 36.11562104318182, 2],
+      ["2025-01-19", 25.986571719104607, 6, 35.93012078064232, 5],
+      ["2025-01-20", 25.345145636752132, 3, 29.033531084249073, 3],
+      ["2025-01-21", 25.64697028279221, 4, 35.86973784171304, 3],
+      ["2025-01-22", 25.205650462726013, 6, 36.258433952203426, 6],
+      ["2025-01-23", 24.215119078018702, 2, 36.408271050807826, 2],
+      ["2025-01-24", 26.285982596513602, 3, 35.61277601493764, 3],
+      ["2025-01-25", 25.868212323658728, 8, 35.81329626008211, 8],
+      ["2025-01-26", 26.486971459324007, 6, 35.99270445206876, 6],
+      ["2025-01-27", 25.807075006578952, 2, 36.32472609999999, 2],
+      ["2025-01-28", 28.01565, 1, 36.10209995000001, 1],
+      ["2025-01-29", 25.19943109657534, 8, 35.845503620217535, 7],
+      ["2025-01-30", 27.053947340259736, 2, 24.274463697402595, 2],
+      ["2025-01-31", 25.714492063774845, 4, 35.76764028312155, 3]
+    ]
+  }
+}

@@ -39,7 +39,7 @@ that against the merged code and the build prompt changed the following:
    the reads gain a reduced provenance object built without a coverage resolution (ADR-0064).
 5. **Source and ingestion timestamps.** The coverage panel must show them (build prompt scope
    4), but the API exposes only the reference time and run identifiers. Migration
-   `0017_query_environment_timestamps` extends the `app.query_environment` view (additive
+   `0017_query_env_times` extends the `app.query_environment` view (additive
    `CREATE OR REPLACE VIEW`, new columns at the end) with the latest completed run's id, its
    actual creation time (ingestion timestamp) and the earliest and latest `raw_manifest.retrieved_at`
    of that run (source retrieval window); `EnvironmentInfo.describe()` reports them (ADR-0064).
@@ -142,7 +142,7 @@ In dependency order. Web paths are under `apps/web/src/`. Every item has tests (
   (null for an unfiltered float listing), execution (`source: postgresql`, `run_ids`, `rows`),
   `result_sha256`, application commit, transformation text, attribution. `router.py` attaches it
   in `floats`, `float_detail`, `profiles` and `profile`.
-- `infra/migrations/versions/0017_query_environment_timestamps.{py,sql}`: `CREATE OR REPLACE VIEW
+- `infra/migrations/versions/0017_query_env_times.{py,sql}`: `CREATE OR REPLACE VIEW
   app.query_environment` adding `latest_run_id`, `ingested_at`
   (`created_at_actual_utc` of the latest completed run), `source_retrieved_from` and
   `source_retrieved_to` (min and max `raw_manifest.retrieved_at` of that run); grants unchanged

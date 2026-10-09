@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
-test("browser loads scaffold and reaches the local API", async ({ page }) => {
+test("browser loads the shell and reaches the local API", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading")).toContainText("Explore the ocean");
-  await expect(page.getByRole("status")).toHaveText("Local services ready");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Dashboard");
+  await expect(page.getByText("Local services ready")).toBeVisible();
 });

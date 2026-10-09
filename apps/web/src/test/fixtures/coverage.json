@@ -1,0 +1,219 @@
+{
+  "coverage": {
+    "estimated_levels": 185694,
+    "estimated_profiles": 291,
+    "missing": [],
+    "months": ["2025-01"],
+    "partial": false,
+    "requested": {
+      "end": "2025-02-01T00:00:00Z",
+      "start": "2025-01-01T00:00:00Z"
+    },
+    "slots_covered": 9,
+    "slots_empty_verified": 1,
+    "slots_missing": 0,
+    "slots_total": 10,
+    "tiles": [
+      {
+        "south": 0.0,
+        "west": 50.0
+      },
+      {
+        "south": 10.0,
+        "west": 50.0
+      },
+      {
+        "south": 20.0,
+        "west": 50.0
+      },
+      {
+        "south": 0.0,
+        "west": 60.0
+      },
+      {
+        "south": 10.0,
+        "west": 60.0
+      },
+      {
+        "south": 20.0,
+        "west": 60.0
+      },
+      {
+        "south": -10.0,
+        "west": 70.0
+      },
+      {
+        "south": 0.0,
+        "west": 70.0
+      },
+      {
+        "south": 10.0,
+        "west": 70.0
+      },
+      {
+        "south": 20.0,
+        "west": 70.0
+      }
+    ]
+  },
+  "environment": {
+    "completed_runs": 2,
+    "hot_tier": {
+      "end": "2025-04-01T00:00:00Z",
+      "start": "2025-01-01T00:00:00Z"
+    },
+    "id": "a21ebf92-ecb9-4508-a67d-c1884f9f89cd",
+    "ingested_at": "2026-10-09T11:59:11.478982Z",
+    "latest_run": "8562e75d-0082-4a22-9e9d-ee31f8ab944e",
+    "mode": "acceptance",
+    "name": "floatchat-s1-acceptance-302412131a7c99fb",
+    "postgresql_window": {
+      "end": "2025-04-01T00:00:00Z",
+      "start": "2024-04-01T00:00:00Z"
+    },
+    "reference_time": "2025-04-01T00:00:00Z",
+    "source_retrieved": {
+      "end": "2026-10-09T11:57:50.913997Z",
+      "start": "2026-10-09T11:35:41.874831Z"
+    }
+  },
+  "geography": {
+    "clipped": false,
+    "kind": "named_region",
+    "name": "Arabian Sea",
+    "sha256": "8f723d4cf663b8ac2634af989a27257a2c993bfffb5333250f93430004548492",
+    "version": "iho-v3-simplified-0.05-min50km2-v1"
+  },
+  "slots": [
+    {
+      "gaps": [],
+      "levels": 24258,
+      "month": "2025-01",
+      "parts": 1,
+      "profiles": 26,
+      "slot": "argovis/core/2025-01/50:0/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+      "state": "covered",
+      "tile": {
+        "south": 0.0,
+        "west": 50.0
+      }
+    },
+    {
+      "gaps": [],
+      "levels": 7250,
+      "month": "2025-01",
+      "parts": 1,
+      "profiles": 10,
+      "slot": "argovis/core/2025-01/50:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+      "state": "covered",
+      "tile": {
+        "south": 10.0,
+        "west": 50.0
+      }
+    },
+    {
+      "gaps": [],
+      "levels": 13676,
+      "month": "2025-01",
+      "parts": 1,
+      "profiles": 14,
+      "slot": "argovis/core/2025-01/50:20/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+      "state": "covered",
+      "tile": {
+        "south": 20.0,
+        "west": 50.0
+      }
+    },
+    {
+      "gaps": [],
+      "levels": 34653,
+      "month": "2025-01",
+      "parts": 1,
+      "profiles": 47,
+      "slot": "argovis/core/2025-01/60:0/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+      "state": "covered",
+      "tile": {
+        "south": 0.0,
+        "west": 60.0
+      }
+    },
+    {
+      "gaps": [],
+      "levels": 32187,
+      "month": "2025-01",
+      "parts": 1,
+      "profiles": 57,
+      "slot": "argovis/core/2025-01/60:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+      "state": "covered",
+      "tile": {
+        "south": 10.0,
+        "west": 60.0
+      }
+    },
+    {
+      "gaps": [],
+      "levels": 16823,
+      "month": "2025-01",
+      "parts": 1,
+      "profiles": 22,
+      "slot": "argovis/core/2025-01/60:20/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+      "state": "covered",
+      "tile": {
+        "south": 20.0,
+        "west": 60.0
+      }
+    },
+    {
+      "gaps": [],
+      "levels": 46297,
+      "month": "2025-01",
+      "parts": 1,
+      "profiles": 87,
+      "slot": "argovis/core/2025-01/70:-10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+      "state": "covered",
+      "tile": {
+        "south": -10.0,
+        "west": 70.0
+      }
+    },
+    {
+      "gaps": [],
+      "levels": 10139,
+      "month": "2025-01",
+      "parts": 1,
+      "profiles": 24,
+      "slot": "argovis/core/2025-01/70:0/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+      "state": "covered",
+      "tile": {
+        "south": 0.0,
+        "west": 70.0
+      }
+    },
+    {
+      "gaps": [],
+      "levels": 411,
+      "month": "2025-01",
+      "parts": 1,
+      "profiles": 4,
+      "slot": "argovis/core/2025-01/70:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+      "state": "covered",
+      "tile": {
+        "south": 10.0,
+        "west": 70.0
+      }
+    },
+    {
+      "gaps": [],
+      "levels": 0,
+      "month": "2025-01",
+      "parts": 0,
+      "profiles": 0,
+      "slot": "argovis/core/2025-01/70:20/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+      "state": "empty_verified",
+      "tile": {
+        "south": 20.0,
+        "west": 70.0
+      }
+    }
+  ]
+}

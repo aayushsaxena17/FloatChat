@@ -1779,7 +1779,7 @@ Decision:
    panel on every result) built by `provenance.build_read` without a coverage resolution:
    environment, source, versions, geography, execution (route, run ids, rows), `result_sha256`,
    application commit, transformation, attribution.
-3. Migration `0017_query_environment_timestamps` replaces the `app.query_environment` view with
+3. Migration `0017_query_env_times` replaces the `app.query_environment` view with
    the same columns plus `latest_run_id`, `ingested_at` (the latest completed run's
    `created_at_actual_utc`, the actual UTC when ingestion started) and `source_retrieved_from`
    and `source_retrieved_to` (earliest and latest `raw_manifest.retrieved_at` of that run);

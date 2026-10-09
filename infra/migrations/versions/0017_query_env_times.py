@@ -4,7 +4,7 @@ from pathlib import Path
 
 from alembic import op
 
-revision = "0017_query_environment_timestamps"
+revision = "0017_query_env_times"
 down_revision = "0016_query_access"
 branch_labels = None
 depends_on = None

@@ -1,0 +1,138 @@
+{
+  "coverage": {
+    "body": null,
+    "method": "GET",
+    "params": {
+      "end": "2025-02-01T00:00:00Z",
+      "region": "Arabian Sea",
+      "start": "2025-01-01T00:00:00Z"
+    },
+    "path": "/v1/catalog/coverage"
+  },
+  "float": {
+    "body": null,
+    "method": "GET",
+    "params": {
+      "end": "2025-02-01T00:00:00Z",
+      "limit": "50",
+      "start": "2025-01-01T00:00:00Z"
+    },
+    "path": "/v1/floats/1902482"
+  },
+  "parameters": {
+    "body": null,
+    "method": "GET",
+    "params": null,
+    "path": "/v1/catalog/parameters"
+  },
+  "profile": {
+    "body": null,
+    "method": "GET",
+    "params": {
+      "depth_max": "100"
+    },
+    "path": "/v1/profiles/ce786cee-c3c3-410f-b557-a48339021f4b"
+  },
+  "profiles": {
+    "body": null,
+    "method": "GET",
+    "params": {
+      "depth_max": "100",
+      "depth_min": "0",
+      "end": "2025-02-01T00:00:00Z",
+      "limit": "25",
+      "region": "Arabian Sea",
+      "start": "2025-01-01T00:00:00Z"
+    },
+    "path": "/v1/profiles"
+  },
+  "query-histogram": {
+    "body": {
+      "depth_dbar": {
+        "max": 100,
+        "min": 0
+      },
+      "geography": {
+        "kind": "named_region",
+        "value": "Arabian Sea"
+      },
+      "operation": {
+        "group_by": ["profile"],
+        "kind": "aggregate",
+        "metrics": ["mean"],
+        "unit": "profile"
+      },
+      "presentation": {
+        "bins": 40,
+        "kind": "histogram"
+      },
+      "qc_policy": "science_ready",
+      "time_range": {
+        "end": "2025-02-01T00:00:00Z",
+        "start": "2025-01-01T00:00:00Z"
+      },
+      "variables": ["temperature"]
+    },
+    "method": "POST",
+    "params": null,
+    "path": "/v1/query"
+  },
+  "query-line": {
+    "body": {
+      "depth_dbar": {
+        "max": 100,
+        "min": 0
+      },
+      "geography": {
+        "kind": "named_region",
+        "value": "Arabian Sea"
+      },
+      "operation": {
+        "group_by": ["day"],
+        "kind": "aggregate",
+        "metrics": ["mean", "count"],
+        "unit": "profile"
+      },
+      "presentation": {
+        "kind": "line_chart"
+      },
+      "qc_policy": "science_ready",
+      "time_range": {
+        "end": "2025-02-01T00:00:00Z",
+        "start": "2025-01-01T00:00:00Z"
+      },
+      "variables": ["temperature", "salinity"]
+    },
+    "method": "POST",
+    "params": null,
+    "path": "/v1/query"
+  },
+  "query-ts": {
+    "body": {
+      "depth_dbar": {
+        "max": 100,
+        "min": 0
+      },
+      "geography": {
+        "kind": "named_region",
+        "value": "Arabian Sea"
+      },
+      "operation": {
+        "kind": "profiles",
+        "limit": 3
+      },
+      "presentation": {
+        "kind": "ts_diagram"
+      },
+      "qc_policy": "science_ready",
+      "time_range": {
+        "end": "2025-02-01T00:00:00Z",
+        "start": "2025-01-01T00:00:00Z"
+      },
+      "variables": ["temperature", "salinity", "pressure"]
+    },
+    "method": "POST",
+    "params": null,
+    "path": "/v1/query"
+  }
+}
