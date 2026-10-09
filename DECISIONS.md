@@ -1663,3 +1663,151 @@ Alternatives: the full IHO polygons (rejected, tens of thousands of vertices per
 fixture and in every query); hand-drawn boxes (rejected, no citation); treating the IHO Indian
 Ocean as "Indian Ocean" (rejected, users expect the marginal seas included, and most of the IHO
 polygon lies outside the ingested envelope).
+
+## ADR-0061 - Stage 3 scope: branch base, routes, library pins
+
+Status: accepted under the owner's authority (ADR-0039; owner instruction 2026-10-09: build
+Stage 3 on the accepted Stage 2 and Stage 2 fixes, deciding open questions without further
+approval).
+
+Decision:
+
+1. `codex/stage-3` branches from `codex/stage-2-fixes` at `5cf262e` (PR #7), because the dashboard
+   runs against the start-up warm-up and the cold-fill retry that branch adds. The pull request
+   targets `main`; once PR #7 is squash-merged the branch is rebased onto `main` so the Stage 2 fix
+   commits leave the diff (the ADR-0056 reasoning). The branch keeps the `codex/stage-N` name.
+2. Scope is the build prompt "Stage 3" (PRD §2.1, §14): routes `/dashboard`, `/explore/map`,
+   `/explore/profiles`; the other PRD §14.1 routes are stubs naming the stage that delivers
+   them; `/` redirects to `/dashboard`. The map, the profile and T-S charts, the time series, the
+   distribution view, the coverage panel and the provenance panel work against the local Stage 1
+   data. No authentication, chat, jobs, exports, forecasts or cloud resource.
+3. Pins (PRD §5.1 and §5.10 choices; no new framework): `react-router` 7.18.4 (React Router 8
+   requires React 19.2.7 and the repository pins 19.2.0; the declarative API used is identical),
+   `@tanstack/react-query` 5.104.1, `maplibre-gl` 6.13.0 (ESM-only, WebGL2-only; headless
+   Chromium provides WebGL2 through SwiftShader on this host and on GitHub runners, probed
+   2026-10-09), `plotly.js-cartesian-dist-min` 4.1.2 with `@types/plotly.js` 3.0.15 (the cartesian
+   bundle covers `scatter` and `histogram`, every chart kind the contract emits except
+   `scattergeo`, which the dashboard renders with MapLibre; Plotly 4 removed the Mapbox traces and
+   tightened colour parsing, so colours are hex), `@types/geojson` 7946.0.16. No `react-plotly.js`
+   (a 30-line `useEffect` wrapper replaces it) and no `supercluster` (MapLibre clusters GeoJSON
+   sources itself).
+4. The Vite dev server proxies `/v1` to the API as in Stage 0 (`API_PROXY_TARGET`); the
+   production build is static and expects the same origin to serve `/v1` (Stage 8 decides the
+   reverse proxy). The Compose service set is unchanged (`tests/test_compose.py`).
+
+Alternatives: branch from `main` and cherry-pick the fixes (rejected, the fixes are under review
+as one unit); React Router 8 with a React bump (rejected, unrelated churn in a dashboard stage);
+the full Plotly bundle (rejected, 3.5 MB more for `scattergeo` the map already covers); Mapbox GL
+or Cesium (rejected by the PRD).
+
+## ADR-0062 - Offline basemap, clustering, bounded map payload
+
+Status: accepted under the owner's authority (ADR-0039).
+
+Decision:
+
+1. The basemap is a Natural Earth 1:50m land layer (public domain; Natural Earth,
+   https://www.naturalearthdata.com/) clipped to 10-130E, 65S-35N by `scripts/build_basemap.py`
+   from a downloaded copy whose source URL and SHA-256 are recorded in the committed JSON. The
+   style has a sea background, land fill and outline, and a 10-degree graticule; it needs no
+   tile server, glyph server or sprite, so the map renders in CI, offline and in the demonstration
+   without any external request (working rule 7: tests never call upstream services).
+2. Profile locations are a MapLibre GeoJSON source with `cluster: true`; clusters show counts;
+   unclustered points carry the profile id, float, cycle and time. The selected float's
+   trajectory is a line through its profiles in time order.
+3. The map follows `/v1/profiles` pages up to 5,000 points (five pages of the 1,000 page bound)
+   for the filters and labels "showing N of more" when truncated (PRD §14.4: bounded features,
+   no million-row payloads). Finer selections come from the filters, not from a larger payload.
+4. A list of the plotted profiles sits beside the map with keyboard-reachable buttons that select
+   the same profile; the canvas is never the only way to reach a result (PRD §14.5), and the
+   end-to-end test selects through the list. The dashboard never asks the API for the `map`
+   chart kind; `/v1/profiles` is the map's source.
+
+Alternatives: OpenStreetMap or MapTiler tiles (rejected, network dependency, terms and a key);
+Natural Earth 1:110m (rejected, too coarse at Arabian Sea zooms); the unclipped 1:50m file
+(rejected, 1.6 MB for coastlines outside the ingested envelope); server-side clustering
+(deferred, PRD §14.4 allows it when payloads outgrow the cap).
+
+## ADR-0063 - Dashboard test data: shared seed, seeded integration project, local acceptance
+
+Status: accepted under the owner's authority (ADR-0039).
+
+Decision:
+
+1. The Stage 2 seed (environment, completed run, chunk, attempt, raw manifest, floats, profiles,
+   levels, slots, parts, receipts; `tests/stage2/conftest.py`) moves to `scripts/science_seed.py`,
+   which the API image ships. The Stage 2 conftest imports the Stage 2 profile list unchanged, so
+   the Stage 2 integration suite keeps its expectations.
+2. `scripts/integration.py` seeds the disposable project after the Stage 2 empty-database checks
+   (which keep running first): the database rows through the `db-init` service (admin URL) and the
+   Parquet parts through the `api` service (storage credentials), with no credential in any
+   argument. The seed refuses a database that already holds an environment row.
+3. The Docker project's seed adds `STAGE3_PROFILES`: two more January 2025 profiles of float
+   `5900001` and one profile of a new float `5900004`, all inside the Arabian Sea polygon
+   (checked by `ST_Covers` against `app.named_region`), with levels in 0-100 dbar, so the
+   end-to-end scenario (Arabian Sea, January 2025, 0-100 dbar) shows several points, a
+   trajectory and a profile chart. The rows are synthetic and labelled so in the seed; they are
+   test data, not Stage 1 evidence.
+4. Acceptance against the imported Stage 1 dataset (ADR-0059) is a separate local run,
+   `scripts/stage3_acceptance.py`, which executes the same Playwright suite against the dev stack
+   and writes a report and screenshots under `reports/`; the gate cites it.
+
+Alternatives: mocking the API inside Playwright (rejected, it would not exercise the proxy, the
+API or the data path CI is meant to prove); copying the 300 MB acceptance dataset into CI
+(rejected, size and the preserved-evidence rule); exporting a real-profile fixture from the dev
+dataset (deferred, the synthetic seed already exists and is proven by the Stage 2 suite).
+
+## ADR-0064 - API additions for the dashboard: typed responses, provenance on reads, view timestamps
+
+Status: accepted under the owner's authority (ADR-0039).
+
+Decision:
+
+1. The Stage 2 response models declared every nested object as a free dictionary, so the
+   generated TypeScript saw `unknown` everywhere the dashboard binds. Stage 3 declares Pydantic
+   models for the stable shapes (environment, intervals, geography, QC policy, slot and coverage
+   summaries, result columns, the chart contract with its Plotly block left loose, provenance)
+   with `extra="allow"`, so the OpenAPI artefact and the generated client carry the fields the
+   PRD §5.1 contract alignment is meant to give. Additive: no field is removed or renamed.
+2. `GET /v1/floats`, `GET /v1/floats/{platform_number}`, `GET /v1/profiles` and
+   `GET /v1/profiles/{profile_id}` gain a `provenance` object (PRD §17, build prompt: a provenance
+   panel on every result) built by `provenance.build_read` without a coverage resolution:
+   environment, source, versions, geography, execution (route, run ids, rows), `result_sha256`,
+   application commit, transformation, attribution.
+3. Migration `0017_query_environment_timestamps` replaces the `app.query_environment` view with
+   the same columns plus `latest_run_id`, `ingested_at` (the latest completed run's
+   `created_at_actual_utc`, the actual UTC when ingestion started) and `source_retrieved_from`
+   and `source_retrieved_to` (earliest and latest `raw_manifest.retrieved_at` of that run);
+   `EnvironmentInfo.describe()` reports them as `latest_run`, `ingested_at` and
+   `source_retrieved`. Additive; downgrade refused, as for 0016.
+4. `APPLICATION_COMMIT` reaches the `api` container from Compose (`${APPLICATION_COMMIT:-unknown}`),
+   set by `scripts/dev.py` and `scripts/integration.py` from `git rev-parse HEAD` when Git is
+   available, so provenance names the commit that produced a result.
+
+Alternatives: hand-written TypeScript types with runtime guards (rejected, duplicates the
+contract and drifts); a client-side provenance panel assembled from loose fields (rejected,
+§17 wants one object per result); reading timestamps from the ingestion tables directly
+(rejected, the query login sees views only).
+
+## ADR-0065 - Chart rendering rules in the browser
+
+Status: accepted under the owner's authority (ADR-0039).
+
+Decision:
+
+1. One unit per panel: a chart spec whose series carry different units (the contract's
+   `line_chart` mixes `degree_C`, practical salinity and counts) is rendered as one panel per
+   unit group, never as a dual-axis chart. Every axis title carries the unit; practical salinity
+   (unit `1`) is titled "Practical salinity (PSS-78, dimensionless)" from the catalogue
+   description rather than "(1)".
+2. Series colours come from the validated reference categorical palette in fixed slot order
+   (slot by series identity, never by rank, so a filter that removes a series does not recolour
+   the rest); scatter forms use at most three slots before folding. Month and QC state are never
+   colour-alone (text or shape beside the colour).
+3. Every chart has a table view (PRD §14.5) and shows the contract's aggregation text and the
+   provenance panel; pressure axes point downwards (`autorange: reversed`).
+4. The browser renders only the allow-listed trace keys of the contract through a pure
+   translation module (`charts/spec.ts`); nothing from the server is executed (PRD §11.3).
+
+Alternatives: dual-axis charts (rejected: units on every axis is unreadable with two scales);
+colour cycling (rejected: identity must be stable); server-rendered images (rejected by PRD §5.10).

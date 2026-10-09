@@ -1,5 +1,28 @@
 # Stage progress
 
+## Stage 3 - plan reviewed and authorized (ADR-0061..0065), 2026-10-09
+
+Owner instruction 2026-10-09: Stage 2 (PR #6, merged) and the Stage 2 fixes (PR #7, open) are
+accepted; build Stage 3 on them and decide open questions without further approval. Branch
+`codex/stage-3` from `codex/stage-2-fixes` at `5cf262e`; the pull request targets `main` and is
+rebased after PR #7 merges. The plan [docs/stage3-plan.md](docs/stage3-plan.md) was written
+against the merged code; the advisor reviewed the approach before the plan was written
+(ADR-0039 convention) and the written plan is recorded below once reviewed.
+
+- [x] Plan corrections recorded in the plan's section 0: branch base, seeded e2e data in CI,
+  typed response models, provenance on reads, view timestamps for the coverage panel,
+  `APPLICATION_COMMIT` wiring, library majors, offline basemap, one unit per chart, the map
+  point cap, the kept Stage 0 browser check, cold Vite in the integration stack.
+- [x] ADR-0061 (scope, branch, routes, pins), ADR-0062 (offline basemap, clustering, point cap),
+  ADR-0063 (shared seed, seeded integration project, local acceptance), ADR-0064 (typed
+  responses, provenance on reads, migration 0017, application commit), ADR-0065 (chart rules).
+- [ ] W1 API additions and regenerated client.
+- [ ] W2 seed module, Dockerfile, seeded integration script.
+- [ ] W3 shell, routes, URL filters, hooks.
+- [ ] W4 map; W5 charts; W6 panels; W7 accessibility and attribution.
+- [ ] W8 Vitest and Playwright; CI green.
+- [ ] W9 local acceptance on the imported dataset; W10 gate report.
+
 ## Stage 2 - post-gate fixes on `codex/stage-2-fixes` (ADR-0058 amendment), 2026-10-09
 
 Stage 2 merged into `main` as `cf0e58b` (PR #6). The two risks named in the gate are addressed on
