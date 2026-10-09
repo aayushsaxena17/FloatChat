@@ -627,26 +627,32 @@ class QueryService:
             raise QueryError(
                 "cost_over_budget", message="The parts to scan exceed the object byte budget."
             )
-        started = time.monotonic()
         selected = self._rows(
             compile_sql.profile_slot_statement(
                 plan, geography, [slot.logical_key for slot in coverage.covered]
             )
         )
         members = compile_duckdb.members_table(selected, coverage.manifests)
-        paths = []
-        partitions = []
-        for slot in coverage.covered:
-            for part in slot.parts:
-                paths.append(self.cache.path(part.key, part.sha256, part.byte_count))
-                partitions.append({"id": str(part.partition_id), "sha256": part.sha256})
+        parts = [part for slot in coverage.covered for part in slot.parts]
+        partitions = [{"id": str(part.partition_id), "sha256": part.sha256} for part in parts]
+        # The object fill has its own byte and time budgets (plan section 4.4); the query
+        # timeout bounds the DuckDB execution that follows.
+        started = time.monotonic()
+        paths = self.cache.paths(
+            [(part.key, part.sha256, part.byte_count) for part in parts],
+            workers=self.limits.object_fetch_workers,
+            deadline_seconds=self.limits.object_fetch_seconds,
+        )
         execution["object_fetch_ms"] = round((time.monotonic() - started) * 1000, 1)
         statement = compile_duckdb.aggregate_statement(
             plan, label=geography.label, max_rows=self.limits.max_rows
         )
-        remaining = max(0.5, self.limits.query_timeout_seconds - (time.monotonic() - started))
         raw_rows = compile_duckdb.run(
-            statement, compile_duckdb.parts_dataset(paths), members, self.limits, remaining
+            statement,
+            compile_duckdb.parts_dataset(paths),
+            members,
+            self.limits,
+            self.limits.query_timeout_seconds,
         )
         if len(raw_rows) > self.limits.max_rows:
             raise QueryError("result_too_large")

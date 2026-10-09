@@ -172,27 +172,28 @@ class QueryRuntime:
 
 
 def _fetcher(settings: Settings) -> Callable[[str, int], bytes]:
+    # One client for the service: boto3 clients are thread-safe and creation is not free.
+    client = boto3.client(
+        "s3",
+        endpoint_url=settings.object_storage_endpoint,
+        aws_access_key_id=settings.object_storage_access_key.get_secret_value(),
+        aws_secret_access_key=settings.object_storage_secret_key.get_secret_value(),
+        region_name=settings.object_storage_region,
+        config=Config(
+            connect_timeout=3,
+            read_timeout=60,
+            retries={"total_max_attempts": 2},
+            s3={"addressing_style": "path"},
+            max_pool_connections=16,
+        ),
+    )
+
     def fetch(object_key: str, byte_count: int) -> bytes:
-        client = boto3.client(
-            "s3",
-            endpoint_url=settings.object_storage_endpoint,
-            aws_access_key_id=settings.object_storage_access_key.get_secret_value(),
-            aws_secret_access_key=settings.object_storage_secret_key.get_secret_value(),
-            region_name=settings.object_storage_region,
-            config=Config(
-                connect_timeout=3,
-                read_timeout=30,
-                retries={"total_max_attempts": 2},
-                s3={"addressing_style": "path"},
-            ),
-        )
         try:
             response = client.get_object(Bucket=settings.object_storage_bucket, Key=object_key)
             payload: bytes = response["Body"].read(byte_count + 1)
         except Exception:
             raise QueryError("execution_failed", message="Object storage is unavailable.") from None
-        finally:
-            client.close()
         return payload
 
     return fetch

@@ -325,3 +325,37 @@ def test_run_maps_memory_exhaustion_to_cost_over_budget(tmp_path):
             20,
         )
     assert caught.value.code == "cost_over_budget"
+
+
+def test_paths_fetches_each_part_once_in_order_and_times_out(tmp_path):
+    import hashlib
+    import threading
+    import time
+
+    from floatchat_core.query.cache import PartCache
+    from floatchat_core.query.errors import QueryError
+
+    payloads = {hashlib.sha256(bytes([i]) * 10).hexdigest(): bytes([i]) * 10 for i in range(5)}
+    calls = []
+    lock = threading.Lock()
+
+    def fetch(key, byte_count):
+        with lock:
+            calls.append(key)
+        return payloads[key.split("/")[-1].split(".")[0]]
+
+    cache = PartCache(tmp_path / "cache", 10_000, fetch)
+    items = [(f"normalised/sha256/{d}.parquet", d, 10) for d in payloads]
+    paths = cache.paths(items, workers=3, deadline_seconds=5)
+    assert [p.name for p in paths] == [d + ".parquet" for d in payloads]
+    assert sorted(calls) == sorted(k for k, _, _ in items)
+    assert cache.paths(items, workers=3, deadline_seconds=5) == paths and len(calls) == 5
+
+    def slow(key, byte_count):
+        time.sleep(0.5)
+        return payloads[key.split("/")[-1].split(".")[0]]
+
+    stalled = PartCache(tmp_path / "slow", 10_000, slow)
+    with pytest.raises(QueryError) as failure:
+        stalled.paths(items, workers=1, deadline_seconds=0.2)
+    assert failure.value.code == "execution_failed"

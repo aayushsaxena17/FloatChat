@@ -31,8 +31,18 @@ reviewed the findings before the rewrite and agreed with the rewritten plan and 
   migration, read-only login, regions, coverage labelling without job creation, pagination,
   geodesic nearest with the geography index, PostgreSQL and DuckDB agreement, manifest exclusion,
   float and profile reads, charts and provenance) passes locally.
-- [ ] W5 TypeScript client, OpenAPI artefact and CI wiring; W6 unit suites; W7 latency report on the
-  imported dataset; W8 gate report with measured numbers, CI on the pushed head, advisor agreement.
+- [x] W5 `apps/api/openapi.json` (checked by `scripts/export_openapi.py --check`), the generated
+  `apps/web/src/api/schema.d.ts` and the typed `client.ts` with Vitest coverage; CI regenerates and
+  diffs the client and runs `tests/stage2` in the offline components job.
+- [x] W6 unit suites (513 offline tests: plan, policy, compilers, sanitiser and charts, cache and
+  DuckDB runner, regions, errors, API contract, OpenAPI artefact, latency script) plus the
+  11-case integration suite; the contract tests found and fixed six defects (raw body handling,
+  cursor id validation, regex anchors, cache eviction, edge tiles, UTC rendering).
+- [x] W1 dataset: session `302412131a7c99fb` copied into the dev project by streamed binary COPY
+  (5,814 profiles, 4,144,346 levels, 206 parts, 301,781,882 bytes; the pg_dump path crashed the
+  1 GiB session server and was replaced); [report](reports/stage2-dataset-302412131a7c99fb.json).
+- [ ] W7 latency report on the imported dataset; W8 gate report with measured numbers, CI on the
+  pushed head, advisor agreement.
 - [ ] Needs from Aayush: confirm ADR-0057, ADR-0059 and the region definitions in ADR-0060.
 
 ## Stage 1 - live and captured-replay acceptance passed on stage1-v4 (ADR-0054, ADR-0055), 2026-10-09

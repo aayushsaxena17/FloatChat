@@ -9,7 +9,10 @@ import os
 import re
 import tempfile
 import threading
-from collections.abc import Callable
+import time
+from collections.abc import Callable, Sequence
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeout
 from pathlib import Path
 
 from .errors import QueryError
@@ -72,6 +75,32 @@ class PartCache:
             size = path.stat().st_size
             path.unlink(missing_ok=True)
             total -= size
+
+    def paths(
+        self,
+        items: Sequence[tuple[str, str, int]],
+        *,
+        workers: int = 4,
+        deadline_seconds: float = 120.0,
+    ) -> list[Path]:
+        """Verified local files for several parts, fetched in parallel under one time budget."""
+        started = time.monotonic()
+        with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
+            futures = [
+                pool.submit(self.path, key, sha256, byte_count) for key, sha256, byte_count in items
+            ]
+            results: list[Path] = []
+            for future in futures:
+                remaining = deadline_seconds - (time.monotonic() - started)
+                try:
+                    results.append(future.result(timeout=max(0.0, remaining)))
+                except FutureTimeout:
+                    for pending in futures:
+                        pending.cancel()
+                    raise QueryError(
+                        "execution_failed", message="Object fetch exceeded its time budget."
+                    ) from None
+        return results
 
     def size(self) -> int:
         return sum(

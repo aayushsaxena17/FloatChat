@@ -16,6 +16,8 @@ class QueryLimits(BaseSettings):
     postgres_level_budget: int = Field(default=1_000_000, ge=1, le=10**9)
     duckdb_level_budget: int = Field(default=5_000_000, ge=1, le=10**9)
     object_fetch_bytes: int = Field(default=512 * 1024 * 1024, ge=1, le=16 * 1024**3)
+    object_fetch_seconds: float = Field(default=120.0, gt=0, le=3600)
+    object_fetch_workers: int = Field(default=4, ge=1, le=16)
     nearest_radius_km: float = Field(default=2000.0, gt=0, le=20_000)
     nearest_k: int = Field(default=100, ge=1, le=10_000)
     chart_points_per_series: int = Field(default=5000, ge=1, le=1_000_000)
@@ -39,6 +41,8 @@ class QueryLimits(BaseSettings):
             "response_bytes": self.response_bytes,
             "postgres_level_budget": self.postgres_level_budget,
             "duckdb_level_budget": self.duckdb_level_budget,
+            "object_fetch_bytes": self.object_fetch_bytes,
+            "object_fetch_seconds": self.object_fetch_seconds,
             "nearest_radius_km": self.nearest_radius_km,
             "nearest_k": self.nearest_k,
             "chart_points_per_series": self.chart_points_per_series,
