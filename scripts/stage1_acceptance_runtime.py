@@ -22,7 +22,7 @@ from psycopg import sql
 
 # Alembic head the isolated database must reach (tests/stage1/test_acceptance_preparation.py
 # keeps this equal to the newest file in infra/migrations/versions).
-MIGRATION_HEAD = "0015_gdac_wiring"
+MIGRATION_HEAD = "0016_query_access"  # Stage 2 views and regions are additive
 
 
 def initialize():

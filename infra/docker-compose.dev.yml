@@ -49,6 +49,7 @@ services:
     environment:
       DATABASE_ADMIN_URL: ${DATABASE_ADMIN_URL:?Local migration role required}
       DB_APP_PASSWORD: ${DB_APP_PASSWORD:?Local application credential required}
+      DB_QUERY_PASSWORD: ${DB_QUERY_PASSWORD:?Local query credential required}
     command: [python, scripts/bootstrap_db.py]
     depends_on:
       db: { condition: service_healthy }
@@ -68,7 +69,12 @@ services:
     restart: "no"
   api:
     build: { context: .., dockerfile: infra/docker/api.Dockerfile, target: runtime }
-    environment: *app-environment
+    environment:
+      <<: *app-environment
+      # Stage 2 read-only query login and the verified Parquet part cache (ADR-0058).
+      QUERY_DATABASE_URL: ${QUERY_DATABASE_URL:?Local query role URL required}
+      QUERY_OBJECT_CACHE_DIR: /var/lib/floatchat/query-cache
+    volumes: [query_cache:/var/lib/floatchat/query-cache]
     ports: ["127.0.0.1:${API_PORT:-8000}:8000"]
     depends_on:
       db-init: { condition: service_completed_successfully }
@@ -99,3 +105,4 @@ volumes:
   postgres_data:
   redis_data:
   minio_data:
+  query_cache:

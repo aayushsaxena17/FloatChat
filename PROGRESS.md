@@ -1,5 +1,66 @@
 # Stage progress
 
+## Stage 2 - plan reviewed and authorized (ADR-0056..0060), 2026-10-09
+
+`codex/stage-1` merged into `main` by PR #5 (squash `91f7dd5`, tree equal to `a4d6a01`); the remote
+Stage 1 branch is deleted. Stage 2 works on `codex/stage-2` from `main`. The draft plan was reviewed
+against the merged code and rewritten: [docs/stage2-plan.md](docs/stage2-plan.md). The advisor
+reviewed the findings before the rewrite and agreed with the rewritten plan and ADR-0056..0060 on
+2026-10-09 (ADR-0039 convention); implementation may start.
+
+- [x] Plan corrections recorded in the plan's section 0: migration `0016` (not 0010), parts plus
+  membership manifests, the `argovis`-only population, `qc-policy-v1`, the environment reference
+  time, the development dataset copy, the read-only role and views, the geography index,
+  `/v1/floats` scope, partial labelling without jobs, bounded in-process DuckDB, named-region
+  source and definitions, unchanged dev Compose service set.
+- [x] ADR-0056 (scope, branch, population, router reference time), ADR-0057 (`qc-policy-v1`, owner
+  to confirm), ADR-0058 (`floatchat_query`, views, DuckDB over a verified cache), ADR-0059 (dataset
+  copy from session `302412131a7c99fb`, owner to confirm), ADR-0060 (IHO Sea Areas v3 regions).
+- [x] W2 migration `0016_query_access`: `floatchat_query` login, `app.query_*` views,
+  `app.named_region` (7 regions from IHO Sea Areas v3 through `scripts/build_named_regions.py`,
+  0.05 degree simplification, parts and holes under 50 km² removed, 337 KB fixture), indexes
+  `profile_float_time` and `profile_position_geog`.
+- [x] W3 `floatchat_core.query`: plan model with registered rejections, `qc-policy-v1`, geography and
+  tiles, SQLAlchemy Core compiler, catalogue coverage on the query login, SHA-256-verified part
+  cache, bounded DuckDB compiler with the manifest semi-join, router, sanitiser, chart contract,
+  provenance. `docs/stage2-query-engine.md` shows the compiled statements.
+- [x] W4 API routes with correlation IDs, closed error registry, request bound; W1 bootstrap, dev
+  configuration (additive keys), Compose cache volume, `scripts/stage2_dataset.py` (streamed binary
+  COPY per month, verified object mirror).
+- [x] Integration suite `tests/stage2/test_integration.py` (11 cases on a disposable PostGIS server:
+  migration, read-only login, regions, coverage labelling without job creation, pagination,
+  geodesic nearest with the geography index, PostgreSQL and DuckDB agreement, manifest exclusion,
+  float and profile reads, charts and provenance) passes locally.
+- [x] W5 `apps/api/openapi.json` (checked by `scripts/export_openapi.py --check`), the generated
+  `apps/web/src/api/schema.d.ts` and the typed `client.ts` with Vitest coverage; CI regenerates and
+  diffs the client and runs `tests/stage2` in the offline components job.
+- [x] W6 unit suites (513 offline tests: plan, policy, compilers, sanitiser and charts, cache and
+  DuckDB runner, regions, errors, API contract, OpenAPI artefact, latency script) plus the
+  11-case integration suite; the contract tests found and fixed six defects (raw body handling,
+  cursor id validation, regex anchors, cache eviction, edge tiles, UTC rendering).
+- [x] W1 dataset: session `302412131a7c99fb` copied into the dev project by streamed binary COPY
+  (5,814 profiles, 4,144,346 levels, 206 parts, 301,781,882 bytes; the pg_dump path crashed the
+  1 GiB session server and was replaced); [report](reports/stage2-dataset-302412131a7c99fb.json).
+- [x] W7 latency: [run 2](reports/query_latency_2026-10-09.md) (canonical) and
+  [run 1](reports/query_latency_2026-10-09-run1.md): PostgreSQL route worst warm p95 528.6 ms,
+  DuckDB route (whole-envelope quarter, 4.14 M levels) worst warm p95 1,859.7 ms, metadata
+  32.0 ms; every PRD §3.1 objective passes in run 2; run 1's D04 cache-cold call timed out under
+  page-cache pressure after the 288 MiB object fill.
+- [x] W8 gate report [docs/stage2-gate.md](docs/stage2-gate.md); `make lint`, `make typecheck`,
+  `make test` (1,844 Python offline, 12 web) and the 11-case integration suite green locally.
+- [x] CI on `1797154`: the six merge-required jobs (`python`, `web`, `docker`, `integration`,
+  `secrets-current`, `secrets-history`) passed; the non-required offline components job failed one
+  Stage 1 case (`test_B07_repeat_bootstrap_cannot_regrant_scientific_writes`: the bootstrap
+  demanded `DB_QUERY_PASSWORD`), fixed in the next commit (the query role stays `NOLOGIN` without a
+  configured password); the Stage 2 integration step of that job runs on the fixed head.
+- [x] Advisor review of the implemented Stage 2 recorded 2026-10-09 (ADR-0039 convention): agreed
+  with the implementation at `1797154` plus the wording and bootstrap fix-ups that follow it, with
+  the cold-path deadline and the hand-observed cross-route agreement stated as risks in the gate.
+- [x] CI on `c01b0e1`: all seven jobs green, including the Stage 2 integration step of the
+  offline components job. Pull request [#6](https://github.com/aayushsaxena17/FloatChat/pull/6)
+  into `main` opened 2026-10-09; merge is the owner's decision.
+- [ ] Needs from Aayush: confirm ADR-0057, ADR-0059 and the region definitions in ADR-0060.
+
 ## Stage 1 - live and captured-replay acceptance passed on stage1-v4 (ADR-0054, ADR-0055), 2026-10-09
 
 `codex/stage-1-perf` merged into `codex/stage-1` (PR #4, `6c88a0a`). Gate report:

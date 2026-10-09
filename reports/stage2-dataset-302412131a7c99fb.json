@@ -1,0 +1,72 @@
+{
+  "kind": "stage2_dataset_import",
+  "adr": "ADR-0059",
+  "session": "302412131a7c99fb",
+  "source_project": "floatchat-s1-acceptance-302412131a7c99fb",
+  "source_database": "floatchat_s1_302412131a7c99fb",
+  "source_runs": [
+    {
+      "id": "edebccd8-5a00-4628-9a08-ec890888571e",
+      "state": "complete",
+      "reference_time": "2025-04-01 00:00:00+00"
+    },
+    {
+      "id": "8562e75d-0082-4a22-9e9d-ee31f8ab944e",
+      "state": "complete",
+      "reference_time": "2025-04-01 00:00:00+00"
+    }
+  ],
+  "target_project": "floatchat-stage0-wsl-dev",
+  "tables": [
+    "ingestion_environment",
+    "argo_float",
+    "ingestion_run",
+    "logical_partition_slot",
+    "ingestion_chunk",
+    "ingestion_attempt",
+    "publication_intent",
+    "raw_manifest",
+    "dataset_partition",
+    "coverage_receipt",
+    "argo_profile"
+  ],
+  "row_counts": {
+    "ingestion_environment": 1,
+    "argo_float": 677,
+    "ingestion_run": 2,
+    "logical_partition_slot": 270,
+    "ingestion_chunk": 540,
+    "ingestion_attempt": 6010,
+    "publication_intent": 540,
+    "raw_manifest": 6008,
+    "dataset_partition": 206,
+    "coverage_receipt": 540,
+    "argo_profile": 5814,
+    "core_measurement": 4144346
+  },
+  "measurement_months": [
+    "2025-01-01",
+    "2025-02-01",
+    "2025-03-01"
+  ],
+  "stream_sha256": null,
+  "stream_bytes": 0,
+  "database_phase": "reused from an earlier run",
+  "objects": {
+    "downloaded": {
+      "mode": "download",
+      "objects": 206,
+      "bytes": 301781882
+    },
+    "uploaded": {
+      "mode": "upload",
+      "objects": 206,
+      "bytes": 301781882
+    },
+    "active_partitions": "206|301781882"
+  },
+  "git_head": "4df8f0f9f6b4",
+  "completed_at_utc": "2026-10-09T18:46:22.518632+00:00",
+  "seconds": 66.0,
+  "scope": "derived copy of accepted science for development and the latency report; never pushed; the preserved session was not modified"
+}

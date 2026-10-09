@@ -10,6 +10,8 @@ dependencies = [
   "pandas==2.3.3",
   "netcdf4>=1.7",
   "numpy>=2",
+  "sqlalchemy==2.0.48",
+  "duckdb==1.5.6",
 ]
 
 [build-system]

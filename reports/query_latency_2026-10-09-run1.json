@@ -1,0 +1,2164 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "cpu_count": 8,
+  "dataset": {
+    "digest": "objects 206|301781882",
+    "levels": 4144346,
+    "profiles": 5814,
+    "report": "stage2-dataset-302412131a7c99fb.json",
+    "session": "302412131a7c99fb"
+  },
+  "date": "2026-10-09",
+  "failures": 1,
+  "generated_at_utc": "2026-10-09T19:13:26.957952+00:00",
+  "git_dirty": false,
+  "git_head": "fc9051c83d03",
+  "host": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "kind": "stage2_query_latency",
+  "limits": {
+    "chart_points_per_series": 5000,
+    "chart_series": 20,
+    "default_page_size": 100,
+    "duckdb_level_budget": 5000000,
+    "histogram_bins": 200,
+    "max_rows": 50000,
+    "nearest_k": 100,
+    "nearest_radius_km": 2000.0,
+    "object_fetch_bytes": 536870912,
+    "object_fetch_seconds": 120.0,
+    "page_size": 1000,
+    "postgres_level_budget": 1000000,
+    "profile_levels": 10000,
+    "query_timeout_seconds": 10.0,
+    "request_bytes": 65536,
+    "response_bytes": 8388608,
+    "time_span_days": 366,
+    "trajectory_points": 1000
+  },
+  "methodology": "One optional restart command, then a cold pass of one call per query plan in matrix order and one call per metadata route, then for each plan and route --warmup discarded calls followed by --runs recorded warm calls. Wall time is time.perf_counter around the HTTP request and body read (loopback, no proxy); server time is execution.elapsed_ms. p50 and p95 are nearest-rank over the sorted warm samples. A call that fails ends the warm loop of its plan and marks the row. Later cold calls may benefit from object-cache fills made by earlier plans of the same pass; the on-disk object cache is emptied only if the restart command does so.",
+  "objectives": {
+    "aggregate_p95_ms": 5000.0,
+    "metadata_p95_ms": 2000.0
+  },
+  "restart_command": "/tmp/claude-1000/-home-floatchat-FloatChat-stage1/7ce9afc5-a509-4ecd-baa8-7276afe45b09/scratchpad/cold-restart.sh",
+  "runs": 20,
+  "tables": [
+    {
+      "id": "postgresql",
+      "objective_ms": 5000.0,
+      "rows": [
+        {
+          "actual_route": "postgresql",
+          "cold_ms": 227.946,
+          "cold_server_ms": 200.5,
+          "error_codes": [],
+          "estimated_levels": 185694,
+          "expected_route": "postgresql",
+          "failed_calls": 0,
+          "group": "postgresql",
+          "http_status": 200,
+          "kind": "profiles",
+          "label": "P01 profiles, Arabian Sea, Jan",
+          "partial": false,
+          "plan": {
+            "dataset": "core",
+            "geography": {
+              "kind": "named_region",
+              "value": "Arabian Sea"
+            },
+            "operation": {
+              "kind": "profiles",
+              "limit": 100
+            },
+            "presentation": {
+              "kind": "table"
+            },
+            "qc_policy": "science_ready",
+            "time_range": {
+              "end": "2025-02-01T00:00:00Z",
+              "start": "2025-01-01T00:00:00Z"
+            },
+            "variables": [
+              "temperature",
+              "salinity"
+            ]
+          },
+          "route_ok": true,
+          "rows": 100,
+          "server_ms": [
+            18.4,
+            17.8,
+            18.1,
+            18.3,
+            18.7,
+            20.8,
+            18.6,
+            18.1,
+            18.0,
+            18.6,
+            20.6,
+            19.1,
+            20.4,
+            23.8,
+            21.7,
+            19.4,
+            18.3,
+            17.9,
+            18.4,
+            18.5
+          ],
+          "server_p50_ms": 18.5,
+          "server_p95_ms": 21.7,
+          "status": "ok",
+          "warm_ms": [
+            23.045,
+            21.59,
+            21.999,
+            21.363,
+            21.841,
+            24.703,
+            21.709,
+            25.895,
+            22.179,
+            21.722,
+            23.771,
+            22.526,
+            23.441,
+            26.934,
+            24.582,
+            22.47,
+            21.314,
+            20.802,
+            21.452,
+            21.732
+          ],
+          "warm_p50_ms": 21.999,
+          "warm_p95_ms": 25.895
+        },
+        {
+          "actual_route": "postgresql",
+          "cold_ms": 227.377,
+          "cold_server_ms": 217.4,
+          "error_codes": [],
+          "estimated_levels": 47334,
+          "expected_route": "postgresql",
+          "failed_calls": 0,
+          "group": "postgresql",
+          "http_status": 200,
+          "kind": "profiles",
+          "label": "P02 profiles, Bay of Bengal, Feb, 0-200 dbar",
+          "partial": false,
+          "plan": {
+            "dataset": "core",
+            "depth_dbar": {
+              "max": 200,
+              "min": 0
+            },
+            "geography": {
+              "kind": "named_region",
+              "value": "Bay of Bengal"
+            },
+            "operation": {
+              "kind": "profiles",
+              "limit": 100
+            },
+            "presentation": {
+              "kind": "table"
+            },
+            "qc_policy": "science_ready",
+            "time_range": {
+              "end": "2025-03-01T00:00:00Z",
+              "start": "2025-02-01T00:00:00Z"
+            },
+            "variables": [
+              "temperature",
+              "salinity"
+            ]
+          },
+          "route_ok": true,
+          "rows": 83,
+          "server_ms": [
+            19.4,
+            19.8,
+            23.5,
+            22.4,
+            21.2,
+            22.8,
+            22.0,
+            24.4,
+            24.2,
+            30.8,
+            26.4,
+            33.8,
+            29.0,
+            28.6,
+            24.4,
+            23.2,
+            21.8,
+            22.9,
+            22.9,
+            24.2
+          ],
+          "server_p50_ms": 23.2,
+          "server_p95_ms": 30.8,
+          "status": "ok",
+          "warm_ms": [
+            22.42,
+            27.801,
+            26.747,
+            25.947,
+            24.817,
+            26.204,
+            25.279,
+            28.546,
+            28.313,
+            34.492,
+            30.911,
+            38.428,
+            33.966,
+            32.432,
+            27.921,
+            26.931,
+            25.01,
+            26.999,
+            37.863,
+            31.506
+          ],
+          "warm_p50_ms": 27.801,
+          "warm_p95_ms": 37.863
+        },
+        {
+          "actual_route": "postgresql",
+          "cold_ms": 131.128,
+          "cold_server_ms": 102.3,
+          "error_codes": [],
+          "estimated_levels": 656597,
+          "expected_route": "postgresql",
+          "failed_calls": 0,
+          "group": "postgresql",
+          "http_status": 200,
+          "kind": "profiles",
+          "label": "P03 profiles, bbox 50E-75E 10S-20N, quarter, temperature",
+          "partial": false,
+          "plan": {
+            "dataset": "core",
+            "geography": {
+              "east": 75,
+              "kind": "bbox",
+              "north": 20,
+              "south": -10,
+              "west": 50
+            },
+            "operation": {
+              "kind": "profiles",
+              "limit": 100
+            },
+            "presentation": {
+              "kind": "table"
+            },
+            "qc_policy": "science_ready",
+            "time_range": {
+              "end": "2025-04-01T00:00:00Z",
+              "start": "2025-01-01T00:00:00Z"
+            },
+            "variables": [
+              "temperature"
+            ]
+          },
+          "route_ok": true,
+          "rows": 100,
+          "server_ms": [
+            23.8,
+            22.6,
+            21.8,
+            22.5,
+            22.3,
+            24.0,
+            24.0,
+            31.9,
+            28.1,
+            25.4,
+            28.2,
+            28.0,
+            25.1,
+            23.9,
+            90.6,
+            23.8,
+            23.9,
+            23.7,
+            23.2,
+            24.2
+          ],
+          "server_p50_ms": 23.9,
+          "server_p95_ms": 31.9,
+          "status": "ok",
+          "warm_ms": [
+            27.07,
+            25.841,
+            24.923,
+            25.56,
+            25.569,
+            27.458,
+            27.181,
+            36.019,
+            32.088,
+            29.346,
+            31.929,
+            31.317,
+            28.481,
+            27.482,
+            94.126,
+            27.712,
+            27.409,
+            27.811,
+            26.586,
+            27.384
+          ],
+          "warm_p50_ms": 27.458,
+          "warm_p95_ms": 36.019
+        },
+        {
+          "actual_route": "postgresql",
+          "cold_ms": 3870.296,
+          "cold_server_ms": 3864.4,
+          "error_codes": [],
+          "estimated_levels": 922593,
+          "expected_route": "postgresql",
+          "failed_calls": 0,
+          "group": "postgresql",
+          "http_status": 200,
+          "kind": "profiles",
+          "label": "P04 profiles, Southern Indian Ocean, Mar, 500-1000 dbar",
+          "partial": false,
+          "plan": {
+            "dataset": "core",
+            "depth_dbar": {
+              "max": 1000,
+              "min": 500
+            },
+            "geography": {
+              "kind": "named_region",
+              "value": "Southern Indian Ocean"
+            },
+            "operation": {
+              "kind": "profiles",
+              "limit": 100
+            },
+            "presentation": {
+              "kind": "table"
+            },
+            "qc_policy": "science_ready",
+            "time_range": {
+              "end": "2025-04-01T00:00:00Z",
+              "start": "2025-03-01T00:00:00Z"
+            },
+            "variables": [
+              "temperature",
+              "salinity"
+            ]
+          },
+          "route_ok": true,
+          "rows": 100,
+          "server_ms": [
+            136.7,
+            150.9,
+            106.8,
+            111.7,
+            112.0,
+            114.8,
+            111.7,
+            110.8,
+            115.4,
+            114.7,
+            116.3,
+            110.6,
+            110.9,
+            127.1,
+            112.0,
+            109.8,
+            106.9,
+            110.8,
+            114.8,
+            133.4
+          ],
+          "server_p50_ms": 112.0,
+          "server_p95_ms": 136.7,
+          "status": "ok",
+          "warm_ms": [
+            142.925,
+            158.963,
+            111.159,
+            115.556,
+            115.362,
+            118.692,
+            115.241,
+            114.04,
+            118.889,
+            119.373,
+            119.749,
+            114.304,
+            115.712,
+            130.852,
+            115.406,
+            112.913,
+            110.224,
+            114.673,
+            118.766,
+            137.922
+          ],
+          "warm_p50_ms": 115.556,
+          "warm_p95_ms": 142.925
+        },
+        {
+          "actual_route": "postgresql",
+          "cold_ms": 139.476,
+          "cold_server_ms": 133.3,
+          "error_codes": [],
+          "estimated_levels": 81561,
+          "expected_route": "postgresql",
+          "failed_calls": 0,
+          "group": "postgresql",
+          "http_status": 200,
+          "kind": "nearest",
+          "label": "P05 nearest 10 within 500 km of 65E 15N, quarter",
+          "partial": false,
+          "plan": {
+            "dataset": "core",
+            "geography": {
+              "kind": "point_radius",
+              "latitude": 15.0,
+              "longitude": 65.0,
+              "radius_km": 500
+            },
+            "operation": {
+              "k": 10,
+              "kind": "nearest",
+              "latitude": 15.0,
+              "longitude": 65.0,
+              "radius_km": 500
+            },
+            "presentation": {
+              "kind": "table"
+            },
+            "qc_policy": "science_ready",
+            "time_range": {
+              "end": "2025-04-01T00:00:00Z",
+              "start": "2025-01-01T00:00:00Z"
+            },
+            "variables": [
+              "temperature",
+              "salinity"
+            ]
+          },
+          "route_ok": true,
+          "rows": 10,
+          "server_ms": [
+            19.2,
+            22.4,
+            16.0,
+            16.3,
+            12.5,
+            15.5,
+            17.4,
+            13.2,
+            12.9,
+            11.7,
+            12.8,
+            13.1,
+            12.0,
+            14.7,
+            12.8,
+            12.5,
+            11.9,
+            12.2,
+            13.7,
+            11.9
+          ],
+          "server_p50_ms": 12.9,
+          "server_p95_ms": 19.2,
+          "status": "ok",
+          "warm_ms": [
+            23.127,
+            25.441,
+            18.743,
+            28.755,
+            18.08,
+            18.631,
+            20.124,
+            15.679,
+            15.861,
+            14.423,
+            15.47,
+            15.758,
+            14.648,
+            17.569,
+            15.974,
+            14.933,
+            14.64,
+            14.899,
+            16.119,
+            15.322
+          ],
+          "warm_p50_ms": 15.861,
+          "warm_p95_ms": 25.441
+        },
+        {
+          "actual_route": "postgresql",
+          "cold_ms": 70.498,
+          "cold_server_ms": 65.0,
+          "error_codes": [],
+          "estimated_levels": 150990,
+          "expected_route": "postgresql",
+          "failed_calls": 0,
+          "group": "postgresql",
+          "http_status": 200,
+          "kind": "nearest",
+          "label": "P06 nearest 50 within 1000 km of 88E 10N, quarter",
+          "partial": false,
+          "plan": {
+            "dataset": "core",
+            "geography": {
+              "kind": "point_radius",
+              "latitude": 10.0,
+              "longitude": 88.0,
+              "radius_km": 1000
+            },
+            "operation": {
+              "k": 50,
+              "kind": "nearest",
+              "latitude": 10.0,
+              "longitude": 88.0,
+              "radius_km": 1000
+            },
+            "presentation": {
+              "kind": "table"
+            },
+            "qc_policy": "science_ready",
+            "time_range": {
+              "end": "2025-04-01T00:00:00Z",
+              "start": "2025-01-01T00:00:00Z"
+            },
+            "variables": [
+              "temperature",
+              "salinity"
+            ]
+          },
+          "route_ok": true,
+          "rows": 50,
+          "server_ms": [
+            26.5,
+            25.1,
+            25.9,
+            25.3,
+            26.3,
+            33.7,
+            28.9,
+            25.7,
+            25.6,
+            26.1,
+            29.7,
+            32.6,
+            36.5,
+            45.6,
+            31.9,
+            34.2,
+            44.5,
+            59.6,
+            56.7,
+            89.8
+          ],
+          "server_p50_ms": 29.7,
+          "server_p95_ms": 59.6,
+          "status": "ok",
+          "warm_ms": [
+            29.888,
+            27.869,
+            29.307,
+            28.452,
+            33.183,
+            36.508,
+            31.642,
+            29.809,
+            28.487,
+            29.277,
+            33.922,
+            37.591,
+            40.8,
+            49.638,
+            36.861,
+            37.84,
+            49.216,
+            64.871,
+            60.905,
+            96.691
+          ],
+          "warm_p50_ms": 33.922,
+          "warm_p95_ms": 64.871
+        },
+        {
+          "actual_route": "postgresql",
+          "cold_ms": 202.338,
+          "cold_server_ms": 194.1,
+          "error_codes": [],
+          "estimated_levels": 1967594,
+          "expected_route": "postgresql",
+          "failed_calls": 0,
+          "group": "postgresql",
+          "http_status": 200,
+          "kind": "nearest",
+          "label": "P07 nearest 100 within 2000 km of 75E 40S, quarter",
+          "partial": false,
+          "plan": {
+            "dataset": "core",
+            "geography": {
+              "kind": "point_radius",
+              "latitude": -40.0,
+              "longitude": 75.0,
+              "radius_km": 2000
+            },
+            "operation": {
+              "k": 100,
+              "kind": "nearest",
+              "latitude": -40.0,
+              "longitude": 75.0,
+              "radius_km": 2000
+            },
+            "presentation": {
+              "kind": "table"
+            },
+            "qc_policy": "science_ready",
+            "time_range": {
+              "end": "2025-04-01T00:00:00Z",
+              "start": "2025-01-01T00:00:00Z"
+            },
+            "variables": [
+              "temperature",
+              "salinity"
+            ]
+          },
+          "route_ok": true,
+          "rows": 100,
+          "server_ms": [
+            92.9,
+            139.9,
+            80.8,
+            76.5,
+            94.3,
+            102.7,
+            105.8,
+            142.8,
+            112.1,
+            74.4,
+            77.0,
+            77.6,
+            70.6,
+            85.3,
+            83.6,
+            76.2,
+            93.6,
+            112.4,
+            105.7,
+            96.1
+          ],
+          "server_p50_ms": 92.9,
+          "server_p95_ms": 139.9,
+          "status": "ok",
+          "warm_ms": [
+            97.351,
+            146.163,
+            85.747,
+            80.214,
+            101.184,
+            107.374,
+            110.773,
+            149.142,
+            137.402,
+            82.717,
+            81.274,
+            82.51,
+            74.381,
+            89.923,
+            87.54,
+            80.477,
+            98.272,
+            116.404,
+            1424.815,
+            100.061
+          ],
+          "warm_p50_ms": 97.351,
+          "warm_p95_ms": 149.142
+        },
+        {
+          "actual_route": "postgresql",
+          "cold_ms": 73.834,
+          "cold_server_ms": 69.9,
+          "error_codes": [],
+          "estimated_levels": 72848,
+          "expected_route": "postgresql",
+          "failed_calls": 0,
+          "group": "postgresql",
+          "http_status": 200,
+          "kind": "aggregate",
+          "label": "P08 aggregate, Laccadive Sea, Jan, by month",
+          "partial": false,
+          "plan": {
+            "dataset": "core",
+            "geography": {
+              "kind": "named_region",
+              "value": "Laccadive Sea"
+            },
+            "operation": {
+              "group_by": [
+                "month"
+              ],
+              "kind": "aggregate",
+              "metrics": [
+                "mean",
+                "count"
+              ],
+              "unit": "profile"
+            },
+            "presentation": {
+              "kind": "table"
+            },
+            "qc_policy": "science_ready",
+            "time_range": {
+              "end": "2025-02-01T00:00:00Z",
+              "start": "2025-01-01T00:00:00Z"
+            },
+            "variables": [
+              "temperature",
+              "salinity"
+            ]
+          },
+          "route_ok": true,
+          "rows": 1,
+          "server_ms": [
+            22.6,
+            27.1,
+            22.1,
+            20.0,
+            18.2,
+            17.6,
+            19.7,
+            18.4,
+            20.3,
+            18.9,
+            18.8,
+            18.0,
+            18.3,
+            19.2,
+            18.7,
+            17.7,
+            17.4,
+            17.8,
+            18.8,
+            18.2
+          ],
+          "server_p50_ms": 18.7,
+          "server_p95_ms": 22.6,
+          "status": "ok",
+          "warm_ms": [
+            29.435,
+            30.385,
+            25.307,
+            23.163,
+            21.057,
+            20.183,
+            22.448,
+            21.141,
+            22.873,
+            22.092,
+            22.044,
+            21.269,
+            21.081,
+            22.139,
+            21.605,
+            20.316,
+            20.156,
+            20.421,
+            21.403,
+            21.001
+          ],
+          "warm_p50_ms": 21.403,
+          "warm_p95_ms": 29.435
+        },
+        {
+          "actual_route": "postgresql",
+          "cold_ms": 2680.403,
+          "cold_server_ms": 2675.9,
+          "error_codes": [],
+          "estimated_levels": 93781,
+          "expected_route": "postgresql",
+          "failed_calls": 0,
+          "group": "postgresql",
+          "http_status": 200,
+          "kind": "aggregate",
+          "label": "P09 aggregate, bbox 60E-75E 5N-20N, Feb, by month",
+          "partial": false,
+          "plan": {
+            "dataset": "core",
+            "geography": {
+              "east": 75,
+              "kind": "bbox",
+              "north": 20,
+              "south": 5,
+              "west": 60
+            },
+            "operation": {
+              "group_by": [
+                "month"
+              ],
+              "kind": "aggregate",
+              "metrics": [
+                "mean",
+                "count",
+                "min",
+                "max"
+              ],
+              "unit": "profile"
+            },
+            "presentation": {
+              "kind": "table"
+            },
+            "qc_policy": "science_ready",
+            "time_range": {
+              "end": "2025-03-01T00:00:00Z",
+              "start": "2025-02-01T00:00:00Z"
+            },
+            "variables": [
+              "temperature",
+              "salinity"
+            ]
+          },
+          "route_ok": true,
+          "rows": 1,
+          "server_ms": [
+            550.2,
+            396.7,
+            453.2,
+            433.9,
+            502.4,
+            455.2,
+            420.8,
+            435.0,
+            426.3,
+            567.5,
+            474.0,
+            450.0,
+            603.4,
+            671.1,
+            433.9,
+            524.4,
+            540.9,
+            471.7,
+            450.4,
+            425.9
+          ],
+          "server_p50_ms": 453.2,
+          "server_p95_ms": 603.4,
+          "status": "ok",
+          "warm_ms": [
+            559.377,
+            400.294,
+            456.739,
+            437.607,
+            505.791,
+            461.297,
+            427.037,
+            440.37,
+            430.462,
+            570.937,
+            477.384,
+            453.32,
+            609.175,
+            690.615,
+            440.467,
+            529.221,
+            545.842,
+            475.1,
+            453.365,
+            430.04
+          ],
+          "warm_p50_ms": 456.739,
+          "warm_p95_ms": 609.175
+        },
+        {
+          "actual_route": "postgresql",
+          "cold_ms": 61.56,
+          "cold_server_ms": 40.0,
+          "error_codes": [],
+          "estimated_levels": 2247,
+          "expected_route": "postgresql",
+          "failed_calls": 0,
+          "group": "postgresql",
+          "http_status": 200,
+          "kind": "aggregate",
+          "label": "P10 aggregate, Andaman Sea, Mar, 0-500 dbar, by month",
+          "partial": false,
+          "plan": {
+            "dataset": "core",
+            "depth_dbar": {
+              "max": 500,
+              "min": 0
+            },
+            "geography": {
+              "kind": "named_region",
+              "value": "Andaman Sea"
+            },
+            "operation": {
+              "group_by": [
+                "month"
+              ],
+              "kind": "aggregate",
+              "metrics": [
+                "mean",
+                "count",
+                "median"
+              ],
+              "unit": "profile"
+            },
+            "presentation": {
+              "kind": "table"
+            },
+            "qc_policy": "science_ready",
+            "time_range": {
+              "end": "2025-04-01T00:00:00Z",
+              "start": "2025-03-01T00:00:00Z"
+            },
+            "variables": [
+              "temperature",
+              "salinity"
+            ]
+          },
+          "route_ok": true,
+          "rows": 0,
+          "server_ms": [
+            18.6,
+            18.7,
+            21.0,
+            20.7,
+            20.3,
+            20.3,
+            18.2,
+            30.5,
+            19.3,
+            22.6,
+            16.7,
+            16.7,
+            17.3,
+            17.8,
+            15.8,
+            23.9,
+            22.0,
+            18.6,
+            22.0,
+            19.1
+          ],
+          "server_p50_ms": 19.1,
+          "server_p95_ms": 23.9,
+          "status": "ok",
+          "warm_ms": [
+            22.18,
+            21.735,
+            24.28,
+            24.354,
+            23.685,
+            24.523,
+            21.448,
+            36.963,
+            26.872,
+            27.841,
+            19.554,
+            19.793,
+            20.182,
+            20.703,
+            18.746,
+            28.124,
+            25.896,
+            21.734,
+            25.399,
+            23.021
+          ],
+          "warm_p50_ms": 23.021,
+          "warm_p95_ms": 28.124
+        }
+      ],
+      "title": "PostgreSQL route (profile listings, nearest, small aggregates)",
+      "verdict": {
+        "objective_ms": 5000.0,
+        "pass": true,
+        "problems": [],
+        "worst_warm_p95_ms": 609.175
+      }
+    },
+    {
+      "id": "duckdb",
+      "objective_ms": 5000.0,
+      "rows": [
+        {
+          "actual_route": "duckdb",
+          "cold_ms": 3336.566,
+          "cold_server_ms": 3325.3,
+          "error_codes": [],
+          "estimated_levels": 2715032,
+          "expected_route": "duckdb",
+          "failed_calls": 0,
+          "group": "duckdb",
+          "http_status": 200,
+          "kind": "aggregate",
+          "label": "D01 Indian Ocean, Jan-Feb, by month, profile",
+          "partial": false,
+          "plan": {
+            "dataset": "core",
+            "geography": {
+              "kind": "named_region",
+              "value": "Indian Ocean"
+            },
+            "operation": {
+              "group_by": [
+                "month"
+              ],
+              "kind": "aggregate",
+              "metrics": [
+                "mean",
+                "count",
+                "min",
+                "max",
+                "median"
+              ],
+              "unit": "profile"
+            },
+            "presentation": {
+              "kind": "table"
+            },
+            "qc_policy": "science_ready",
+            "time_range": {
+              "end": "2025-03-01T00:00:00Z",
+              "start": "2025-01-01T00:00:00Z"
+            },
+            "variables": [
+              "temperature",
+              "salinity"
+            ]
+          },
+          "route_ok": true,
+          "rows": 2,
+          "server_ms": [
+            858.8,
+            847.7,
+            892.2,
+            653.1,
+            660.1,
+            811.1,
+            701.9,
+            801.3,
+            707.0,
+            642.7,
+            659.0,
+            1092.2,
+            723.2,
+            733.5,
+            743.8,
+            656.4,
+            639.0,
+            705.7,
+            699.3,
+            718.5
+          ],
+          "server_p50_ms": 707.0,
+          "server_p95_ms": 892.2,
+          "status": "ok",
+          "warm_ms": [
+            868.243,
+            855.1,
+            899.458,
+            669.745,
+            668.324,
+            816.322,
+            708.145,
+            806.775,
+            723.619,
+            649.916,
+            663.968,
+            1098.382,
+            729.973,
+            749.588,
+            755.867,
+            662.676,
+            643.68,
+            711.727,
+            705.061,
+            724.982
+          ],
+          "warm_p50_ms": 723.619,
+          "warm_p95_ms": 899.458
+        },
+        {
+          "actual_route": "duckdb",
+          "cold_ms": 11722.418,
+          "cold_server_ms": 11669.3,
+          "error_codes": [],
+          "estimated_levels": 4144346,
+          "expected_route": "duckdb",
+          "failed_calls": 0,
+          "group": "duckdb",
+          "http_status": 200,
+          "kind": "aggregate",
+          "label": "D02 Indian Ocean, quarter, by month, profile",
+          "partial": false,
+          "plan": {
+            "dataset": "core",
+            "geography": {
+              "kind": "named_region",
+              "value": "Indian Ocean"
+            },
+            "operation": {
+              "group_by": [
+                "month"
+              ],
+              "kind": "aggregate",
+              "metrics": [
+                "mean",
+                "count",
+                "min",
+                "max",
+                "median"
+              ],
+              "unit": "profile"
+            },
+            "presentation": {
+              "kind": "table"
+            },
+            "qc_policy": "science_ready",
+            "time_range": {
+              "end": "2025-04-01T00:00:00Z",
+              "start": "2025-01-01T00:00:00Z"
+            },
+            "variables": [
+              "temperature",
+              "salinity"
+            ]
+          },
+          "route_ok": true,
+          "rows": 3,
+          "server_ms": [
+            1327.8,
+            1071.1,
+            1312.0,
+            1491.0,
+            1455.5,
+            1088.2,
+            1068.6,
+            908.6,
+            1094.3,
+            950.7,
+            1059.6,
+            894.8,
+            1002.1,
+            997.4,
+            1086.3,
+            1128.5,
+            937.8,
+            960.7,
+            968.0,
+            978.4
+          ],
+          "server_p50_ms": 1059.6,
+          "server_p95_ms": 1455.5,
+          "status": "ok",
+          "warm_ms": [
+            1334.095,
+            1079.563,
+            1344.218,
+            1509.481,
+            1463.488,
+            1099.197,
+            1078.615,
+            915.468,
+            1099.077,
+            959.475,
+            1077.402,
+            903.908,
+            1007.63,
+            1002.835,
+            1093.287,
+            1136.421,
+            947.651,
+            966.17,
+            973.602,
+            984.385
+          ],
+          "warm_p50_ms": 1077.402,
+          "warm_p95_ms": 1463.488
+        },
+        {
+          "actual_route": "duckdb",
+          "cold_ms": 4439.439,
+          "cold_server_ms": 4339.2,
+          "error_codes": [],
+          "estimated_levels": 4144346,
+          "expected_route": "duckdb",
+          "failed_calls": 0,
+          "group": "duckdb",
+          "http_status": 200,
+          "kind": "aggregate",
+          "label": "D03 Indian Ocean, quarter, by month, measurement",
+          "partial": false,
+          "plan": {
+            "dataset": "core",
+            "geography": {
+              "kind": "named_region",
+              "value": "Indian Ocean"
+            },
+            "operation": {
+              "group_by": [
+                "month"
+              ],
+              "kind": "aggregate",
+              "metrics": [
+                "mean",
+                "count",
+                "min",
+                "max",
+                "median"
+              ],
+              "unit": "measurement"
+            },
+            "presentation": {
+              "kind": "table"
+            },
+            "qc_policy": "science_ready",
+            "time_range": {
+              "end": "2025-04-01T00:00:00Z",
+              "start": "2025-01-01T00:00:00Z"
+            },
+            "variables": [
+              "temperature",
+              "salinity"
+            ]
+          },
+          "route_ok": true,
+          "rows": 3,
+          "server_ms": [
+            1569.4,
+            1427.3,
+            1231.1,
+            1063.4,
+            1332.9,
+            1079.9,
+            1271.2,
+            1118.5,
+            1291.9,
+            1495.2,
+            1251.2,
+            1166.6,
+            1248.0,
+            1207.3,
+            1288.4,
+            1371.4,
+            1199.6,
+            1388.6,
+            1108.7,
+            1185.1
+          ],
+          "server_p50_ms": 1248.0,
+          "server_p95_ms": 1495.2,
+          "status": "ok",
+          "warm_ms": [
+            1584.407,
+            1445.946,
+            1240.457,
+            1070.308,
+            1339.092,
+            1095.936,
+            1280.333,
+            1123.568,
+            1298.63,
+            1512.592,
+            1259.29,
+            1173.06,
+            1255.66,
+            1214.973,
+            1297.884,
+            1380.253,
+            1205.339,
+            1404.29,
+            1116.312,
+            1191.427
+          ],
+          "warm_p50_ms": 1255.66,
+          "warm_p95_ms": 1512.592
+        },
+        {
+          "actual_route": null,
+          "cold_ms": null,
+          "cold_server_ms": null,
+          "error_codes": [
+            "statement_timeout"
+          ],
+          "estimated_levels": null,
+          "expected_route": "duckdb",
+          "failed_calls": 1,
+          "group": "duckdb",
+          "http_status": 504,
+          "kind": "aggregate",
+          "label": "D04 Indian Ocean, quarter, month+depth_bin 100, 0-2000 dbar, profile",
+          "partial": false,
+          "plan": {
+            "dataset": "core",
+            "depth_dbar": {
+              "max": 2000,
+              "min": 0
+            },
+            "geography": {
+              "kind": "named_region",
+              "value": "Indian Ocean"
+            },
+            "operation": {
+              "depth_bin_size": 100,
+              "group_by": [
+                "month",
+                "depth_bin"
+              ],
+              "kind": "aggregate",
+              "metrics": [
+                "mean",
+                "count",
+                "min",
+                "max",
+                "median"
+              ],
+              "unit": "profile"
+            },
+            "presentation": {
+              "kind": "table"
+            },
+            "qc_policy": "science_ready",
+            "time_range": {
+              "end": "2025-04-01T00:00:00Z",
+              "start": "2025-01-01T00:00:00Z"
+            },
+            "variables": [
+              "temperature",
+              "salinity"
+            ]
+          },
+          "route_ok": false,
+          "rows": null,
+          "server_ms": [],
+          "server_p50_ms": null,
+          "server_p95_ms": null,
+          "status": "statement_timeout",
+          "warm_ms": [],
+          "warm_p50_ms": null,
+          "warm_p95_ms": null
+        },
+        {
+          "actual_route": "duckdb",
+          "cold_ms": 4163.303,
+          "cold_server_ms": 4121.4,
+          "error_codes": [],
+          "estimated_levels": 4144346,
+          "expected_route": "duckdb",
+          "failed_calls": 0,
+          "group": "duckdb",
+          "http_status": 200,
+          "kind": "aggregate",
+          "label": "D05 Indian Ocean, quarter, month+depth_bin 100, 0-2000 dbar, measurement",
+          "partial": false,
+          "plan": {
+            "dataset": "core",
+            "depth_dbar": {
+              "max": 2000,
+              "min": 0
+            },
+            "geography": {
+              "kind": "named_region",
+              "value": "Indian Ocean"
+            },
+            "operation": {
+              "depth_bin_size": 100,
+              "group_by": [
+                "month",
+                "depth_bin"
+              ],
+              "kind": "aggregate",
+              "metrics": [
+                "mean",
+                "count",
+                "min",
+                "max",
+                "median"
+              ],
+              "unit": "measurement"
+            },
+            "presentation": {
+              "kind": "table"
+            },
+            "qc_policy": "science_ready",
+            "time_range": {
+              "end": "2025-04-01T00:00:00Z",
+              "start": "2025-01-01T00:00:00Z"
+            },
+            "variables": [
+              "temperature",
+              "salinity"
+            ]
+          },
+          "route_ok": true,
+          "rows": 63,
+          "server_ms": [
+            1620.5,
+            1354.0,
+            1631.1,
+            1712.0,
+            1449.5,
+            1519.6,
+            1562.1,
+            1450.6,
+            1551.5,
+            1534.1,
+            1467.9,
+            1488.2,
+            1492.4,
+            1670.7,
+            1309.3,
+            1381.2,
+            1528.8,
+            1301.4,
+            1398.9,
+            1517.7
+          ],
+          "server_p50_ms": 1492.4,
+          "server_p95_ms": 1670.7,
+          "status": "ok",
+          "warm_ms": [
+            1629.116,
+            1360.585,
+            1646.128,
+            1721.234,
+            1455.911,
+            1525.572,
+            1571.704,
+            1462.076,
+            1557.124,
+            1539.938,
+            1484.341,
+            1496.389,
+            1497.633,
+            1678.131,
+            1324.327,
+            1389.306,
+            1533.844,
+            1314.493,
+            1413.865,
+            1523.728
+          ],
+          "warm_p50_ms": 1497.633,
+          "warm_p95_ms": 1678.131
+        },
+        {
+          "actual_route": "duckdb",
+          "cold_ms": 1800.436,
+          "cold_server_ms": 1791.3,
+          "error_codes": [],
+          "estimated_levels": 4144346,
+          "expected_route": "duckdb",
+          "failed_calls": 0,
+          "group": "duckdb",
+          "http_status": 200,
+          "kind": "aggregate",
+          "label": "D06 Indian Ocean, quarter, month+depth_bin 50, 0-1000 dbar, profile",
+          "partial": false,
+          "plan": {
+            "dataset": "core",
+            "depth_dbar": {
+              "max": 1000,
+              "min": 0
+            },
+            "geography": {
+              "kind": "named_region",
+              "value": "Indian Ocean"
+            },
+            "operation": {
+              "depth_bin_size": 50,
+              "group_by": [
+                "month",
+                "depth_bin"
+              ],
+              "kind": "aggregate",
+              "metrics": [
+                "mean",
+                "count",
+                "min",
+                "max",
+                "median"
+              ],
+              "unit": "profile"
+            },
+            "presentation": {
+              "kind": "table"
+            },
+            "qc_policy": "science_ready",
+            "time_range": {
+              "end": "2025-04-01T00:00:00Z",
+              "start": "2025-01-01T00:00:00Z"
+            },
+            "variables": [
+              "temperature",
+              "salinity"
+            ]
+          },
+          "route_ok": true,
+          "rows": 63,
+          "server_ms": [
+            1122.5,
+            1300.5,
+            1145.1,
+            1115.2,
+            1190.6,
+            1178.1,
+            1262.2,
+            1178.0,
+            1247.7,
+            1310.4,
+            1190.9,
+            1228.8,
+            1183.9,
+            1227.0,
+            1511.1,
+            1132.3,
+            1315.6,
+            1122.2,
+            1005.4,
+            1399.6
+          ],
+          "server_p50_ms": 1190.6,
+          "server_p95_ms": 1399.6,
+          "status": "ok",
+          "warm_ms": [
+            1138.604,
+            1310.972,
+            1150.214,
+            1122.001,
+            1273.705,
+            1188.995,
+            1268.687,
+            1183.644,
+            1262.767,
+            1316.301,
+            1199.81,
+            1235.232,
+            1198.665,
+            1235.004,
+            1516.825,
+            1138.473,
+            1331.189,
+            1131.485,
+            1012.873,
+            1406.051
+          ],
+          "warm_p50_ms": 1199.81,
+          "warm_p95_ms": 1406.051
+        },
+        {
+          "actual_route": "duckdb",
+          "cold_ms": 1568.887,
+          "cold_server_ms": 1562.6,
+          "error_codes": [],
+          "estimated_levels": 4144346,
+          "expected_route": "duckdb",
+          "failed_calls": 0,
+          "group": "duckdb",
+          "http_status": 200,
+          "kind": "aggregate",
+          "label": "D07 Indian Ocean, quarter, month+depth_bin 50, 0-1000 dbar, measurement",
+          "partial": false,
+          "plan": {
+            "dataset": "core",
+            "depth_dbar": {
+              "max": 1000,
+              "min": 0
+            },
+            "geography": {
+              "kind": "named_region",
+              "value": "Indian Ocean"
+            },
+            "operation": {
+              "depth_bin_size": 50,
+              "group_by": [
+                "month",
+                "depth_bin"
+              ],
+              "kind": "aggregate",
+              "metrics": [
+                "mean",
+                "count",
+                "min",
+                "max",
+                "median"
+              ],
+              "unit": "measurement"
+            },
+            "presentation": {
+              "kind": "table"
+            },
+            "qc_policy": "science_ready",
+            "time_range": {
+              "end": "2025-04-01T00:00:00Z",
+              "start": "2025-01-01T00:00:00Z"
+            },
+            "variables": [
+              "temperature",
+              "salinity"
+            ]
+          },
+          "route_ok": true,
+          "rows": 63,
+          "server_ms": [
+            1817.2,
+            2011.8,
+            1749.2,
+            1502.5,
+            1473.8,
+            1513.3,
+            1604.5,
+            1434.7,
+            1327.9,
+            1308.9,
+            1309.8,
+            1757.1,
+            1244.7,
+            1364.8,
+            1215.8,
+            1380.3,
+            1405.0,
+            1155.4,
+            1260.1,
+            1373.2
+          ],
+          "server_p50_ms": 1380.3,
+          "server_p95_ms": 1817.2,
+          "status": "ok",
+          "warm_ms": [
+            1825.63,
+            2040.38,
+            1763.385,
+            1509.511,
+            1495.483,
+            1522.457,
+            1610.571,
+            1442.394,
+            1344.486,
+            1317.535,
+            1315.55,
+            1762.948,
+            1258.817,
+            1371.786,
+            1222.532,
+            1386.111,
+            1418.992,
+            1162.859,
+            1267.309,
+            1378.636
+          ],
+          "warm_p50_ms": 1386.111,
+          "warm_p95_ms": 1825.63
+        },
+        {
+          "actual_route": "duckdb",
+          "cold_ms": 1128.07,
+          "cold_server_ms": 1096.3,
+          "error_codes": [],
+          "estimated_levels": 4144346,
+          "expected_route": "duckdb",
+          "failed_calls": 0,
+          "group": "duckdb",
+          "http_status": 200,
+          "kind": "aggregate",
+          "label": "D08 Indian Ocean, quarter, month+float, profile",
+          "partial": false,
+          "plan": {
+            "dataset": "core",
+            "geography": {
+              "kind": "named_region",
+              "value": "Indian Ocean"
+            },
+            "operation": {
+              "group_by": [
+                "month",
+                "float"
+              ],
+              "kind": "aggregate",
+              "metrics": [
+                "mean",
+                "count",
+                "min",
+                "max",
+                "median"
+              ],
+              "unit": "profile"
+            },
+            "presentation": {
+              "kind": "table"
+            },
+            "qc_policy": "science_ready",
+            "time_range": {
+              "end": "2025-04-01T00:00:00Z",
+              "start": "2025-01-01T00:00:00Z"
+            },
+            "variables": [
+              "temperature",
+              "salinity"
+            ]
+          },
+          "route_ok": true,
+          "rows": 1901,
+          "server_ms": [
+            1031.1,
+            956.4,
+            1004.7,
+            1275.4,
+            906.2,
+            1090.9,
+            900.4,
+            1056.1,
+            1079.6,
+            963.2,
+            1019.7,
+            1140.8,
+            1016.1,
+            972.4,
+            985.6,
+            935.7,
+            1060.9,
+            927.5,
+            1040.7,
+            1227.6
+          ],
+          "server_p50_ms": 1016.1,
+          "server_p95_ms": 1227.6,
+          "status": "ok",
+          "warm_ms": [
+            1056.162,
+            974.335,
+            1021.92,
+            1293.159,
+            931.842,
+            1107.242,
+            919.382,
+            1075.36,
+            1101.527,
+            981.435,
+            1040.432,
+            1161.907,
+            1050.42,
+            989.675,
+            1002.326,
+            955.88,
+            1085.994,
+            944.419,
+            1057.588,
+            1245.018
+          ],
+          "warm_p50_ms": 1040.432,
+          "warm_p95_ms": 1245.018
+        },
+        {
+          "actual_route": "duckdb",
+          "cold_ms": 1524.338,
+          "cold_server_ms": 1507.0,
+          "error_codes": [],
+          "estimated_levels": 4144346,
+          "expected_route": "duckdb",
+          "failed_calls": 0,
+          "group": "duckdb",
+          "http_status": 200,
+          "kind": "aggregate",
+          "label": "D09 Indian Ocean, quarter, month+float, measurement",
+          "partial": false,
+          "plan": {
+            "dataset": "core",
+            "geography": {
+              "kind": "named_region",
+              "value": "Indian Ocean"
+            },
+            "operation": {
+              "group_by": [
+                "month",
+                "float"
+              ],
+              "kind": "aggregate",
+              "metrics": [
+                "mean",
+                "count",
+                "min",
+                "max",
+                "median"
+              ],
+              "unit": "measurement"
+            },
+            "presentation": {
+              "kind": "table"
+            },
+            "qc_policy": "science_ready",
+            "time_range": {
+              "end": "2025-04-01T00:00:00Z",
+              "start": "2025-01-01T00:00:00Z"
+            },
+            "variables": [
+              "temperature",
+              "salinity"
+            ]
+          },
+          "route_ok": true,
+          "rows": 1901,
+          "server_ms": [
+            1409.5,
+            1377.6,
+            1275.9,
+            1108.8,
+            1090.7,
+            1204.0,
+            1099.0,
+            1232.6,
+            1077.0,
+            1151.7,
+            1356.5,
+            1357.7,
+            1154.7,
+            1153.1,
+            1148.3,
+            1099.8,
+            1105.7,
+            1377.7,
+            1119.1,
+            1130.9
+          ],
+          "server_p50_ms": 1151.7,
+          "server_p95_ms": 1377.7,
+          "status": "ok",
+          "warm_ms": [
+            1457.402,
+            1393.831,
+            1290.942,
+            1123.34,
+            1122.422,
+            1217.609,
+            1113.692,
+            1245.623,
+            1102.002,
+            1165.996,
+            1370.531,
+            1370.701,
+            1177.067,
+            1166.623,
+            1162.373,
+            1113.391,
+            1124.429,
+            1394.854,
+            1134.247,
+            1145.356
+          ],
+          "warm_p50_ms": 1165.996,
+          "warm_p95_ms": 1394.854
+        },
+        {
+          "actual_route": "duckdb",
+          "cold_ms": 976.904,
+          "cold_server_ms": 971.2,
+          "error_codes": [],
+          "estimated_levels": 4144346,
+          "expected_route": "duckdb",
+          "failed_calls": 0,
+          "group": "duckdb",
+          "http_status": 200,
+          "kind": "aggregate",
+          "label": "D10 Indian Ocean, quarter, month+depth_bin 50, whole profile, temperature",
+          "partial": false,
+          "plan": {
+            "dataset": "core",
+            "geography": {
+              "kind": "named_region",
+              "value": "Indian Ocean"
+            },
+            "operation": {
+              "depth_bin_size": 50,
+              "group_by": [
+                "month",
+                "depth_bin"
+              ],
+              "kind": "aggregate",
+              "metrics": [
+                "mean",
+                "count",
+                "min",
+                "max",
+                "median"
+              ],
+              "unit": "profile"
+            },
+            "presentation": {
+              "kind": "table"
+            },
+            "qc_policy": "science_ready",
+            "time_range": {
+              "end": "2025-04-01T00:00:00Z",
+              "start": "2025-01-01T00:00:00Z"
+            },
+            "variables": [
+              "temperature"
+            ]
+          },
+          "route_ok": true,
+          "rows": 331,
+          "server_ms": [
+            1032.5,
+            953.8,
+            1008.0,
+            1049.3,
+            1015.4,
+            1040.3,
+            917.7,
+            1015.7,
+            1093.4,
+            1245.5,
+            1210.4,
+            908.8,
+            1223.6,
+            1089.8,
+            1126.8,
+            977.1,
+            1078.9,
+            925.4,
+            1033.0,
+            931.8
+          ],
+          "server_p50_ms": 1032.5,
+          "server_p95_ms": 1223.6,
+          "status": "ok",
+          "warm_ms": [
+            1050.58,
+            966.575,
+            1014.711,
+            1056.046,
+            1033.909,
+            1047.62,
+            925.789,
+            1021.652,
+            1099.365,
+            1257.592,
+            1221.632,
+            916.366,
+            1230.799,
+            1097.864,
+            1137.307,
+            984.378,
+            1085.286,
+            932.445,
+            1049.669,
+            939.924
+          ],
+          "warm_p50_ms": 1047.62,
+          "warm_p95_ms": 1230.799
+        }
+      ],
+      "title": "DuckDB route (aggregates up to the whole-envelope quarter)",
+      "verdict": {
+        "objective_ms": 5000.0,
+        "pass": false,
+        "problems": [
+          "D04 Indian Ocean, quarter, month+depth_bin 100, 0-2000 dbar, profile: failed with statement_timeout"
+        ],
+        "worst_warm_p95_ms": 1825.63
+      }
+    },
+    {
+      "id": "metadata",
+      "objective_ms": 2000.0,
+      "rows": [
+        {
+          "cold_ms": 4.341,
+          "cold_server_ms": null,
+          "error_codes": [],
+          "estimated_levels": null,
+          "failed_calls": 0,
+          "group": "metadata",
+          "http_status": 200,
+          "kind": "metadata",
+          "label": "GET /v1/catalog/parameters",
+          "method": "GET",
+          "partial": null,
+          "path": "/v1/catalog/parameters",
+          "rows": null,
+          "server_ms": [],
+          "server_p50_ms": null,
+          "server_p95_ms": null,
+          "status": "ok",
+          "warm_ms": [
+            1.886,
+            1.729,
+            1.554,
+            2.054,
+            1.741,
+            1.85,
+            1.827,
+            1.554,
+            1.794,
+            1.855,
+            1.64,
+            1.918,
+            1.712,
+            2.01,
+            1.693,
+            1.695,
+            1.858,
+            1.762,
+            1.611,
+            1.967
+          ],
+          "warm_p50_ms": 1.762,
+          "warm_p95_ms": 2.01
+        },
+        {
+          "cold_ms": 32.693,
+          "cold_server_ms": null,
+          "error_codes": [],
+          "estimated_levels": null,
+          "failed_calls": 0,
+          "group": "metadata",
+          "http_status": 200,
+          "kind": "metadata",
+          "label": "GET /v1/catalog/coverage?region=Arabian Sea",
+          "method": "GET",
+          "partial": null,
+          "path": "/v1/catalog/coverage?region=Arabian%20Sea",
+          "rows": null,
+          "server_ms": [],
+          "server_p50_ms": null,
+          "server_p95_ms": null,
+          "status": "ok",
+          "warm_ms": [
+            28.32,
+            27.486,
+            26.676,
+            26.57,
+            25.813,
+            24.882,
+            24.533,
+            26.201,
+            26.577,
+            29.912,
+            29.123,
+            25.271,
+            25.792,
+            24.868,
+            25.804,
+            25.423,
+            26.21,
+            24.534,
+            24.82,
+            24.649
+          ],
+          "warm_p50_ms": 25.804,
+          "warm_p95_ms": 29.123
+        },
+        {
+          "cold_ms": 33.51,
+          "cold_server_ms": null,
+          "error_codes": [],
+          "estimated_levels": null,
+          "failed_calls": 0,
+          "group": "metadata",
+          "http_status": 200,
+          "kind": "metadata",
+          "label": "GET /v1/floats?limit=100",
+          "method": "GET",
+          "partial": null,
+          "path": "/v1/floats?limit=100",
+          "rows": 100,
+          "server_ms": [],
+          "server_p50_ms": null,
+          "server_p95_ms": null,
+          "status": "ok",
+          "warm_ms": [
+            8.569,
+            8.918,
+            9.799,
+            10.021,
+            9.37,
+            9.086,
+            9.435,
+            8.881,
+            8.756,
+            8.652,
+            8.594,
+            9.572,
+            9.708,
+            9.734,
+            9.232,
+            9.134,
+            8.676,
+            9.032,
+            8.826,
+            8.941
+          ],
+          "warm_p50_ms": 9.032,
+          "warm_p95_ms": 9.799
+        },
+        {
+          "cold_ms": 12.097,
+          "cold_server_ms": null,
+          "error_codes": [],
+          "estimated_levels": null,
+          "failed_calls": 0,
+          "group": "metadata",
+          "http_status": 200,
+          "kind": "metadata",
+          "label": "GET /v1/profiles?region=Arabian Sea&limit=100",
+          "method": "GET",
+          "partial": null,
+          "path": "/v1/profiles?region=Arabian%20Sea&limit=100",
+          "rows": 100,
+          "server_ms": [],
+          "server_p50_ms": null,
+          "server_p95_ms": null,
+          "status": "ok",
+          "warm_ms": [
+            13.353,
+            13.372,
+            11.442,
+            12.02,
+            12.92,
+            11.494,
+            11.252,
+            11.713,
+            11.529,
+            14.577,
+            14.268,
+            14.621,
+            12.002,
+            13.14,
+            13.143,
+            12.316,
+            13.179,
+            13.882,
+            13.083,
+            11.557
+          ],
+          "warm_p50_ms": 12.92,
+          "warm_p95_ms": 14.577
+        }
+      ],
+      "title": "Metadata routes",
+      "verdict": {
+        "objective_ms": 2000.0,
+        "pass": true,
+        "problems": [],
+        "worst_warm_p95_ms": 29.123
+      }
+    }
+  ],
+  "warmup": 2
+}
