@@ -910,3 +910,22 @@ def test_E05_replay_never_consults_the_cache(tmp_path):
     assert repository.reserved[0][2] == "replay"
     assert landed.manifest["sanitization"]["input_origin"] == "replay"
     assert landed.manifest["retrieved_at"] == record["retrieved_at"].isoformat()
+
+
+def test_E04_retry_wait_survives_a_heartbeat_that_outlasts_the_delay(cache_world):
+    # A heartbeat queued behind a publication commit can return after the retry delay
+    # has ended; the remaining sleep is then zero, never negative (ValueError).
+    now = [0.0]
+    slept = []
+
+    class Slow(type(cache_world.repository)):
+        def heartbeat(self, authority):
+            now[0] += 15
+
+    owner = cache_world.owner()
+    owner.repository.__class__ = Slow
+    owner.clock = lambda: now[0]
+    owner.sleep = slept.append
+    owner.deadline = 1000.0
+    owner.wait(5)
+    assert slept == [0.0]

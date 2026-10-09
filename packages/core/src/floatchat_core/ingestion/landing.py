@@ -187,7 +187,8 @@ class RequestOwner:
             if not self.enabled():
                 raise Rejection("live_ingestion_disabled")
             self.repository.heartbeat(self.authority)
-            self.sleep(min(10, end - self.clock()))
+            # The heartbeat can wait behind a publication commit (ADR-0054) and pass `end`.
+            self.sleep(max(0.0, min(10, end - self.clock())))
 
     def restart_selection(self) -> None:
         if self.require_existing:
