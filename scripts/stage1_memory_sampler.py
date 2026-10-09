@@ -23,22 +23,27 @@ ACQUIRE_SERVICES = {"acquire", "live-acquire"}
 WORKER_SERVICES = ACQUIRE_SERVICES | {"process"}
 
 
-def containers(project: str) -> dict[str, tuple[str, str]]:
-    result = subprocess.run(
-        [
-            "docker",
-            "ps",
-            "--no-trunc",
-            "--filter",
-            f"label=com.docker.compose.project={project}",
-            "--format",
-            '{{.ID}} {{.Label "com.docker.compose.service"}} {{.Names}}',
-        ],
-        capture_output=True,
-        text=True,
-        timeout=20,
-        check=False,
-    )
+def containers(project: str) -> dict[str, tuple[str, str]] | None:
+    """Worker containers of the project, or None when docker did not answer in time."""
+    try:
+        result = subprocess.run(
+            [
+                "docker",
+                "ps",
+                "--no-trunc",
+                "--filter",
+                f"label=com.docker.compose.project={project}",
+                "--format",
+                '{{.ID}} {{.Label "com.docker.compose.service"}} {{.Names}}',
+            ],
+            capture_output=True,
+            text=True,
+            timeout=20,
+            check=False,
+        )
+    except (subprocess.TimeoutExpired, OSError):
+        # A loaded host can stall `docker ps`; one missed listing must not end the evidence.
+        return None
     found = {}
     for line in result.stdout.splitlines():
         parts = line.split()
@@ -124,8 +129,15 @@ def main() -> int:
     deadline = time.monotonic() + args.max_seconds
     seen: dict[str, dict[str, object]] = {}
     samples = 0
+    missed_listings = 0
+    known: dict[str, tuple[str, str]] = {}
     while time.monotonic() < deadline and not Path(args.stop_file).exists():
-        for identifier, (service, name) in containers(args.project).items():
+        listed = containers(args.project)
+        if listed is None:
+            missed_listings += 1  # keep sampling the containers already known
+        else:
+            known = listed
+        for identifier, (service, name) in known.items():
             values = read(identifier)
             if values is None:
                 continue
@@ -165,6 +177,7 @@ def main() -> int:
         "finished_at_utc": datetime.now(UTC).isoformat(),
         "interval_seconds": args.interval,
         "samples": samples,
+        "missed_container_listings": missed_listings,
         "workers": workers,
         "by_service": summary(workers),
         # Evidence needs both halves of the topology to have been sampled.

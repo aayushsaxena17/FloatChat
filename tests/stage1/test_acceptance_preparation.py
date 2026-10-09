@@ -6,6 +6,7 @@ import io
 import json
 import re
 import signal
+import subprocess
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -648,6 +649,37 @@ def test_sampler_selects_every_worker_container_and_no_other_service(monkeypatch
         "b2": ("process", "proj-process-1"),
         "d4": ("live-acquire", "proj-live-owner"),
     }
+
+
+def test_sampler_survives_a_docker_listing_timeout(monkeypatch, tmp_path):
+    def stalled(*args, **kwargs):
+        raise subprocess.TimeoutExpired(args[0], 20)
+
+    monkeypatch.setattr(sampler.subprocess, "run", stalled)
+    assert sampler.containers("proj") is None
+    gib = 1024**3
+    make_cgroup(tmp_path / "cg/a1", anon=gib // 4, peak=gib // 2, limit=gib)
+    make_cgroup(tmp_path / "cg/b2", anon=gib // 4, peak=gib // 2, limit=2 * gib)
+    monkeypatch.setattr(sampler, "CGROUP", tmp_path / "cg")
+    listings = iter(
+        [{"a1": ("live-acquire", "proj-live-owner"), "b2": ("process", "proj-process-1")}, None]
+    )
+    monkeypatch.setattr(sampler, "containers", lambda project: next(listings))
+    stop = tmp_path / "stop"
+    polls = []
+    monkeypatch.setattr(
+        sampler.time, "sleep", lambda _: polls.append(1) if not polls else stop.write_text("")
+    )
+    output = tmp_path / "memory.json"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["sampler", "--project", "proj", "--output", str(output), "--stop-file", str(stop)],
+    )
+    assert sampler.main() == 0
+    report = json.loads(output.read_text())
+    assert report["missed_container_listings"] == 1 and report["samples"] == 4
+    assert report["pass"] is True
 
 
 @pytest.mark.parametrize("process_limit", [2 * 1024**3, 4 * 1024**3])
