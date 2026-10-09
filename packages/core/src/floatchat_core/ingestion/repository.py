@@ -177,8 +177,11 @@ class Repository:
                     cursor.execute(
                         "SELECT set_config('statement_timeout',%s,true)", (str(milliseconds),)
                     )
+                    # stage1-v4: concurrent acquire threads and process workers queue on the
+                    # run row behind a publication commit (seconds); a lock wait is bounded by
+                    # the same per-transaction bound as every statement, not a fixed 5 s.
                     cursor.execute(
-                        "SELECT set_config('lock_timeout',%s,true)", (str(min(5000, milliseconds)),)
+                        "SELECT set_config('lock_timeout',%s,true)", (str(milliseconds),)
                     )
                     cursor.execute(
                         "SELECT set_config('transaction_timeout',%s,true)", (str(milliseconds),)

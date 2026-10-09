@@ -1,8 +1,11 @@
 """Restricted-role repository proof in a network-isolated disposable database."""
 
 import os
+import threading
+import time
 import uuid
 
+import psycopg
 from floatchat_core.ingestion.numeric import Rejection
 from floatchat_core.ingestion.planning import Interval, Tile, timestamp
 from floatchat_core.ingestion.repository import Authority, Repository
@@ -53,6 +56,28 @@ def main():
             )
         else:
             raise AssertionError("Terminal publication accepted staging mutation")
+        # stage1-v4: a lock held longer than the former fixed 5 s lock_timeout (a
+        # publication commit holding the run row) is waited for, not a database_failure.
+        holder = psycopg.connect(os.environ["INGESTION_DATABASE_URL"], autocommit=False)
+        held = threading.Event()
+
+        def hold():
+            holder.execute("SELECT pg_advisory_xact_lock(164993999, 1)")
+            held.set()
+            time.sleep(7)
+            holder.rollback()
+
+        thread = threading.Thread(target=hold)
+        thread.start()
+        try:
+            assert held.wait(10)
+            started = time.monotonic()
+            with repository.transaction(remaining=30) as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock(164993999, 1)")
+            assert time.monotonic() - started >= 5
+        finally:
+            thread.join(15)
+            holder.close()
         print("offline-restricted-repository-verified")
     finally:
         repository.close()
