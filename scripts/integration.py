@@ -13,7 +13,14 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
-from scripts.dev import ROOT, bootstrap_env, configuration_root, docker_command, wait_ready
+from scripts.dev import (
+    ROOT,
+    application_commit,
+    bootstrap_env,
+    configuration_root,
+    docker_command,
+    wait_ready,
+)
 from scripts.security.scan import restrict
 
 
@@ -51,7 +58,10 @@ def main() -> None:
             key: value for key, value in os.environ.items() if key not in configuration_keys
         }
         environment.update(
-            COMPOSE_PROJECT_NAME=project, API_PORT=str(api_port), WEB_PORT=str(web_port)
+            COMPOSE_PROJECT_NAME=project,
+            API_PORT=str(api_port),
+            WEB_PORT=str(web_port),
+            APPLICATION_COMMIT=application_commit(),
         )
         command = [
             docker,
@@ -108,6 +118,23 @@ def main() -> None:
                 assert json.loads(error.read())["error"]["code"] == "coverage_missing"
             evidence.append({"check": "stage2-catalogue-on-empty-database", "passed": True})
             compose("run", "--rm", "db-init")
+            # Stage 3 (ADR-0063): seed the synthetic science and catalogue so the dashboard's
+            # end-to-end scenario has data; rows through the admin login, objects through the
+            # API's storage credentials, no credential in any argument. A restart exercises the
+            # start-up warm-up over the seeded parts.
+            compose("run", "--rm", "db-init", "python", "scripts/science_seed.py", "database")
+            compose("exec", "-T", "api", "python", "scripts/science_seed.py", "objects")
+            compose("restart", "api")
+            wait_ready(ready_url, 60)
+            with urllib.request.urlopen(
+                f"http://127.0.0.1:{api_port}/v1/profiles?region=Arabian%20Sea"
+                "&start=2025-01-01T00:00:00Z&end=2025-02-01T00:00:00Z&depth_max=100",
+                timeout=10,
+            ) as response:
+                listing = json.loads(response.read())
+                assert listing["result"]["row_count"] == 5, listing["result"]["row_count"]
+                assert listing["provenance"]["environment"]["ingested_at"]
+            evidence.append({"check": "stage3-science-seed", "profiles_in_scenario": 5})
             compose(
                 "run",
                 "--rm",
@@ -198,7 +225,7 @@ def main() -> None:
                 ["pnpm", "--filter", "@floatchat/web", "test:e2e"],
                 cwd=ROOT,
                 env=dict(environment, BASE_URL=f"http://127.0.0.1:{web_port}"),
-                timeout=120,
+                timeout=300,
                 check=False,
                 shell=os.name == "nt",
             )

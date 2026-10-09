@@ -48,8 +48,9 @@ that against the merged code and the build prompt changed the following:
    `scripts/integration.py` set it from `git rev-parse HEAD` when Git is available (ADR-0064).
 7. **Library majors.** React Router 8 requires React 19.2.7 and the repository pins 19.2.0;
    Stage 3 pins `react-router` 7.18.4 (the declarative API the app needs is identical) and leaves
-   React alone. MapLibre 6 is ESM-only and WebGL2-only; headless Chromium on this host and on
-   GitHub runners provides WebGL2 through SwiftShader (probed 2026-10-09). Plotly 4 removed the
+   React alone. MapLibre 6 is ESM-only and WebGL2-only; headless Chromium on this host provides
+   WebGL2 through SwiftShader (probed 2026-10-09; the GitHub runner result is observed when CI
+   runs). Plotly 4 removed the
    Mapbox traces and changed colour parsing; the cartesian bundle covers every chart kind the
    contract emits except `scattergeo`, which the dashboard renders with MapLibre (ADR-0061).
 8. **Basemap without network.** Tests never call external services, and the map must work
@@ -198,7 +199,8 @@ In dependency order. Web paths are under `apps/web/src/`. Every item has tests (
   `scripts/build_basemap.py` (run once from a downloaded copy; the script records the source URL,
   SHA-256 and the clip box in the JSON's `properties`; tests never fetch).
 - `map/style.ts`: a MapLibre style with a sea-coloured background, the land fill and outline,
-  a graticule every 10 degrees with labels, no glyphs or sprites from the network.
+  a graticule every 10 degrees as line layers; no `symbol` layer, glyph or sprite (text needs a
+  glyph server): cluster counts and coordinate labels are DOM overlays (`Marker`, `Popup`).
 - `explorer/MapView.tsx`: MapLibre map over the style; a GeoJSON source of profile points with
   `cluster: true` (cluster circles with counts, unclustered circles coloured by month with a
   shape-free status: month is also in the hover and in the list); the selected float's

@@ -76,6 +76,11 @@ environment = Table(
     Column("disposable", Boolean),
     Column("reference_time", DateTime(timezone=True)),
     Column("completed_runs", BigInteger),
+    # Migration 0017 (ADR-0064): the latest completed run and its retrieval window.
+    Column("latest_run_id", Uuid),
+    Column("ingested_at", DateTime(timezone=True)),
+    Column("source_retrieved_from", DateTime(timezone=True)),
+    Column("source_retrieved_to", DateTime(timezone=True)),
 )
 floats = Table(
     "query_float",

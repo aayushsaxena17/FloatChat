@@ -1,4 +1,4 @@
-"""Stage 2 integration: migration 0016, the read-only login, both execution routes, regions.
+"""Stage 2 integration: migrations 0016 and 0017, the read-only login, both routes, regions.
 
 Runs against the seeded disposable PostGIS server from ``conftest.py`` (no host network beyond
 loopback to that container, no upstream). Marked ``integration`` like the Stage 1 suite.
@@ -112,6 +112,15 @@ def test_environment_reference_time_and_parameters(database, tmp_path, allow_loo
     assert environment.mode == "acceptance"
     assert environment.reference_time == utc("2025-04-01T00:00:00Z")
     assert environment.hot is not None and environment.hot.start == utc("2025-01-01T00:00:00Z")
+    # Migration 0017 (ADR-0064): the latest completed run, its creation and retrieval times.
+    assert str(environment.latest_run_id) == "00000000-0000-4000-8000-000000000001"
+    assert environment.ingested_at is not None
+    assert environment.source_retrieved_from is not None
+    assert environment.source_retrieved_to is not None
+    assert environment.source_retrieved_from <= environment.source_retrieved_to
+    described = environment.describe()
+    assert described["latest_run"] == "00000000-0000-4000-8000-000000000001"
+    assert described["ingested_at"].endswith("Z") and described["source_retrieved"]["start"]
     parameters = service.parameters()
     assert [v["name"] for v in parameters["variables"]] == ["temperature", "salinity", "pressure"]
     assert {r["name"] for r in parameters["geography"]["named_region"]} >= {
@@ -324,6 +333,31 @@ def test_floats_and_profile_reads(database, tmp_path, allow_loopback):
     assert temperatures == [28.0, 25.0, None, 9.0]  # R mode, QC 4 level dropped
     raw = service.profile(PROFILES[2][0], qc_policy="raw", depth=None)["levels"]
     assert "temperature_adjusted_qc" in [c["name"] for c in raw["columns"]]
+    # Stage 3 (ADR-0064): every read carries provenance naming the runs it answered from.
+    assert profile["provenance"]["execution"] == {
+        "source": "postgresql",
+        "rows": 4,
+        "run_ids": ["00000000-0000-4000-8000-000000000001"],
+    }
+    assert profile["provenance"]["versions"]["qc_policy"] == "qc-policy-v1/science_ready"
+    assert profile["provenance"]["result_sha256"] and profile["provenance"]["attribution"]["argo"]
+    assert (
+        floats["provenance"]["geography"] is None
+        and "qc_policy" not in (floats["provenance"]["versions"])
+    )
+    assert detail["provenance"]["transformation"].startswith("float summary")
+    listing = service.profiles(
+        start=None,
+        end=None,
+        geography=None,
+        platform_number=None,
+        depth=None,
+        qc_policy="science_ready",
+        cursor=None,
+        limit=10,
+    )
+    assert listing["provenance"]["execution"]["run_ids"] == ["00000000-0000-4000-8000-000000000001"]
+    assert listing["provenance"]["versions"]["region"]["name"] == "Indian Ocean"
     with pytest.raises(QueryError) as bad_cursor:
         service.floats(start=None, end=None, geography=None, cursor="nope", limit=None)
     assert bad_cursor.value.code == "invalid_cursor"

@@ -13,6 +13,12 @@ against the merged code; the advisor reviewed the approach before the plan was w
   typed response models, provenance on reads, view timestamps for the coverage panel,
   `APPLICATION_COMMIT` wiring, library majors, offline basemap, one unit per chart, the map
   point cap, the kept Stage 0 browser check, cold Vite in the integration stack.
+- [x] Advisor review of the written plan recorded 2026-10-09 (ADR-0039 convention): agreed with the
+  plan and ADR-0061..0065 with four amendments folded in before implementation: the WebGL2
+  probe is stated for this host only; MapLibre text layers need a glyph server, so labels are DOM
+  overlays (ADR-0062); the objects seeding step verifies the regenerated part bytes against the
+  catalogue before uploading; the environment model keeps the tier intervals and timestamps
+  optional for a database without a completed run.
 - [x] ADR-0061 (scope, branch, routes, pins), ADR-0062 (offline basemap, clustering, point cap),
   ADR-0063 (shared seed, seeded integration project, local acceptance), ADR-0064 (typed
   responses, provenance on reads, migration 0017, application commit), ADR-0065 (chart rules).
