@@ -48,7 +48,15 @@ reviewed the findings before the rewrite and agreed with the rewritten plan and 
   page-cache pressure after the 288 MiB object fill.
 - [x] W8 gate report [docs/stage2-gate.md](docs/stage2-gate.md); `make lint`, `make typecheck`,
   `make test` (1,844 Python offline, 12 web) and the 11-case integration suite green locally.
-- [ ] CI on the pushed head; advisor agreement recorded here; pull request into `main`.
+- [x] CI on `1797154`: the six merge-required jobs (`python`, `web`, `docker`, `integration`,
+  `secrets-current`, `secrets-history`) passed; the non-required offline components job failed one
+  Stage 1 case (`test_B07_repeat_bootstrap_cannot_regrant_scientific_writes`: the bootstrap
+  demanded `DB_QUERY_PASSWORD`), fixed in the next commit (the query role stays `NOLOGIN` without a
+  configured password); the Stage 2 integration step of that job runs on the fixed head.
+- [x] Advisor review of the implemented Stage 2 recorded 2026-10-09 (ADR-0039 convention): agreed
+  with the implementation at `1797154` plus the wording and bootstrap fix-ups that follow it, with
+  the cold-path deadline and the hand-observed cross-route agreement stated as risks in the gate.
+- [ ] Pull request into `main` after the components job is green on the fixed head.
 - [ ] Needs from Aayush: confirm ADR-0057, ADR-0059 and the region definitions in ADR-0060.
 
 ## Stage 1 - live and captured-replay acceptance passed on stage1-v4 (ADR-0054, ADR-0055), 2026-10-09

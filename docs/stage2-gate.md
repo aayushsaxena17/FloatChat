@@ -91,7 +91,7 @@ suite and the Stage 0 Docker acceptance are listed with their outcome):
 | `pnpm test` (App and the generated client) | 12 passed |
 | `pytest tests/stage2 -m integration` (disposable PostGIS) | 11 passed |
 | `scripts/export_openapi.py --check`, `pnpm generate:api` + `git diff` | in sync |
-| `make integration` (Stage 0 Docker acceptance with the Stage 2 catalogue check) | runs in CI (`integration` job); not re-run locally after the Stage 2 change |
+| `make integration` (Stage 0 Docker acceptance with the Stage 2 catalogue check) | not run locally after the Stage 2 change; the CI `integration` job result is recorded in PROGRESS.md |
 
 `tests/stage2` holds 513 offline tests (plan validation 85, policy 71, compilers 40, sanitiser and
 charts 64, cache and DuckDB runner 46, regions and errors 32, API contract 131, OpenAPI 4,
@@ -121,16 +121,18 @@ that empties the part cache):
 | Metadata routes (parameters, coverage, floats, profiles) | 32.0 ms | 2-28 ms | 17-43 ms | metadata p95 under 2 s | pass |
 
 Run 1 (same matrix, first execution on the host) failed one row: D04's cache-cold call timed out
-(`statement_timeout`, HTTP 504) when the whole-quarter object fill (288 MiB from a cold MinIO,
-11.7 s on D02's cold call) left the host under page-cache pressure; its warm runs were therefore
-not measured in that run. Run 2, executed next with the same cold procedure, measured D04 at
-2.4 s cold and 1.54 s warm p95, and every other row within a few percent of run 1. The cold
-object fill is bounded separately from the query deadline (ADR-0058).
+(`statement_timeout`, HTTP 504), so its warm runs were not measured in that run. The failure
+was observed once and did not reproduce in run 2, executed next with the same cold procedure
+(D04 2.4 s cold, 1.54 s warm p95; every other row within a few percent of run 1). Its cause is
+not isolated: the separate object-fetch budget of ADR-0058 was already deployed for both runs,
+so the 10 s DuckDB execution deadline itself was exceeded on that cold call; page-cache pressure
+after the 288 MiB object fill on this 3.7 GB host is a hypothesis, not a diagnosis. See Known
+issues.
 
-Byte-level agreement of the two routes on the imported data: the integration suite proves it on
-seeded rows; on the acceptance copy, D02 and D03 (DuckDB) return the same monthly means as the
-PostgreSQL route within floating-point summation order (checked by hand during development, not
-by a committed script; a committed cross-route check on the dev dataset is a follow-up).
+Agreement of the two routes: the integration suite proves it on the seeded rows; on the
+acceptance copy it is observed, not test-proven (D02 and D03 on DuckDB returned the same
+monthly means as the PostgreSQL route within floating-point summation order when checked by
+hand). A committed cross-route check on the dev dataset is a follow-up.
 
 ## Deviations from the PRD (with ADRs)
 
@@ -157,7 +159,15 @@ by a committed script; a committed cross-route check on the dev dataset is a fol
 - Keyset cursors are unsigned opaque tokens; a client can forge a position but cannot read
   anything the plan would not allow.
 - The DuckDB route depends on the object store for the first fill of each part; a cold request
-  over the whole quarter fetches about 288 MiB (the measured cold latency includes it).
+  over the whole quarter fetches about 288 MiB (the measured cold latency includes it, 2.7 s to
+  11.7 s on this host depending on MinIO's own cache).
+- Cold-path risk: one cache-cold whole-quarter DuckDB call (run 1, D04) exceeded the 10 s
+  execution deadline and was not reproduced; the cause is not isolated. On the production
+  profile (8 GB host) the margin is larger, but a cold cache after a deploy can still produce a
+  `statement_timeout` on the first large aggregate until the cache is warm; a warm-up step at
+  start-up is a follow-up.
+- Cross-route agreement (PostgreSQL versus DuckDB) is test-proven on the seeded integration rows;
+  on the imported 4.14 M levels it was observed by hand on D02 and D03, not by a committed check.
 - No authentication, quotas or rate limits (Stage 7); the API binds to loopback only.
 - `tests/test_refetch.py` HTTPS deadline tests are load-sensitive on this host (observed failing
   under the import and three concurrent test runs, passing in isolation).

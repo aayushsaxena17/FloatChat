@@ -52,18 +52,23 @@ def ensure_application_role(cursor: psycopg.Cursor[tuple[object, ...]]) -> None:
         cursor.execute("CREATE ROLE floatchat_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE")
 
 
-def ensure_query_role(cursor: psycopg.Cursor[tuple[object, ...]]) -> None:
+def ensure_query_role(
+    cursor: psycopg.Cursor[tuple[object, ...]], password: str | None = None
+) -> None:
     """Stage 2 read-only login (ADR-0058). Migration 0016 may have created it NOLOGIN first,
-    so LOGIN and the password are set unconditionally, never only on creation."""
+    so LOGIN and the password are set whenever a password is configured, never only on
+    creation. Without DB_QUERY_PASSWORD (Stage 1 tooling, restricted bootstraps) the role
+    exists but cannot log in."""
     cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s", ("floatchat_query",))
     if cursor.fetchone() is None:
         cursor.execute("CREATE ROLE floatchat_query NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE")
-    cursor.execute(
-        sql.SQL(
-            "ALTER ROLE floatchat_query LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT "
-            "PASSWORD {}"
-        ).format(sql.Literal(os.environ["DB_QUERY_PASSWORD"]))
-    )
+    if password is not None:
+        cursor.execute(
+            sql.SQL(
+                "ALTER ROLE floatchat_query LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT "
+                "PASSWORD {}"
+            ).format(sql.Literal(password))
+        )
     cursor.execute("GRANT CONNECT ON DATABASE floatchat TO floatchat_query")
 
 
@@ -82,7 +87,7 @@ def main() -> None:
     with psycopg.connect(os.environ["DATABASE_ADMIN_URL"], connect_timeout=3) as connection:
         with connection.cursor() as cursor:
             ensure_application_role(cursor)
-            ensure_query_role(cursor)
+            ensure_query_role(cursor, os.environ.get("DB_QUERY_PASSWORD"))
             cursor.execute(
                 sql.SQL("ALTER ROLE floatchat_app PASSWORD {}").format(
                     sql.Literal(os.environ["DB_APP_PASSWORD"])

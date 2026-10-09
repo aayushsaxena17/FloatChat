@@ -63,3 +63,29 @@ def test_append_missing_keys_is_additive_and_generates_secrets(tmp_path: Path) -
     assert "QUERY_DATABASE_URL=postgresql://floatchat_query:${DB_QUERY_PASSWORD}@db" in content
     assert append_missing_keys(tmp_path) == []
     assert (tmp_path / ".env").read_text() == content
+
+
+def test_query_role_without_a_password_stays_nologin() -> None:
+    from scripts.bootstrap_db import ensure_query_role
+
+    class Cursor:
+        def __init__(self) -> None:
+            self.statements: list[str] = []
+            self.exists = False
+
+        def execute(self, statement, parameters=None) -> None:  # noqa: ANN001
+            self.statements.append(str(statement))
+
+        def fetchone(self):  # noqa: ANN202
+            return (1,) if self.exists else None
+
+    cursor = Cursor()
+    ensure_query_role(cursor, None)  # type: ignore[arg-type]
+    assert any("CREATE ROLE floatchat_query NOLOGIN" in s for s in cursor.statements)
+    assert not any("LOGIN NOSUPERUSER" in s and "PASSWORD" in s for s in cursor.statements)
+    assert any("GRANT CONNECT" in s for s in cursor.statements)
+    cursor = Cursor()
+    cursor.exists = True
+    ensure_query_role(cursor, "secret")  # type: ignore[arg-type]
+    assert not any("CREATE ROLE" in s for s in cursor.statements)
+    assert any("PASSWORD" in s for s in cursor.statements)
