@@ -12,6 +12,7 @@ import time
 import uuid
 from collections.abc import Sequence
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from sqlalchemy.exc import SQLAlchemyError
@@ -637,23 +638,26 @@ class QueryService:
         partitions = [{"id": str(part.partition_id), "sha256": part.sha256} for part in parts]
         # The object fill has its own byte and time budgets (plan section 4.4); the query
         # timeout bounds the DuckDB execution that follows.
-        started = time.monotonic()
-        paths = self.cache.paths(
+        fill = self.cache.fill(
             [(part.key, part.sha256, part.byte_count) for part in parts],
             workers=self.limits.object_fetch_workers,
             deadline_seconds=self.limits.object_fetch_seconds,
         )
-        execution["object_fetch_ms"] = round((time.monotonic() - started) * 1000, 1)
+        execution["object_fetch_ms"] = round(fill.seconds * 1000, 1)
+        execution["objects_fetched"] = fill.fetched
+        execution["objects_reused"] = fill.reused
         statement = compile_duckdb.aggregate_statement(
             plan, label=geography.label, max_rows=self.limits.max_rows
         )
-        raw_rows = compile_duckdb.run(
-            statement,
-            compile_duckdb.parts_dataset(paths),
-            members,
-            self.limits,
-            self.limits.query_timeout_seconds,
-        )
+        try:
+            raw_rows = self._run_duckdb(statement, fill.paths, members)
+        except QueryError as error:
+            # A cold fill just wrote the files it scans; one more attempt runs over warm files
+            # within the same execution deadline (gate known issue: cold-path deadline).
+            if error.code != "statement_timeout" or fill.fetched == 0:
+                raise
+            execution["retried_after_cold_fill"] = True
+            raw_rows = self._run_duckdb(statement, fill.paths, members)
         if len(raw_rows) > self.limits.max_rows:
             raise QueryError("result_too_large")
         rows = [dict(zip(statement.columns, row, strict=True)) for row in raw_rows]
@@ -664,6 +668,63 @@ class QueryService:
             sanitize(rows, _aggregate_columns(statement.columns), self.limits),
             description + ", source duckdb",
         )
+
+    def _run_duckdb(
+        self, statement: compile_duckdb.DuckStatement, paths: list[Path], members: Any
+    ) -> list[tuple[Any, ...]]:
+        return compile_duckdb.run(
+            statement,
+            compile_duckdb.parts_dataset(paths),
+            members,
+            self.limits,
+            self.limits.query_timeout_seconds,
+        )
+
+    def warm_cache(self) -> dict[str, Any]:
+        """Fill the part cache with the environment's active parts, newest months first.
+
+        Bounded by the cache size and ``warm_cache_seconds``; parts beyond the cache budget are
+        skipped rather than evicting what was just warmed. Never raises for an empty database.
+        """
+        started = time.monotonic()
+        if self.cache is None:
+            return {"skipped": "no part cache configured"}
+        try:
+            environment = self.catalogue.environment()
+        except QueryError as error:
+            if error.code == "coverage_missing":
+                return {"skipped": "no ingestion environment"}
+            raise
+        # Newest months first: slot keys carry the month in their third segment.
+        parts = sorted(
+            self.catalogue.active_parts(environment.id),
+            key=lambda record: record.logical_key.split("/")[2],
+            reverse=True,
+        )
+        selected: list[tuple[str, str, int]] = []
+        budget = self.limits.object_cache_bytes
+        for part in parts:
+            if part.byte_count > budget:
+                continue
+            budget -= part.byte_count
+            selected.append((part.key, part.sha256, part.byte_count))
+        fill = self.cache.fill(
+            selected,
+            workers=self.limits.object_fetch_workers,
+            deadline_seconds=self.limits.warm_cache_seconds,
+        )
+        record = {
+            "environment": environment.name,
+            "parts": len(parts),
+            "warmed": len(selected),
+            "skipped_over_budget": len(parts) - len(selected),
+            "fetched": fill.fetched,
+            "fetched_bytes": fill.fetched_bytes,
+            "reused": fill.reused,
+            "seconds": round(time.monotonic() - started, 1),
+        }
+        log.info(json.dumps({"event": "warm_cache", **record}))
+        return record
 
     @staticmethod
     def _aggregate_names(plan: QueryPlan) -> list[str]:

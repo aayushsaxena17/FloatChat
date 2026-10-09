@@ -18,6 +18,8 @@ class QueryLimits(BaseSettings):
     object_fetch_bytes: int = Field(default=512 * 1024 * 1024, ge=1, le=16 * 1024**3)
     object_fetch_seconds: float = Field(default=120.0, gt=0, le=3600)
     object_fetch_workers: int = Field(default=4, ge=1, le=16)
+    warm_cache_on_start: bool = True
+    warm_cache_seconds: float = Field(default=600.0, gt=0, le=7200)
     nearest_radius_km: float = Field(default=2000.0, gt=0, le=20_000)
     nearest_k: int = Field(default=100, ge=1, le=10_000)
     chart_points_per_series: int = Field(default=5000, ge=1, le=1_000_000)

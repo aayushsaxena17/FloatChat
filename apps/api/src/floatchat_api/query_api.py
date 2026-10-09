@@ -11,7 +11,7 @@ import uuid
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from threading import Lock
+from threading import Lock, Thread
 from typing import Any
 
 import boto3
@@ -147,6 +147,30 @@ class QueryRuntime:
             if self._service is None:
                 self._service = self._build()
             return self._service
+
+    def start_warmup(self) -> Thread | None:
+        """Fill the part cache in the background at start-up (ADR-0058 amendment).
+
+        Readiness is never delayed: the thread builds the service, warms newest months first and
+        logs one record; a missing configuration or environment is logged as a skip.
+        """
+        if not self.limits.warm_cache_on_start:
+            return None
+
+        def work() -> None:
+            try:
+                warm = getattr(self.service(), "warm_cache", None)
+                record = warm() if warm is not None else {"skipped": "service has no cache"}
+                if "event" not in record:
+                    log.info(json.dumps({"event": "warm_cache", **record}))
+            except QueryError as error:
+                log.info(json.dumps({"event": "warm_cache", "skipped": error.code}))
+            except Exception:
+                log.exception("warm_cache failed")
+
+        thread = Thread(target=work, name="floatchat-warm-cache", daemon=True)
+        thread.start()
+        return thread
 
     def _build(self) -> QueryService:
         try:
