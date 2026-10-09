@@ -1,6 +1,8 @@
 # Stage 2 gate - query engine and API
 
-**Stage 2 - complete pending CI on the pull-request head and the advisor's recorded agreement.**
+**Stage 2 - complete.** CI green on `c01b0e1` (all seven jobs), advisor agreement recorded in
+PROGRESS.md, pull request [#6](https://github.com/aayushsaxena17/FloatChat/pull/6) open; three
+decisions still await the owner's confirmation (section Needs from Aayush).
 Branch `codex/stage-2` from `main` (`91f7dd5`, the Stage 1 squash). Scope: PRD §8, §11.3, §13.1-13.2,
 §17; reviewed plan [docs/stage2-plan.md](stage2-plan.md); decisions ADR-0056 to ADR-0060.
 

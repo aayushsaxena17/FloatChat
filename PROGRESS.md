@@ -56,7 +56,9 @@ reviewed the findings before the rewrite and agreed with the rewritten plan and 
 - [x] Advisor review of the implemented Stage 2 recorded 2026-10-09 (ADR-0039 convention): agreed
   with the implementation at `1797154` plus the wording and bootstrap fix-ups that follow it, with
   the cold-path deadline and the hand-observed cross-route agreement stated as risks in the gate.
-- [ ] Pull request into `main` after the components job is green on the fixed head.
+- [x] CI on `c01b0e1`: all seven jobs green, including the Stage 2 integration step of the
+  offline components job. Pull request [#6](https://github.com/aayushsaxena17/FloatChat/pull/6)
+  into `main` opened 2026-10-09; merge is the owner's decision.
 - [ ] Needs from Aayush: confirm ADR-0057, ADR-0059 and the region definitions in ADR-0060.
 
 ## Stage 1 - live and captured-replay acceptance passed on stage1-v4 (ADR-0054, ADR-0055), 2026-10-09
