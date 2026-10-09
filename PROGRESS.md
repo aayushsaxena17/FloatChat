@@ -41,8 +41,14 @@ reviewed the findings before the rewrite and agreed with the rewritten plan and 
 - [x] W1 dataset: session `302412131a7c99fb` copied into the dev project by streamed binary COPY
   (5,814 profiles, 4,144,346 levels, 206 parts, 301,781,882 bytes; the pg_dump path crashed the
   1 GiB session server and was replaced); [report](reports/stage2-dataset-302412131a7c99fb.json).
-- [ ] W7 latency report on the imported dataset; W8 gate report with measured numbers, CI on the
-  pushed head, advisor agreement.
+- [x] W7 latency: [run 2](reports/query_latency_2026-10-09.md) (canonical) and
+  [run 1](reports/query_latency_2026-10-09-run1.md): PostgreSQL route worst warm p95 528.6 ms,
+  DuckDB route (whole-envelope quarter, 4.14 M levels) worst warm p95 1,859.7 ms, metadata
+  32.0 ms; every PRD §3.1 objective passes in run 2; run 1's D04 cache-cold call timed out under
+  page-cache pressure after the 288 MiB object fill.
+- [x] W8 gate report [docs/stage2-gate.md](docs/stage2-gate.md); `make lint`, `make typecheck`,
+  `make test` (1,844 Python offline, 12 web) and the 11-case integration suite green locally.
+- [ ] CI on the pushed head; advisor agreement recorded here; pull request into `main`.
 - [ ] Needs from Aayush: confirm ADR-0057, ADR-0059 and the region definitions in ADR-0060.
 
 ## Stage 1 - live and captured-replay acceptance passed on stage1-v4 (ADR-0054, ADR-0055), 2026-10-09

@@ -80,11 +80,57 @@ uv run --all-packages --frozen python scripts/query_latency.py --base-url http:/
 
 ## Tests and CI
 
-MEASURED_TESTS
+Local, on the final head (`make lint`, `make typecheck`, `make test`, the Stage 2 integration
+suite and the Stage 0 Docker acceptance are listed with their outcome):
+
+| Check | Result |
+|---|---|
+| `ruff check`, `ruff format --check`, `pnpm lint`, `pnpm format:check` | clean |
+| `mypy` (strict, 53 source files) | clean |
+| `pytest -m 'not integration'` (Stage 0, 1 and 2) | 1,844 passed, 1 skipped, 133 integration deselected |
+| `pnpm test` (App and the generated client) | 12 passed |
+| `pytest tests/stage2 -m integration` (disposable PostGIS) | 11 passed |
+| `scripts/export_openapi.py --check`, `pnpm generate:api` + `git diff` | in sync |
+| `make integration` (Stage 0 Docker acceptance with the Stage 2 catalogue check) | runs in CI (`integration` job); not re-run locally after the Stage 2 change |
+
+`tests/stage2` holds 513 offline tests (plan validation 85, policy 71, compilers 40, sanitiser and
+charts 64, cache and DuckDB runner 46, regions and errors 32, API contract 131, OpenAPI 4,
+latency script 27, plus parametrised cases) and the 11-case integration suite. Coverage for
+`packages/core` is not measured in this repository (no coverage tool is configured; a
+follow-up). CI on the pushed head is recorded in PROGRESS.md once the run completes.
 
 ## Measured results
 
-MEASURED_RESULTS
+All numbers below are copied from files written by scripts in this repository; nothing is typed
+by hand.
+
+Dataset ([report](../reports/stage2-dataset-302412131a7c99fb.json)): the accepted session
+`302412131a7c99fb` copied into the dev project: 5,814 profiles, 4,144,346 levels, 270 slots, 206
+parts (301,781,882 bytes), 2 runs (live `edebccd8`, replay `8562e75d`), environment reference time
+2025-04-01T00:00:00Z. Row counts match the source table by table.
+
+Latency ([run 2, canonical](../reports/query_latency_2026-10-09.md),
+[run 1](../reports/query_latency_2026-10-09-run1.md); WSL2 host, 8 CPUs, 3.7 GB RAM, the dev
+Compose stack, 20 warm runs after 2 discarded, one cache-cold call per plan after an API restart
+that empties the part cache):
+
+| Table (10 plans each) | Worst warm p95 | Typical warm p50 | Cold range | PRD §3.1 objective | Result |
+|---|---:|---:|---:|---|---|
+| PostgreSQL route (listings, nearest, small aggregates) | 528.6 ms (P09 bbox aggregate) | 18-110 ms | 37 ms to 2.8 s | aggregate p95 under 5 s | pass |
+| DuckDB route (whole-envelope quarter, 4.14 M levels) | 1,859.7 ms (D05 month+depth_bin, measurement) | 0.7-1.5 s | 1.1 s to 4.2 s | aggregate p95 under 5 s | pass |
+| Metadata routes (parameters, coverage, floats, profiles) | 32.0 ms | 2-28 ms | 17-43 ms | metadata p95 under 2 s | pass |
+
+Run 1 (same matrix, first execution on the host) failed one row: D04's cache-cold call timed out
+(`statement_timeout`, HTTP 504) when the whole-quarter object fill (288 MiB from a cold MinIO,
+11.7 s on D02's cold call) left the host under page-cache pressure; its warm runs were therefore
+not measured in that run. Run 2, executed next with the same cold procedure, measured D04 at
+2.4 s cold and 1.54 s warm p95, and every other row within a few percent of run 1. The cold
+object fill is bounded separately from the query deadline (ADR-0058).
+
+Byte-level agreement of the two routes on the imported data: the integration suite proves it on
+seeded rows; on the acceptance copy, D02 and D03 (DuckDB) return the same monthly means as the
+PostgreSQL route within floating-point summation order (checked by hand during development, not
+by a committed script; a committed cross-route check on the dev dataset is a follow-up).
 
 ## Deviations from the PRD (with ADRs)
 
