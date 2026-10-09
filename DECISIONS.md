@@ -1570,8 +1570,9 @@ Decision:
    `lock_timeout` and `search_path`. It holds `SELECT` on the `app.query_*` views and on
    `app.named_region` only; views are owned by `floatchat_admin`, so the role needs no privilege on
    base tables and cannot read ingestion control, raw manifests, staging or evidence tables.
-   `floatchat_app` keeps its Stage 0 privileges; `named_region` joins the bootstrap's withheld set
-   so it receives `SELECT` only.
+   `floatchat_app` keeps its Stage 0 privileges and gets nothing on Stage 2 objects: `named_region`
+   joins the bootstrap's withheld set (`REVOKE ALL`), and the bootstrap's grant loop never touches
+   views (relkinds `r`, `p`, `S` only), so the migration's view grants survive it.
 2. PostgreSQL compilation is SQLAlchemy Core over `Table` objects bound to the views, with allow-listed
    identifiers and functions and every value bound; `text()` and formatted SQL are forbidden in the
    query package by a test.

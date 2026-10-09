@@ -5,7 +5,8 @@
 `codex/stage-1` merged into `main` by PR #5 (squash `91f7dd5`, tree equal to `a4d6a01`); the remote
 Stage 1 branch is deleted. Stage 2 works on `codex/stage-2` from `main`. The draft plan was reviewed
 against the merged code and rewritten: [docs/stage2-plan.md](docs/stage2-plan.md). The advisor
-reviewed the findings before the rewrite (ADR-0039 convention).
+reviewed the findings before the rewrite and agreed with the rewritten plan and ADR-0056..0060 on
+2026-10-09 (ADR-0039 convention); implementation may start.
 
 - [x] Plan corrections recorded in the plan's section 0: migration `0016` (not 0010), parts plus
   membership manifests, the `argovis`-only population, `qc-policy-v1`, the environment reference

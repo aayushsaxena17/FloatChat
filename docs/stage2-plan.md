@@ -100,7 +100,9 @@ In dependency order. Paths without a directory are under
   `ingestion_run`, `ingestion_chunk`, `ingestion_attempt`, `raw_manifest`, `argo_float`,
   `argo_profile`, `core_measurement` (after creating the monthly partitions in the target with the
   same DDL `ensure_measurement_month` uses), `logical_partition_slot`, `publication_intent`,
-  `dataset_partition`, `coverage_receipt`; restores into the dev project's database as
+  `dataset_partition`, `coverage_receipt`, extended by one `pg_constraint` query on the session
+  database to the foreign-key closure of that list (a data-only restore fails on the first missing
+  target); restores into the dev project's database as
   `floatchat_admin`; mirrors every object of `app.committed_active_partitions` into the dev bucket
   under the same key through a one-off container on the session network, verifying length and
   SHA-256 against the catalogue before and after the copy; stops the session containers; writes
@@ -111,18 +113,22 @@ In dependency order. Paths without a directory are under
   keys with generated values to an existing `.env` without rewriting existing keys (additive only).
 - `infra/docker-compose.dev.yml`: `api` gains `QUERY_DATABASE_URL`, `QUERY_OBJECT_CACHE_DIR` and
   the named volume `query_cache`; `db-init` gains `DB_QUERY_PASSWORD`. Service set unchanged.
-- `scripts/bootstrap_db.py`: creates `floatchat_query` (LOGIN, NOSUPERUSER, NOCREATEDB,
-  NOCREATEROLE) and sets its password; adds `named_region` to the withheld set so `floatchat_app`
-  gets SELECT only. `tests/test_bootstrap.py` extended.
+- `scripts/bootstrap_db.py`: creates `floatchat_query` when absent and unconditionally sets
+  `LOGIN`, `NOSUPERUSER`, `NOCREATEDB`, `NOCREATEROLE` and the password (a migration run before the
+  bootstrap leaves a `NOLOGIN` placeholder, see W2); adds `named_region` to the withheld set, which
+  revokes everything from `floatchat_app` (it has no Stage 2 role). The bootstrap grant loop only
+  handles relkinds `r`, `p` and `S`, so the `SELECT` grants on the `app.query_*` views made by the
+  migration survive it. `tests/test_bootstrap.py` extended.
 
 ### W2. Migration `0016_query_access` (additive; ADR-0058, ADR-0060)
 
 - Role settings: `ALTER ROLE floatchat_query SET default_transaction_read_only = on,
   statement_timeout = '15s', idle_in_transaction_session_timeout = '15s', lock_timeout = '2s',
   search_path = app, public`. Grants: `CONNECT`, `USAGE` on `app` and `public`, `SELECT` on the
-  views below and on `app.named_region`; `REVOKE ALL ... FROM PUBLIC` on each new object. The role
-  is created by the bootstrap; the migration creates it `NOLOGIN` if absent so it applies on a
-  bare database (same pattern as `floatchat_ingestor`).
+  views below and on `app.named_region`; `REVOKE ALL ... FROM PUBLIC` on each new object. The
+  migration creates the role `NOLOGIN` if absent so it applies on a bare database (same pattern as
+  `floatchat_ingestor`); the bootstrap and the Stage 2 test fixture then set `LOGIN` and the
+  password unconditionally, never only on creation.
 - Views (owner `floatchat_admin`, invoker privileges not enabled, so the role needs nothing on the
   base tables): `app.query_float` (id, source, platform_number); `app.query_profile` (id, source,
   source_profile_id, float_id, platform_number, cycle_number, direction, observed_at,
