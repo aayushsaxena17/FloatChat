@@ -295,6 +295,7 @@ with `aggregate`, `median` with `unit = measurement` over DuckDB when unsupporte
 | DuckDB aggregate budget | 5,000,000 estimated levels |
 | Object bytes fetched per query | 512 MiB |
 | Object fetch time per query | 120 s, 4 parallel downloads (separate from the query timeout) |
+| Cache warm-up at start-up | on by default, 600 s, newest months first, never beyond the cache size |
 | Nearest | radius 2,000 km, k 100 |
 | Chart | 5,000 points per series, 20 series |
 | Statement timeout | 15 s (role) and 10 s per query (API) |

@@ -1,5 +1,25 @@
 # Stage progress
 
+## Stage 2 - post-gate fixes on `codex/stage-2-fixes` (ADR-0058 amendment), 2026-10-09
+
+Stage 2 merged into `main` as `cf0e58b` (PR #6). The two risks named in the gate are addressed on
+`codex/stage-2-fixes` from `main`; the third (the preserved session's crash recovery) needed no fix.
+
+- [x] Cold-path deadline: the API warms the part cache in a background thread at start-up (every
+  active part, newest months first, bounded by the cache size and `warm_cache_seconds`; readiness
+  never waits) and retries a DuckDB execution once when it times out right after a cold fill.
+  Measured on the dev stack: a cache-cold restart filled 206 parts (301,781,882 bytes) in 31.6 s
+  and the first whole-quarter aggregate afterwards ran in 2.0 s with nothing fetched.
+- [x] Cross-route agreement on the real data: `scripts/stage2_route_check.py` runs the ten DuckDB
+  plans of the latency matrix on both routes inside the API container and writes
+  [reports/stage2-route-check_2026-10-09.md](reports/stage2-route-check_2026-10-09.md): PASS, 10 of 10
+  plans agree on the 4.14 M-level copy, maximum relative difference 5.8e-14 (summation order);
+  the same plans take 9.6-30.0 s on the PostgreSQL route against 1.7-7.6 s on DuckDB.
+- [x] Tests: 521 offline Stage 2 tests (7 new for the fill statistics, warm-up, retry, start-up
+  hook and the check's comparison) and 12 integration cases (warm-up on the seeded server).
+- [ ] CI on the pushed head; pull request into `main`.
+- [ ] Owner confirmation of ADR-0057, ADR-0059 and ADR-0060 (not recorded by the merge of PR #6).
+
 ## Stage 2 - plan reviewed and authorized (ADR-0056..0060), 2026-10-09
 
 `codex/stage-1` merged into `main` by PR #5 (squash `91f7dd5`, tree equal to `a4d6a01`); the remote

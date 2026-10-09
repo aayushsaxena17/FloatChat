@@ -723,8 +723,7 @@ class QueryService:
             "reused": fill.reused,
             "seconds": round(time.monotonic() - started, 1),
         }
-        log.info(json.dumps({"event": "warm_cache", **record}))
-        return record
+        return record  # the API logs one warm_cache record per start-up
 
     @staticmethod
     def _aggregate_names(plan: QueryPlan) -> list[str]:

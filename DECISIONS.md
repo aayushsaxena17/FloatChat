@@ -1588,6 +1588,15 @@ Decision:
    This deviates from PRD §4.1, which places DuckDB scans in workers, for bounded hot-tier
    aggregates only; large scans stay with Stage 5 jobs.
 
+Amendment (2026-10-09, Stage 2 fixes after the gate): the API warms the part cache in a
+background thread at start-up (every active part of the environment, newest months first, bounded
+by `object_cache_bytes` and `warm_cache_seconds`; readiness never waits on it), and a DuckDB
+execution that exceeds its deadline immediately after a cold fill is retried once over the warm
+files. Reason: run 1 of the latency matrix saw one cache-cold whole-quarter call exceed the 10 s
+deadline on the 3.7 GB host, and every dashboard start would otherwise begin cold.
+`scripts/stage2_route_check.py` makes the cross-route agreement on the dev dataset a committed,
+reproducible check instead of a hand observation.
+
 Alternatives: reuse `floatchat_app` with per-connection options (rejected, privileges are the only
 real read-only guarantee and the API will need a writable role later); DuckDB `httpfs` to MinIO
 (rejected, extension download at runtime, offline CI, credentials inside DuckDB); DuckDB reading
