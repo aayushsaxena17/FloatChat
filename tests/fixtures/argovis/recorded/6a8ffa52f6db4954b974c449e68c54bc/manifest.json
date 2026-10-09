@@ -1,0 +1,237 @@
+{
+  "capture_id": "6a8ffa52f6db4954b974c449e68c54bc",
+  "kind": "live_recorded_argovis_raw_json",
+  "scope": "small_profile_id_capture_not_region_ingestion",
+  "versions": {
+    "geometry": "indian-ocean-v1",
+    "mapping": "argovis-core-v1",
+    "hash": "scientific-json-v2",
+    "specification": "2.36.2",
+    "specification_sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
+    "qc": "core-good-v1"
+  },
+  "specification": {
+    "release": "2.36.2",
+    "sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
+    "url": "https://github.com/argovis/argovis_api/blob/2.36.2/core-spec.json"
+  },
+  "application_commit": "619411aedc9cee1037c98b4e7714dfb64f5590ca",
+  "application_uncommitted": true,
+  "responses": [
+    {
+      "path": "01-inventory_before.json",
+      "kind": "live_recorded_argovis_raw_json",
+      "role": "inventory_before",
+      "endpoint": "https://argovis-api.colorado.edu/argo",
+      "request_parameters": {
+        "id": "1901094_109"
+      },
+      "retrieved_at_utc": "2026-10-06T08:33:01.744852+00:00",
+      "status": 200,
+      "response_headers": {
+        "content-type": "application/json",
+        "content-encoding": "identity"
+      },
+      "representation": "sanitized_decompressed_json",
+      "sha256": "c1b79ee839135292e2de68fbdbab8cfa4101265594faededb52eebaff8bd5a36",
+      "bytes": 866,
+      "received_compressed_bytes": 869,
+      "sanitization": {
+        "version": "raw-sanitization-v1",
+        "credential_fields_removed": 0,
+        "urls_scrubbed": 0
+      }
+    },
+    {
+      "path": "02-profile.json",
+      "kind": "live_recorded_argovis_raw_json",
+      "role": "profile",
+      "endpoint": "https://argovis-api.colorado.edu/argo",
+      "request_parameters": {
+        "id": "1901094_109",
+        "data": "all"
+      },
+      "retrieved_at_utc": "2026-10-06T08:33:02.844597+00:00",
+      "status": 200,
+      "response_headers": {
+        "content-type": "application/json",
+        "content-encoding": "identity"
+      },
+      "representation": "sanitized_decompressed_json",
+      "sha256": "c650083aa1a3119ddc3d334581e3c4a0a7d80a18f6b768fd6ef3d76b2585a4ed",
+      "bytes": 3323,
+      "received_compressed_bytes": 3326,
+      "sanitization": {
+        "version": "raw-sanitization-v1",
+        "credential_fields_removed": 0,
+        "urls_scrubbed": 0
+      }
+    },
+    {
+      "path": "03-inventory_after.json",
+      "kind": "live_recorded_argovis_raw_json",
+      "role": "inventory_after",
+      "endpoint": "https://argovis-api.colorado.edu/argo",
+      "request_parameters": {
+        "id": "1901094_109"
+      },
+      "retrieved_at_utc": "2026-10-06T08:33:03.885848+00:00",
+      "status": 200,
+      "response_headers": {
+        "content-type": "application/json",
+        "content-encoding": "identity"
+      },
+      "representation": "sanitized_decompressed_json",
+      "sha256": "c1b79ee839135292e2de68fbdbab8cfa4101265594faededb52eebaff8bd5a36",
+      "bytes": 866,
+      "received_compressed_bytes": 869,
+      "sanitization": {
+        "version": "raw-sanitization-v1",
+        "credential_fields_removed": 0,
+        "urls_scrubbed": 0
+      }
+    },
+    {
+      "path": "04-metadata.json",
+      "kind": "live_recorded_argovis_raw_json",
+      "role": "metadata",
+      "endpoint": "https://argovis-api.colorado.edu/argo/meta",
+      "request_parameters": {
+        "id": "1901094_m0"
+      },
+      "retrieved_at_utc": "2026-10-06T08:33:04.875670+00:00",
+      "status": 200,
+      "response_headers": {
+        "content-type": "application/json",
+        "content-encoding": "identity"
+      },
+      "representation": "sanitized_decompressed_json",
+      "sha256": "8c707f40b8f74c5d9aa03d743b2ae523b2c92af51d08decdb4c229c605e1ea29",
+      "bytes": 360,
+      "received_compressed_bytes": 375,
+      "sanitization": {
+        "version": "raw-sanitization-v1",
+        "credential_fields_removed": 0,
+        "urls_scrubbed": 1
+      }
+    },
+    {
+      "path": "05-inventory_before.json",
+      "kind": "live_recorded_argovis_raw_json",
+      "role": "inventory_before",
+      "endpoint": "https://argovis-api.colorado.edu/argo",
+      "request_parameters": {
+        "id": "4901283_003"
+      },
+      "retrieved_at_utc": "2026-10-06T08:33:05.933356+00:00",
+      "status": 200,
+      "response_headers": {
+        "content-type": "application/json",
+        "content-encoding": "identity"
+      },
+      "representation": "sanitized_decompressed_json",
+      "sha256": "f839f589fe11fdbd2dfa2fef03f33605e62875ac6f41fddc5854c22061589e87",
+      "bytes": 1093,
+      "received_compressed_bytes": 1096,
+      "sanitization": {
+        "version": "raw-sanitization-v1",
+        "credential_fields_removed": 0,
+        "urls_scrubbed": 0
+      }
+    },
+    {
+      "path": "06-profile.json",
+      "kind": "live_recorded_argovis_raw_json",
+      "role": "profile",
+      "endpoint": "https://argovis-api.colorado.edu/argo",
+      "request_parameters": {
+        "id": "4901283_003",
+        "data": "all"
+      },
+      "retrieved_at_utc": "2026-10-06T08:33:07.231318+00:00",
+      "status": 200,
+      "response_headers": {
+        "content-type": "application/json",
+        "content-encoding": "identity"
+      },
+      "representation": "sanitized_decompressed_json",
+      "sha256": "6b18c1dc8e626657fc3b3311d4fdd0520a2e3c16979c236cc3130361ef434a37",
+      "bytes": 23800,
+      "received_compressed_bytes": 23803,
+      "sanitization": {
+        "version": "raw-sanitization-v1",
+        "credential_fields_removed": 0,
+        "urls_scrubbed": 0
+      }
+    },
+    {
+      "path": "07-inventory_after.json",
+      "kind": "live_recorded_argovis_raw_json",
+      "role": "inventory_after",
+      "endpoint": "https://argovis-api.colorado.edu/argo",
+      "request_parameters": {
+        "id": "4901283_003"
+      },
+      "retrieved_at_utc": "2026-10-06T08:33:08.284355+00:00",
+      "status": 200,
+      "response_headers": {
+        "content-type": "application/json",
+        "content-encoding": "identity"
+      },
+      "representation": "sanitized_decompressed_json",
+      "sha256": "f839f589fe11fdbd2dfa2fef03f33605e62875ac6f41fddc5854c22061589e87",
+      "bytes": 1093,
+      "received_compressed_bytes": 1096,
+      "sanitization": {
+        "version": "raw-sanitization-v1",
+        "credential_fields_removed": 0,
+        "urls_scrubbed": 0
+      }
+    },
+    {
+      "path": "08-metadata.json",
+      "kind": "live_recorded_argovis_raw_json",
+      "role": "metadata",
+      "endpoint": "https://argovis-api.colorado.edu/argo/meta",
+      "request_parameters": {
+        "id": "4901283_m1"
+      },
+      "retrieved_at_utc": "2026-10-06T08:33:09.385385+00:00",
+      "status": 200,
+      "response_headers": {
+        "content-type": "application/json",
+        "content-encoding": "identity"
+      },
+      "representation": "sanitized_decompressed_json",
+      "sha256": "6e879d4c5e868ede2af4868b82e2766bf73b2f8a21f69ee08dad09f39afdd4a5",
+      "bytes": 350,
+      "received_compressed_bytes": 365,
+      "sanitization": {
+        "version": "raw-sanitization-v1",
+        "credential_fields_removed": 0,
+        "urls_scrubbed": 1
+      }
+    }
+  ],
+  "expected_profiles": [
+    {
+      "identity": "id:1901094_109",
+      "levels": 92,
+      "content_hash": "4720d3534449499d5fc67703e9c04a719c63b776600aab98d1111bbd42e8e0d4",
+      "source_revision": "present"
+    },
+    {
+      "identity": "id:4901283_003",
+      "levels": 423,
+      "content_hash": "e0e9bb008a98fec66e47ffdffd987d2548ff94de6d456a608aced14e65474782",
+      "source_revision": "present"
+    }
+  ],
+  "attribution": {
+    "provider": "International Argo Program and national contributors, via Argovis",
+    "argo_doi": "https://doi.org/10.17882/42182",
+    "terms_and_acknowledgement": "https://argo.ucsd.edu/data/acknowledging-argo/",
+    "argovis_contract_citation": "https://zenodo.org/records/15708506"
+  },
+  "acceptance": "Sample capture does not certify the full F01 corpus or Jan-Mar acceptance."
+}

@@ -1,0 +1,6 @@
+{
+  "reason": "Repeated-pressure test setup used Decimal with standard JSON encoding; corrected before final rerun. Parent-binding assertions also strengthened.",
+  "source_unchanged": false,
+  "scope": "Historical failed first attempt, not final source verification",
+  "public_checksum_label_correction": "Generated report label normalized to base_specification_sha256; checksum and all check outcomes unchanged. Original failed scan log retained; no scanner exclusion or allowlist added."
+}

@@ -1,0 +1,140 @@
+{
+  "kind": "persisted_sanitized_fixture_audit",
+  "bundle": "tests/fixtures/argovis/recorded/10b19b21ac4d4d8ba69a4fc95e87de3c",
+  "manifest_sha256": "d65c72afd189be392d4c3335ca88803cffa291fb904e2d6ae8daaff1ed3a2e2f",
+  "versions": {
+    "geometry": "indian-ocean-v1",
+    "mapping": "argovis-core-v1",
+    "hash": "scientific-json-v2",
+    "specification": "2.36.2",
+    "specification_sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
+    "qc": "core-good-v1"
+  },
+  "attribution": {
+    "provider": "International Argo Program and national contributors, via Argovis",
+    "argo_doi": "https://doi.org/10.17882/42182",
+    "terms_and_acknowledgement": "https://argo.ucsd.edu/data/acknowledging-argo/",
+    "argovis_contract_citation": "https://zenodo.org/records/15708506"
+  },
+  "verified_responses": [
+    {
+      "path": "01-inventory_before.json",
+      "role": "inventory_before",
+      "sha256": "e6589dcd9d225505641d25ae8d90e12ed5f14557361748dc2dc495d1d795b155",
+      "bytes": 680,
+      "retrieved_at_utc": "2026-10-06T12:10:06.092106+00:00"
+    },
+    {
+      "path": "02-profile.json",
+      "role": "profile",
+      "sha256": "bb8ead610998ce3d2f0c760bc85b0a7af404ecb344b7b2083ef0a0a6b18033f6",
+      "bytes": 2744,
+      "retrieved_at_utc": "2026-10-06T12:10:07.115649+00:00"
+    },
+    {
+      "path": "03-inventory_after.json",
+      "role": "inventory_after",
+      "sha256": "e6589dcd9d225505641d25ae8d90e12ed5f14557361748dc2dc495d1d795b155",
+      "bytes": 680,
+      "retrieved_at_utc": "2026-10-06T12:10:08.177631+00:00"
+    },
+    {
+      "path": "04-metadata.json",
+      "role": "metadata",
+      "sha256": "4470deb86c71c588a137297aafcd969a2c87626d73cb2e72b0f6d61db9b219e9",
+      "bytes": 347,
+      "retrieved_at_utc": "2026-10-06T12:10:09.178500+00:00"
+    }
+  ],
+  "profiles": [
+    {
+      "source_profile_id": "13857_068",
+      "identity": "id:13857_068",
+      "levels": 103,
+      "scientific_sha256": "13656548049786e4452cd06e65b95fc274a6268a3e486af572b184645edeb3c2",
+      "direction": "A",
+      "observed_at_utc": "1999-08-05T19:03:42.002000+00:00",
+      "in_indian_ocean_geometry": false,
+      "source_revision_components": 1,
+      "source_columns": [
+        "pressure",
+        "pressure_argoqc",
+        "temperature",
+        "temperature_argoqc"
+      ],
+      "source_null_cells": 0,
+      "source_core_null_cells": 0,
+      "source_core_value_null_cells": 0,
+      "source_core_qc_null_cells": 0,
+      "repeated_nonnull_pressure": false,
+      "variables": {
+        "pressure": {
+          "modes": [
+            "D"
+          ],
+          "source_column_present": true,
+          "raw_data_keys_modes": [
+            "D"
+          ],
+          "available": {
+            "original": 0,
+            "_adjusted": 103,
+            "_qc": 0,
+            "_adjusted_qc": 103,
+            "_error": 0,
+            "_original_error": 0
+          },
+          "qc_values": [
+            "2"
+          ]
+        },
+        "temperature": {
+          "modes": [
+            "D"
+          ],
+          "source_column_present": true,
+          "raw_data_keys_modes": [
+            "D"
+          ],
+          "available": {
+            "original": 0,
+            "_adjusted": 103,
+            "_qc": 0,
+            "_adjusted_qc": 103,
+            "_error": 0,
+            "_original_error": 0
+          },
+          "qc_values": [
+            "2"
+          ]
+        },
+        "salinity": {
+          "modes": [],
+          "source_column_present": false,
+          "raw_data_keys_modes": [],
+          "available": {
+            "original": 0,
+            "_adjusted": 0,
+            "_qc": 0,
+            "_adjusted_qc": 0,
+            "_error": 0,
+            "_original_error": 0
+          },
+          "qc_values": []
+        }
+      }
+    }
+  ],
+  "representation_gaps": [
+    "data_mode_R",
+    "data_mode_A",
+    "direction_D",
+    "repeated_nonnull_pressure",
+    "supplied_measurement_error",
+    "source_core_measurement_null"
+  ],
+  "F01_representative_corpus": "pending",
+  "regional_completeness": "not_proven_by_profile_id_samples",
+  "live_regional_acceptance": "not_executed",
+  "private_originals": "not_accessed"
+}

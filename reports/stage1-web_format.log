@@ -1,0 +1,10 @@
+
+> floatchat@ format:check /home/floatchat/FloatChat-stage1
+> pnpm --filter @floatchat/web format:check
+
+
+> @floatchat/web@0.0.0 format:check /home/floatchat/FloatChat-stage1/apps/web
+> prettier --check .
+
+Checking formatting...
+All matched files use Prettier code style!

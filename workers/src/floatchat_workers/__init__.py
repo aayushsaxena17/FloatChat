@@ -1,1 +1,1 @@
-"""Stage 0 worker smoke task only."""
+"""Stage 1 ingestion workers: PostgreSQL work queue, acquire and process pools, CLI."""

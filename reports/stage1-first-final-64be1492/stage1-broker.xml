@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="324.231" timestamp="2026-10-07T15:06:41.236241+00:00" hostname="Anduril"><testcase classname="tests.stage1.test_broker" name="test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults" time="324.010"><failure message="AssertionError: Traceback (most recent call last):&#10;    File &quot;/test/tests/stage1/broker_probe.py&quot;, line 613, in &lt;module&gt;&#10;      main()&#10;    File &quot;/test/tests/stage1/broker_probe.py&quot;, line 555, in main&#10;      third_beat.wait(timeout=5)&#10;    File &quot;/usr/local/lib/python3.12/subprocess.py&quot;, line 1264, in wait&#10;      return self._wait(timeout=timeout)&#10;             ^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;    File &quot;/usr/local/lib/python3.12/subprocess.py&quot;, line 2045, in _wait&#10;      raise TimeoutExpired(self.args, timeout)&#10;  subprocess.TimeoutExpired: Command '['/app/.venv/bin/python', '-m', 'celery', '-A', 'floatchat_workers.app:app', 'beat', '--max-interval=1', '--loglevel=WARNING', '--schedule=/tmp/beat-third']' timed out after 5 seconds&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['docker', 'run', '--rm', '--pull=never', '--memory=1g', '--network=container:floatchat-stage1-o...\'beat\', \'--max-interval=1\', \'--loglevel=WARNING\', \'--schedule=/tmp/beat-third\']\' timed out after 5 seconds\n').returncode">tests/stage1/test_broker.py:118: in test_C05_C06_C07_C08_C11_P07_D01_D05_D06_B02_real_broker_process_faults
+    assert result.returncode == 0, result.stderr.decode(errors="replace")[-5000:]
+E   AssertionError: Traceback (most recent call last):
+E       File "/test/tests/stage1/broker_probe.py", line 613, in &lt;module&gt;
+E         main()
+E       File "/test/tests/stage1/broker_probe.py", line 555, in main
+E         third_beat.wait(timeout=5)
+E       File "/usr/local/lib/python3.12/subprocess.py", line 1264, in wait
+E         return self._wait(timeout=timeout)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/usr/local/lib/python3.12/subprocess.py", line 2045, in _wait
+E         raise TimeoutExpired(self.args, timeout)
+E     subprocess.TimeoutExpired: Command '['/app/.venv/bin/python', '-m', 'celery', '-A', 'floatchat_workers.app:app', 'beat', '--max-interval=1', '--loglevel=WARNING', '--schedule=/tmp/beat-third']' timed out after 5 seconds
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['docker', 'run', '--rm', '--pull=never', '--memory=1g', '--network=container:floatchat-stage1-o...\'beat\', \'--max-interval=1\', \'--loglevel=WARNING\', \'--schedule=/tmp/beat-third\']\' timed out after 5 seconds\n').returncode</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,78 @@
+{
+  "verified_at_utc": "2026-10-07T10:13:17.067Z",
+  "kind": "offline_pinned_official_API_functions_with_mocked_database_stream",
+  "revision": "13e634127a3ad51e7c237c1319dba4f56fcabf13",
+  "source_pins": [
+    {
+      "path": "nodejs-server/controllers/Argo.js",
+      "revision": "13e634127a3ad51e7c237c1319dba4f56fcabf13",
+      "url": "https://raw.githubusercontent.com/argovis/argovis_api/13e634127a3ad51e7c237c1319dba4f56fcabf13/nodejs-server/controllers/Argo.js",
+      "sha256": "9633e0d393e2bfd8431f860520f14b53a0325902945760a5bf0e6b6ffb068c53",
+      "bytes": 3672
+    },
+    {
+      "path": "nodejs-server/service/ArgoService.js",
+      "revision": "13e634127a3ad51e7c237c1319dba4f56fcabf13",
+      "url": "https://raw.githubusercontent.com/argovis/argovis_api/13e634127a3ad51e7c237c1319dba4f56fcabf13/nodejs-server/service/ArgoService.js",
+      "sha256": "594b0536271f10b474396444553d02de5ad8c87bf36f1e10096ea2514db91df4",
+      "bytes": 9688
+    },
+    {
+      "path": "nodejs-server/helpers/helpers.js",
+      "revision": "13e634127a3ad51e7c237c1319dba4f56fcabf13",
+      "url": "https://raw.githubusercontent.com/argovis/argovis_api/13e634127a3ad51e7c237c1319dba4f56fcabf13/nodejs-server/helpers/helpers.js",
+      "sha256": "e445aa4ee0f72702adce19974a3bab31d1301db93533182dd9affb0e63294f8e",
+      "bytes": 36230
+    },
+    {
+      "path": "nodejs-server/utils/writer.js",
+      "revision": "13e634127a3ad51e7c237c1319dba4f56fcabf13",
+      "url": "https://raw.githubusercontent.com/argovis/argovis_api/13e634127a3ad51e7c237c1319dba4f56fcabf13/nodejs-server/utils/writer.js",
+      "sha256": "bffe8ce63d7f30c7e8565dd7672d5450946d9688f9c3753fd0c8515b78e3e1e8",
+      "bytes": 906
+    },
+    {
+      "path": "tests/tests/core/profiles.tests.js",
+      "revision": "13e634127a3ad51e7c237c1319dba4f56fcabf13",
+      "url": "https://raw.githubusercontent.com/argovis/argovis_api/13e634127a3ad51e7c237c1319dba4f56fcabf13/tests/tests/core/profiles.tests.js",
+      "sha256": "12d129c3a208b08dc74bac77dd35f9356b4c40ff07a35e0bb9fc2b2bbf3a135d",
+      "bytes": 32713
+    },
+    {
+      "path": "nodejs-server/models/argo.js",
+      "revision": "13e634127a3ad51e7c237c1319dba4f56fcabf13",
+      "url": "https://raw.githubusercontent.com/argovis/argovis_api/13e634127a3ad51e7c237c1319dba4f56fcabf13/nodejs-server/models/argo.js",
+      "sha256": "0b48293c36f39eaad6b76188892920b3b2061866e127bb87376cff8b939e7f94",
+      "bytes": 2221
+    }
+  ],
+  "cases": [
+    {
+      "name": "inventory: empty source arrays are discarded",
+      "status": 404,
+      "dropped": true,
+      "passed": true
+    },
+    {
+      "name": "inventory: document with a level survives, then data is suppressed",
+      "status": 200,
+      "dropped": false,
+      "passed": true
+    },
+    {
+      "name": "data=all: empty source arrays are discarded",
+      "status": 404,
+      "dropped": true,
+      "passed": true
+    },
+    {
+      "name": "findArgo defaults a successful setup to 404 before postprocessing",
+      "status": 404,
+      "passed": true
+    }
+  ],
+  "live_calls": 0,
+  "deployment_version_attested": false,
+  "old_44_failures_reclassified": false,
+  "conclusion": "404 can mean zero surviving documents; it cannot prove source absence or classify historical failures without a validated complete response."
+}

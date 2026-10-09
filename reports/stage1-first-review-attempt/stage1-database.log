@@ -1,0 +1,24 @@
+............F.....................                                       [100%]
+=================================== FAILURES ===================================
+_______ test_F01_I04_S05_labelled_authentic_pressure_derivative_storage ________
+tests/stage1/test_database.py:608: in test_F01_I04_S05_labelled_authentic_pressure_derivative_storage
+    profile, candidate = _candidate(wire, {metadata["_id"]: metadata})
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/stage1/test_database.py:854: in _candidate
+    profile = map_profile(decode_json(json.dumps(wire).encode()), metadata, CanonicalBudget())
+                                      ^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/json/__init__.py:231: in dumps
+    return _default_encoder.encode(obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/json/encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/json/encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/json/encoder.py:180: in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+E   TypeError: Object of type Decimal is not JSON serializable
+=========================== short test summary info ============================
+FAILED tests/stage1/test_database.py::test_F01_I04_S05_labelled_authentic_pressure_derivative_storage
+1 failed, 33 passed in 245.50s (0:04:05)

@@ -1,0 +1,40 @@
+{
+  "kind": "stage1_disposable_db_commit_timings",
+  "image": "floatchat-stage0-wsl-dev-db:latest",
+  "container_memory": "768m",
+  "scope": "Synthetic clone chunks; disposable PostgreSQL only; not acceptance evidence",
+  "scenarios": [
+    {
+      "label": "probe-0",
+      "profiles": 87,
+      "levels_per_profile": 699,
+      "levels": 60813,
+      "staging_ndjson_bytes": 143764696,
+      "parquet_bytes": 4107564,
+      "chunk_state": "complete",
+      "outcome": "complete",
+      "core_measurement_rows_in_month": 60813,
+      "relation_bytes": {
+        "core_measurement_202501": 103825408,
+        "argo_profile": 3203072,
+        "ingestion_staging": 5111808
+      },
+      "stages_s": {
+        "spool.prepare with repository.identities per profile": 6.267,
+        "canonical_budget round trip x20": 0.153,
+        "heartbeat x20": 0.062,
+        "retained_snapshot read (before commit; expect 0 rows)": 0.001,
+        "prepare_intent": 0.01,
+        "spool.write_candidates": 3.859,
+        "stage_file COPY to ingestion_staging": 3.967,
+        "commit_publication": 16.502,
+        "retained_snapshot read after commit (all slot profiles, science_row verify)": 19.93,
+        "load_science x5 (one profile)": 0.631,
+        "slot_members query": 0.031
+      },
+      "retained_profiles_read_back": 87,
+      "db_container_memory_after": "155.8MiB / 768MiB"
+    }
+  ],
+  "finished_at_utc": "2026-10-08T13:00:57.015619+00:00"
+}

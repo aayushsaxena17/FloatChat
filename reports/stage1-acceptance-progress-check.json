@@ -1,0 +1,20 @@
+{
+  "no_credentials_or_private_originals_accessed": true,
+  "persisted_snapshot": {
+    "accepted_levels": 572347,
+    "accepted_profiles": 819,
+    "closed": false,
+    "deadline": "2026-10-07 13:04:38.284791+00:00",
+    "http_attempts": 1260,
+    "id": "fee47d4d-8e91-4cd4-ace2-a1c3d1129fdb",
+    "leaf_states": {
+      "complete": 120,
+      "failed": 44,
+      "planned": 1088,
+      "quarantined": 8
+    },
+    "state": "validating"
+  },
+  "readonly_progress_verified": true,
+  "worker_restarted": false
+}

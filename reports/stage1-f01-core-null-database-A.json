@@ -1,0 +1,70 @@
+{
+  "provenance": {
+    "kind": "labelled_synthetic_derivative_of_admitted_authentic_fixture",
+    "evidence_version": "F01-2",
+    "basis": {
+      "mode": "A",
+      "bundle": "tests/fixtures/argovis/recorded/9efe8f4e713c44a1a2964407e52b9a45",
+      "manifest_sha256": "f42b03e44588560ba43151428405eb4b40324a6d26dc3111406a41c56d0ff540",
+      "profile_id": "2904014_040"
+    },
+    "attribution": {
+      "provider": "International Argo Program and national contributors, via Argovis",
+      "argo_doi": "https://doi.org/10.17882/42182",
+      "terms_and_acknowledgement": "https://argo.ucsd.edu/data/acknowledging-argo/",
+      "argovis_contract_citation": "https://zenodo.org/records/15708506"
+    },
+    "source_versions": {
+      "geometry": "indian-ocean-v1",
+      "mapping": "argovis-core-v1",
+      "hash": "scientific-json-v2",
+      "specification": "2.36.2",
+      "specification_sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
+      "qc": "core-good-v1",
+      "source_contract": "argovis-core-2.36.2+ifremer-fluorescence-v1",
+      "translator_revision": "cbf2bb48ed5d95532c18bb2cd5217e44618356cf",
+      "translator_sha256": "279af8ef7b2adabad38d94ca71de02d86dd11efe28e3c1f174f874b7ed73224f"
+    },
+    "payload_sha256": {
+      "profile": "c51989d8f3285a976e64e55fd7dde0c8d95a6a4306bb27607980e2b8d1c8ba4f",
+      "metadata": "0b108edd5db80012cfc7b7860719f81ca43b72d937fa16ac61887b2a9bb5474a"
+    },
+    "mutations": [
+      {
+        "column": "pressure",
+        "level_index": 1,
+        "value": null
+      },
+      {
+        "column": "temperature",
+        "level_index": 2,
+        "value": null
+      },
+      {
+        "column": "salinity",
+        "level_index": 3,
+        "value": null
+      },
+      {
+        "field": "timestamp",
+        "to": "2025-01-02T00:00:00Z"
+      },
+      {
+        "field": "geolocation.coordinates",
+        "to": [
+          70,
+          10
+        ]
+      }
+    ],
+    "authentic_representation_claim": false
+  },
+  "passed_assertions": {
+    "scientific_sha256": "f6d5a418f3004dd1c0adf78e1b750797bc808b3f5e3128e9f75790278c299768",
+    "effective_publication_role": "floatchat_ingestor",
+    "rows": 501,
+    "selected_value_nulls_per_core_variable": 1,
+    "canonical_missing_reason": "null",
+    "matching_QC_unit_mode_preserved": true
+  }
+}

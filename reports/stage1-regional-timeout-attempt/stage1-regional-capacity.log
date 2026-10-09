@@ -1,0 +1,19 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_one_run_actual_1260_root_capacity_and_pipeline_memory __________
+tests/stage1/test_regional_capacity.py:85: in test_one_run_actual_1260_root_capacity_and_pipeline_memory
+    result = subprocess.run(
+../.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/subprocess.py:550: in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/subprocess.py:1209: in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/subprocess.py:2116: in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+../.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/subprocess.py:1253: in _check_timeout
+    raise TimeoutExpired(
+E   subprocess.TimeoutExpired: Command '['docker', 'run', '--pull=never', '--name', 'floatchat-stage1-regional-worker-7c040b8fa4d248c9be0989641a7a821e', '--user', '1000', '--memory=1g', '--network=container:floatchat-stage1-offline-9feed1b5573d4ad0a06b08f0d8ebaed7', '--env', 'HOME=/tmp/offline-regional-model-home', '--mount', 'type=bind,source=/home/floatchat/FloatChat-stage1,target=/test,readonly', '--env', 'INGESTION_DATABASE_URL=postgresql://postgres@127.0.0.1/regional_model', '--env', 'MINIO_ROOT_USER', '--env', 'MINIO_ROOT_PASSWORD', '--env', 'PYTHONPATH=/test/packages/core/src:/test/workers/src:/test/.venv/lib/python3.12/site-packages', 'floatchat-stage0-wsl-dev-api:latest', 'python', '/test/tests/stage1/regional_capacity_probe.py']' timed out after 3600 seconds
+=========================== short test summary info ============================
+FAILED tests/stage1/test_regional_capacity.py::test_one_run_actual_1260_root_capacity_and_pipeline_memory
+1 failed in 3611.37s (1:00:11)

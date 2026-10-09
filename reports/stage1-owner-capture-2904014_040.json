@@ -1,0 +1,19 @@
+{
+  "evidence_kind": "owner_reported_recorder_diagnostic",
+  "independently_observed_live_response": false,
+  "operation": "bounded_profile_id_fixture_capture",
+  "selected_profile_id": "2904014_040",
+  "category": "unknown_data_field",
+  "usable_complete_fixture_bundle": false,
+  "F01_representation_closed": [],
+  "related_sanitized_inventory": "tests/fixtures/argovis/discovery/e5b3f14e549d49e69ed77fde03d40d8c/01-inventory_discovery.json",
+  "inventory_columns_outside_pinned_2_36_2_pattern": [
+    "chla_fluorescence",
+    "chla_fluorescence_qc"
+  ],
+  "disposition": "withdraw_candidate; stop_for_source_contract_review",
+  "contract_basis": "docs/stage1-contract.md section 3.2: data=all and fail closed on unsupported schema drift",
+  "private_originals_accessed": false,
+  "agent_live_calls": false,
+  "limitations": "No failed profile response or private artifacts were inspected. The supplied diagnostic and previously sanitized inventory are distinct evidence. The inventory mismatch is consistent with the failure, not proof of the contents of the inaccessible failed profile response."
+}

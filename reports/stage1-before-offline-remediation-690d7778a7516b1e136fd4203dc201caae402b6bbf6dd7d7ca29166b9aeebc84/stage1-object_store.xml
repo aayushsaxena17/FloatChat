@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="1" time="3.506" timestamp="2026-10-06T23:53:33.206007+00:00" hostname="Anduril"><testcase classname="tests.stage1.test_minio" name="test_P02_P03_P04_real_minio_conditional_publication_and_corrupt_final" time="3.476" /></testsuite></testsuites>

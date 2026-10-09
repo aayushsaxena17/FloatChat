@@ -1,0 +1,111 @@
+{
+  "kind": "stage1_disposable_db_commit_timings",
+  "image": "floatchat-stage0-wsl-dev-db:latest",
+  "container_memory": "768m",
+  "scope": "Synthetic clone chunks; disposable PostgreSQL only; not acceptance evidence",
+  "scenarios": [
+    {
+      "label": "probe-0",
+      "profiles": 22,
+      "levels_per_profile": 699,
+      "levels": 15378,
+      "staging_json_bytes": 21045388,
+      "parquet_bytes": 1050803,
+      "chunk_state": "complete",
+      "outcome": "complete",
+      "core_measurement_rows_in_month": 15378,
+      "relation_bytes": {
+        "core_measurement_202501": 4087808,
+        "argo_profile": 933888,
+        "ingestion_staging": 696320
+      },
+      "stages_s": {
+        "spool.prepare with repository.identities_batch + science_hashes": 0.009,
+        "canonical_budget round trip x20": 0.168,
+        "heartbeat x20": 0.087,
+        "slot_state (publication base)": 0.002,
+        "prepare_intent": 0.007,
+        "stage_candidates COPY": 0.29,
+        "stage_levels COPY": 0.512,
+        "stage_candidates + stage_levels COPY": 0.802,
+        "commit_publication": 0.643,
+        "identities_batch after commit (next chunk re-delivers every slot profile)": 0.004,
+        "science_hashes after commit (all slot profiles)": 0.007,
+        "science_hashes x5 (one profile)": 0.012,
+        "slot_state counts after commit": 0.011
+      },
+      "stored_hashes_read_back": 22,
+      "slot_members_after_commit": 22,
+      "db_container_memory_after": "54.77MiB / 768MiB"
+    },
+    {
+      "label": "probe-1",
+      "profiles": 87,
+      "levels_per_profile": 699,
+      "levels": 60813,
+      "staging_json_bytes": 83224973,
+      "parquet_bytes": 4107570,
+      "chunk_state": "complete",
+      "outcome": "complete",
+      "core_measurement_rows_in_month": 76191,
+      "relation_bytes": {
+        "core_measurement_202501": 20283392,
+        "argo_profile": 3964928,
+        "ingestion_staging": 3268608
+      },
+      "stages_s": {
+        "spool.prepare with repository.identities_batch + science_hashes": 0.01,
+        "canonical_budget round trip x20": 0.174,
+        "heartbeat x20": 0.08,
+        "slot_state (publication base)": 0.002,
+        "prepare_intent": 0.309,
+        "stage_candidates COPY": 1.735,
+        "stage_levels COPY": 2.026,
+        "stage_candidates + stage_levels COPY": 3.761,
+        "commit_publication": 3.208,
+        "identities_batch after commit (next chunk re-delivers every slot profile)": 0.006,
+        "science_hashes after commit (all slot profiles)": 0.018,
+        "science_hashes x5 (one profile)": 0.013,
+        "slot_state counts after commit": 0.035
+      },
+      "stored_hashes_read_back": 87,
+      "slot_members_after_commit": 87,
+      "db_container_memory_after": "97.92MiB / 768MiB"
+    },
+    {
+      "label": "probe-2",
+      "profiles": 35,
+      "levels_per_profile": 1211,
+      "levels": 42385,
+      "staging_json_bytes": 57979345,
+      "parquet_bytes": 2864296,
+      "chunk_state": "complete",
+      "outcome": "complete",
+      "core_measurement_rows_in_month": 118576,
+      "relation_bytes": {
+        "core_measurement_202501": 31531008,
+        "argo_profile": 5898240,
+        "ingestion_staging": 4907008
+      },
+      "stages_s": {
+        "spool.prepare with repository.identities_batch + science_hashes": 0.007,
+        "canonical_budget round trip x20": 0.161,
+        "heartbeat x20": 0.077,
+        "slot_state (publication base)": 0.002,
+        "prepare_intent": 0.005,
+        "stage_candidates COPY": 0.737,
+        "stage_levels COPY": 1.367,
+        "stage_candidates + stage_levels COPY": 2.104,
+        "commit_publication": 2.213,
+        "identities_batch after commit (next chunk re-delivers every slot profile)": 0.004,
+        "science_hashes after commit (all slot profiles)": 0.017,
+        "science_hashes x5 (one profile)": 0.012,
+        "slot_state counts after commit": 0.03
+      },
+      "stored_hashes_read_back": 35,
+      "slot_members_after_commit": 35,
+      "db_container_memory_after": "127.2MiB / 768MiB"
+    }
+  ],
+  "finished_at_utc": "2026-10-08T16:05:35.755102+00:00"
+}

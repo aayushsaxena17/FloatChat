@@ -1,0 +1,65 @@
+{
+  "verified_at_utc": "2026-10-07T10:13:16.693115+00:00",
+  "kind": "offline_execution_of_pinned_official_translator_functions",
+  "source": "https://github.com/argovis/ifremer-sync/blob/cbf2bb48ed5d95532c18bb2cd5217e44618356cf/util/helpers.py",
+  "revision": "cbf2bb48ed5d95532c18bb2cd5217e44618356cf",
+  "sha256": "279af8ef7b2adabad38d94ca71de02d86dd11efe28e3c1f174f874b7ed73224f",
+  "cases": [
+    {
+      "synthetic_core_degenerate": false,
+      "synthetic_BGC_degenerate": false,
+      "returned_levels": 3,
+      "annotation": {
+        "degenerate_levels": false
+      },
+      "temperature_nonnull": 2,
+      "salinity_nonnull": 2,
+      "nitrate_nonnull": 2,
+      "returned_pressure_unique": true,
+      "passed": true
+    },
+    {
+      "synthetic_core_degenerate": true,
+      "synthetic_BGC_degenerate": false,
+      "returned_levels": 2,
+      "annotation": {
+        "degenerate_levels": true
+      },
+      "temperature_nonnull": 0,
+      "salinity_nonnull": 0,
+      "nitrate_nonnull": 2,
+      "returned_pressure_unique": true,
+      "passed": true
+    },
+    {
+      "synthetic_core_degenerate": false,
+      "synthetic_BGC_degenerate": true,
+      "returned_levels": 2,
+      "annotation": {
+        "degenerate_levels": true
+      },
+      "temperature_nonnull": 2,
+      "salinity_nonnull": 2,
+      "nitrate_nonnull": 0,
+      "returned_pressure_unique": true,
+      "passed": true
+    },
+    {
+      "synthetic_core_degenerate": true,
+      "synthetic_BGC_degenerate": true,
+      "returned_levels": 0,
+      "annotation": {
+        "degenerate_levels": true
+      },
+      "temperature_nonnull": 0,
+      "salinity_nonnull": 0,
+      "nitrate_nonnull": 0,
+      "returned_pressure_unique": true,
+      "passed": true
+    }
+  ],
+  "inputs": "labelled synthetic core/BGC source models; not captures or inferred originals",
+  "authentic_discarded_component_identified": false,
+  "live_calls": 0,
+  "warning_policy_changed": false
+}

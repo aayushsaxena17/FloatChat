@@ -1,0 +1,132 @@
+{
+  "kind": "stage1_offline_chunk_cpu_profile",
+  "scope": "Synthetic clone of authentic 1901094_109 core profile; CPU stages only, no HTTP/MinIO/PostgreSQL; stage1-v4 code path, multiplicities read from the stage1-v4 processor/landing/objects code (see git_head in the benchmark report)",
+  "audit": false,
+  "basis": "tests/fixtures/argovis/recorded/6a8ffa52f6db4954b974c449e68c54bc",
+  "basis_label": "core6",
+  "profiles": 87,
+  "levels_per_profile": 699,
+  "raw_profile_payload_bytes": 1815778,
+  "raw_inventory_payload_bytes": 55768,
+  "python": "3.12.12",
+  "canonical_bytes_per_profile": 854393,
+  "canonical_bytes_per_level": 1222,
+  "canonical_bytes_chunk": 74332191,
+  "parquet_bytes": 4107575,
+  "parquet_rows": 60813,
+  "staging_json_bytes": 83222450,
+  "staging_level_rows": 60813,
+  "stages": {
+    "sanitize_raw(profile payload)": {
+      "wall_s": 0.342,
+      "cpu_s": 0.342
+    },
+    "validate_raw(profile payload) x1": {
+      "wall_s": 0.187,
+      "cpu_s": 0.187
+    },
+    "sanitize_raw(inventory payload)": {
+      "wall_s": 0.009,
+      "cpu_s": 0.009
+    },
+    "validate_raw(inventory payload) x1": {
+      "wall_s": 0.005,
+      "cpu_s": 0.005
+    },
+    "sha256(profile payload)": {
+      "wall_s": 0.001,
+      "cpu_s": 0.001
+    },
+    "documents() decode profile payload x1": {
+      "wall_s": 0.365,
+      "cpu_s": 0.364
+    },
+    "documents() decode inventory payload x1": {
+      "wall_s": 0.007,
+      "cpu_s": 0.007
+    },
+    "map_profile + budget.encode (all profiles)": {
+      "wall_s": 1.903,
+      "cpu_s": 1.901
+    },
+    "spool.add (all)": {
+      "wall_s": 0.0,
+      "cpu_s": 0.0
+    },
+    "spool.prepare (restore+certify, no DB)": {
+      "wall_s": 0.003,
+      "cpu_s": 0.003
+    },
+    "spool.membership(slot)": {
+      "wall_s": 0.0,
+      "cpu_s": 0.0
+    },
+    "write_snapshot (write+verify+storage_comparison)": {
+      "wall_s": 1.543,
+      "cpu_s": 1.543
+    },
+    "  write_snapshot: verify_snapshot (local read-back)": {
+      "wall_s": 0
+    },
+    "  write_snapshot: storage_comparison (to_pandas)": {
+      "wall_s": 0.163
+    },
+    "  write_snapshot: writer loop (rows+ipc spill+parquet)": {
+      "wall_s": 1.38
+    },
+    "  write_snapshot: _verify_written (Arrow equality scan, informational)": {
+      "wall_s": 0.518
+    },
+    "sha256(parquet file)": {
+      "wall_s": 0.004,
+      "cpu_s": 0.004
+    },
+    "publish_verified (certificate full verify + 2 light verifies; memory store)": {
+      "wall_s": 0.008,
+      "cpu_s": 0.008
+    },
+    "spool.candidates (slim JSON)": {
+      "wall_s": 0.225,
+      "cpu_s": 0.225
+    },
+    "spool.level_tables (Arrow)": {
+      "wall_s": 0.153,
+      "cpu_s": 0.153
+    }
+  },
+  "sum_measured_wall_s": 4.755,
+  "multiplicity_per_chunk_from_code": {
+    "profile payload sanitize_raw": 1,
+    "profile payload validate_raw (publish_verified validates once; audit adds 1)": 1,
+    "profile payload documents() decode in processor (land: inventory_accounting, inventory, metadata loop; publish: inventory_accounting, map)": 5,
+    "canonical encode per profile (map only; audit adds verify_snapshot's re-encode)": 1,
+    "parquet row-by-row verify_snapshot re-decode (audit only)": 0,
+    "parquet Arrow-equality scan inside write_snapshot (always; inside its stage)": 1,
+    "parquet light read (publish_verified validate with the writer's certificate)": 1,
+    "spool.profiles(slot) restores (in-memory generator in v4, no decode)": 0
+  },
+  "stage_multiplicity": {
+    "sanitize_raw(profile payload)": 1,
+    "validate_raw(profile payload) x1": 1,
+    "documents() decode profile payload x1": 5,
+    "map_profile + budget.encode (all profiles)": 1,
+    "spool.add (all)": 1,
+    "spool.prepare (restore+certify, no DB)": 1,
+    "spool.membership(slot)": 1,
+    "write_snapshot (write+verify+storage_comparison)": 1,
+    "publish_verified (certificate full verify + 2 light verifies; memory store)": 1,
+    "spool.candidates (slim JSON)": 1,
+    "spool.level_tables (Arrow)": 1
+  },
+  "stage_notes": {
+    "spool.prepare (restore+certify, no DB)": "v4: two batched lookups (stubbed empty here) and identity resolution; nothing is restored or re-certified. Name kept so v3/v4 reports line up.",
+    "write_snapshot (write+verify+storage_comparison)": "v4: verification is the Arrow equality scan inside the stage; the 'writer loop' sub-stage therefore includes it (see the informational _verify_written line); verify_snapshot is 0 unless --audit.",
+    "publish_verified (certificate full verify + 2 light verifies; memory store)": "v4: the writer's certificate runs one light check; one write_immutable and one stat. Name kept for comparison with the v3 report.",
+    "spool.candidates (slim JSON)": "replaces 'spool.write_candidates (NDJSON for COPY)'",
+    "spool.level_tables (Arrow)": "typed level rows for the binary COPY; the COPY's client-side formatting is not timed here"
+  },
+  "max_rss_mib": 524.2,
+  "cprofile_top": {},
+  "finished_at_utc": "2026-10-08T16:04:01.303785+00:00",
+  "git_head": "65eb3fcfe5ddc67c2a689730f8f56ef8ab0c182d"
+}

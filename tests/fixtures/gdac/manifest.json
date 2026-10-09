@@ -1,0 +1,30 @@
+{
+  "attribution": "Argo (2000). Argo float data and metadata from Global Data Assembly Centre (Argo GDAC). SEANOE. https://doi.org/10.17882/42182",
+  "files": [
+    {
+      "bytes": 5632396,
+      "path": "20250115_prof.nc",
+      "retrieved_at_utc": "2026-10-08T14:39:33+00:00",
+      "sha256": "3ee588d5c8a3b23441cc617d094df1f7716b4de6f37d27d091584417605df9b1",
+      "url": "https://data-argo.ifremer.fr/geo/indian_ocean/2025/01/20250115_prof.nc"
+    },
+    {
+      "bytes": 4402816,
+      "path": "20250214_prof.nc",
+      "retrieved_at_utc": "2026-10-08T14:42:35+00:00",
+      "sha256": "1c588c179f9c1335563a9f3871f128dc90ff795a61913b341df30023bf8c90d8",
+      "url": "https://data-argo.ifremer.fr/geo/indian_ocean/2025/02/20250214_prof.nc"
+    },
+    {
+      "bytes": 555166,
+      "derived": "latitude [-60,30], longitude [20,120], date 2025-01-01..2025-03-31",
+      "path": "ar_index_indian_2025q1.txt",
+      "retrieved_at_utc": "2026-10-08T14:44:22+00:00",
+      "sha256": "940fe4443ab6dd4805fa2df76677f0977a3ddbae9e03edcf425f54563448e396",
+      "source_bytes": 58734918,
+      "source_sha256": "f547dc514ee53f553883a176368f7358b4fb5619fcfbd0946e0a1f9abb3f7a05",
+      "url": "https://data-argo.ifremer.fr/ar_index_global_prof.txt.gz"
+    }
+  ],
+  "host": "data-argo.ifremer.fr"
+}

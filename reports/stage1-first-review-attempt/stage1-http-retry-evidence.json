@@ -1,0 +1,294 @@
+{
+  "http_request_owner": [
+    {
+      "run_id": "e849aacb-a8a2-4a46-8a29-9ad1f77b0b3a",
+      "chunk_id": "acf35ca3-404f-49c7-94b0-60ffac6c8568",
+      "statuses": [
+        429,
+        503,
+        200
+      ],
+      "dispositions": [
+        "http_failure",
+        "http_failure",
+        "verified_raw"
+      ],
+      "http_retries": 2,
+      "attempts": 3,
+      "timings_finished": true,
+      "frozen_resource_counters": {
+        "http_attempts": 3,
+        "received_bytes": 2,
+        "canonical_bytes": 0,
+        "controller_claims": 1,
+        "accepted_new_profiles": 0,
+        "accepted_insert_replacement_levels": 0
+      },
+      "state_reasons": [
+        {
+          "events": 1,
+          "reason": "component_request_probe_complete",
+          "new_state": "failed"
+        },
+        {
+          "events": 1,
+          "reason": "run_reduction",
+          "new_state": "failed"
+        },
+        {
+          "events": 1,
+          "reason": "child_phase",
+          "new_state": "fetching"
+        },
+        {
+          "events": 1,
+          "reason": "offline_http_probe",
+          "new_state": "fetching"
+        },
+        {
+          "events": 1,
+          "reason": "processing_claim",
+          "new_state": "planned"
+        },
+        {
+          "events": 1,
+          "reason": "run_admitted_reference_captured",
+          "new_state": null
+        }
+      ],
+      "scientific_no_change": true,
+      "scope": "Real repository/MinIO, mocked HTTP; request-only component"
+    },
+    {
+      "run_id": "6dd342e6-9558-41ad-b2b9-19970121913f",
+      "chunk_id": "1a9b420a-f291-4090-8405-a0c45837af6c",
+      "statuses": [
+        401
+      ],
+      "dispositions": [
+        "http_failure"
+      ],
+      "http_retries": 0,
+      "attempts": 1,
+      "timings_finished": true,
+      "frozen_resource_counters": {
+        "http_attempts": 1,
+        "received_bytes": 0,
+        "canonical_bytes": 0,
+        "controller_claims": 1,
+        "accepted_new_profiles": 0,
+        "accepted_insert_replacement_levels": 0
+      },
+      "state_reasons": [
+        {
+          "events": 1,
+          "reason": "http_retry_exhausted",
+          "new_state": "failed"
+        },
+        {
+          "events": 1,
+          "reason": "run_reduction",
+          "new_state": "failed"
+        },
+        {
+          "events": 1,
+          "reason": "child_phase",
+          "new_state": "fetching"
+        },
+        {
+          "events": 1,
+          "reason": "offline_http_probe",
+          "new_state": "fetching"
+        },
+        {
+          "events": 1,
+          "reason": "processing_claim",
+          "new_state": "planned"
+        },
+        {
+          "events": 1,
+          "reason": "run_admitted_reference_captured",
+          "new_state": null
+        }
+      ],
+      "scientific_no_change": true,
+      "scope": "Real repository/MinIO, mocked HTTP; request-only component"
+    },
+    {
+      "run_id": "9db211c1-06ec-4efb-b36b-2f27cb60672c",
+      "chunk_id": "44ab4608-be37-45de-8530-0d2305e13a38",
+      "statuses": [
+        403
+      ],
+      "dispositions": [
+        "http_failure"
+      ],
+      "http_retries": 0,
+      "attempts": 1,
+      "timings_finished": true,
+      "frozen_resource_counters": {
+        "http_attempts": 1,
+        "received_bytes": 0,
+        "canonical_bytes": 0,
+        "controller_claims": 1,
+        "accepted_new_profiles": 0,
+        "accepted_insert_replacement_levels": 0
+      },
+      "state_reasons": [
+        {
+          "events": 1,
+          "reason": "http_retry_exhausted",
+          "new_state": "failed"
+        },
+        {
+          "events": 1,
+          "reason": "run_reduction",
+          "new_state": "failed"
+        },
+        {
+          "events": 1,
+          "reason": "child_phase",
+          "new_state": "fetching"
+        },
+        {
+          "events": 1,
+          "reason": "offline_http_probe",
+          "new_state": "fetching"
+        },
+        {
+          "events": 1,
+          "reason": "processing_claim",
+          "new_state": "planned"
+        },
+        {
+          "events": 1,
+          "reason": "run_admitted_reference_captured",
+          "new_state": null
+        }
+      ],
+      "scientific_no_change": true,
+      "scope": "Real repository/MinIO, mocked HTTP; request-only component"
+    },
+    {
+      "run_id": "ff415e71-a12a-46b6-9e4c-175262057f1d",
+      "chunk_id": "21b4a922-da1a-453e-8122-a8c3dda43fce",
+      "statuses": [
+        503,
+        503,
+        503,
+        503
+      ],
+      "dispositions": [
+        "http_failure",
+        "http_failure",
+        "http_failure",
+        "http_failure"
+      ],
+      "http_retries": 3,
+      "attempts": 4,
+      "timings_finished": true,
+      "frozen_resource_counters": {
+        "http_attempts": 4,
+        "received_bytes": 0,
+        "canonical_bytes": 0,
+        "controller_claims": 1,
+        "accepted_new_profiles": 0,
+        "accepted_insert_replacement_levels": 0
+      },
+      "state_reasons": [
+        {
+          "events": 1,
+          "reason": "http_retry_exhausted",
+          "new_state": "failed"
+        },
+        {
+          "events": 1,
+          "reason": "run_reduction",
+          "new_state": "failed"
+        },
+        {
+          "events": 1,
+          "reason": "child_phase",
+          "new_state": "fetching"
+        },
+        {
+          "events": 1,
+          "reason": "offline_http_probe",
+          "new_state": "fetching"
+        },
+        {
+          "events": 1,
+          "reason": "processing_claim",
+          "new_state": "planned"
+        },
+        {
+          "events": 1,
+          "reason": "run_admitted_reference_captured",
+          "new_state": null
+        }
+      ],
+      "scientific_no_change": true,
+      "scope": "Real repository/MinIO, mocked HTTP; request-only component"
+    }
+  ],
+  "split_replay": {
+    "predecessor_run_id": "c5a65058-1748-42df-86d9-bd6c4faf20fe",
+    "replay_run_id": "3c19f038-c982-4f00-863c-e42ba66a6043",
+    "actual_cli_exit": 0,
+    "input_kind": "replay",
+    "upstream_denied": true,
+    "temporal_split": true,
+    "spatial_split": true,
+    "topology_identical": true,
+    "plan_nodes": 466,
+    "completed_leaves": 458,
+    "scientific_no_change": true,
+    "active_partition_no_change": true,
+    "audit_attempts_increased": true,
+    "before": {
+      "runs": 11,
+      "floats": 1,
+      "attempts": 1403,
+      "profiles": 2,
+      "audit_rows": 4682,
+      "reconciliation": {
+        "full_stored": {
+          "profiles": 2,
+          "manifest_sha256": "7cf825c11e55cf2c7fd2ff23b07c9e069b6b345df5970eb70a07777bf05be763",
+          "measurement_levels": 4
+        },
+        "full_snapshot": {
+          "profiles": 2,
+          "manifest_sha256": "7cf825c11e55cf2c7fd2ff23b07c9e069b6b345df5970eb70a07777bf05be763",
+          "measurement_levels": 4
+        },
+        "run_eligible_stored": {
+          "profiles": 2,
+          "manifest_sha256": "7cf825c11e55cf2c7fd2ff23b07c9e069b6b345df5970eb70a07777bf05be763",
+          "measurement_levels": 4
+        },
+        "run_eligible_snapshot": {
+          "profiles": 2,
+          "manifest_sha256": "7cf825c11e55cf2c7fd2ff23b07c9e069b6b345df5970eb70a07777bf05be763",
+          "measurement_levels": 4
+        }
+      },
+      "active_partitions": 1,
+      "measurement_levels": 4,
+      "profile_manifest_sha256": "7cf825c11e55cf2c7fd2ff23b07c9e069b6b345df5970eb70a07777bf05be763",
+      "active_generation_sha256": "31a733f51b9fe09ae8996012e1e4aebe9acdec72448b5de03f199432ce75065b"
+    },
+    "after": {
+      "runs": 11,
+      "floats": 1,
+      "attempts": 2778,
+      "profiles": 2,
+      "audit_rows": 9264,
+      "active_partitions": 1,
+      "measurement_levels": 4,
+      "profile_manifest_sha256": "7cf825c11e55cf2c7fd2ff23b07c9e069b6b345df5970eb70a07777bf05be763",
+      "active_generation_sha256": "31a733f51b9fe09ae8996012e1e4aebe9acdec72448b5de03f199432ce75065b"
+    },
+    "scope": "Synthetic complete plan, not live regional acceptance"
+  }
+}

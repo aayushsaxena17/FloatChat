@@ -1,0 +1,237 @@
+{
+  "kind": "offline_remediation_review_from_persisted_evidence",
+  "generated_at_utc": "2026-10-07T11:10:25.920537+00:00",
+  "decision": "NO_GO",
+  "source_tree_sha256": "582d4599eeb86c6967c18234db1da501b084402bad25c6abd78657a730b0bbbb",
+  "fresh_offline_checks": {
+    "python_lint": {
+      "exit_code": 0,
+      "seconds": 0.11523054899589624,
+      "evidence": "reports/stage1-python_lint.log"
+    },
+    "python_format": {
+      "exit_code": 0,
+      "seconds": 0.06458123899938073,
+      "evidence": "reports/stage1-python_format.log"
+    },
+    "python_types": {
+      "exit_code": 0,
+      "seconds": 0.5664034189976519,
+      "evidence": "reports/stage1-python_types.log"
+    },
+    "unit": {
+      "exit_code": 0,
+      "seconds": 13.20414034499845,
+      "evidence": "reports/stage1-unit.log"
+    },
+    "database": {
+      "exit_code": 0,
+      "seconds": 446.5912395350024,
+      "evidence": "reports/stage1-database.log"
+    },
+    "object_store": {
+      "exit_code": 0,
+      "seconds": 2.9422955859918147,
+      "evidence": "reports/stage1-object_store.log"
+    },
+    "resource": {
+      "exit_code": 0,
+      "seconds": 144.9374581669981,
+      "evidence": "reports/stage1-resource.log"
+    },
+    "broker": {
+      "exit_code": 0,
+      "seconds": 282.0623100369994,
+      "evidence": "reports/stage1-broker.log"
+    },
+    "fixture_audit": {
+      "exit_code": 0,
+      "seconds": 0.4771816540014697,
+      "evidence": "reports/stage1-fixture_audit.log"
+    },
+    "secrets_recorded_bundle": {
+      "exit_code": 0,
+      "seconds": 0.5176001749932766,
+      "evidence": "reports/stage1-secrets_recorded_bundle.log"
+    },
+    "web_lint": {
+      "exit_code": 0,
+      "seconds": 2.523472525004763,
+      "evidence": "reports/stage1-web_lint.log"
+    },
+    "web_format": {
+      "exit_code": 0,
+      "seconds": 0.9186425030056853,
+      "evidence": "reports/stage1-web_format.log"
+    },
+    "web_types": {
+      "exit_code": 0,
+      "seconds": 1.5195423349941848,
+      "evidence": "reports/stage1-web_types.log"
+    },
+    "web_tests": {
+      "exit_code": 0,
+      "seconds": 1.8701605370006291,
+      "evidence": "reports/stage1-web_tests.log"
+    },
+    "web_build": {
+      "exit_code": 0,
+      "seconds": 3.2240572049922775,
+      "evidence": "reports/stage1-web_build.log"
+    },
+    "secrets_current": {
+      "exit_code": 0,
+      "seconds": 1.1250158039911184,
+      "evidence": "reports/stage1-secrets_current.log"
+    },
+    "secrets_history": {
+      "exit_code": 0,
+      "seconds": 1.168048881998402,
+      "evidence": "reports/stage1-secrets_history.log"
+    },
+    "diff_whitespace": {
+      "exit_code": 0,
+      "seconds": 0.01606790600635577,
+      "evidence": "reports/stage1-diff_whitespace.log"
+    }
+  },
+  "fresh_python_suites": {
+    "unit": {
+      "tests": 369,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "database": {
+      "tests": 40,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "object_store": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "resource": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "broker": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "input_sha256": {
+    "stage1-verification.json": "8ff608444d5e0d29e37114b5008a0d5f432724eb49303c364533dcc3c900aa59",
+    "stage1-publication-capacity.json": "30954f6767e2a79055f7a427d54b15e36b7fb8c2db09fd3c7012a4520c8c41d5",
+    "stage1-http-source-semantics.json": "290ead3ccd4e197c4ab4b101b1db2da85d6dde6f060aea3321c8b9503ad9cc42",
+    "stage1-discarded-input-science.json": "72ff742a32dda37b4c311c19b206ebdcddf564c64244b2acccb40f7aff370289",
+    "stage1-terminalization-rehearsal.json": "a76c51e3ed1e69074e5bfe28866f35f875e9655e26bba2d00d0ad44f467bf202",
+    "stage1-coverage-failure-review.json": "5c6f2fb11058c21bfd0983f70aa95c28e099fba1fccdfc6204f2810664cdfe48"
+  },
+  "source_semantics_cases": 4,
+  "discarded_input_cases": 4,
+  "publication_capacity": {
+    "canonical_bytes": 443771280,
+    "canonical_operations": 720,
+    "approved_cap_bytes": 10737418240,
+    "chunks": [
+      {
+        "chunk": "4c232188-a281-4aa9-be76-27b9cda23e37",
+        "canonical_bytes": 29584752,
+        "retained_profiles": 8,
+        "retained_levels": 4008
+      },
+      {
+        "chunk": "e45b649b-964e-46e2-a48c-4c9408231d25",
+        "canonical_bytes": 88754256,
+        "retained_profiles": 16,
+        "retained_levels": 8016
+      },
+      {
+        "chunk": "94fb75f5-316d-40e5-94f8-945ad50a9a01",
+        "canonical_bytes": 177508512,
+        "retained_profiles": 24,
+        "retained_levels": 12024
+      },
+      {
+        "chunk": "b8af6752-3167-4f0a-98a5-d79939f4ec84",
+        "canonical_bytes": 295847520,
+        "retained_profiles": 32,
+        "retained_levels": 16032
+      },
+      {
+        "chunk": "1301f170-28c2-463c-8915-e14448133949",
+        "canonical_bytes": 443771280,
+        "retained_profiles": 40,
+        "retained_levels": 20040
+      }
+    ],
+    "exhaustion_model": {
+      "input": "Explicit synthetic administrative counter/ledger seeding",
+      "run_id": "7d2ea9ca-1b73-4879-89ad-9d4ac020f16f",
+      "state": "quarantined",
+      "resource_limit": {
+        "scope": "run",
+        "operation": "reservation",
+        "limit_bytes": 10737418240,
+        "used_bytes": 10721657712,
+        "requested_bytes": 16777216
+      },
+      "scientific_no_change": true,
+      "active_partition_no_change": true,
+      "final_evidence_frozen": true,
+      "unchanged_bytes": 10721657712
+    },
+    "scope": "Five growing month/tile snapshots, real restricted PostgreSQL and MinIO temporary/final verification and commits; not Jan\u2013Mar regional capacity or whole-pipeline memory proof."
+  },
+  "original_project_running_containers": [],
+  "original_session_manifest_sha256": "181cf9c708e1df3ccee107d66f81dfc7d0ce5942b4083174abd883dc2c1fd183",
+  "original_session_source_sha256": "12cbb73e8bb70f28190d29a2afb5aa521aebda510bc06807d8917dede78eba3c",
+  "original_session_resealed": false,
+  "original_run_operated": false,
+  "original_run_terminalized": false,
+  "terminalization_review_required": true,
+  "live_calls": 0,
+  "credentials_or_private_originals_accessed": false,
+  "commit_stage_push_PR": false,
+  "stage2_started": false,
+  "findings": [
+    {
+      "priority": "P1",
+      "category": "aggregate_publication_capacity",
+      "status": "regional_blocker_open",
+      "evidence": "Original allowance cannot fund its next 16 MiB reservation; bounded growing-slot publication succeeds, but no regional workload envelope is proved"
+    },
+    {
+      "priority": "P1",
+      "category": "pre_inventory_404_coverage",
+      "status": "open",
+      "evidence": "All 44 failed selections stay failed; official source can discard documents before inventory; deployed version/body evidence unavailable"
+    },
+    {
+      "priority": "P1",
+      "category": "discarded_source_input",
+      "status": "open",
+      "evidence": "Pinned translator can discard core or BGC values; four original warning chunks remain quarantined"
+    },
+    {
+      "priority": "P1",
+      "category": "original_run_final_evidence",
+      "status": "separate_procedure_review_pending",
+      "evidence": "Stopped open run is not frozen; synthetic disposable idempotent deadline finalization rehearsal passed; original database untouched"
+    },
+    {
+      "priority": "P3",
+      "category": "evidence_scope",
+      "status": "limitations_visible",
+      "evidence": "F01-2 authentic direction/core-null limitations remain; component broker and writer proofs are not regional or whole-pipeline certification"
+    }
+  ]
+}

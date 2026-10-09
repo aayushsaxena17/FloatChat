@@ -23,3 +23,6 @@ desktop.ini
 *gitleaks-report*
 *secret-mapping*
 commit-map
+# Local Claude Code permissions and parked tooling (never committed)
+.claude/settings.local.json
+.claude/parked/

@@ -1,0 +1,78 @@
+E501 Line too long (103 > 100)
+   --> scripts/stage1_blocker_review.py:265:101
+    |
+263 |                 "state": "supported_at_real_broker_prefork_component_scope",
+264 |                 "fresh_evidence": "reports/stage1-broker-evidence.json",
+265 |                 "qualifications": "Accelerated leases and explicit redelivery; no live regional proof",
+    |                                                                                                     ^^^
+266 |             },
+267 |             "S1-G02": {
+    |
+
+E501 Line too long (101 > 100)
+   --> scripts/stage1_blocker_review.py:271:101
+    |
+269 |                 "fresh_evidence": "reports/stage1-parquet-resource.json",
+270 |                 "pipeline_evidence": "reports/stage1-regional-capacity-model.json",
+271 |                 "qualifications": "Writer and synthetic whole-worker envelope are separate measures",
+    |                                                                                                     ^
+272 |             },
+273 |             "S1-G03": {
+    |
+
+E501 Line too long (105 > 100)
+   --> scripts/stage1_blocker_review.py:276:101
+    |
+274 |                 "state": "http_replay_reporting_components_supported_regional_gate_open",
+275 |                 "fresh_evidence": "reports/stage1-http-retry-evidence.json",
+276 |                 "qualifications": "Original frozen evidence, regional completeness and capacity pending",
+    |                                                                                                     ^^^^^
+277 |             },
+278 |             "S1-G04": {
+    |
+
+E501 Line too long (103 > 100)
+   --> scripts/stage1_blocker_review.py:285:101
+    |
+283 |         },
+284 |         "historical_evidence_limits": {
+285 |             "original_forensics": "Saved immutable reports, not fresh reads of the preserved database",
+    |                                                                                                     ^^^
+286 |             "source_witnesses": "Pinned previously executed translator models, not lost authentic inputs",
+287 |             "prior_verification": "Previous source digest 582d4599 and its 412 tests are historical",
+    |
+
+E501 Line too long (106 > 100)
+   --> scripts/stage1_blocker_review.py:286:101
+    |
+284 |         "historical_evidence_limits": {
+285 |             "original_forensics": "Saved immutable reports, not fresh reads of the preserved database",
+286 |             "source_witnesses": "Pinned previously executed translator models, not lost authentic inputs",
+    |                                                                                                     ^^^^^^
+287 |             "prior_verification": "Previous source digest 582d4599 and its 412 tests are historical",
+288 |             "superseded_model": "Stopped experiment; not a capacity pass or part of current run budget",
+    |
+
+E501 Line too long (101 > 100)
+   --> scripts/stage1_blocker_review.py:287:101
+    |
+285 |             "original_forensics": "Saved immutable reports, not fresh reads of the preserved database",
+286 |             "source_witnesses": "Pinned previously executed translator models, not lost authentic inputs",
+287 |             "prior_verification": "Previous source digest 582d4599 and its 412 tests are historical",
+    |                                                                                                     ^
+288 |             "superseded_model": "Stopped experiment; not a capacity pass or part of current run budget",
+289 |             "timed_out_model": "One-hour harness timeout; no completed capacity result",
+    |
+
+E501 Line too long (104 > 100)
+   --> scripts/stage1_blocker_review.py:288:101
+    |
+286 |             "source_witnesses": "Pinned previously executed translator models, not lost authentic inputs",
+287 |             "prior_verification": "Previous source digest 582d4599 and its 412 tests are historical",
+288 |             "superseded_model": "Stopped experiment; not a capacity pass or part of current run budget",
+    |                                                                                                     ^^^^
+289 |             "timed_out_model": "One-hour harness timeout; no completed capacity result",
+290 |         },
+    |
+
+Found 7 errors.

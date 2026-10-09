@@ -1,0 +1,132 @@
+{
+  "kind": "stage1_perf_run_model",
+  "scope": "Projection for Jan-Mar 2025 from the census and offline measurements; not a measurement of a live run",
+  "inputs": {
+    "census": "reports/stage1-inventory-census.json",
+    "cpu": "reports/stage1-v4-bench-chunk.json",
+    "cpu_pipeline": "stage1-v4",
+    "db_pipeline": "stage1-v4",
+    "db": [
+      "reports/stage1-v4-perf-db-probe.json"
+    ],
+    "transport": "reports/stage1-live-transport-8e8da1d4.json",
+    "depth_levels_per_profile_by_month": {
+      "2025-01": 699,
+      "2025-02": 384,
+      "2025-03": 384
+    },
+    "metadata_requests_assumed": 2000,
+    "raw_column_factor": 1.63,
+    "raw_calibration": "reports/stage1-perf-chunk-cpu-22x699-bgc24.json"
+  },
+  "cpu_us_per_level_by_stage": {
+    "sanitize_raw(profile payload)": {
+      "multiplicity": 1,
+      "raw_column_factor": 1.63,
+      "us_per_level": 9.2
+    },
+    "validate_raw(profile payload) x1": {
+      "multiplicity": 1,
+      "raw_column_factor": 1.63,
+      "us_per_level": 5.0
+    },
+    "documents() decode profile payload x1": {
+      "multiplicity": 5,
+      "raw_column_factor": 1.63,
+      "us_per_level": 48.9
+    },
+    "map_profile + budget.encode (all profiles)": {
+      "multiplicity": 1,
+      "raw_column_factor": 1.0,
+      "us_per_level": 31.3
+    },
+    "spool.add (all)": {
+      "multiplicity": 1,
+      "raw_column_factor": 1.0,
+      "us_per_level": 0.0
+    },
+    "spool.prepare (restore+certify, no DB)": {
+      "multiplicity": 1,
+      "raw_column_factor": 1.0,
+      "us_per_level": 0.0
+    },
+    "spool.membership(slot)": {
+      "multiplicity": 1,
+      "raw_column_factor": 1.0,
+      "us_per_level": 0.0
+    },
+    "spool.profiles(slot) re-read (receipts pass)": {
+      "multiplicity": 1,
+      "raw_column_factor": 1.0,
+      "us_per_level": 0.0
+    },
+    "write_snapshot (write+verify+storage_comparison)": {
+      "multiplicity": 1,
+      "raw_column_factor": 1.0,
+      "us_per_level": 25.4
+    },
+    "publish_verified (certificate full verify + 2 light verifies; memory store)": {
+      "multiplicity": 1,
+      "raw_column_factor": 1.0,
+      "us_per_level": 0.1
+    },
+    "spool.write_candidates (NDJSON for COPY)": {
+      "multiplicity": 1,
+      "raw_column_factor": 1.0,
+      "us_per_level": 0.0
+    },
+    "spool.candidates (slim JSON)": {
+      "multiplicity": 1,
+      "raw_column_factor": 1.0,
+      "us_per_level": 3.7
+    },
+    "spool.level_tables (Arrow)": {
+      "multiplicity": 1,
+      "raw_column_factor": 1.0,
+      "us_per_level": 2.5
+    }
+  },
+  "stage_names_missing": [
+    "spool.profiles(slot) re-read (receipts pass)",
+    "spool.write_candidates (NDJSON for COPY)"
+  ],
+  "cpu_us_per_level_total": 126.2,
+  "db_us_per_level_copy_plus_commit": {
+    "15378 levels (stage1-v4-perf-db-probe, 22x699)": 94.0,
+    "60813 levels (stage1-v4-perf-db-probe, 87x699)": 114.6,
+    "42385 levels (stage1-v4-perf-db-probe, 35x1211)": 101.9
+  },
+  "db_us_per_level_pooled": 107.4,
+  "http_mean_seconds_by_role": {
+    "inventory_before_200_s": 24.636363636363637,
+    "profile_200_s": 12.154545454545454,
+    "inventory_after_200_s": 2.85,
+    "inventory_before_404_s": 7.8,
+    "profile_404_s": 1.3571428571428572,
+    "inventory_after_404_s": 0.9285714285714286,
+    "metadata_200_s": 0.9932038834951457
+  },
+  "projection": {
+    "levels_jan_mar": 2877630,
+    "nonempty_chunks": 206,
+    "empty_chunks": 64,
+    "worker_cpu_hours": 0.1,
+    "db_copy_commit_hours": 0.09,
+    "http_selection_hours_fast": 1.12,
+    "http_selection_hours_slow": 2.45,
+    "http_metadata_hours": 0.55,
+    "serial_total_hours_fast": 1.86,
+    "serial_total_hours_slow": 3.19,
+    "captured_replay_hours_no_http": 0.19,
+    "live_first_70_chunks_cross_check": {
+      "chunks": 70,
+      "empty": 19,
+      "nonempty": 51,
+      "profiles": 1502,
+      "measured_seconds": 3960,
+      "model_seconds_fast": 1789,
+      "model_seconds_slow": 2969
+    }
+  },
+  "finished_at_utc": "2026-10-08T16:06:11.227458+00:00"
+}

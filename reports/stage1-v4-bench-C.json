@@ -1,0 +1,239 @@
+{
+  "kind": "stage1_v4_package_c_chunk_cpu_profile",
+  "scope": "Package C (Parquet write-once, Arrow verification, checksum upload). The 'stages' are the best of three runs of scripts/stage1_perf_profile.py at the package C tree, run as a scratch copy with three edits (see notes). Host is shared with other packages' test runs; see after_runs and same_session_repeats for the spread.",
+  "basis": "tests/fixtures/argovis/recorded/6a8ffa52f6db4954b974c449e68c54bc",
+  "basis_label": "core6",
+  "profiles": 87,
+  "levels_per_profile": 699,
+  "raw_profile_payload_bytes": 1815778,
+  "raw_inventory_payload_bytes": 55768,
+  "python": "3.12.12",
+  "canonical_bytes_per_profile": 854393,
+  "canonical_bytes_per_level": 1222,
+  "canonical_bytes_chunk": 74332191,
+  "parquet_bytes": 4105706,
+  "parquet_rows": 60813,
+  "stages": {
+    "sanitize_raw(profile payload)": {
+      "wall_s": 0.42,
+      "cpu_s": 0.417
+    },
+    "validate_raw(profile payload) x1": {
+      "wall_s": 0.231,
+      "cpu_s": 0.23
+    },
+    "sanitize_raw(inventory payload)": {
+      "wall_s": 0.008,
+      "cpu_s": 0.008
+    },
+    "validate_raw(inventory payload) x1": {
+      "wall_s": 0.005,
+      "cpu_s": 0.005
+    },
+    "sha256(profile payload)": {
+      "wall_s": 0.002,
+      "cpu_s": 0.002
+    },
+    "documents() decode profile payload x1": {
+      "wall_s": 0.278,
+      "cpu_s": 0.277
+    },
+    "documents() decode inventory payload x1": {
+      "wall_s": 0.006,
+      "cpu_s": 0.006
+    },
+    "map_profile + budget.encode (all profiles)": {
+      "wall_s": 2.854,
+      "cpu_s": 2.841
+    },
+    "write_snapshot (write+verify+storage_comparison)": {
+      "wall_s": 2.748,
+      "cpu_s": 2.735
+    },
+    "  write_snapshot: verify_snapshot (local read-back)": {
+      "wall_s": 0
+    },
+    "  write_snapshot: storage_comparison (to_pandas)": {
+      "wall_s": 0.166
+    },
+    "  write_snapshot: writer loop (rows+ipc spill+parquet)": {
+      "wall_s": 2.582
+    },
+    "sha256(parquet file)": {
+      "wall_s": 0.004,
+      "cpu_s": 0.004
+    },
+    "publish_verified (certified: 1 conditional put + stat; memory store)": {
+      "wall_s": 0.013,
+      "cpu_s": 0.013
+    },
+    "publish_verified (uncertified verifier: row-by-row first call; informational)": {
+      "wall_s": 9.389,
+      "cpu_s": 9.205
+    },
+    "write_snapshot(audit=True) (arrow verify + row-by-row audit; informational)": {
+      "wall_s": 10.206,
+      "cpu_s": 10.143
+    }
+  },
+  "sum_measured_wall_s": 26.164,
+  "multiplicity_per_chunk_from_code": {
+    "profile payload sanitize_raw": 1,
+    "profile payload validate_raw (publish_verified: payload, temporary, final)": 3,
+    "profile payload documents() decode in processor (inventory_accounting x2, inventory, metadata loop, map)": 5,
+    "canonical encode per profile (map, spool certify, verify_snapshot in write_snapshot, certificate first payload)": 4,
+    "parquet full read-back (write_snapshot verify, certificate first call)": 2,
+    "parquet light read (certificate temporary+final)": 2,
+    "spool.profiles(slot) restores (membership, write_snapshot, receipts)": 3
+  },
+  "max_rss_mib": 519.9,
+  "cprofile_top": {},
+  "finished_at_utc": "2026-10-08T15:04:56.435287+00:00",
+  "baseline": {
+    "source": "scripts/stage1_perf_profile.py unmodified at 272508b before any package C edit (same host, 87 profiles x 699 levels); full output kept in /tmp/claude-1000/bench-C-before.json",
+    "review_reference_s": {
+      "write_snapshot": 22.9,
+      "publish_verified": 11.3
+    },
+    "write_snapshot (write+verify+storage_comparison)": {
+      "wall_s": 25.596,
+      "cpu_s": 24.708
+    },
+    "write_snapshot: verify_snapshot (local read-back)": {
+      "wall_s": 15.158
+    },
+    "write_snapshot: storage_comparison (to_pandas)": {
+      "wall_s": 0.327
+    },
+    "write_snapshot: writer loop (rows+ipc spill+parquet)": {
+      "wall_s": 10.111
+    },
+    "publish_verified (certificate full verify + 2 light verifies; memory store)": {
+      "wall_s": 12.024,
+      "cpu_s": 11.576
+    },
+    "us_per_level_write_snapshot": 420.9
+  },
+  "after_runs": [
+    {
+      "write_snapshot": {
+        "wall_s": 2.748,
+        "cpu_s": 2.735
+      },
+      "publish_verified_certified": {
+        "wall_s": 0.013,
+        "cpu_s": 0.013
+      },
+      "publish_verified_uncertified_informational": {
+        "wall_s": 9.389,
+        "cpu_s": 9.205
+      },
+      "write_snapshot_audit_informational": {
+        "wall_s": 10.206,
+        "cpu_s": 10.143
+      },
+      "max_rss_mib": 519.9
+    },
+    {
+      "write_snapshot": {
+        "wall_s": 14.724,
+        "cpu_s": 8.211
+      },
+      "publish_verified_certified": {
+        "wall_s": 0.021,
+        "cpu_s": 0.02
+      },
+      "publish_verified_uncertified_informational": {
+        "wall_s": 6.867,
+        "cpu_s": 6.842
+      },
+      "write_snapshot_audit_informational": {
+        "wall_s": 9.502,
+        "cpu_s": 9.468
+      },
+      "max_rss_mib": 520.0
+    },
+    {
+      "write_snapshot": {
+        "wall_s": 12.764,
+        "cpu_s": 12.355
+      },
+      "publish_verified_certified": {
+        "wall_s": 0.013,
+        "cpu_s": 0.013
+      },
+      "publish_verified_uncertified_informational": {
+        "wall_s": 9.819,
+        "cpu_s": 9.585
+      },
+      "write_snapshot_audit_informational": {
+        "wall_s": 10.983,
+        "cpu_s": 10.907
+      },
+      "max_rss_mib": 519.4
+    }
+  ],
+  "same_session_repeats": {
+    "what": "write_snapshot alone, same 87x699 profiles, same host session, interleaved with other packages' load; old = stage1-v3 parquet.py (git HEAD copy) on the current tree, new = package C",
+    "old_v3_module": [
+      {
+        "wall_s": 20.04,
+        "user_s": 17.47,
+        "sys_s": 1.53
+      },
+      {
+        "wall_s": 16.38,
+        "user_s": 15.24,
+        "sys_s": 0.92
+      },
+      {
+        "wall_s": 16.29,
+        "user_s": 15.18,
+        "sys_s": 0.89
+      }
+    ],
+    "new": [
+      {
+        "wall_s": 3.87,
+        "user_s": 2.66,
+        "sys_s": 1.03
+      },
+      {
+        "wall_s": 2.12,
+        "user_s": 1.82,
+        "sys_s": 0.29
+      },
+      {
+        "wall_s": 3.07,
+        "user_s": 2.6,
+        "sys_s": 0.46
+      },
+      {
+        "wall_s": 4.2,
+        "user_s": 3.03,
+        "sys_s": 0.54
+      },
+      {
+        "wall_s": 5.95,
+        "user_s": 4.44,
+        "sys_s": 1.27
+      }
+    ],
+    "min_wall_s": {
+      "old_v3_module": 16.29,
+      "new": 2.12
+    },
+    "median_wall_s": {
+      "old_v3_module": 16.38,
+      "new": 3.87
+    },
+    "rule_6_note": "Informal: produced by a scratch harness (write_snapshot alone, repeated), not by scripts/stage1_perf_profile.py or scripts/stage1_perf_experiments.py; outside rule 6 and given only to show the host-load spread. The authoritative stages are the script-derived ones."
+  },
+  "us_per_level_write_snapshot_best_run": 45.2,
+  "notes": [
+    "The stages above come from a scratch copy of scripts/stage1_perf_profile.py (package J owns the script, it was not edited): ROOT pinned to the worktree, sub.get('verify_snapshot', 0) because the Arrow path never calls verify_snapshot, the spool stages replaced by the identifier-ordered (uuid, Profile) list because ProfileSpool is being rewritten by package F, and the publish stage uses verified['certificate'] (the shipped script builds an uncertified verifier, so it would still measure a full row-by-row verify).",
+    "Stage names for write_snapshot are unchanged; the publish_verified stage is renamed because it no longer measures a full verify.",
+    "MinIO is not involved: MemoryStore. The server-side checksum cost and round trips are not measured here.",
+    "Re-run the shipped scripts/stage1_perf_profile.py once package J applies the fixes listed in docs/v4-packages/C.md and replace 'stages'."
+  ]
+}

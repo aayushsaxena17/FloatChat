@@ -1,0 +1,22 @@
+{
+  "criterion": "ADR-0042: memory.max = 1 GiB, zero oom/oom_kill, anonymous peak < 1 GiB",
+  "finished_at_utc": "2026-10-08T10:20:48.876656+00:00",
+  "interval_seconds": 2.0,
+  "kind": "stage1_worker_memory_evidence",
+  "pass": true,
+  "project": "floatchat-s1-acceptance-5f59c62f122295a7",
+  "samples": 848,
+  "scope": "Sampled host cgroup v2 counters; anonymous peak is the maximum sample, memory.peak is the kernel high-water mark including page cache",
+  "started_at_utc": "2026-10-08T09:51:41.448501+00:00",
+  "workers": [
+    {
+      "anon_peak_bytes": 336068608,
+      "container": "live-worker:floatchat-s1-acceptance-5f59c62f122295a7-live-owner",
+      "memory_max": 1073741824,
+      "memory_peak_counter_bytes": 1073745920,
+      "oom": 0,
+      "oom_kill": 0,
+      "samples": 848
+    }
+  ]
+}

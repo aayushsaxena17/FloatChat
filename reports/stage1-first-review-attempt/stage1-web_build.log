@@ -1,0 +1,17 @@
+
+> floatchat@ build /home/floatchat/FloatChat-stage1
+> pnpm --filter @floatchat/web build
+
+
+> @floatchat/web@0.0.0 build /home/floatchat/FloatChat-stage1/apps/web
+> tsc --noEmit && vite build
+
+vite v7.3.1 building client environment for production...
+transforming...
+✓ 29 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.39 kB │ gzip:  0.26 kB
+dist/assets/index-CIKEKlrL.css    0.43 kB │ gzip:  0.30 kB
+dist/assets/index-CD8_xxpK.js   194.14 kB │ gzip: 61.10 kB
+✓ built in 2.43s

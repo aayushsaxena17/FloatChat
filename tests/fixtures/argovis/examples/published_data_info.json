@@ -1,0 +1,20 @@
+[
+  [
+    "temperature",
+    "pressure"
+  ],
+  [
+    "units",
+    "data_keys_mode"
+  ],
+  [
+    [
+      "degree_Celsius",
+      "D"
+    ],
+    [
+      "decibar",
+      "D"
+    ]
+  ]
+]

@@ -1,0 +1,107 @@
+{
+  "actual_head_CI": "pending",
+  "bucket": "floatchat-s1-acceptance-302412131a7c99fb",
+  "database": "floatchat_s1_302412131a7c99fb",
+  "environment_file_sha256": "ff8d061b622c9ea6c5b3ec7a4bff961d1b1feb3fc6c223974a0bcdcd84bd592d",
+  "environment_id": "a21ebf92-ecb9-4508-a67d-c1884f9f89cd",
+  "full_acceptance": "pending_owner_opt_in",
+  "images": {
+    "API": "sha256:7055829eacc85bbc99fbbaefb735bd3ce8a916c93d4aec115ccf12ded1eccd2a",
+    "DB": "sha256:d84da980fdcc9c281fffd62c626f72da7f8c78a239694bb63c60679541024d1b",
+    "MINIO": "sha256:0c9f68b6e6633c942dfaba317af259e74ffbc201102eff13dd56a98e8df666ff"
+  },
+  "interval": [
+    "2025-01-01T00:00:00Z",
+    "2025-04-01T00:00:00Z"
+  ],
+  "isolation": {
+    "development_volume_identities": [
+      "39760844b96a4ab14113cfc53281165a18e4a312753c1dd56f777b746a442ff8",
+      "floatchat-dev_minio_data",
+      "floatchat-dev_postgres_data",
+      "floatchat-dev_redis_data",
+      "floatchat-stage0-wsl-dev_minio_data",
+      "floatchat-stage0-wsl-dev_postgres_data",
+      "floatchat-stage0-wsl-dev_redis_data"
+    ],
+    "host_port_bindings": [],
+    "live_network_created": false,
+    "network": "floatchat-s1-acceptance-302412131a7c99fb_default",
+    "network_internal": true,
+    "other_volume_count": 93,
+    "project": "floatchat-s1-acceptance-302412131a7c99fb",
+    "services": [
+      "acquire",
+      "db",
+      "minio",
+      "process",
+      "supervisor"
+    ],
+    "shared_development_volumes": [],
+    "volumes": [
+      "floatchat-s1-acceptance-302412131a7c99fb_minio_data",
+      "floatchat-s1-acceptance-302412131a7c99fb_postgres_data"
+    ]
+  },
+  "live_executed": false,
+  "live_request_id": "1f7507eb-994b-46ca-b53e-cad3eed746eb",
+  "prepared_at_utc": "2026-10-09T11:34:15.353141+00:00",
+  "project": "floatchat-s1-acceptance-302412131a7c99fb",
+  "queue": "floatchat-s1-acceptance-302412131a7c99fb.ingestion",
+  "reference_time_utc": "2025-04-01T00:00:00Z",
+  "replay_request_id": "e3d94099-5f6c-4d5e-830a-edf02a71c48e",
+  "runtime_proof": {
+    "bucket_readback_sha256": "33109011aed2654347cf7d82a9505f20085775fe5816cb1e71ba07d8419fc9b3",
+    "bucket_scoped_identity": true,
+    "denied_control_bucket": "floatchat-s1-acceptance-302412131a7c99fb-control",
+    "environment": {
+      "bucket": "floatchat-s1-acceptance-302412131a7c99fb",
+      "compose_project": "floatchat-s1-acceptance-302412131a7c99fb",
+      "disposable": true,
+      "id": "a21ebf92-ecb9-4508-a67d-c1884f9f89cd",
+      "max_active_chunks": 8,
+      "mode": "acceptance",
+      "name": "floatchat-s1-acceptance-302412131a7c99fb",
+      "queue_namespace": "floatchat-s1-acceptance-302412131a7c99fb.ingestion",
+      "upstream_slots": 4
+    },
+    "identity": {
+      "database": "floatchat_s1_302412131a7c99fb",
+      "login": "acceptance_ingestion",
+      "role": "floatchat_ingestor"
+    },
+    "kind": "offline_acceptance_isolation_proof",
+    "live_disabled_admission_refused": true,
+    "migration": "0015_gdac_wiring",
+    "queue": "floatchat-s1-acceptance-302412131a7c99fb.ingestion",
+    "queue_claims_empty": true,
+    "queue_ticket_rows": 0,
+    "run_created": false,
+    "science_counts": {
+      "levels": 0,
+      "profiles": 0,
+      "runs": 0
+    }
+  },
+  "scope": "offline preparation only; no ingestion or upstream calls",
+  "services_stopped": true,
+  "session": "302412131a7c99fb",
+  "source_sha256": "9c46893db3e1ee9054ae8738ad3054abd407e8f86a858d8c08cd74844e59de0b",
+  "worker_topology": {
+    "acquire_memory": "1g",
+    "acquire_slots": 4,
+    "process_memory": "2g",
+    "process_workers": 2,
+    "services": [
+      "acquire",
+      "process",
+      "supervisor"
+    ],
+    "worker_memory_bytes": 1073741824
+  },
+  "workers_running_after_proof": [
+    "acquire",
+    "process",
+    "supervisor"
+  ]
+}

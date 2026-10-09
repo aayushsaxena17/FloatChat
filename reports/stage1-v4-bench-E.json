@@ -1,0 +1,226 @@
+{
+  "base_commit": "272508b",
+  "generated_at_utc": "2026-10-08T14:55:49.982264+00:00",
+  "kind": "stage1-v4-bench-E",
+  "package": "E",
+  "scenario": {
+    "chunks": 12,
+    "distinct_floats": 16,
+    "metadata_requests_per_chunk": 5,
+    "reference_time_utc": "2025-04-01T00:00:00+00:00",
+    "run_created_at_utc": "2026-10-08T12:00:00+00:00",
+    "selection_requests_per_chunk": 3,
+    "transport": "fake; no network, database or object store"
+  },
+  "scenario_notes": {
+    "counters": "validate_raw_calls covers landing plus the reload of every landing; phase_landing_validate_raw_calls is landing only; http_attempts counts transport calls; object_puts counts write_temporary/write_immutable",
+    "fixture_metadata_recorded_source": "RecordedSource fixture path: no cache access",
+    "objects_py": "identical hashes across trees mean publish_verified (package C) has not changed, so validate_raw still runs three times per landing",
+    "same_run": "one run: every fetch is stamped after the run was created, so later chunks reuse earlier chunks' metadata; the reference time T (2025-04-01) does not enter the window",
+    "second_run_after_30_days": "run 2 is created 45 days after run 1: run 1's entries are stale, run 2 refetches each float once and then reuses it",
+    "second_run_within_30_days": "run 2 is created 20 days after run 1; first_run_* keys describe run 1, the other keys run 2"
+  },
+  "source_sha256": {
+    "baseline": {
+      "landing.py": "0f16d6b3f63ca3e37d04f16f1318aab4c9b69b98b7aac55577fe4899342404c0",
+      "objects.py": "3f2ac2be49c80b76a4a1579d7789eb030f54efd3c7d8cc3dc65bc704aa80d94b",
+      "source.py": "b7929c8928a04acf1bcd9bb0d28e121ce31073b5fdfc8b960743ddb7396e8f63",
+      "transport.py": "682eb77b1ef1fd76761a02cb48b80c0d68f8cd47bf6bc327fc931c130352bd5c"
+    },
+    "e_modules_on_baseline": {
+      "landing.py": "c535509b0cb3224bbfefa4813ee5d295cb6f7383e5100d6ec60d5eebb4877cbe",
+      "objects.py": "3f2ac2be49c80b76a4a1579d7789eb030f54efd3c7d8cc3dc65bc704aa80d94b",
+      "source.py": "e24adb555ca4a6e98d45b63f45a796aba0dc6991f9abbf6a84e49fadc019a43e",
+      "transport.py": "2b570f78be8b57c62f99416802285a5655e7e9e6185a0746ebcac3f7177b6f4f"
+    },
+    "worktree": {
+      "landing.py": "c535509b0cb3224bbfefa4813ee5d295cb6f7383e5100d6ec60d5eebb4877cbe",
+      "objects.py": "6f0b6a9a08e6194d026f5a5599fb108ad25d439386879c95fa8ab8a5b5cc66a7",
+      "source.py": "e24adb555ca4a6e98d45b63f45a796aba0dc6991f9abbf6a84e49fadc019a43e",
+      "transport.py": "2b570f78be8b57c62f99416802285a5655e7e9e6185a0746ebcac3f7177b6f4f"
+    }
+  },
+  "trees": {
+    "baseline": {
+      "label": "baseline",
+      "results": {
+        "fixture_metadata_recorded_source": {
+          "attempts_origin_captured": 60,
+          "manifests_recorded": 60,
+          "object_publishes": 60,
+          "object_puts": 60,
+          "object_reads": 180,
+          "phase_landing_validate_raw_calls": 180,
+          "validate_raw_calls": 240,
+          "wall_seconds": 0.0599
+        },
+        "same_run": {
+          "http_attempts": 96,
+          "http_attempts_metadata": 60,
+          "http_attempts_other": 36,
+          "manifests_recorded": 96,
+          "object_publishes": 96,
+          "object_puts": 96,
+          "object_reads": 288,
+          "phase_landing_validate_raw_calls": 288,
+          "validate_raw_calls": 384,
+          "wall_seconds": 0.1176
+        },
+        "second_run_after_30_days": {
+          "first_run_http_attempts": 96,
+          "first_run_validate_raw_calls": 288,
+          "http_attempts": 96,
+          "http_attempts_metadata": 60,
+          "http_attempts_other": 36,
+          "manifests_recorded": 96,
+          "object_publishes": 96,
+          "object_puts": 96,
+          "object_reads": 288,
+          "phase_landing_validate_raw_calls": 288,
+          "validate_raw_calls": 384,
+          "wall_seconds": 0.3044
+        },
+        "second_run_within_30_days": {
+          "first_run_http_attempts": 96,
+          "first_run_validate_raw_calls": 288,
+          "http_attempts": 96,
+          "http_attempts_metadata": 60,
+          "http_attempts_other": 36,
+          "manifests_recorded": 96,
+          "object_publishes": 96,
+          "object_puts": 96,
+          "object_reads": 288,
+          "phase_landing_validate_raw_calls": 288,
+          "validate_raw_calls": 384,
+          "wall_seconds": 0.2465
+        }
+      }
+    },
+    "e_modules_on_baseline": {
+      "label": "e_modules_on_baseline",
+      "results": {
+        "fixture_metadata_recorded_source": {
+          "attempts_origin_captured": 60,
+          "manifests_recorded": 60,
+          "object_publishes": 60,
+          "object_puts": 60,
+          "object_reads": 180,
+          "phase_landing_validate_raw_calls": 180,
+          "validate_raw_calls": 180,
+          "wall_seconds": 0.0439
+        },
+        "same_run": {
+          "attempts_origin_cache": 44,
+          "cache_reads": 60,
+          "cache_upserts": 16,
+          "http_attempts": 52,
+          "http_attempts_metadata": 16,
+          "http_attempts_other": 36,
+          "manifests_recorded": 96,
+          "object_publishes": 52,
+          "object_puts": 52,
+          "object_reads": 244,
+          "phase_landing_validate_raw_calls": 156,
+          "run_row_reads": 12,
+          "validate_raw_calls": 156,
+          "wall_seconds": 0.0716
+        },
+        "second_run_after_30_days": {
+          "attempts_origin_cache": 44,
+          "cache_reads": 60,
+          "cache_upserts": 16,
+          "first_run_http_attempts": 52,
+          "first_run_validate_raw_calls": 156,
+          "http_attempts": 52,
+          "http_attempts_metadata": 16,
+          "http_attempts_other": 36,
+          "manifests_recorded": 96,
+          "object_publishes": 52,
+          "object_puts": 52,
+          "object_reads": 244,
+          "phase_landing_validate_raw_calls": 156,
+          "run_row_reads": 12,
+          "validate_raw_calls": 156,
+          "wall_seconds": 0.1595
+        },
+        "second_run_within_30_days": {
+          "attempts_origin_cache": 60,
+          "cache_reads": 60,
+          "first_run_http_attempts": 52,
+          "first_run_validate_raw_calls": 156,
+          "http_attempts": 36,
+          "http_attempts_other": 36,
+          "manifests_recorded": 96,
+          "object_publishes": 36,
+          "object_puts": 36,
+          "object_reads": 228,
+          "phase_landing_validate_raw_calls": 108,
+          "run_row_reads": 12,
+          "validate_raw_calls": 108,
+          "wall_seconds": 0.1746
+        }
+      }
+    },
+    "worktree": {
+      "label": "worktree",
+      "results": {
+        "fixture_metadata_recorded_source": {
+          "attempts_origin_captured": 60,
+          "manifests_recorded": 60,
+          "object_puts": 60,
+          "object_reads": 60,
+          "phase_landing_validate_raw_calls": 60,
+          "validate_raw_calls": 60,
+          "wall_seconds": 0.036
+        },
+        "same_run": {
+          "attempts_origin_cache": 44,
+          "cache_reads": 60,
+          "cache_upserts": 16,
+          "http_attempts": 52,
+          "http_attempts_metadata": 16,
+          "http_attempts_other": 36,
+          "manifests_recorded": 96,
+          "object_puts": 52,
+          "object_reads": 140,
+          "phase_landing_validate_raw_calls": 52,
+          "run_row_reads": 12,
+          "validate_raw_calls": 52,
+          "wall_seconds": 0.0376
+        },
+        "second_run_after_30_days": {
+          "attempts_origin_cache": 44,
+          "cache_reads": 60,
+          "cache_upserts": 16,
+          "first_run_http_attempts": 52,
+          "first_run_validate_raw_calls": 52,
+          "http_attempts": 52,
+          "http_attempts_metadata": 16,
+          "http_attempts_other": 36,
+          "manifests_recorded": 96,
+          "object_puts": 52,
+          "object_reads": 140,
+          "phase_landing_validate_raw_calls": 52,
+          "run_row_reads": 12,
+          "validate_raw_calls": 52,
+          "wall_seconds": 0.0958
+        },
+        "second_run_within_30_days": {
+          "attempts_origin_cache": 60,
+          "cache_reads": 60,
+          "first_run_http_attempts": 52,
+          "first_run_validate_raw_calls": 52,
+          "http_attempts": 36,
+          "http_attempts_other": 36,
+          "manifests_recorded": 96,
+          "object_puts": 36,
+          "object_reads": 156,
+          "phase_landing_validate_raw_calls": 36,
+          "run_row_reads": 12,
+          "validate_raw_calls": 36,
+          "wall_seconds": 0.0709
+        }
+      }
+    }
+  }
+}

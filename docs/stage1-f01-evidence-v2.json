@@ -1,0 +1,27 @@
+{
+  "version": "F01-2",
+  "decision": "ADR-0033",
+  "owner_authorized_date": "2026-10-07",
+  "date_timezone": "Asia/Calcutta",
+  "reason": "Obtaining authentic descending and present-core-value null examples is disproportionate; no further discovery/capture for these representations.",
+  "required_authentic_representations": ["data_mode_R", "data_mode_A", "data_mode_D", "direction_A"],
+  "waived_authentic_representations": ["direction_D", "source_core_measurement_null"],
+  "waiver_observation_status": "authentic_unobserved_requirement_waived",
+  "synthetic_obligations": ["descending_direction_identity", "present_core_null_parser_canonical_database_parquet", "repeated_pressure_ordinals_diagnostics", "normalized_measurement_errors_model_storage_parquet"],
+  "derivative_basis": [
+    {
+      "mode": "R",
+      "bundle": "tests/fixtures/argovis/recorded/25f21e056e7c4db7bc1e21b0a28ea45f",
+      "manifest_sha256": "7127115c0b866861e11f1ab34c3cda5c0d4633e885fa6687ba5d6d4112414dc6",
+      "profile_id": "6990616_100"
+    },
+    {
+      "mode": "A",
+      "bundle": "tests/fixtures/argovis/recorded/9efe8f4e713c44a1a2964407e52b9a45",
+      "manifest_sha256": "f42b03e44588560ba43151428405eb4b40324a6d26dc3111406a41c56d0ff540",
+      "profile_id": "2904014_040"
+    }
+  ],
+  "limitations": ["No authentic descending or present-core-value null witness", "No verified supplied-error wire mapping", "No regional completeness or full live acceptance", "No Stage 2 permission"],
+  "source_contract_changed": false
+}

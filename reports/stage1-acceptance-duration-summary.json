@@ -1,0 +1,79 @@
+{
+  "attempt_timing": [
+    {
+      "attempts": 44,
+      "disposition": "http_failure",
+      "elapsed_seconds_max": 2.805535,
+      "elapsed_seconds_sum": 42.913533,
+      "origin": "http"
+    },
+    {
+      "attempts": 1,
+      "disposition": "transport_failure",
+      "elapsed_seconds_max": 10.005566,
+      "elapsed_seconds_sum": 10.005566,
+      "origin": "http"
+    },
+    {
+      "attempts": 1215,
+      "disposition": "verified_raw",
+      "elapsed_seconds_max": 15.147538,
+      "elapsed_seconds_sum": 1513.252331,
+      "origin": "http"
+    }
+  ],
+  "execution_worker_processes": 1,
+  "http_retries": 1,
+  "initial_plan": {
+    "chunks": 1260,
+    "month_bounded_weekly_slices": 14,
+    "tiles": 90
+  },
+  "per_run_hard_limit_seconds": 21600,
+  "phase_sum_is_not_elapsed_time": true,
+  "phase_timings": [
+    {
+      "episodes": 120,
+      "phase": "complete",
+      "wall_seconds_sum": 312348.581447
+    },
+    {
+      "episodes": 44,
+      "phase": "failed",
+      "wall_seconds_sum": 137061.740845
+    },
+    {
+      "episodes": 172,
+      "phase": "fetching",
+      "wall_seconds_sum": 1654.172195
+    },
+    {
+      "episodes": 128,
+      "phase": "landed",
+      "wall_seconds_sum": 0.328736
+    },
+    {
+      "episodes": 174,
+      "phase": "planned",
+      "wall_seconds_sum": 3946.283746
+    },
+    {
+      "episodes": 121,
+      "phase": "publishing",
+      "wall_seconds_sum": 2622.855655
+    },
+    {
+      "episodes": 8,
+      "phase": "quarantined",
+      "wall_seconds_sum": 8473.575475
+    },
+    {
+      "episodes": 128,
+      "phase": "validating",
+      "wall_seconds_sum": 281.103386
+    }
+  ],
+  "scope": "saved provisional persisted evidence; no services started or source accessed",
+  "source": "reports/stage1-acceptance-live-interrupted.json",
+  "upstream_max_in_flight": 1
+}

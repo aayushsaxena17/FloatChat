@@ -8,7 +8,6 @@ import uuid
 import psycopg
 from floatchat_api.health import storage_client
 from floatchat_core.config import Settings
-from floatchat_workers.app import app
 
 
 def main() -> None:
@@ -132,9 +131,33 @@ def main() -> None:
                         "AND usename = current_user AND query LIKE '%%pg_sleep(5)%%'"
                     )
                     assert cursor.fetchone() == (0,)
-        elif mode == "worker":
-            result = app.send_task("floatchat.smoke", args=["stage0"])
-            assert result.get(timeout=30) == "ok:stage0"
+        elif mode in ("queue", "worker"):
+            # The work queue is PostgreSQL (migrations 0012/0013). Stage 0's application role
+            # must see none of it: ticket claims, the metadata cache and level staging belong
+            # to the ingestion login (scripts/bootstrap_db.py STAGE1_TABLES).
+            with psycopg.connect(
+                settings.database_url.get_secret_value(), autocommit=True
+            ) as connection:
+                with connection.cursor() as cursor:
+                    for table in (
+                        "processing_ticket",
+                        "float_metadata_cache",
+                        "measurement_staging",
+                    ):
+                        cursor.execute("SELECT to_regclass(%s) IS NOT NULL", (f"app.{table}",))
+                        assert cursor.fetchone() == (True,)
+                        cursor.execute(
+                            "SELECT has_table_privilege(current_user, %s, "
+                            "'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')",
+                            (f"app.{table}",),
+                        )
+                        assert cursor.fetchone() == (False,)
+                    cursor.execute(
+                        "SELECT to_regprocedure('app.claim_ticket(text,text)') IS NOT NULL, "
+                        "has_function_privilege(current_user, "
+                        "'app.claim_ticket(text,text)', 'EXECUTE')"
+                    )
+                    assert cursor.fetchone() == (True, False)
         elif mode in ["invalid-storage", "missing-bucket"]:
             import asyncio
 

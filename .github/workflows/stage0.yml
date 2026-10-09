@@ -3,6 +3,42 @@ on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:
+  stage1-components:
+    name: stage1-offline-components
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with: { version: '0.10.4', python-version: '3.12.12' }
+      - name: Prepare dependency/image caches separately from acceptance
+        run: |
+          uv sync --all-packages --frozen
+          docker build -t floatchat-stage1-postgres-offline -f infra/docker/postgres.Dockerfile .
+          docker build -t floatchat-stage1-api-offline -f infra/docker/api.Dockerfile .
+          docker build -t floatchat-stage1-minio-offline -f infra/docker/minio.Dockerfile .
+          docker pull redis@sha256:02419de7eddf55aa5bcf49efb74e88fa8d931b4d77c07eff8a6b2144472b6952
+      - name: Offline component tests (no upstream or credential)
+        run: |
+          sudo unshare --net -- env \
+            PATH="$PATH" UV_OFFLINE=true \
+            STAGE1_POSTGRES_IMAGE=floatchat-stage1-postgres-offline \
+            STAGE1_API_IMAGE=floatchat-stage1-api-offline \
+            STAGE1_MINIO_IMAGE=floatchat-stage1-minio-offline \
+            "$PWD/.venv/bin/python" -m pytest tests/stage1 -q \
+            --junitxml=reports/stage1-ci-components.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage1-components
+          path: |
+            reports/stage1-ci-components.xml
+            reports/stage1-broker-evidence.json
+            reports/stage1-parquet-resource.json
+            reports/stage1-ingestion-example.json
+            reports/stage1-ingestion-example.md
+      # Component green is not the Stage 1 acceptance gate; F01/live and the
+      # end-to-end 86-case matrix remain explicit implementation requirements.
   python:
     name: python
     runs-on: ubuntu-24.04

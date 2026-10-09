@@ -1,0 +1,54 @@
+{
+  "capture_id": "e5b3f14e549d49e69ed77fde03d40d8c",
+  "kind": "live_recorded_argovis_inventory_discovery",
+  "scope": "candidate_discovery_only_not_F01_or_regional_coverage",
+  "endpoint": "https://argovis-api.colorado.edu/argo",
+  "request_parameters": {
+    "startDate": "2026-09-28T00:00:00Z",
+    "endDate": "2026-10-05T00:00:00Z",
+    "polygon": "[[65,-5],[70,-5],[70,0],[65,0],[65,-5]]"
+  },
+  "request_role": "inventory_discovery",
+  "status": 200,
+  "retrieved_at_utc": "2026-10-06T13:00:14.602107+00:00",
+  "specification": {
+    "release": "2.36.2",
+    "sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
+    "url": "https://github.com/argovis/argovis_api/blob/2.36.2/core-spec.json"
+  },
+  "response": {
+    "path": "01-inventory_discovery.json",
+    "representation": "sanitized_decompressed_json",
+    "sha256": "d4ce241fdca004776130aefbcfd1e0bc9208c3de3228d7966102349381976022",
+    "bytes": 2281,
+    "received_compressed_bytes": 2286,
+    "sanitization": {
+      "version": "raw-sanitization-v1",
+      "credential_fields_removed": 0,
+      "urls_scrubbed": 0
+    }
+  },
+  "candidate_ids": [
+    "2904014_040",
+    "6990616_100"
+  ],
+  "candidate_count": 2,
+  "bounds": {
+    "requests": 1,
+    "concurrency": 1,
+    "automatic_retries": 0,
+    "compressed_bytes": 1048576,
+    "decompressed_bytes": 8388608,
+    "inventory_documents": 20,
+    "http_seconds": 120,
+    "scanner_seconds": 60,
+    "owner_command_seconds": 300
+  },
+  "attribution": {
+    "provider": "International Argo Program and national contributors, via Argovis",
+    "argo_doi": "https://doi.org/10.17882/42182",
+    "terms_and_acknowledgement": "https://argo.ucsd.edu/data/acknowledging-argo/",
+    "argovis_contract_citation": "https://zenodo.org/records/15708506"
+  },
+  "acceptance": "No regional completeness, empty coverage or F01 representation pass. Candidate IDs require a later separately selected inventory/profile/metadata capture."
+}

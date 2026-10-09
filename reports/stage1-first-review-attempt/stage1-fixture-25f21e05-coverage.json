@@ -1,0 +1,148 @@
+{
+  "kind": "persisted_sanitized_fixture_audit",
+  "bundle": "tests/fixtures/argovis/recorded/25f21e056e7c4db7bc1e21b0a28ea45f",
+  "manifest_sha256": "7127115c0b866861e11f1ab34c3cda5c0d4633e885fa6687ba5d6d4112414dc6",
+  "versions": {
+    "geometry": "indian-ocean-v1",
+    "mapping": "argovis-core-v1",
+    "hash": "scientific-json-v2",
+    "specification": "2.36.2",
+    "specification_sha256": "0d824a0722c9155b5fcf091f315429a634ed99a1310652271730954f901a3dc9",
+    "qc": "core-good-v1"
+  },
+  "attribution": {
+    "provider": "International Argo Program and national contributors, via Argovis",
+    "argo_doi": "https://doi.org/10.17882/42182",
+    "terms_and_acknowledgement": "https://argo.ucsd.edu/data/acknowledging-argo/",
+    "argovis_contract_citation": "https://zenodo.org/records/15708506"
+  },
+  "verified_responses": [
+    {
+      "path": "01-inventory_before.json",
+      "role": "inventory_before",
+      "sha256": "132a783e69d3ab0108ae4af6a28c250879c8047679982575708e5df7a756d2a9",
+      "bytes": 741,
+      "retrieved_at_utc": "2026-10-06T13:21:14.238833+00:00"
+    },
+    {
+      "path": "02-profile.json",
+      "role": "profile",
+      "sha256": "0abfe6dc9a9bd3418d549842b1c2d7d8d4859f3b3922532dcaf09f6c6d65fbf2",
+      "bytes": 2097,
+      "retrieved_at_utc": "2026-10-06T13:21:15.247007+00:00"
+    },
+    {
+      "path": "03-inventory_after.json",
+      "role": "inventory_after",
+      "sha256": "132a783e69d3ab0108ae4af6a28c250879c8047679982575708e5df7a756d2a9",
+      "bytes": 741,
+      "retrieved_at_utc": "2026-10-06T13:21:16.277323+00:00"
+    },
+    {
+      "path": "04-metadata.json",
+      "role": "metadata",
+      "sha256": "96734e1c036ec56842faea6fc55d656f3dc2c40ec8c7f5b823fdc4a18e220c10",
+      "bytes": 352,
+      "retrieved_at_utc": "2026-10-06T13:21:17.262506+00:00"
+    }
+  ],
+  "profiles": [
+    {
+      "source_profile_id": "6990616_100",
+      "identity": "id:6990616_100",
+      "levels": 43,
+      "scientific_sha256": "eb5f397e8626fa8146fc41faed6d39ce49c233059dfeb3c77a95c833db5f7eb7",
+      "direction": "A",
+      "observed_at_utc": "2026-10-02T13:58:36.999000+00:00",
+      "in_indian_ocean_geometry": true,
+      "source_revision_components": 1,
+      "source_columns": [
+        "pressure",
+        "pressure_argoqc",
+        "salinity",
+        "salinity_argoqc",
+        "temperature",
+        "temperature_argoqc"
+      ],
+      "source_null_cells": 0,
+      "source_core_null_cells": 0,
+      "source_core_value_null_cells": 0,
+      "source_core_qc_null_cells": 0,
+      "repeated_nonnull_pressure": false,
+      "variables": {
+        "pressure": {
+          "modes": [
+            "R"
+          ],
+          "source_column_present": true,
+          "raw_data_keys_modes": [
+            "R"
+          ],
+          "available": {
+            "original": 43,
+            "_adjusted": 0,
+            "_qc": 43,
+            "_adjusted_qc": 0,
+            "_error": 0,
+            "_original_error": 0
+          },
+          "qc_values": [
+            "1"
+          ]
+        },
+        "temperature": {
+          "modes": [
+            "R"
+          ],
+          "source_column_present": true,
+          "raw_data_keys_modes": [
+            "R"
+          ],
+          "available": {
+            "original": 43,
+            "_adjusted": 0,
+            "_qc": 43,
+            "_adjusted_qc": 0,
+            "_error": 0,
+            "_original_error": 0
+          },
+          "qc_values": [
+            "1"
+          ]
+        },
+        "salinity": {
+          "modes": [
+            "R"
+          ],
+          "source_column_present": true,
+          "raw_data_keys_modes": [
+            "R"
+          ],
+          "available": {
+            "original": 43,
+            "_adjusted": 0,
+            "_qc": 43,
+            "_adjusted_qc": 0,
+            "_error": 0,
+            "_original_error": 0
+          },
+          "qc_values": [
+            "1"
+          ]
+        }
+      }
+    }
+  ],
+  "representation_gaps": [
+    "data_mode_A",
+    "data_mode_D",
+    "direction_D",
+    "repeated_nonnull_pressure",
+    "supplied_measurement_error",
+    "source_core_measurement_null"
+  ],
+  "F01_representative_corpus": "pending",
+  "regional_completeness": "not_proven_by_profile_id_samples",
+  "live_regional_acceptance": "not_executed",
+  "private_originals": "not_accessed"
+}

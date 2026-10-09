@@ -1,0 +1,22 @@
+{
+  "kind": "disposable_postgresql_deadline_finalizer_model",
+  "evidence": {
+    "closed": true,
+    "states": {
+      "failed": 2,
+      "complete": 1,
+      "quarantined": 1
+    },
+    "http_attempts": 0,
+    "frozen_records": 1,
+    "canonical_bytes": 10721657712,
+    "active_unchanged": true,
+    "science_unchanged": true,
+    "complete_unchanged": true,
+    "deadlines_unchanged": true
+  },
+  "repeat_finalization": "partial",
+  "owner_run_operated": false,
+  "input": "explicit synthetic administrative states; not capture or original-run clone",
+  "scope": "Existing closing/freeze procedure; zero ingestion or HTTP work"
+}

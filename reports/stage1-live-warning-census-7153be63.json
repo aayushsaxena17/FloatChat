@@ -1,0 +1,48 @@
+{
+  "kind": "stage1_live_warning_census",
+  "session": "7153be6379df84de",
+  "scope": "All landed profile documents of the fifth live run, including tile-overlap duplicates",
+  "profile_documents": 5931,
+  "warning_combinations": [
+    {
+      "warnings": [],
+      "documents": 5899
+    },
+    {
+      "warnings": [
+        "degenerate_levels"
+      ],
+      "documents": 31,
+      "example": "5906971_088"
+    },
+    {
+      "warnings": [
+        "missing_basin"
+      ],
+      "documents": 1,
+      "example": "1902191_253",
+      "coordinates": [
+        50.4972,
+        -13.9956
+      ]
+    }
+  ],
+  "openapi_2_36_2_warning_enum": [
+    "degenerate_levels",
+    "missing_basin",
+    "missing_location",
+    "missing_timestamp"
+  ],
+  "translator": {
+    "revision": "cbf2bb48ed5d95532c18bb2cd5217e44618356cf",
+    "file": "util/helpers.py",
+    "sha256": "279af8ef7b2adabad38d94ca71de02d86dd11efe28e3c1f174f874b7ed73224f",
+    "missing_basin": "Lines 199-203 and 334-364: added only when the location is present and find_basin() finds land at all surrounding 0.5-degree basin-mask points (basin = -1); position, time and measurements are not altered."
+  },
+  "run_outcome": {
+    "complete": 269,
+    "quarantined": 1,
+    "quarantine_reason": "upstream_data_warning",
+    "quarantined_chunk": "2025-03 50E/-20S"
+  }
+}

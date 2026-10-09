@@ -1,0 +1,354 @@
+{
+    "run": {
+        "http_attempts": 101,
+        "canonical_bytes": 712676768,
+        "elapsed_seconds": 835.268200
+    },
+    "kind": "stage1_v3_live_throughput_measurement",
+    "scope": "Interrupted first stage1-v3 live run; measurement only, not acceptance",
+    "chunks": [
+        {
+            "tile": "100:-30",
+            "month": "2025-01",
+            "state": "complete",
+            "phases": [
+                {
+                    "at": "2026-10-08T06:11:56.615554+00:00",
+                    "state": "planned"
+                },
+                {
+                    "at": "2026-10-08T06:11:56.8346+00:00",
+                    "state": "fetching"
+                },
+                {
+                    "at": "2026-10-08T06:13:25.839659+00:00",
+                    "state": "landed"
+                },
+                {
+                    "at": "2026-10-08T06:13:25.845303+00:00",
+                    "state": "validating"
+                },
+                {
+                    "at": "2026-10-08T06:13:37.448259+00:00",
+                    "state": "publishing"
+                },
+                {
+                    "at": "2026-10-08T06:14:54.543183+00:00",
+                    "state": "complete"
+                }
+            ],
+            "profile_outcomes": 34
+        },
+        {
+            "tile": "100:-20",
+            "month": "2025-01",
+            "state": "complete",
+            "phases": [
+                {
+                    "at": "2026-10-08T06:09:27.318546+00:00",
+                    "state": "planned"
+                },
+                {
+                    "at": "2026-10-08T06:09:32.662113+00:00",
+                    "state": "fetching"
+                },
+                {
+                    "at": "2026-10-08T06:10:27.894772+00:00",
+                    "state": "landed"
+                },
+                {
+                    "at": "2026-10-08T06:10:27.899504+00:00",
+                    "state": "validating"
+                },
+                {
+                    "at": "2026-10-08T06:10:37.563368+00:00",
+                    "state": "publishing"
+                },
+                {
+                    "at": "2026-10-08T06:11:49.230962+00:00",
+                    "state": "complete"
+                }
+            ],
+            "profile_outcomes": 29
+        },
+        {
+            "tile": "100:-10",
+            "month": "2025-01",
+            "state": "complete",
+            "phases": [
+                {
+                    "at": "2026-10-08T06:08:27.599833+00:00",
+                    "state": "planned"
+                },
+                {
+                    "at": "2026-10-08T06:08:32.637328+00:00",
+                    "state": "fetching"
+                },
+                {
+                    "at": "2026-10-08T06:08:57.800196+00:00",
+                    "state": "landed"
+                },
+                {
+                    "at": "2026-10-08T06:08:57.807484+00:00",
+                    "state": "validating"
+                },
+                {
+                    "at": "2026-10-08T06:09:00.841742+00:00",
+                    "state": "publishing"
+                },
+                {
+                    "at": "2026-10-08T06:09:25.701607+00:00",
+                    "state": "complete"
+                }
+            ],
+            "profile_outcomes": 10
+        },
+        {
+            "tile": "100:-50",
+            "month": "2025-01",
+            "state": "complete",
+            "phases": [
+                {
+                    "at": "2026-10-08T06:15:00.825914+00:00",
+                    "state": "planned"
+                },
+                {
+                    "at": "2026-10-08T06:19:13.034384+00:00",
+                    "state": "fetching"
+                },
+                {
+                    "at": "2026-10-08T06:19:58.015991+00:00",
+                    "state": "landed"
+                },
+                {
+                    "at": "2026-10-08T06:19:58.019095+00:00",
+                    "state": "validating"
+                },
+                {
+                    "at": "2026-10-08T06:20:04.166204+00:00",
+                    "state": "publishing"
+                },
+                {
+                    "at": "2026-10-08T06:20:41.914589+00:00",
+                    "state": "complete"
+                }
+            ],
+            "profile_outcomes": 20
+        },
+        {
+            "tile": "100:-40",
+            "month": "2025-01",
+            "state": "publishing",
+            "phases": [
+                {
+                    "at": "2026-10-08T06:12:06.781038+00:00",
+                    "state": "planned"
+                },
+                {
+                    "at": "2026-10-08T06:14:54.905606+00:00",
+                    "state": "fetching"
+                },
+                {
+                    "at": "2026-10-08T06:17:12.73799+00:00",
+                    "state": "landed"
+                },
+                {
+                    "at": "2026-10-08T06:17:12.742998+00:00",
+                    "state": "validating"
+                },
+                {
+                    "at": "2026-10-08T06:17:31.915172+00:00",
+                    "state": "publishing"
+                }
+            ],
+            "profile_outcomes": 63
+        },
+        {
+            "tile": "100:-60",
+            "month": "2025-01",
+            "state": "validating",
+            "phases": [
+                {
+                    "at": "2026-10-08T06:20:42.045932+00:00",
+                    "state": "planned"
+                },
+                {
+                    "at": "2026-10-08T06:20:42.182099+00:00",
+                    "state": "fetching"
+                },
+                {
+                    "at": "2026-10-08T06:21:58.60411+00:00",
+                    "state": "landed"
+                },
+                {
+                    "at": "2026-10-08T06:21:58.608306+00:00",
+                    "state": "validating"
+                }
+            ],
+            "profile_outcomes": 0
+        },
+        {
+            "tile": "100:0",
+            "month": "2025-01",
+            "state": "complete",
+            "phases": [
+                {
+                    "at": "2026-10-08T06:08:27.443486+00:00",
+                    "state": "planned"
+                },
+                {
+                    "at": "2026-10-08T06:08:27.798703+00:00",
+                    "state": "fetching"
+                },
+                {
+                    "at": "2026-10-08T06:08:32.456884+00:00",
+                    "state": "landed"
+                },
+                {
+                    "at": "2026-10-08T06:08:32.463742+00:00",
+                    "state": "validating"
+                },
+                {
+                    "at": "2026-10-08T06:08:32.509464+00:00",
+                    "state": "publishing"
+                },
+                {
+                    "at": "2026-10-08T06:08:32.567955+00:00",
+                    "state": "complete"
+                }
+            ],
+            "profile_outcomes": 0
+        },
+        {
+            "tile": "100:10",
+            "month": "2025-01",
+            "state": "complete",
+            "phases": [
+                {
+                    "at": "2026-10-08T06:08:37.660554+00:00",
+                    "state": "planned"
+                },
+                {
+                    "at": "2026-10-08T06:09:25.953799+00:00",
+                    "state": "fetching"
+                },
+                {
+                    "at": "2026-10-08T06:09:32.356178+00:00",
+                    "state": "landed"
+                },
+                {
+                    "at": "2026-10-08T06:09:32.362941+00:00",
+                    "state": "validating"
+                },
+                {
+                    "at": "2026-10-08T06:09:32.415625+00:00",
+                    "state": "publishing"
+                },
+                {
+                    "at": "2026-10-08T06:09:32.547597+00:00",
+                    "state": "complete"
+                }
+            ],
+            "profile_outcomes": 0
+        },
+        {
+            "tile": "100:20",
+            "month": "2025-01",
+            "state": "complete",
+            "phases": [
+                {
+                    "at": "2026-10-08T06:09:37.393857+00:00",
+                    "state": "planned"
+                },
+                {
+                    "at": "2026-10-08T06:11:49.493291+00:00",
+                    "state": "fetching"
+                },
+                {
+                    "at": "2026-10-08T06:11:56.494512+00:00",
+                    "state": "landed"
+                },
+                {
+                    "at": "2026-10-08T06:11:56.497466+00:00",
+                    "state": "validating"
+                },
+                {
+                    "at": "2026-10-08T06:11:56.517495+00:00",
+                    "state": "publishing"
+                },
+                {
+                    "at": "2026-10-08T06:11:56.733655+00:00",
+                    "state": "complete"
+                }
+            ],
+            "profile_outcomes": 0
+        }
+    ],
+    "session": "c9af101ab1d458b9",
+    "attempts": [
+        {
+            "n": 6,
+            "role": "profile",
+            "disposition": "verified_raw",
+            "http_status": 200,
+            "mean_seconds": 14.77,
+            "error_category": null
+        },
+        {
+            "n": 68,
+            "role": "metadata",
+            "disposition": "verified_raw",
+            "http_status": 200,
+            "mean_seconds": 1.55,
+            "error_category": null
+        },
+        {
+            "n": 6,
+            "role": "inventory_before",
+            "disposition": "verified_raw",
+            "http_status": 200,
+            "mean_seconds": 8.79,
+            "error_category": null
+        },
+        {
+            "n": 3,
+            "role": "profile",
+            "disposition": "verified_raw",
+            "http_status": 404,
+            "mean_seconds": 2.46,
+            "error_category": null
+        },
+        {
+            "n": 3,
+            "role": "inventory_before",
+            "disposition": "verified_raw",
+            "http_status": 404,
+            "mean_seconds": 2.38,
+            "error_category": null
+        },
+        {
+            "n": 6,
+            "role": "inventory_before",
+            "disposition": "transport_failure",
+            "http_status": null,
+            "mean_seconds": 21.18,
+            "error_category": "upstream_transport_failure"
+        },
+        {
+            "n": 3,
+            "role": "inventory_after",
+            "disposition": "verified_raw",
+            "http_status": 404,
+            "mean_seconds": 1.13,
+            "error_category": null
+        },
+        {
+            "n": 6,
+            "role": "inventory_after",
+            "disposition": "verified_raw",
+            "http_status": 200,
+            "mean_seconds": 2.57,
+            "error_category": null
+        }
+    ]
+}

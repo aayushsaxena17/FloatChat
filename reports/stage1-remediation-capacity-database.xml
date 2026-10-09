@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="494.756" timestamp="2026-10-07T10:16:19.502844+00:00" hostname="Anduril"><testcase classname="tests.stage1.test_database" name="test_P01_P05_R02_B03_F02_F03_F04_F06_F07_combined_processor_publication_replay" time="494.374"><failure message="AssertionError: []Traceback (most recent call last):&#10;  File &quot;/test/tests/stage1/processor_probe.py&quot;, line 273, in &lt;module&gt;&#10;    main()&#10;  File &quot;/test/tests/stage1/processor_probe.py&quot;, line 260, in main&#10;    json.dumps(&#10;  File &quot;/usr/local/lib/python3.12/json/__init__.py&quot;, line 231, in dumps&#10;    return _default_encoder.encode(obj)&#10;           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/usr/local/lib/python3.12/json/encoder.py&quot;, line 200, in encode&#10;    chunks = self.iterencode(o, _one_shot=True)&#10;             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/usr/local/lib/python3.12/json/encoder.py&quot;, line 258, in iterencode&#10;    return _iterencode(o, 0)&#10;           ^^^^^^^^^^^^^^^^^&#10;  File &quot;/usr/local/lib/python3.12/json/encoder.py&quot;, line 180, in default&#10;    raise TypeError(f'Object of type {o.__class__.__name__} '&#10;TypeError: Object of type Decimal is not JSON serializable">tests/stage1/test_database.py:427: in test_P01_P05_R02_B03_F02_F03_F04_F06_F07_combined_processor_publication_replay
+    os.environ, MINIO_ROOT_USER=secrets.token_hex(12), MINIO_ROOT_PASSWORD=secrets.token_hex(24)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: []Traceback (most recent call last):
+E     File "/test/tests/stage1/processor_probe.py", line 273, in &lt;module&gt;
+E       main()
+E     File "/test/tests/stage1/processor_probe.py", line 260, in main
+E       json.dumps(
+E     File "/usr/local/lib/python3.12/json/__init__.py", line 231, in dumps
+E       return _default_encoder.encode(obj)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/usr/local/lib/python3.12/json/encoder.py", line 200, in encode
+E       chunks = self.iterencode(o, _one_shot=True)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/usr/local/lib/python3.12/json/encoder.py", line 258, in iterencode
+E       return _iterencode(o, 0)
+E              ^^^^^^^^^^^^^^^^^
+E     File "/usr/local/lib/python3.12/json/encoder.py", line 180, in default
+E       raise TypeError(f'Object of type {o.__class__.__name__} '
+E   TypeError: Object of type Decimal is not JSON serializable</failure></testcase></testsuite></testsuites>

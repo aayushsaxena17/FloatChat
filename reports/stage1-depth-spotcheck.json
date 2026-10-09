@@ -1,0 +1,40 @@
+{
+  "authorization": "ADR-0039",
+  "kind": "stage1_capacity_depth_spotcheck",
+  "levels_per_profile": 384.1842105263158,
+  "results": [
+    {
+      "content_encoding": null,
+      "decoded_bytes": 408571,
+      "end": "2025-03-01T00:00:00Z",
+      "http_status": 200,
+      "levels_max": 1447,
+      "levels_mean": 261.4736842105263,
+      "levels_min": 57,
+      "levels_total": 4968,
+      "profiles": 19,
+      "sha256": "a292503566d42298cbec99f60107dd71b1de32724e0b747212bd0ee2250f267e",
+      "start": "2025-02-22T00:00:00Z",
+      "tile": "80:0",
+      "unknown_level_profiles": 0,
+      "wire_bytes": 408571
+    },
+    {
+      "content_encoding": null,
+      "decoded_bytes": 541177,
+      "end": "2025-03-08T00:00:00Z",
+      "http_status": 200,
+      "levels_max": 1450,
+      "levels_mean": 506.89473684210526,
+      "levels_min": 97,
+      "levels_total": 9631,
+      "profiles": 19,
+      "sha256": "7f1348b8cbc3d0ee32bcbc63106eab31918a56e7244783a57641e4685d68b413",
+      "start": "2025-03-01T00:00:00Z",
+      "tile": "70:-10",
+      "unknown_level_profiles": 0,
+      "wire_bytes": 541177
+    }
+  ],
+  "scope": "Level-depth sample outside January for capacity sizing only"
+}

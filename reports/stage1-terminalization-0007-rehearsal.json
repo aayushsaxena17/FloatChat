@@ -1,0 +1,41 @@
+{
+  "kind": "migration_0007_exact_1260_state_shape_rehearsal",
+  "migration": "0007_http_replay",
+  "before": {
+    "failed": 44,
+    "planned": 1088,
+    "complete": 120,
+    "quarantined": 8
+  },
+  "after": {
+    "failed": 1132,
+    "complete": 120,
+    "quarantined": 8
+  },
+  "database_clock_past_deadline": true,
+  "closed": true,
+  "state": "partial",
+  "completed_failed_quarantine_rows_unchanged": true,
+  "planned_fences_incremented": true,
+  "scientific_and_catalogue_manifests_unchanged": true,
+  "frozen_rows": 1,
+  "before_commit_rollback_unchanged": true,
+  "before_commit_connection_termination_unchanged": true,
+  "after_commit_connection_termination_recognized": true,
+  "after_commit_retry_recognized": true,
+  "repeat_no_change": true,
+  "wrong_identity_refused": true,
+  "migration_0008_absent": true,
+  "canonical_bytes_unchanged": 10721657712,
+  "deadline_budget_unchanged": true,
+  "finalizer_definition_sha256": {
+    "finalize_run": "d7577bbf971653aa6d5fba2eeacf5a8a09543e64220708a000638421a26bc897",
+    "scientific_snapshot": "e828e09a9e277f31a2a413d2ce1b730d8b0f4a16771af9870bc3d88f0b34d9cb",
+    "reconciliation_snapshot": "8fe89c2e6304c1eb1cb732dc0454bf15035501b7db10f923494a92c1c2bdb27e",
+    "capture_final_evidence": "6a591ebd735b5e89ffcd7bd30ad6df83d67569da00e1b7568482629215452182",
+    "report_metrics_snapshot": "c7bc145661d033e3b5e85aa9af3691607ef065e5040ca29148063458439c1864"
+  },
+  "original_database_operated": false,
+  "scientific_fixture": "one administrative profile/one level/one active generation; no authentic object clone",
+  "scope": "exact state counts and atomic rollback/commit/retry; not original-run certification"
+}

@@ -1,0 +1,24 @@
+{
+  "authorization": "ADR-0039",
+  "kind": "stage1_capacity_depth_spotcheck",
+  "levels_per_profile": 532.1494252873563,
+  "results": [
+    {
+      "content_encoding": null,
+      "decoded_bytes": 2657260,
+      "end": "2025-02-01T00:00:00Z",
+      "http_status": 200,
+      "levels_max": 1478,
+      "levels_mean": 532.1494252873563,
+      "levels_min": 91,
+      "levels_total": 46297,
+      "profiles": 87,
+      "sha256": "7a843321c5f50bdfc67859c18602fe24e8b32cb1ab4fea4fc120bfc5cdfdaeec",
+      "start": "2025-01-01T00:00:00Z",
+      "tile": "70:-10",
+      "unknown_level_profiles": 0,
+      "wire_bytes": 2657260
+    }
+  ],
+  "scope": "Level-depth sample outside January for capacity sizing only"
+}
