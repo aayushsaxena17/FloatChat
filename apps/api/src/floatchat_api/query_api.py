@@ -11,7 +11,7 @@ import uuid
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from threading import Lock
+from threading import Lock, Thread
 from typing import Any
 
 import boto3
@@ -148,6 +148,30 @@ class QueryRuntime:
                 self._service = self._build()
             return self._service
 
+    def start_warmup(self) -> Thread | None:
+        """Fill the part cache in the background at start-up (ADR-0058 amendment).
+
+        Readiness is never delayed: the thread builds the service, warms newest months first and
+        logs one record; a missing configuration or environment is logged as a skip.
+        """
+        if not self.limits.warm_cache_on_start:
+            return None
+
+        def work() -> None:
+            try:
+                warm = getattr(self.service(), "warm_cache", None)
+                record = warm() if warm is not None else {"skipped": "service has no cache"}
+                if "event" not in record:
+                    log.info(json.dumps({"event": "warm_cache", **record}))
+            except QueryError as error:
+                log.info(json.dumps({"event": "warm_cache", "skipped": error.code}))
+            except Exception:
+                log.exception("warm_cache failed")
+
+        thread = Thread(target=work, name="floatchat-warm-cache", daemon=True)
+        thread.start()
+        return thread
+
     def _build(self) -> QueryService:
         try:
             settings = self.settings_factory()
@@ -161,7 +185,7 @@ class QueryRuntime:
             cache = PartCache(
                 Path(settings.query_object_cache_dir),
                 self.limits.object_cache_bytes,
-                _fetcher(settings),
+                object_fetcher(settings),
             )
         return QueryService(
             QueryCatalogue(engine, self.limits),
@@ -171,7 +195,8 @@ class QueryRuntime:
         )
 
 
-def _fetcher(settings: Settings) -> Callable[[str, int], bytes]:
+def object_fetcher(settings: Settings) -> Callable[[str, int], bytes]:
+    """Verified part download for the cache; also used by scripts/stage2_route_check.py."""
     # One client for the service: boto3 clients are thread-safe and creation is not free.
     client = boto3.client(
         "s3",

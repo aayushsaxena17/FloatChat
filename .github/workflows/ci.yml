@@ -1,5 +1,11 @@
-name: Stage 0
-on: [push, pull_request, workflow_dispatch]
+name: CI
+# One run per change: pull requests and pushes to main. A push to a feature branch that
+# has an open pull request would otherwise run the same seven jobs twice.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:

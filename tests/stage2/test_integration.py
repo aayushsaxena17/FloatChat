@@ -363,3 +363,26 @@ def test_chart_and_provenance(database, tmp_path, allow_loopback):
     serialized = json.dumps(response)
     for forbidden in ("normalised/", "postgresql://", "Traceback"):
         assert forbidden not in serialized
+
+
+def test_warm_cache_fills_every_active_part(database, tmp_path, allow_loopback):
+    service = _service(database, tmp_path, allow_loopback)
+    record = service.warm_cache()
+    assert record["parts"] == len(PROFILES) and record["warmed"] == len(PROFILES)
+    assert record["fetched"] == len(PROFILES) and record["skipped_over_budget"] == 0
+    assert service.cache is not None and service.cache.size() == sum(
+        len(payload) for payload in database.parts.values()
+    )
+    assert service.warm_cache()["reused"] == len(PROFILES)
+    # A warm cache serves the DuckDB route without fetching anything.
+    duck = _service(database, tmp_path, allow_loopback, postgres_level_budget=1)
+    duck.warm_cache()
+    response = duck.query(
+        _plan(
+            geography={"kind": "named_region", "value": "Indian Ocean"},
+            operation={"kind": "aggregate", "group_by": ["month"], "metrics": ["count"]},
+            variables=["temperature"],
+        )
+    )
+    assert response["execution"]["objects_fetched"] == 0
+    assert response["execution"]["objects_reused"] == len(PROFILES)

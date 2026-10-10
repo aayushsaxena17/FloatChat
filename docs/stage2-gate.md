@@ -131,10 +131,10 @@ so the 10 s DuckDB execution deadline itself was exceeded on that cold call; pag
 after the 288 MiB object fill on this 3.7 GB host is a hypothesis, not a diagnosis. See Known
 issues.
 
-Agreement of the two routes: the integration suite proves it on the seeded rows; on the
-acceptance copy it is observed, not test-proven (D02 and D03 on DuckDB returned the same
-monthly means as the PostgreSQL route within floating-point summation order when checked by
-hand). A committed cross-route check on the dev dataset is a follow-up.
+Agreement of the two routes: the integration suite proves it on the seeded rows, and
+[reports/stage2-route-check_2026-10-09.md](../reports/stage2-route-check_2026-10-09.md) (post-gate
+fix, `scripts/stage2_route_check.py`) proves it on the acceptance copy: the ten DuckDB plans of
+the latency matrix return the same rows on both routes, maximum relative difference 5.8e-14.
 
 ## Deviations from the PRD (with ADRs)
 
@@ -163,13 +163,19 @@ hand). A committed cross-route check on the dev dataset is a follow-up.
 - The DuckDB route depends on the object store for the first fill of each part; a cold request
   over the whole quarter fetches about 288 MiB (the measured cold latency includes it, 2.7 s to
   11.7 s on this host depending on MinIO's own cache).
-- Cold-path risk: one cache-cold whole-quarter DuckDB call (run 1, D04) exceeded the 10 s
-  execution deadline and was not reproduced; the cause is not isolated. On the production
-  profile (8 GB host) the margin is larger, but a cold cache after a deploy can still produce a
-  `statement_timeout` on the first large aggregate until the cache is warm; a warm-up step at
-  start-up is a follow-up.
-- Cross-route agreement (PostgreSQL versus DuckDB) is test-proven on the seeded integration rows;
-  on the imported 4.14 M levels it was observed by hand on D02 and D03, not by a committed check.
+- Cold-path risk (addressed after the gate, ADR-0058 amendment): one cache-cold whole-quarter
+  DuckDB call (run 1, D04) exceeded the 10 s execution deadline and was not reproduced; the cause
+  was not isolated. The API now warms the part cache in a background thread at start-up (newest
+  months first, bounded by the cache size) and retries once when an execution times out right
+  after a cold fill. Measured on the dev stack: a cache-cold restart filled the 206 parts in
+  31.6 s and the first whole-quarter aggregate afterwards ran in 2.0 s with nothing fetched. A
+  request that arrives before the warm-up finishes still pays the cold fill.
+- Cross-route agreement (PostgreSQL versus DuckDB) is test-proven on the seeded integration rows
+  and, since the post-gate fixes, by the committed `scripts/stage2_route_check.py` on the imported
+  4.14 M levels: [reports/stage2-route-check_2026-10-09.md](../reports/stage2-route-check_2026-10-09.md),
+  10 of 10 plans agree, maximum relative difference 5.8e-14. The per-plan timings in that report
+  are not latency measurements: both routes ran in one process, so its DuckDB times include
+  contention from the PostgreSQL route; the latency reports above are the timing evidence.
 - No authentication, quotas or rate limits (Stage 7); the API binds to loopback only.
 - `tests/test_refetch.py` HTTPS deadline tests are load-sensitive on this host (observed failing
   under the import and three concurrent test runs, passing in isolation).

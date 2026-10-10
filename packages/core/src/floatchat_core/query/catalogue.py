@@ -212,6 +212,48 @@ class QueryCatalogue:
             row["id"], row["name"], row["mode"], row["reference_time"], int(row["completed_runs"])
         )
 
+    def active_parts(self, environment_id: uuid.UUID) -> tuple[CatalogueRecord, ...]:
+        """Every committed active part and snapshot of the environment, newest month first."""
+        try:
+            with self.engine.connect() as connection:
+                rows = (
+                    connection.execute(
+                        select(compile_sql.partition)
+                        .where(compile_sql.partition.c.environment_id == environment_id)
+                        .order_by(
+                            compile_sql.partition.c.logical_key.desc(),
+                            compile_sql.partition.c.generation,
+                        )
+                    )
+                    .mappings()
+                    .all()
+                )
+        except SQLAlchemyError as error:
+            raise translate_error(error) from None
+        records = [
+            CatalogueRecord(
+                row["id"],
+                row["environment_id"],
+                row["logical_key"],
+                int(row["generation"]),
+                int(row["slot_version"]),
+                "active",
+                True,
+                True,
+                row["geometry_version"],
+                SCHEMA_VERSION,
+                row["object_key"],
+                row["sha256"],
+                int(row["bytes"]),
+                row["kind"],
+                row["part_ordinal"],
+            )
+            for row in rows
+        ]
+        # Slot keys carry the month in their third segment; the newest months warm first.
+        records.sort(key=lambda record: record.logical_key.split("/")[2], reverse=True)
+        return tuple(records)
+
     def tiles_for(self, geography: ResolvedGeography) -> tuple[Tile, ...]:
         candidates = envelope_tiles(geography.boxes)
         if geography.kind != "named_region" or not candidates:
