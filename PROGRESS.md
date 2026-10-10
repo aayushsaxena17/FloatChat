@@ -22,12 +22,51 @@ against the merged code; the advisor reviewed the approach before the plan was w
 - [x] ADR-0061 (scope, branch, routes, pins), ADR-0062 (offline basemap, clustering, point cap),
   ADR-0063 (shared seed, seeded integration project, local acceptance), ADR-0064 (typed
   responses, provenance on reads, migration 0017, application commit), ADR-0065 (chart rules).
-- [ ] W1 API additions and regenerated client.
-- [ ] W2 seed module, Dockerfile, seeded integration script.
-- [ ] W3 shell, routes, URL filters, hooks.
-- [ ] W4 map; W5 charts; W6 panels; W7 accessibility and attribution.
-- [ ] W8 Vitest and Playwright; CI green.
-- [ ] W9 local acceptance on the imported dataset; W10 gate report.
+- [x] W1 API additions (ADR-0064): typed response models with `extra="allow"` and
+  `response_model_exclude_unset` (payloads unchanged), `provenance.build_read` on the four read
+  endpoints, migration `0017_query_env_times` (the first name exceeded alembic's 32-character
+  version column and was renamed before any database took it), `APPLICATION_COMMIT` from Git
+  through Compose; `apps/api/openapi.json` and `apps/web/src/api/schema.d.ts` regenerated; the
+  contract-test doubles typed; `tests/stage3/test_provenance_read.py`.
+- [x] W2 `scripts/science_seed.py` (ADR-0063): the Stage 2 seed moved out of the conftest,
+  `STAGE3_PROFILES` (four January 2025 Arabian Sea profiles, polygon membership checked on
+  PostGIS), `database` and `objects` entry points with catalogue verification; shipped in the API
+  image; `scripts/integration.py` seeds the disposable project, restarts the API (warm-up over the
+  seeded parts) and asserts the scenario lists five profiles; `tests/stage3/test_science_seed.py`.
+  The Stage 2 integration suite passes unchanged on the shared seed (12 cases, 2026-10-09).
+- [x] W3 shell and state: `react-router` 7.18.4, `@tanstack/react-query` 5.104.1; `/` redirects
+  to `/dashboard`; stubs name their stage; filters parsed from and written to the URL
+  (`explorer/filters.ts`, 100% of the model under Vitest); hooks with bounded page following.
+- [x] W4 map (ADR-0062): `maplibre-gl` 6.13.0 over the bundled Natural Earth land layer
+  (`scripts/build_basemap.py`, 193 KB, 314 polygons, source SHA-256 recorded), built-in
+  clustering with DOM count markers (no glyph server), trajectory, region bounding box, hover
+  popups, a profile list as the keyboard path, 5,000-point cap label. MapLibre 6 resolves its
+  worker relative to its module URL, which Vite's pre-bundle breaks; the worker is imported
+  through Vite (`?url`) and set with `setWorkerUrl`.
+- [x] W5 charts (ADR-0065): `plotly.js-cartesian-dist-min` 4.1.2 through a 20-line wrapper;
+  `charts/spec.ts` translates the contract (allow-listed keys only) into one figure per unit
+  group with units on every axis, the validated reference palette by series identity, folding to
+  one colour past three profiles, a table view for every figure; profile charts from
+  `/v1/profiles/{id}` (temperature and salinity against pressure downwards, T-S diagram, QC and
+  data-mode summary).
+- [x] W6 panels: coverage (range, region, manifest counts, slot states and missing tiles, source
+  retrieval window, ingestion timestamp, reference time, tiers) and provenance on every result.
+- [x] W7 accessibility and attribution: skip link, landmarks, labelled controls with errors beside
+  them, live regions, visible focus tokens, UTC and longitude conventions stated, non-colour
+  status badges, footer citing Argo, Argovis, Marine Regions and Natural Earth.
+- [x] W8 tests: 47 Vitest cases (filters, chart translation, profile figures, units, points,
+  coverage panel, provenance panel, profile charts, dashboard with a fetch stub over recorded
+  fixtures, app shell and stubs) with MapLibre and Plotly mocked under jsdom; recorded fixtures
+  from the dev API (`scripts/capture_web_fixtures.py`); Playwright `e2e/dashboard.spec.ts`
+  (the build prompt's scenario through the controls, URL assertions, the map's live count, list
+  selection, profile chart with axis titles and table rows, provenance) and the adapted Stage 0
+  shell check; both pass against the dev dataset on this host (2026-10-09).
+- [x] W9 `scripts/stage3_acceptance.py` on the imported dataset:
+  [reports/stage3-acceptance-2026-10-10.json](reports/stage3-acceptance-2026-10-10.json) passed
+  (132 profiles in the scenario, 9 of 10 slots covered and 1 verified empty, screenshots under
+  `reports/stage3-acceptance-2026-10-10/`).
+- [ ] `scripts/integration.py` (seeded Docker acceptance with the e2e) on this host; CI on the
+  pushed head; gate report `docs/stage3-gate.md`.
 
 ## Stage 2 - post-gate fixes on `codex/stage-2-fixes` (ADR-0058 amendment), 2026-10-09
 

@@ -1,6 +1,6 @@
 {
   "stage": 3,
-  "date": "2026-10-09",
+  "date": "2026-10-10",
   "base_url": "http://127.0.0.1:5174",
   "api_url": "http://127.0.0.1:8000",
   "environment": {
@@ -43,17 +43,17 @@
   },
   "playwright": {
     "exit_code": 0,
-    "elapsed_seconds": 16.9,
+    "elapsed_seconds": 17.6,
     "specs": [
       {
         "title": "dashboard: Arabian Sea, January 2025, 0-100 dbar shows map points and a profile chart",
         "ok": true,
-        "duration_ms": 12711
+        "duration_ms": 13422
       },
       {
         "title": "browser loads the shell and reaches the local API",
         "ok": true,
-        "duration_ms": 2001
+        "duration_ms": 2200
       }
     ],
     "stderr_tail": ""

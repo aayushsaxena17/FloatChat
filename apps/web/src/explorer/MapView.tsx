@@ -139,29 +139,6 @@ export function MapView({
           "line-dasharray": [2, 2],
         },
       });
-      map.addSource(SOURCES.trajectory, {
-        type: "geojson",
-        data: { type: "FeatureCollection", features: [] },
-      });
-      map.addLayer({
-        id: "trajectory-line",
-        type: "line",
-        source: SOURCES.trajectory,
-        filter: ["==", ["geometry-type"], "LineString"],
-        paint: { "line-color": MAP_COLORS.trajectory, "line-width": 2 },
-      });
-      map.addLayer({
-        id: "trajectory-points",
-        type: "circle",
-        source: SOURCES.trajectory,
-        filter: ["==", ["geometry-type"], "Point"],
-        paint: {
-          "circle-color": MAP_COLORS.trajectory,
-          "circle-radius": 5,
-          "circle-stroke-color": "#ffffff",
-          "circle-stroke-width": 1,
-        },
-      });
       map.addSource(SOURCES.profiles, {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
@@ -220,6 +197,29 @@ export function MapView({
             3,
             1.5,
           ],
+        },
+      });
+      map.addSource(SOURCES.trajectory, {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+      map.addLayer({
+        id: "trajectory-line",
+        type: "line",
+        source: SOURCES.trajectory,
+        filter: ["==", ["geometry-type"], "LineString"],
+        paint: { "line-color": MAP_COLORS.trajectory, "line-width": 2 },
+      });
+      map.addLayer({
+        id: "trajectory-points",
+        type: "circle",
+        source: SOURCES.trajectory,
+        filter: ["==", ["geometry-type"], "Point"],
+        paint: {
+          "circle-color": MAP_COLORS.trajectory,
+          "circle-radius": 5,
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": 1,
         },
       });
       map.on("click", "clusters", (event) => {
@@ -362,6 +362,15 @@ export function MapView({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
+    const selected = points.find((point) => point.id === selectedProfile);
+    if (selected) {
+      // Leave the cluster: above clusterMaxZoom every point is drawn on its own.
+      map.easeTo({
+        center: [selected.longitude, selected.latitude],
+        zoom: Math.max(map.getZoom(), 8.2),
+        duration: 300,
+      });
+    }
     for (const point of points) {
       map.setFeatureState(
         { source: SOURCES.profiles, id: point.id },
