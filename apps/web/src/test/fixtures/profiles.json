@@ -1,0 +1,546 @@
+{
+  "environment": {
+    "completed_runs": 2,
+    "hot_tier": {
+      "end": "2025-04-01T00:00:00Z",
+      "start": "2025-01-01T00:00:00Z"
+    },
+    "id": "a21ebf92-ecb9-4508-a67d-c1884f9f89cd",
+    "ingested_at": "2026-10-09T11:59:11.478982Z",
+    "latest_run": "8562e75d-0082-4a22-9e9d-ee31f8ab944e",
+    "mode": "acceptance",
+    "name": "floatchat-s1-acceptance-302412131a7c99fb",
+    "postgresql_window": {
+      "end": "2025-04-01T00:00:00Z",
+      "start": "2024-04-01T00:00:00Z"
+    },
+    "reference_time": "2025-04-01T00:00:00Z",
+    "source_retrieved": {
+      "end": "2026-10-09T11:57:50.913997Z",
+      "start": "2026-10-09T11:35:41.874831Z"
+    }
+  },
+  "geography": {
+    "clipped": false,
+    "kind": "named_region",
+    "name": "Arabian Sea",
+    "sha256": "8f723d4cf663b8ac2634af989a27257a2c993bfffb5333250f93430004548492",
+    "version": "iho-v3-simplified-0.05-min50km2-v1"
+  },
+  "next_cursor": "eyJpZCI6ICI1ODA3NTNjNy1kZTA0LTRmNTItYjE0OC04MWQ5NmQ4ZDkzMGEiLCAia2luZCI6ICJwcm9maWxlIiwgInQiOiAiMjAyNS0wMS0yNVQxNjo0NzozMCswMDowMCJ9",
+  "provenance": {
+    "application_commit": "3571e0992a0d012427445b8370b5e2c571c16bb8",
+    "attribution": {
+      "argo": "Argo (2000). Argo float data and metadata from Global Data Assembly Centre (Argo GDAC). SEANOE. https://doi.org/10.17882/42182",
+      "argovis": "Tucker, Giglio, Scanderbeg and Shen (2020), Argovis, https://doi.org/10.1175/JTECH-D-19-0041.1"
+    },
+    "environment": {
+      "completed_runs": 2,
+      "hot_tier": {
+        "end": "2025-04-01T00:00:00Z",
+        "start": "2025-01-01T00:00:00Z"
+      },
+      "id": "a21ebf92-ecb9-4508-a67d-c1884f9f89cd",
+      "ingested_at": "2026-10-09T11:59:11.478982Z",
+      "latest_run": "8562e75d-0082-4a22-9e9d-ee31f8ab944e",
+      "mode": "acceptance",
+      "name": "floatchat-s1-acceptance-302412131a7c99fb",
+      "postgresql_window": {
+        "end": "2025-04-01T00:00:00Z",
+        "start": "2024-04-01T00:00:00Z"
+      },
+      "reference_time": "2025-04-01T00:00:00Z",
+      "source_retrieved": {
+        "end": "2026-10-09T11:57:50.913997Z",
+        "start": "2026-10-09T11:35:41.874831Z"
+      }
+    },
+    "execution": {
+      "rows": 25,
+      "run_ids": ["edebccd8-5a00-4628-9a08-ec890888571e"],
+      "source": "postgresql"
+    },
+    "geography": {
+      "clipped": false,
+      "kind": "named_region",
+      "name": "Arabian Sea",
+      "sha256": "8f723d4cf663b8ac2634af989a27257a2c993bfffb5333250f93430004548492",
+      "version": "iho-v3-simplified-0.05-min50km2-v1"
+    },
+    "result_sha256": "18f063cb9c0fe897aee07cc6da6c50acf191a2ffb794e6478b71e4c3628aa95f",
+    "source": "argovis",
+    "transformation": "profile headers newest first, with at least one level in 0.0-100.0 dbar",
+    "versions": {
+      "geometry": "indian-ocean-v1",
+      "hash": "scientific-json-v2",
+      "mapping": "argovis-core-v1",
+      "plan_schema": "stage2-plan-v1",
+      "qc": "core-good-v1",
+      "qc_policy": "qc-policy-v1/science_ready",
+      "region": {
+        "name": "Arabian Sea",
+        "sha256": "8f723d4cf663b8ac2634af989a27257a2c993bfffb5333250f93430004548492",
+        "version": "iho-v3-simplified-0.05-min50km2-v1"
+      },
+      "schema": "core-parquet-v1"
+    }
+  },
+  "qc_policy": {
+    "description": "the variant the data mode delivered (R original, A/D adjusted), kept only when that variant's QC is 1 or 2",
+    "name": "science_ready",
+    "version": "qc-policy-v1"
+  },
+  "result": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "string",
+        "unit": null
+      },
+      {
+        "name": "source",
+        "type": "string",
+        "unit": null
+      },
+      {
+        "name": "source_profile_id",
+        "type": "string",
+        "unit": null
+      },
+      {
+        "name": "platform_number",
+        "type": "string",
+        "unit": null
+      },
+      {
+        "name": "cycle_number",
+        "type": "integer",
+        "unit": null
+      },
+      {
+        "name": "direction",
+        "type": "string",
+        "unit": null
+      },
+      {
+        "name": "observed_at",
+        "type": "timestamp",
+        "unit": null
+      },
+      {
+        "name": "observation_month",
+        "type": "date",
+        "unit": null
+      },
+      {
+        "name": "longitude",
+        "type": "number",
+        "unit": "degrees_east"
+      },
+      {
+        "name": "latitude",
+        "type": "number",
+        "unit": "degrees_north"
+      },
+      {
+        "name": "level_count",
+        "type": "integer",
+        "unit": null
+      },
+      {
+        "name": "content_hash",
+        "type": "string",
+        "unit": null
+      },
+      {
+        "name": "last_scientific_run_id",
+        "type": "string",
+        "unit": null
+      }
+    ],
+    "missing_value_policy": "null",
+    "non_finite_values": 0,
+    "row_count": 25,
+    "rows": [
+      [
+        "ce786cee-c3c3-410f-b557-a48339021f4b",
+        "argovis",
+        "1902482_063",
+        "1902482",
+        63,
+        "A",
+        "2025-01-31T23:23:01.002000Z",
+        "2025-01-01",
+        69.68408,
+        3.27522,
+        1008,
+        "0b37277a505c6a639736c871ad6288bc2df4f6196403e93a11ccba21fa624bf8",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ],
+      [
+        "503566e0-0d81-4b60-93c4-30739747399a",
+        "argovis",
+        "6903140_299",
+        "6903140",
+        299,
+        "A",
+        "2025-01-31T22:48:30Z",
+        "2025-01-01",
+        62.202868333333335,
+        23.085578333333334,
+        1011,
+        "032652722822390046341b7f58875aaf6638c55c17dc6d30dcbd75cc30932d2a",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ],
+      [
+        "f81a805a-5005-4c63-b7d6-df4efcf69457",
+        "argovis",
+        "1902671_049",
+        "1902671",
+        49,
+        "A",
+        "2025-01-31T14:01:24.999000Z",
+        "2025-01-01",
+        69.51666666666667,
+        17.016666666666666,
+        103,
+        "689e64a967a489fa670f18df6888e1a5336fc82892f10ee553e0df0a7af0eba0",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ],
+      [
+        "075bd52a-09fb-4288-b5c9-8853e322b98b",
+        "argovis",
+        "1901897_245",
+        "1901897",
+        245,
+        "A",
+        "2025-01-31T11:02:41Z",
+        "2025-01-01",
+        60.8587,
+        16.8763,
+        54,
+        "f9d6ea65d8d4c7267cba7a0bf67e21553178c1dad20370a0b2f63fee04d1371f",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ],
+      [
+        "8b0b40ca-315c-4787-b1db-5c3bc12fedc9",
+        "argovis",
+        "2902203_326",
+        "2902203",
+        326,
+        "A",
+        "2025-01-30T14:22:22Z",
+        "2025-01-01",
+        65.648,
+        15.949,
+        59,
+        "3eaedbe6f57ceca11a32816faf9474998ccb3ac25ec5865138bb99cd21d8dc3e",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ],
+      [
+        "074240b9-6b5c-43f1-9e1b-0208c522c5c5",
+        "argovis",
+        "2903138_080",
+        "2903138",
+        80,
+        "A",
+        "2025-01-30T01:24:08Z",
+        "2025-01-01",
+        67.98694,
+        6.13229,
+        1013,
+        "a646a503118e7420429f9d98806ecc0c43f449d2c2906ae49bfb3627a2f59416",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ],
+      [
+        "d7b7adf0-bf68-464a-8bc1-cd148b9117cb",
+        "argovis",
+        "6903140_298",
+        "6903140",
+        298,
+        "A",
+        "2025-01-29T20:50:30Z",
+        "2025-01-01",
+        62.010241666666666,
+        23.180641666666666,
+        1014,
+        "71993ad4d5bf99bc6cb12e0267396fcd497bd665dc364be343718ed1e952bb1c",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ],
+      [
+        "9e4f9358-c13a-4f56-9975-b65b4f1cbd93",
+        "argovis",
+        "5907085_047",
+        "5907085",
+        47,
+        "A",
+        "2025-01-29T14:07:25Z",
+        "2025-01-01",
+        68.31666666666666,
+        8.683333333333334,
+        102,
+        "525749cf2bf4835183ac97ac84e28303c63feaee64788896c95288ed1bcdd675",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ],
+      [
+        "7b3dda39-0430-4869-87fc-0a85cd09212d",
+        "argovis",
+        "2903140_080",
+        "2903140",
+        80,
+        "A",
+        "2025-01-29T12:25:03.001000Z",
+        "2025-01-01",
+        64.33493,
+        7.43306,
+        1010,
+        "a1220623ed00e41a483e501103324505b78b1b2d666c287ebb204a4d8d2df9d0",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ],
+      [
+        "1b169994-d2f0-4cda-88cc-a23f6c9b4b82",
+        "argovis",
+        "2902201_326",
+        "2902201",
+        326,
+        "A",
+        "2025-01-29T11:58:51Z",
+        "2025-01-01",
+        59.832,
+        19.732,
+        59,
+        "842a29e972df1979d2aa38b7a211a133788cf712ed0b2789e5a3c5154dacd6b0",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ],
+      [
+        "71b3f564-c844-4827-a54b-b4a276302bf4",
+        "argovis",
+        "4903660_084",
+        "4903660",
+        84,
+        "A",
+        "2025-01-29T07:03:17.002000Z",
+        "2025-01-01",
+        60.09451483333334,
+        14.897165166666666,
+        1387,
+        "ac377b9076cc8acf6d821b3dbe59408e1088212d6f1ee55b66cc1f4ef9ef53bb",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ],
+      [
+        "9df72431-6e38-4005-815a-c1f998fbc941",
+        "argovis",
+        "6990514_084",
+        "6990514",
+        84,
+        "A",
+        "2025-01-29T07:01:21.992000Z",
+        "2025-01-01",
+        64.82648916666668,
+        16.579728499999998,
+        1376,
+        "b2e4639a1e665fce5d55af61f9534fc8064437fb0c71236b3c205b44c296610e",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ],
+      [
+        "f3d02479-01e8-4ccc-9bda-0011c6a6ec15",
+        "argovis",
+        "7901016_053",
+        "7901016",
+        53,
+        "A",
+        "2025-01-29T02:51:30Z",
+        "2025-01-01",
+        53.093135,
+        10.386596666666666,
+        1013,
+        "d4a3181e9f78368665878ffb9caca4ac7ff39ab9e77b10076381c1fac420213b",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ],
+      [
+        "6699b159-ec7a-49f9-b5f2-88eff118e8bf",
+        "argovis",
+        "2903137_080",
+        "2903137",
+        80,
+        "A",
+        "2025-01-29T01:44:38Z",
+        "2025-01-01",
+        53.83318,
+        10.92808,
+        1009,
+        "367da34e7ae1ebdaa538e5a6b11912fca8adc3a4b2b0ab9e1911f1e15021fa73",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ],
+      [
+        "12f950df-93e6-42cb-bd7c-88558fa6a5d8",
+        "argovis",
+        "1902673_047",
+        "1902673",
+        47,
+        "A",
+        "2025-01-28T14:04:24.999000Z",
+        "2025-01-01",
+        69.81666666666666,
+        11.983333333333333,
+        103,
+        "234c819a3f8c29ba4ccbb6213d6812d99031122474de24e5556d03fb1098b94c",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ],
+      [
+        "d49dfa0a-b7e0-4577-84d8-5df3b0b13b79",
+        "argovis",
+        "6903140_297",
+        "6903140",
+        297,
+        "A",
+        "2025-01-27T18:48:30Z",
+        "2025-01-01",
+        61.87535833333333,
+        23.259688333333333,
+        1016,
+        "f90d17e3890e17aa14a985d0d640a41dd8fa62c30a78024a4c22a0b88444efb3",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ],
+      [
+        "2407d580-87e2-4c32-8c3e-178c374b6e7e",
+        "argovis",
+        "6990612_047",
+        "6990612",
+        47,
+        "A",
+        "2025-01-27T14:08:25Z",
+        "2025-01-01",
+        69.85,
+        12.383333333333333,
+        103,
+        "8164deacaaf89c51427d9ce1eb7022e8097c8638c0729ed8e348eb99619cf4c5",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ],
+      [
+        "40e0fce8-56fd-422a-8e9c-e324b9cf1f0a",
+        "argovis",
+        "1902289_018",
+        "1902289",
+        18,
+        "A",
+        "2025-01-26T22:29:46.002000Z",
+        "2025-01-01",
+        67.7544,
+        6.4147,
+        987,
+        "1d32f1c626cf9573c0a869166a75903cd6989dc55c8f51745b8ac00bc9b427d1",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ],
+      [
+        "8231ea56-91f8-455e-8755-15d25a65c630",
+        "argovis",
+        "3902573_037",
+        "3902573",
+        37,
+        "A",
+        "2025-01-26T14:12:24.999000Z",
+        "2025-01-01",
+        66.91666666666667,
+        9.3,
+        104,
+        "d65a5bf6ead46377ed60f2df587fe90a7eae31c78aa7e5b0f750084d9256e8c7",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ],
+      [
+        "cd264db9-5525-416d-83ee-cd417d909b47",
+        "argovis",
+        "2903895_037",
+        "2903895",
+        37,
+        "A",
+        "2025-01-26T14:00:25.999000Z",
+        "2025-01-01",
+        66.7,
+        10.166666666666666,
+        101,
+        "48bdc44c06ac19fd987460cb92dc45cb10a22feff0462882793caa1290dda5da",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ],
+      [
+        "8dfc8b0d-1191-4d11-9218-f48892f301aa",
+        "argovis",
+        "2903145_044",
+        "2903145",
+        44,
+        "A",
+        "2025-01-26T13:22:20.001000Z",
+        "2025-01-01",
+        57.57183,
+        8.5737,
+        1014,
+        "9c7e678f9f7ba14d6735b7b6a368a3252e0233523a030aca479ed44725fc805e",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ],
+      [
+        "6e6be897-f90a-49bf-b504-955fd4b056c2",
+        "argovis",
+        "7901136_061",
+        "7901136",
+        61,
+        "A",
+        "2025-01-26T13:22:00Z",
+        "2025-01-01",
+        68.83688666666667,
+        16.702223333333333,
+        190,
+        "50216165eb52554469005a446861b43b1b87a650eef27772b325d0cb8662dd90",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ],
+      [
+        "4e298e79-baeb-4b80-85ce-e8b6106172ec",
+        "argovis",
+        "2903149_044",
+        "2903149",
+        44,
+        "A",
+        "2025-01-26T01:54:00Z",
+        "2025-01-01",
+        62.86438,
+        12.38342,
+        1012,
+        "4ecd9374ce8fe8270a96d752952794d0d352fc60994ea2063df5448c2cf98e6f",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ],
+      [
+        "85e48969-0b24-4a56-a298-2bc26943fc66",
+        "argovis",
+        "6903059_470",
+        "6903059",
+        470,
+        "A",
+        "2025-01-25T20:38:30Z",
+        "2025-01-01",
+        60.93479,
+        18.579701666666665,
+        1002,
+        "4f8f7537d1ba3aafd9a5c8523192cd05fee8ea46e1a690aad65da76e2c1316dd",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ],
+      [
+        "580753c7-de04-4f52-b148-81d96d8d930a",
+        "argovis",
+        "6903140_296",
+        "6903140",
+        296,
+        "A",
+        "2025-01-25T16:47:30Z",
+        "2025-01-01",
+        61.818041666666666,
+        23.347746666666666,
+        1010,
+        "ed0df30133e06cbe8fa92af832692ae715cbc9966534b0175c49dbd6fe1786fc",
+        "edebccd8-5a00-4628-9a08-ec890888571e"
+      ]
+    ]
+  },
+  "time_range": {
+    "end": "2025-02-01T00:00:00Z",
+    "start": "2025-01-01T00:00:00Z"
+  }
+}

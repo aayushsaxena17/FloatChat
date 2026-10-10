@@ -74,6 +74,8 @@ services:
       # Stage 2 read-only query login and the verified Parquet part cache (ADR-0058).
       QUERY_DATABASE_URL: ${QUERY_DATABASE_URL:?Local query role URL required}
       QUERY_OBJECT_CACHE_DIR: /var/lib/floatchat/query-cache
+      # Stage 3 (ADR-0064): provenance names the commit; scripts/dev.py sets it from Git.
+      APPLICATION_COMMIT: ${APPLICATION_COMMIT:-unknown}
     volumes: [query_cache:/var/lib/floatchat/query-cache]
     ports: ["127.0.0.1:${API_PORT:-8000}:8000"]
     depends_on:

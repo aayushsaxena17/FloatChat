@@ -161,36 +161,167 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** CollectionResponse */
-        CollectionResponse: {
-            /** Environment */
-            environment: {
+        /** Box */
+        Box: {
+            /** East */
+            east: number;
+            /** North */
+            north: number;
+            /** South */
+            south: number;
+            /** West */
+            west: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ChartAxes */
+        ChartAxes: {
+            x: components["schemas"]["ChartAxis"];
+            y?: components["schemas"]["ChartAxis"] | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ChartAxis */
+        ChartAxis: {
+            /** Field */
+            field: string;
+            /** Label */
+            label: string;
+            /**
+             * Reversed
+             * @default false
+             */
+            reversed: boolean;
+            /** Unit */
+            unit?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ChartData */
+        ChartData: {
+            /** Inline */
+            inline: boolean;
+            /** Points */
+            points: number;
+            /** Url */
+            url?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ChartEncodings */
+        ChartEncodings: {
+            series: components["schemas"]["ChartAxis"];
+            x: components["schemas"]["ChartAxis"];
+            y?: components["schemas"]["ChartAxis"] | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * ChartSpec
+         * @description The PRD 11.3 contract; ``plotly`` stays loose (allow-listed trace keys, see chart.py).
+         */
+        ChartSpec: {
+            /** Aggregation */
+            aggregation: string;
+            axis: components["schemas"]["ChartAxes"];
+            data: components["schemas"]["ChartData"];
+            encodings: components["schemas"]["ChartEncodings"];
+            /** Missing Value Policy */
+            missing_value_policy: string;
+            /** Plotly */
+            plotly: {
                 [key: string]: unknown;
             };
+            /** Provenance Ref */
+            provenance_ref: string;
+            /** Series */
+            series: string[];
+            /** Type */
+            type: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** CollectionResponse */
+        CollectionResponse: {
+            environment: components["schemas"]["Environment"];
+            geography?: components["schemas"]["GeographyInfo"] | null;
             /** Next Cursor */
             next_cursor: string | null;
+            provenance: components["schemas"]["Provenance"];
+            qc_policy?: components["schemas"]["QcPolicy"] | null;
             result: components["schemas"]["ResultTable"];
+            time_range?: components["schemas"]["TimeInterval"] | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Column */
+        Column: {
+            /** Name */
+            name: string;
+            /** Type */
+            type: string;
+            /** Unit */
+            unit?: string | null;
         } & {
             [key: string]: unknown;
         };
         /** CoverageResponse */
         CoverageResponse: {
-            /** Coverage */
-            coverage: {
-                [key: string]: unknown;
-            };
-            /** Environment */
-            environment: {
-                [key: string]: unknown;
-            };
-            /** Geography */
-            geography: {
-                [key: string]: unknown;
-            };
+            coverage: components["schemas"]["CoverageSummary"];
+            environment: components["schemas"]["Environment"];
+            geography: components["schemas"]["GeographyInfo"];
             /** Slots */
-            slots: {
-                [key: string]: unknown;
-            }[];
+            slots: components["schemas"]["SlotCoverage"][];
+        } & {
+            [key: string]: unknown;
+        };
+        /** CoverageSummary */
+        CoverageSummary: {
+            /** Estimated Levels */
+            estimated_levels: number;
+            /** Estimated Profiles */
+            estimated_profiles: number;
+            /** Missing */
+            missing: components["schemas"]["SlotCoverage"][];
+            /** Months */
+            months: string[];
+            /** Partial */
+            partial: boolean;
+            requested: components["schemas"]["TimeInterval"];
+            /** Slots Covered */
+            slots_covered: number;
+            /** Slots Empty Verified */
+            slots_empty_verified: number;
+            /** Slots Missing */
+            slots_missing: number;
+            /** Slots Total */
+            slots_total: number;
+            /** Tiles */
+            tiles: components["schemas"]["Tile"][];
+        } & {
+            [key: string]: unknown;
+        };
+        /** Environment */
+        Environment: {
+            /** Completed Runs */
+            completed_runs: number;
+            hot_tier?: components["schemas"]["TimeInterval"] | null;
+            /** Id */
+            id: string;
+            /** Ingested At */
+            ingested_at?: string | null;
+            /** Latest Run */
+            latest_run?: string | null;
+            /** Mode */
+            mode: string;
+            /** Name */
+            name: string;
+            postgresql_window?: components["schemas"]["TimeInterval"] | null;
+            /** Reference Time */
+            reference_time?: string | null;
+            source_retrieved?: components["schemas"]["TimeInterval"] | null;
+        } & {
+            [key: string]: unknown;
         };
         /** ErrorBody */
         ErrorBody: {
@@ -209,37 +340,161 @@ export interface components {
         ErrorResponse: {
             error: components["schemas"]["ErrorBody"];
         };
+        /** Execution */
+        Execution: {
+            /** Elapsed Ms */
+            elapsed_ms?: number | null;
+            /** Estimated Levels */
+            estimated_levels?: number | null;
+            /** Estimated Profiles */
+            estimated_profiles?: number | null;
+            /** Partitions */
+            partitions?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Rows */
+            rows?: number | null;
+            /** Run Ids */
+            run_ids?: string[] | null;
+            /** Source */
+            source?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
         /** FloatResponse */
         FloatResponse: {
-            /** Environment */
-            environment: {
-                [key: string]: unknown;
-            };
-            /** Float */
-            float: {
-                [key: string]: unknown;
-            };
+            environment: components["schemas"]["Environment"];
+            float: components["schemas"]["FloatSummary"];
             /** Next Cursor */
             next_cursor: string | null;
+            provenance: components["schemas"]["Provenance"];
+            time_range?: components["schemas"]["TimeInterval"] | null;
             trajectory: components["schemas"]["ResultTable"];
+        } & {
+            [key: string]: unknown;
+        };
+        /** FloatSummary */
+        FloatSummary: {
+            /** First Cycle */
+            first_cycle?: number | null;
+            /** First Observed At */
+            first_observed_at?: string | null;
+            /** Last Cycle */
+            last_cycle?: number | null;
+            /** Last Latitude */
+            last_latitude?: number | null;
+            /** Last Longitude */
+            last_longitude?: number | null;
+            /** Last Observed At */
+            last_observed_at?: string | null;
+            /** Platform Number */
+            platform_number: string;
+            /** Profile Count */
+            profile_count: number;
+            /** Source */
+            source: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** GeographyInfo */
+        GeographyInfo: {
+            /** Boxes */
+            boxes?: components["schemas"]["Box"][] | null;
+            /** Clipped */
+            clipped?: boolean | null;
+            /** Kind */
+            kind: string;
+            /** Latitude */
+            latitude?: number | null;
+            /** Longitude */
+            longitude?: number | null;
+            /** Name */
+            name?: string | null;
+            /** Radius M */
+            radius_m?: number | null;
+            /** Sha256 */
+            sha256?: string | null;
+            /** Version */
+            version?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ProfileHeader */
+        ProfileHeader: {
+            /** Content Hash */
+            content_hash: string;
+            /** Cycle Number */
+            cycle_number: number;
+            /** Direction */
+            direction: string;
+            /** Id */
+            id: string;
+            /** Last Scientific Run Id */
+            last_scientific_run_id: string;
+            /** Latitude */
+            latitude: number;
+            /** Level Count */
+            level_count: number;
+            /** Longitude */
+            longitude: number;
+            /** Observation Month */
+            observation_month: string;
+            /** Observed At */
+            observed_at: string;
+            /** Platform Number */
+            platform_number: string;
+            /** Source */
+            source: string;
+            /** Source Profile Id */
+            source_profile_id: string;
         } & {
             [key: string]: unknown;
         };
         /** ProfileResponse */
         ProfileResponse: {
-            /** Environment */
-            environment: {
-                [key: string]: unknown;
-            };
+            environment: components["schemas"]["Environment"];
             levels: components["schemas"]["ResultTable"];
-            /** Profile */
-            profile: {
-                [key: string]: unknown;
-            };
-            /** Qc Policy */
-            qc_policy: {
+            profile: components["schemas"]["ProfileHeader"];
+            provenance: components["schemas"]["Provenance"];
+            qc_policy: components["schemas"]["QcPolicy"];
+        } & {
+            [key: string]: unknown;
+        };
+        /** Provenance */
+        Provenance: {
+            /** Application Commit */
+            application_commit: string;
+            /** Attribution */
+            attribution: {
                 [key: string]: string;
             };
+            coverage?: components["schemas"]["CoverageSummary"] | null;
+            environment: components["schemas"]["Environment"];
+            execution: components["schemas"]["Execution"];
+            geography?: components["schemas"]["GeographyInfo"] | null;
+            /** Plan Sha256 */
+            plan_sha256?: string | null;
+            /** Result Sha256 */
+            result_sha256: string;
+            /** Source */
+            source: string;
+            /** Transformation */
+            transformation: string;
+            /** Versions */
+            versions: {
+                [key: string]: unknown;
+            };
+        } & {
+            [key: string]: unknown;
+        };
+        /** QcPolicy */
+        QcPolicy: {
+            /** Description */
+            description: string;
+            /** Name */
+            name: string;
+            /** Version */
+            version: string;
         } & {
             [key: string]: unknown;
         };
@@ -306,26 +561,15 @@ export interface components {
         };
         /** QueryResponse */
         QueryResponse: {
-            /** Chart */
-            chart: {
-                [key: string]: unknown;
-            } | null;
-            /** Coverage */
-            coverage: {
-                [key: string]: unknown;
-            };
-            /** Execution */
-            execution: {
-                [key: string]: unknown;
-            };
+            chart: components["schemas"]["ChartSpec"] | null;
+            coverage: components["schemas"]["CoverageSummary"];
+            execution: components["schemas"]["Execution"];
             /** Interpretation */
             interpretation: {
                 [key: string]: unknown;
             };
             /** Missing */
-            missing: {
-                [key: string]: unknown;
-            }[];
+            missing: components["schemas"]["SlotCoverage"][];
             /** Next Cursor */
             next_cursor: string | null;
             /** Partial */
@@ -334,18 +578,15 @@ export interface components {
             plan: {
                 [key: string]: unknown;
             };
-            /** Provenance */
-            provenance: {
-                [key: string]: unknown;
-            };
+            provenance: components["schemas"]["Provenance"];
             result: components["schemas"]["ResultTable"];
+        } & {
+            [key: string]: unknown;
         };
         /** ResultTable */
         ResultTable: {
             /** Columns */
-            columns: {
-                [key: string]: unknown;
-            }[];
+            columns: components["schemas"]["Column"][];
             /** Missing Value Policy */
             missing_value_policy: string;
             /** Non Finite Values */
@@ -354,6 +595,44 @@ export interface components {
             row_count: number;
             /** Rows */
             rows: unknown[][];
+        } & {
+            [key: string]: unknown;
+        };
+        /** SlotCoverage */
+        SlotCoverage: {
+            /** Gaps */
+            gaps: string[];
+            /** Levels */
+            levels: number;
+            /** Month */
+            month: string;
+            /** Parts */
+            parts: number;
+            /** Profiles */
+            profiles: number;
+            /** Slot */
+            slot: string;
+            /** State */
+            state: string;
+            tile: components["schemas"]["Tile"];
+        } & {
+            [key: string]: unknown;
+        };
+        /** Tile */
+        Tile: {
+            /** South */
+            south: number;
+            /** West */
+            west: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** TimeInterval */
+        TimeInterval: {
+            /** End */
+            end?: string | null;
+            /** Start */
+            start?: string | null;
         } & {
             [key: string]: unknown;
         };

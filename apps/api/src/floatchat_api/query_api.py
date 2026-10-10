@@ -47,56 +47,234 @@ class ErrorResponse(BaseModel):
     error: ErrorBody
 
 
-class ResultTable(BaseModel):
+class _Loose(BaseModel):
+    """A typed shape that later stages may extend; extra keys pass through (ADR-0064)."""
+
     model_config = ConfigDict(extra="allow")
-    columns: list[dict[str, Any]]
+
+
+class TimeInterval(_Loose):
+    start: str | None = None
+    end: str | None = None
+
+
+class Environment(_Loose):
+    id: str
+    name: str
+    mode: str
+    reference_time: str | None = None
+    completed_runs: int
+    hot_tier: TimeInterval | None = None
+    postgresql_window: TimeInterval | None = None
+    latest_run: str | None = None
+    ingested_at: str | None = None
+    source_retrieved: TimeInterval | None = None
+
+
+class Box(_Loose):
+    west: float
+    south: float
+    east: float
+    north: float
+
+
+class GeographyInfo(_Loose):
+    kind: str
+    name: str | None = None
+    version: str | None = None
+    sha256: str | None = None
+    clipped: bool | None = None
+    boxes: list[Box] | None = None
+    longitude: float | None = None
+    latitude: float | None = None
+    radius_m: float | None = None
+
+
+class QcPolicy(_Loose):
+    name: str
+    version: str
+    description: str
+
+
+class Tile(_Loose):
+    west: float
+    south: float
+
+
+class SlotCoverage(_Loose):
+    slot: str
+    month: str
+    tile: Tile
+    state: str
+    gaps: list[str]
+    profiles: int
+    levels: int
+    parts: int
+
+
+class CoverageSummary(_Loose):
+    requested: TimeInterval
+    months: list[str]
+    tiles: list[Tile]
+    slots_total: int
+    slots_covered: int
+    slots_empty_verified: int
+    slots_missing: int
+    missing: list[SlotCoverage]
+    estimated_profiles: int
+    estimated_levels: int
+    partial: bool
+
+
+class Column(_Loose):
+    name: str
+    type: str
+    unit: str | None = None
+
+
+class ResultTable(_Loose):
+    columns: list[Column]
     rows: list[list[Any]]
     row_count: int
     missing_value_policy: str
     non_finite_values: int
 
 
-class CollectionResponse(BaseModel):
-    model_config = ConfigDict(extra="allow")
-    environment: dict[str, Any]
+class ChartAxis(_Loose):
+    field: str
+    label: str
+    unit: str | None = None
+    reversed: bool = False
+
+
+class ChartEncodings(_Loose):
+    x: ChartAxis
+    y: ChartAxis | None = None
+    series: ChartAxis
+
+
+class ChartAxes(_Loose):
+    x: ChartAxis
+    y: ChartAxis | None = None
+
+
+class ChartData(_Loose):
+    inline: bool
+    points: int
+    url: str | None = None
+
+
+class ChartSpec(_Loose):
+    """The PRD 11.3 contract; ``plotly`` stays loose (allow-listed trace keys, see chart.py)."""
+
+    type: str
+    encodings: ChartEncodings
+    axis: ChartAxes
+    series: list[str]
+    missing_value_policy: str
+    aggregation: str
+    data: ChartData
+    provenance_ref: str
+    plotly: dict[str, Any]
+
+
+class Execution(_Loose):
+    source: str | None = None
+    elapsed_ms: float | None = None
+    rows: int | None = None
+    run_ids: list[str] | None = None
+    partitions: list[dict[str, Any]] | None = None
+    estimated_profiles: int | None = None
+    estimated_levels: int | None = None
+
+
+class Provenance(_Loose):
+    source: str
+    environment: Environment
+    versions: dict[str, Any]
+    geography: GeographyInfo | None = None
+    coverage: CoverageSummary | None = None
+    execution: Execution
+    plan_sha256: str | None = None
+    result_sha256: str
+    application_commit: str
+    transformation: str
+    attribution: dict[str, str]
+
+
+class FloatSummary(_Loose):
+    platform_number: str
+    source: str
+    profile_count: int
+    first_observed_at: str | None = None
+    last_observed_at: str | None = None
+    first_cycle: int | None = None
+    last_cycle: int | None = None
+    last_longitude: float | None = None
+    last_latitude: float | None = None
+
+
+class ProfileHeader(_Loose):
+    id: str
+    source: str
+    source_profile_id: str
+    platform_number: str
+    cycle_number: int
+    direction: str
+    observed_at: str
+    observation_month: str
+    longitude: float
+    latitude: float
+    level_count: int
+    content_hash: str
+    last_scientific_run_id: str
+
+
+class CollectionResponse(_Loose):
+    environment: Environment
+    time_range: TimeInterval | None = None
+    geography: GeographyInfo | None = None
+    qc_policy: QcPolicy | None = None
     result: ResultTable
     next_cursor: str | None
+    provenance: Provenance
 
 
-class FloatResponse(BaseModel):
-    model_config = ConfigDict(extra="allow")
-    environment: dict[str, Any]
-    float: dict[str, Any]
+class FloatResponse(_Loose):
+    environment: Environment
+    time_range: TimeInterval | None = None
+    float: FloatSummary
     trajectory: ResultTable
     next_cursor: str | None
+    provenance: Provenance
 
 
-class ProfileResponse(BaseModel):
-    model_config = ConfigDict(extra="allow")
-    environment: dict[str, Any]
-    profile: dict[str, Any]
-    qc_policy: dict[str, str]
+class ProfileResponse(_Loose):
+    environment: Environment
+    profile: ProfileHeader
+    qc_policy: QcPolicy
     levels: ResultTable
+    provenance: Provenance
 
 
-class CoverageResponse(BaseModel):
-    environment: dict[str, Any]
-    geography: dict[str, Any]
-    coverage: dict[str, Any]
-    slots: list[dict[str, Any]]
+class CoverageResponse(_Loose):
+    environment: Environment
+    geography: GeographyInfo
+    coverage: CoverageSummary
+    slots: list[SlotCoverage]
 
 
-class QueryResponse(BaseModel):
+class QueryResponse(_Loose):
     plan: dict[str, Any]
     result: ResultTable
     next_cursor: str | None
-    chart: dict[str, Any] | None
-    coverage: dict[str, Any]
+    chart: ChartSpec | None
+    coverage: CoverageSummary
     partial: bool
-    missing: list[dict[str, Any]]
-    execution: dict[str, Any]
+    missing: list[SlotCoverage]
+    execution: Execution
     interpretation: dict[str, Any]
-    provenance: dict[str, Any]
+    provenance: Provenance
 
 
 class QueryRequest(BaseModel):
@@ -329,7 +507,9 @@ def install(app: FastAPI, runtime: QueryRuntime) -> None:
     def catalog_parameters() -> dict[str, Any]:
         return runtime.service().parameters()
 
-    @router.get("/catalog/coverage", response_model=CoverageResponse)
+    @router.get(
+        "/catalog/coverage", response_model=CoverageResponse, response_model_exclude_unset=True
+    )
     def catalog_coverage(
         start: datetime | None = None,
         end: datetime | None = None,
@@ -340,7 +520,7 @@ def install(app: FastAPI, runtime: QueryRuntime) -> None:
             start=_aware("start", start), end=_aware("end", end), geography=_geography(region, bbox)
         )
 
-    @router.get("/floats", response_model=CollectionResponse)
+    @router.get("/floats", response_model=CollectionResponse, response_model_exclude_unset=True)
     def floats(
         start: datetime | None = None,
         end: datetime | None = None,
@@ -357,7 +537,9 @@ def install(app: FastAPI, runtime: QueryRuntime) -> None:
             limit=limit,
         )
 
-    @router.get("/floats/{platform_number}", response_model=FloatResponse)
+    @router.get(
+        "/floats/{platform_number}", response_model=FloatResponse, response_model_exclude_unset=True
+    )
     def float_detail(
         platform_number: str,
         start: datetime | None = None,
@@ -373,7 +555,7 @@ def install(app: FastAPI, runtime: QueryRuntime) -> None:
             limit=limit,
         )
 
-    @router.get("/profiles", response_model=CollectionResponse)
+    @router.get("/profiles", response_model=CollectionResponse, response_model_exclude_unset=True)
     def profiles(
         start: datetime | None = None,
         end: datetime | None = None,
@@ -397,7 +579,9 @@ def install(app: FastAPI, runtime: QueryRuntime) -> None:
             limit=limit,
         )
 
-    @router.get("/profiles/{profile_id}", response_model=ProfileResponse)
+    @router.get(
+        "/profiles/{profile_id}", response_model=ProfileResponse, response_model_exclude_unset=True
+    )
     def profile(
         profile_id: str,
         qc_policy: str = "science_ready",
@@ -411,6 +595,7 @@ def install(app: FastAPI, runtime: QueryRuntime) -> None:
     @router.post(
         "/query",
         response_model=QueryResponse,
+        response_model_exclude_unset=True,
         openapi_extra={
             "requestBody": {
                 "required": True,

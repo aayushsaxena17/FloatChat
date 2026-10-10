@@ -56,6 +56,13 @@ class EnvironmentInfo:
     mode: str
     reference_time: datetime | None
     completed_runs: int
+    # Migration 0017 (ADR-0064): the latest completed run, when ingestion started (actual UTC)
+    # and the window in which its raw inputs were retrieved from the source.
+    latest_run_id: uuid.UUID | None = None
+    ingested_at: datetime | None = None
+    # Not an ``Interval``: a run with one raw input has equal bounds, which Interval rejects.
+    source_retrieved_from: datetime | None = None
+    source_retrieved_to: datetime | None = None
 
     @property
     def hot(self) -> Interval | None:
@@ -78,6 +85,16 @@ class EnvironmentInfo:
             "completed_runs": self.completed_runs,
             "hot_tier": _interval(self.hot),
             "postgresql_window": _interval(self.window),
+            "latest_run": None if self.latest_run_id is None else str(self.latest_run_id),
+            "ingested_at": _iso(self.ingested_at),
+            "source_retrieved": (
+                None
+                if self.source_retrieved_from is None or self.source_retrieved_to is None
+                else {
+                    "start": _iso(self.source_retrieved_from),
+                    "end": _iso(self.source_retrieved_to),
+                }
+            ),
         }
 
 
@@ -209,7 +226,15 @@ class QueryCatalogue:
             raise QueryError("coverage_missing", message="No ingestion environment is configured.")
         row = rows[0]
         return EnvironmentInfo(
-            row["id"], row["name"], row["mode"], row["reference_time"], int(row["completed_runs"])
+            row["id"],
+            row["name"],
+            row["mode"],
+            row["reference_time"],
+            int(row["completed_runs"]),
+            row["latest_run_id"],
+            row["ingested_at"],
+            row["source_retrieved_from"],
+            row["source_retrieved_to"],
         )
 
     def active_parts(self, environment_id: uuid.UUID) -> tuple[CatalogueRecord, ...]:

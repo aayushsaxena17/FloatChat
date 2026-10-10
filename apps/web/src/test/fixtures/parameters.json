@@ -1,0 +1,287 @@
+{
+  "aggregation_units": [
+    {
+      "description": "one value per profile (the mean of its selected levels in the depth band), metrics across profiles; count counts profiles",
+      "name": "profile"
+    },
+    {
+      "description": "metrics over selected levels; count counts levels",
+      "name": "measurement"
+    }
+  ],
+  "attribution": {
+    "argo": "https://doi.org/10.17882/42182",
+    "argovis": "https://doi.org/10.1175/JTECH-D-19-0041.1",
+    "regions": "Flanders Marine Institute (2018), IHO Sea Areas v3, https://doi.org/10.14284/323, CC-BY 4.0"
+  },
+  "dataset": {
+    "core": {
+      "mapping": "argovis-core-v1",
+      "source": "argovis"
+    }
+  },
+  "geography": {
+    "bbox": "west, south, east, north in degrees; west > east crosses the antimeridian",
+    "membership": "planar ST_Covers on WGS84 geometry (the Stage 1 rule); distances are geodesic",
+    "named_region": [
+      {
+        "area_km2": 4168644.8,
+        "bbox": {
+          "east": 74.33501744,
+          "north": 25.59504271,
+          "south": -0.70336914,
+          "west": 51.02462411
+        },
+        "citation": "Flanders Marine Institute (2018). IHO Sea Areas, version 3. Available online at https://www.marineregions.org/. https://doi.org/10.14284/323 (CC-BY 4.0)",
+        "clipped": false,
+        "kind": "iho",
+        "min_part_area_km2": 50.0,
+        "name": "Arabian Sea",
+        "note": "Gazetteer name: Arabian Sea.",
+        "sha256": "8f723d4cf663b8ac2634af989a27257a2c993bfffb5333250f93430004548492",
+        "simplify_tolerance_deg": 0.05,
+        "source": "marineregions-iho-v3",
+        "source_id": "MRGID 4268",
+        "version": "iho-v3-simplified-0.05-min50km2-v1",
+        "vertices": 854
+      },
+      {
+        "area_km2": 2188006.1,
+        "bbox": {
+          "east": 95.04884012,
+          "north": 24.37766898,
+          "south": 5.75024419,
+          "west": 78.89822006
+        },
+        "citation": "Flanders Marine Institute (2018). IHO Sea Areas, version 3. Available online at https://www.marineregions.org/. https://doi.org/10.14284/323 (CC-BY 4.0)",
+        "clipped": false,
+        "kind": "iho",
+        "min_part_area_km2": 50.0,
+        "name": "Bay of Bengal",
+        "note": "Gazetteer name: Bay of Bengal.",
+        "sha256": "38ba83a5084e693b988a56cf0f819c3d3afb0462df7066834c4118fc7b8fbb4e",
+        "simplify_tolerance_deg": 0.05,
+        "source": "marineregions-iho-v3",
+        "source_id": "MRGID 4273",
+        "version": "iho-v3-simplified-0.05-min50km2-v1",
+        "vertices": 2738
+      },
+      {
+        "area_km2": 834419.4,
+        "bbox": {
+          "east": 80.58879328,
+          "north": 14.79254425,
+          "south": -0.68934131,
+          "west": 71.98242
+        },
+        "citation": "Flanders Marine Institute (2018). IHO Sea Areas, version 3. Available online at https://www.marineregions.org/. https://doi.org/10.14284/323 (CC-BY 4.0)",
+        "clipped": false,
+        "kind": "iho",
+        "min_part_area_km2": 50.0,
+        "name": "Laccadive Sea",
+        "note": "Gazetteer name: Laccadive Sea.",
+        "sha256": "ad6b7cbc2cfff3d44ad056fddb33536cdcd9344e84280602becdbedb87f55ea2",
+        "simplify_tolerance_deg": 0.05,
+        "source": "marineregions-iho-v3",
+        "source_id": "MRGID 4269",
+        "version": "iho-v3-simplified-0.05-min50km2-v1",
+        "vertices": 225
+      },
+      {
+        "area_km2": 614715.4,
+        "bbox": {
+          "east": 99.13872683,
+          "north": 17.75390625,
+          "south": 5.53430877,
+          "west": 92.39042405
+        },
+        "citation": "Flanders Marine Institute (2018). IHO Sea Areas, version 3. Available online at https://www.marineregions.org/. https://doi.org/10.14284/323 (CC-BY 4.0)",
+        "clipped": false,
+        "kind": "iho",
+        "min_part_area_km2": 50.0,
+        "name": "Andaman Sea",
+        "note": "Gazetteer name: Andaman or Burma Sea.",
+        "sha256": "f3ac763d584b416e5db35f085b391f0f799b8746dc85b574d7a069a8547c1379",
+        "simplify_tolerance_deg": 0.05,
+        "source": "marineregions-iho-v3",
+        "source_id": "MRGID 4274",
+        "version": "iho-v3-simplified-0.05-min50km2-v1",
+        "vertices": 1214
+      },
+      {
+        "area_km2": 67206327.5,
+        "bbox": {
+          "east": 120.0,
+          "north": 30.0,
+          "south": -60.0,
+          "west": 20.00261595
+        },
+        "citation": "Flanders Marine Institute (2018). IHO Sea Areas, version 3. Available online at https://www.marineregions.org/. https://doi.org/10.14284/323 (CC-BY 4.0)",
+        "clipped": true,
+        "kind": "iho",
+        "min_part_area_km2": 50.0,
+        "name": "Indian Ocean (IHO)",
+        "note": "Gazetteer name: Indian Ocean.",
+        "sha256": "c170e296a6a471526301119e89e1a656ba2bccf5820939d2758ccd8ba773b98a",
+        "simplify_tolerance_deg": 0.05,
+        "source": "marineregions-iho-v3",
+        "source_id": "MRGID 1904",
+        "version": "iho-v3-simplified-0.05-min50km2-v1",
+        "vertices": 8739
+      },
+      {
+        "area_km2": 108544347.4,
+        "bbox": {
+          "east": 120.0,
+          "north": 30.0,
+          "south": -60.0,
+          "west": 20.0
+        },
+        "citation": "FloatChat operational definition (docs/stage1-contract.md section 3.1, ADR-0060)",
+        "clipped": false,
+        "kind": "operational",
+        "min_part_area_km2": null,
+        "name": "Indian Ocean",
+        "note": "The Stage 1 ingestion envelope (contract section 3.1); coverage is exactly the ingested domain.",
+        "sha256": "8b90f5135ef8d8f4e3e50e5ad75eaacac60045b865a0e88aa3e6d02d58fa45c0",
+        "simplify_tolerance_deg": null,
+        "source": "floatchat",
+        "source_id": null,
+        "version": "indian-ocean-v1",
+        "vertices": 5
+      },
+      {
+        "area_km2": 21452169.3,
+        "bbox": {
+          "east": 120.0,
+          "north": -30.0,
+          "south": -60.0,
+          "west": 20.0
+        },
+        "citation": "FloatChat operational definition (docs/stage1-contract.md section 3.1, ADR-0060)",
+        "clipped": false,
+        "kind": "operational",
+        "min_part_area_km2": null,
+        "name": "Southern Indian Ocean",
+        "note": "The envelope south of 30S; a FloatChat definition, not an IHO area.",
+        "sha256": "29a72336f56b3cd31d6341cb4c27855ef37814a3f62e843e5658ebb0714daa39",
+        "simplify_tolerance_deg": null,
+        "source": "floatchat",
+        "source_id": null,
+        "version": "southern-indian-ocean-floatchat-v1",
+        "vertices": 5
+      }
+    ],
+    "point_radius": "longitude, latitude, radius_km"
+  },
+  "limits": {
+    "chart_points_per_series": 5000,
+    "chart_series": 20,
+    "default_page_size": 100,
+    "duckdb_level_budget": 5000000,
+    "histogram_bins": 200,
+    "max_rows": 50000,
+    "nearest_k": 100,
+    "nearest_radius_km": 2000.0,
+    "object_fetch_bytes": 536870912,
+    "object_fetch_seconds": 120.0,
+    "page_size": 1000,
+    "postgres_level_budget": 1000000,
+    "profile_levels": 10000,
+    "query_timeout_seconds": 10.0,
+    "request_bytes": 65536,
+    "response_bytes": 8388608,
+    "time_span_days": 366,
+    "trajectory_points": 1000
+  },
+  "operations": {
+    "aggregate": {
+      "depth_bin_sizes": [10, 25, 50, 100],
+      "group_by": ["month", "day", "profile", "float", "depth_bin", "region"],
+      "metrics": ["mean", "count", "min", "max", "stddev", "median"]
+    },
+    "nearest": {
+      "k": 100,
+      "radius_km": 2000.0
+    },
+    "profiles": {
+      "cursor": "opaque keyset cursor",
+      "limit": "1..page_size"
+    }
+  },
+  "plan_schema": "stage2-plan-v1",
+  "presentations": [
+    "table",
+    "line_chart",
+    "scatter",
+    "profile_plot",
+    "ts_diagram",
+    "histogram",
+    "map"
+  ],
+  "qc_policies": [
+    {
+      "description": "the variant the data mode delivered (R original, A/D adjusted), kept only when that variant's QC is 1 or 2",
+      "name": "science_ready",
+      "version": "qc-policy-v1"
+    },
+    {
+      "description": "the variant the data mode delivered, any QC; QC returned beside the value",
+      "name": "mode_selected",
+      "version": "qc-policy-v1"
+    },
+    {
+      "description": "no selection; every stored column (profile reads only)",
+      "name": "raw",
+      "version": "qc-policy-v1"
+    }
+  ],
+  "time_range": "UTC ISO-8601 with offset; start inclusive, end exclusive",
+  "variables": [
+    {
+      "columns": [
+        "temperature",
+        "temperature_adjusted",
+        "temperature_qc",
+        "temperature_adjusted_qc",
+        "temperature_error",
+        "temperature_original_error",
+        "temperature_unit",
+        "temperature_data_mode"
+      ],
+      "description": "In-situ temperature (ITS-90)",
+      "name": "temperature",
+      "unit": "degree_C"
+    },
+    {
+      "columns": [
+        "salinity",
+        "salinity_adjusted",
+        "salinity_qc",
+        "salinity_adjusted_qc",
+        "salinity_error",
+        "salinity_original_error",
+        "salinity_unit",
+        "salinity_data_mode"
+      ],
+      "description": "Practical salinity (PSS-78), dimensionless",
+      "name": "salinity",
+      "unit": "1"
+    },
+    {
+      "columns": [
+        "pressure",
+        "pressure_adjusted",
+        "pressure_qc",
+        "pressure_adjusted_qc",
+        "pressure_error",
+        "pressure_original_error",
+        "pressure_unit",
+        "pressure_data_mode"
+      ],
+      "description": "Sea pressure, the vertical coordinate",
+      "name": "pressure",
+      "unit": "dbar"
+    }
+  ]
+}

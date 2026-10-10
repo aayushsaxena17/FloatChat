@@ -105,6 +105,17 @@ def append_missing_keys(root: Path = ROOT) -> list[str]:
     return [line.split("=", 1)[0] for line in added]
 
 
+def application_commit() -> str:
+    """The checked-out commit for provenance (ADR-0064); "unknown" without Git."""
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, timeout=10
+        )
+    except (OSError, subprocess.SubprocessError):
+        return "unknown"
+    return result.stdout.strip() if result.returncode == 0 else "unknown"
+
+
 def compose(*args: str, timeout: int = 300) -> None:
     command = [
         docker_command(),
@@ -115,7 +126,8 @@ def compose(*args: str, timeout: int = 300) -> None:
         str(ROOT / "infra/docker-compose.dev.yml"),
         *args,
     ]
-    subprocess.run(command, cwd=ROOT, check=True, timeout=timeout)
+    environment = {**os.environ, "APPLICATION_COMMIT": application_commit()}
+    subprocess.run(command, cwd=ROOT, check=True, timeout=timeout, env=environment)
 
 
 def wait_ready(url: str, seconds: int) -> None:

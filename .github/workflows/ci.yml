@@ -31,7 +31,7 @@ jobs:
             STAGE1_POSTGRES_IMAGE=floatchat-stage1-postgres-offline \
             STAGE1_API_IMAGE=floatchat-stage1-api-offline \
             STAGE1_MINIO_IMAGE=floatchat-stage1-minio-offline \
-            "$PWD/.venv/bin/python" -m pytest tests/stage1 tests/stage2 -q \
+            "$PWD/.venv/bin/python" -m pytest tests/stage1 tests/stage2 tests/stage3 -q \
             --deselect tests/stage2/test_integration.py \
             --junitxml=reports/stage1-ci-components.xml
       # The Stage 2 integration fixture reaches its disposable PostGIS server through a

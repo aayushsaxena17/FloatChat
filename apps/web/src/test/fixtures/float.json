@@ -1,0 +1,154 @@
+{
+  "environment": {
+    "completed_runs": 2,
+    "hot_tier": {
+      "end": "2025-04-01T00:00:00Z",
+      "start": "2025-01-01T00:00:00Z"
+    },
+    "id": "a21ebf92-ecb9-4508-a67d-c1884f9f89cd",
+    "ingested_at": "2026-10-09T11:59:11.478982Z",
+    "latest_run": "8562e75d-0082-4a22-9e9d-ee31f8ab944e",
+    "mode": "acceptance",
+    "name": "floatchat-s1-acceptance-302412131a7c99fb",
+    "postgresql_window": {
+      "end": "2025-04-01T00:00:00Z",
+      "start": "2024-04-01T00:00:00Z"
+    },
+    "reference_time": "2025-04-01T00:00:00Z",
+    "source_retrieved": {
+      "end": "2026-10-09T11:57:50.913997Z",
+      "start": "2026-10-09T11:35:41.874831Z"
+    }
+  },
+  "float": {
+    "first_cycle": 60,
+    "first_observed_at": "2025-01-01T03:55:59Z",
+    "last_cycle": 63,
+    "last_latitude": 3.27522,
+    "last_longitude": 69.68408,
+    "last_observed_at": "2025-01-31T23:23:01.002000Z",
+    "platform_number": "1902482",
+    "profile_count": 4,
+    "source": "argovis"
+  },
+  "next_cursor": null,
+  "provenance": {
+    "application_commit": "3571e0992a0d012427445b8370b5e2c571c16bb8",
+    "attribution": {
+      "argo": "Argo (2000). Argo float data and metadata from Global Data Assembly Centre (Argo GDAC). SEANOE. https://doi.org/10.17882/42182",
+      "argovis": "Tucker, Giglio, Scanderbeg and Shen (2020), Argovis, https://doi.org/10.1175/JTECH-D-19-0041.1"
+    },
+    "environment": {
+      "completed_runs": 2,
+      "hot_tier": {
+        "end": "2025-04-01T00:00:00Z",
+        "start": "2025-01-01T00:00:00Z"
+      },
+      "id": "a21ebf92-ecb9-4508-a67d-c1884f9f89cd",
+      "ingested_at": "2026-10-09T11:59:11.478982Z",
+      "latest_run": "8562e75d-0082-4a22-9e9d-ee31f8ab944e",
+      "mode": "acceptance",
+      "name": "floatchat-s1-acceptance-302412131a7c99fb",
+      "postgresql_window": {
+        "end": "2025-04-01T00:00:00Z",
+        "start": "2024-04-01T00:00:00Z"
+      },
+      "reference_time": "2025-04-01T00:00:00Z",
+      "source_retrieved": {
+        "end": "2026-10-09T11:57:50.913997Z",
+        "start": "2026-10-09T11:35:41.874831Z"
+      }
+    },
+    "execution": {
+      "rows": 4,
+      "source": "postgresql"
+    },
+    "geography": null,
+    "result_sha256": "f100ea6a6a2ab4929cb9f6279596e276bbeef83dd79b551ce93b391570c43cee",
+    "source": "argovis",
+    "transformation": "float summary and trajectory of profile positions, newest first",
+    "versions": {
+      "geometry": "indian-ocean-v1",
+      "hash": "scientific-json-v2",
+      "mapping": "argovis-core-v1",
+      "plan_schema": "stage2-plan-v1",
+      "qc": "core-good-v1",
+      "schema": "core-parquet-v1"
+    }
+  },
+  "time_range": {
+    "end": "2025-02-01T00:00:00Z",
+    "start": "2025-01-01T00:00:00Z"
+  },
+  "trajectory": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "string",
+        "unit": null
+      },
+      {
+        "name": "cycle_number",
+        "type": "integer",
+        "unit": null
+      },
+      {
+        "name": "direction",
+        "type": "string",
+        "unit": null
+      },
+      {
+        "name": "observed_at",
+        "type": "timestamp",
+        "unit": null
+      },
+      {
+        "name": "longitude",
+        "type": "number",
+        "unit": "degrees_east"
+      },
+      {
+        "name": "latitude",
+        "type": "number",
+        "unit": "degrees_north"
+      }
+    ],
+    "missing_value_policy": "null",
+    "non_finite_values": 0,
+    "row_count": 4,
+    "rows": [
+      [
+        "ce786cee-c3c3-410f-b557-a48339021f4b",
+        63,
+        "A",
+        "2025-01-31T23:23:01.002000Z",
+        69.68408,
+        3.27522
+      ],
+      [
+        "ca7cb229-753d-497a-9293-9938a041965e",
+        62,
+        "A",
+        "2025-01-21T16:41:56.001000Z",
+        69.59283,
+        3.10218
+      ],
+      [
+        "a598892c-2879-4dc0-a278-87bd51ed9a9c",
+        61,
+        "A",
+        "2025-01-11T10:12:05.001000Z",
+        69.33592,
+        3.19291
+      ],
+      [
+        "24c6c28c-891e-49ae-91a1-00c9bbc38c08",
+        60,
+        "A",
+        "2025-01-01T03:55:59Z",
+        69.47238,
+        2.90205
+      ]
+    ]
+  }
+}
