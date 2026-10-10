@@ -41,7 +41,7 @@ def main() -> int:
         document = fetch(base, method, path, params, body)
         if trim is not None:
             document = trim(document)
-        (OUTPUT / f"{name}.json").write_text(json.dumps(document, indent=1, sort_keys=True) + "\n")
+        (OUTPUT / f"{name}.json").write_text(json.dumps(document, indent=2, sort_keys=True) + "\n")
         index[name] = {"method": method, "path": path, "params": params, "body": body}
         return document
 
@@ -101,7 +101,7 @@ def main() -> int:
             "presentation": {"kind": "ts_diagram"},
         },
     )
-    (OUTPUT / "index.json").write_text(json.dumps(index, indent=1, sort_keys=True) + "\n")
+    (OUTPUT / "index.json").write_text(json.dumps(index, indent=2, sort_keys=True) + "\n")
     print(f"recorded {len(index)} fixtures under {OUTPUT.relative_to(ROOT)}")
     return 0
 

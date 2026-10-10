@@ -1,6 +1,6 @@
 # Stage 3 plan - web dashboard (reviewed 2026-10-09)
 
-Status: **authorized, implementation starting** (owner instruction 2026-10-09: Stage 2 and the
+Status: **implemented; CI on pull request #8 pending** (plan written 2026-10-09) (owner instruction 2026-10-09: Stage 2 and the
 Stage 2 fixes are accepted; build Stage 3 on them; decide open questions without further
 approval). Scope: build prompt "Stage 3", PRD §2.1, §5.1, §5.10, §11.3, §14, §17, §20. Branch
 `codex/stage-3` from `codex/stage-2-fixes` at `5cf262e`; one pull request into `main`.

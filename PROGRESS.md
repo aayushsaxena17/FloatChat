@@ -75,6 +75,14 @@ against the merged code; the advisor reviewed the approach before the plan was w
   `origin/codex/stage-3` through the owner's stored GitHub credential.
 - [x] Pull request [#8](https://github.com/aayushsaxena17/FloatChat/pull/8) into `main` opened
   2026-10-10 (base `codex/stage-2-fixes`; rebased after PR #7 merges).
+- [x] Advisor review of the implemented Stage 3 recorded 2026-10-10 (ADR-0039 convention): agreed
+  with the implementation at `5b5bd54` with two open items, both closed in the next commit: the
+  default landing view (Indian Ocean, the whole quarter) asked for a per-profile histogram over
+  5,814 profiles and received `result_too_large` (the contract bounds a series to 5,000 points),
+  so the dashboard now withholds that request above the published `chart_points_per_series`
+  bound and says how to narrow the filters; and the Playwright and secrets checks were run on the
+  final head (`pnpm exec playwright test` 2 passed; `make secrets-current` reports only the
+  owner's git-ignored `.env.txt` of ADR-0039, which CI never sees).
 - [ ] CI on the pull-request head (recorded here once the run completes).
 
 ## Stage 2 - post-gate fixes on `codex/stage-2-fixes` (ADR-0058 amendment), 2026-10-09

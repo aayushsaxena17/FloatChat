@@ -332,7 +332,8 @@ table.data button.link {
 .map-overlay {
   position: absolute;
   left: 8px;
-  bottom: 8px;
+  top: 8px;
+  max-width: 60%;
   background: rgba(252, 252, 251, 0.92);
   padding: 4px 8px;
   border-radius: 6px;

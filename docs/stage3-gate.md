@@ -96,6 +96,7 @@ Local, on `56900f4` (WSL2 Ubuntu 24.04, Docker Desktop):
 | `pnpm test` (Vitest, jsdom, MapLibre and Plotly mocked) | 47 passed in 11 files |
 | `pytest tests/stage2/test_integration.py -m integration` (disposable PostGIS, migration 0017, read provenance) | 12 passed |
 | `pnpm build` (Vite) | built; chunks `index` 503 kB, `maplibre` 1,058 kB, `plotly` 1,512 kB (gzip 159, 288, 504 kB), worker 508 kB |
+| `make secrets-current` (gitleaks 8.30.1) | one finding, the owner's git-ignored `.env.txt` (ADR-0039); nothing tracked |
 | `scripts/integration.py` (Docker acceptance: empty-database checks, seed of 9 profiles with catalogue and objects, API restart with warm-up, probes, outages, repeat start-up, Playwright e2e) | complete; [reports/stage0-integration.json](../reports/stage0-integration.json), project `floatchat-stage0-test-ac9dd329caa2`, empty-volume start-up 27.4 s, 5 profiles in the scenario, both e2e specs passed (7.9 s and 3.8 s) |
 | Playwright against the imported dataset (host Vite, dev API) | 2 passed ([report](../reports/stage3-acceptance-2026-10-10.json)) |
 

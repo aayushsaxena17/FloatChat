@@ -83,6 +83,30 @@ describe("Dashboard", () => {
     expect(body.depth_dbar).toEqual({ min: 0, max: 100 });
   });
 
+  it("withholds the per-profile distribution above the published chart bound", async () => {
+    const wide = {
+      ...coverage,
+      coverage: { ...coverage.coverage, estimated_profiles: 5814 },
+    };
+    const api = stubApi({
+      "/v1/catalog/parameters": parameters,
+      "/v1/catalog/coverage": wide,
+      "/v1/profiles": profiles,
+      "/v1/query": line,
+    });
+    renderWithProviders(<Dashboard />, SCENARIO);
+    const notice = await screen.findByTestId("histogram-bound");
+    expect(notice).toHaveTextContent("at most 5,000 profiles");
+    expect(notice).toHaveTextContent("holds 5,814");
+    // The time series still runs; only the histogram request is withheld.
+    await screen.findAllByRole("heading", { name: "Temperature mean (°C)" });
+    const queries = api.calls.filter(
+      (call) => call.startsWith("POST") && call.endsWith("/v1/query"),
+    );
+    expect(queries).toHaveLength(1);
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
   it("shows an API error with its code and correlation id", async () => {
     stubApi(
       {

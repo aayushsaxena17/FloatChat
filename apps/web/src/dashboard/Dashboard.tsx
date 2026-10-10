@@ -17,6 +17,15 @@ import { MapView } from "../explorer/MapView";
 import { useExplorerData } from "../explorer/useExplorerData";
 import { ProvenancePanel } from "../provenance/ProvenancePanel";
 
+/** The contract's chart_points_per_series limit as the parameter catalogue publishes it. */
+export function chartPointBound(parameters: unknown): number | null {
+  const limits = (
+    parameters as { limits?: Record<string, unknown> } | undefined
+  )?.limits;
+  const value = limits?.chart_points_per_series;
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
 /** PRD 2.1: the most recent data with explicit coverage, time series and distributions. */
 export function Dashboard() {
   const data = useExplorerData();
@@ -32,7 +41,14 @@ export function Dashboard() {
     [filters, ready],
   );
   const series = usePlanQuery(seriesPlan);
-  const distribution = usePlanQuery(histogram);
+  // The per-profile distribution is bounded by the contract's points-per-series limit
+  // (chart.py); the request is only sent when the coverage estimate fits, and the panel says
+  // how to narrow the filters otherwise.
+  const bound = chartPointBound(data.parameters.data);
+  const estimated = coverage.data?.coverage.estimated_profiles;
+  const histogramAllowed =
+    estimated !== undefined && bound !== null && estimated <= bound;
+  const distribution = usePlanQuery(histogram, histogramAllowed);
   const seriesFigures = useMemo(
     () =>
       series.data?.chart
@@ -142,6 +158,14 @@ export function Dashboard() {
           </StatusMessage>
         </div>
         <div className="wide">
+          {coverage.data && !histogramAllowed ? (
+            <p className="status" role="status" data-testid="histogram-bound">
+              The per-profile distribution is available for at most{" "}
+              {bound?.toLocaleString("en-GB") ?? "?"} profiles; this selection
+              holds {estimated?.toLocaleString("en-GB") ?? "?"} in its coverage
+              manifests. Narrow the region or the dates to see it.
+            </p>
+          ) : null}
           <StatusMessage
             loading={
               distribution.isPending && distribution.fetchStatus !== "idle"
