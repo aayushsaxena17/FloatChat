@@ -323,6 +323,16 @@ class QueryService:
             "geography": None if resolved is None else resolved.describe(),
             "result": result.as_dict(),
             "next_cursor": next_cursor,
+            "provenance": provenance.build_read(
+                environment=environment,
+                geography=resolved,
+                qc_policy=None,
+                execution={"source": "postgresql", "rows": len(result.rows)},
+                rows=result.rows,
+                application_commit=self.application_commit,
+                transformation="floats with profiles in the window, by platform number, with "
+                "statistics derived from their profiles",
+            ),
         }
 
     def float_detail(
@@ -365,6 +375,15 @@ class QueryService:
             "float": dict(zip([c.name for c in FLOAT_COLUMNS], head.rows[0], strict=True)),
             "trajectory": trajectory.as_dict(),
             "next_cursor": next_cursor,
+            "provenance": provenance.build_read(
+                environment=environment,
+                geography=None,
+                qc_policy=None,
+                execution={"source": "postgresql", "rows": len(trajectory.rows)},
+                rows=head.rows + trajectory.rows,
+                application_commit=self.application_commit,
+                transformation="float summary and trajectory of profile positions, newest first",
+            ),
         }
 
     def profiles(
@@ -403,6 +422,9 @@ class QueryService:
         next_cursor = self._next_profile_cursor(rows, page)
         rows = rows[:page]
         result = sanitize(rows, PROFILE_COLUMNS, self.limits)
+        transformation = "profile headers newest first" + (
+            f", with at least one level in {depth.min}-{depth.max} dbar" if depth else ""
+        )
         return {
             "environment": environment.describe(),
             "time_range": {"start": _iso(interval.start), "end": _iso(interval.end)},
@@ -410,6 +432,19 @@ class QueryService:
             "qc_policy": describe(qc_policy),
             "result": result.as_dict(),
             "next_cursor": next_cursor,
+            "provenance": provenance.build_read(
+                environment=environment,
+                geography=resolved,
+                qc_policy=qc_policy,
+                execution={
+                    "source": "postgresql",
+                    "rows": len(result.rows),
+                    "run_ids": sorted({str(row["last_scientific_run_id"]) for row in rows}),
+                },
+                rows=result.rows,
+                application_commit=self.application_commit,
+                transformation=transformation,
+            ),
         }
 
     def profile(
@@ -438,11 +473,27 @@ class QueryService:
         )
         head = sanitize(header, PROFILE_COLUMNS, self.limits)
         body = sanitize(levels, _level_columns(qc_policy), self.limits)
+        transformation = f"levels of one profile with qc-policy-v1/{qc_policy}" + (
+            f", depth {depth.min}-{depth.max} dbar" if depth else ""
+        )
         return {
             "environment": environment.describe(),
             "profile": dict(zip([c.name for c in PROFILE_COLUMNS], head.rows[0], strict=True)),
             "qc_policy": describe(qc_policy),
             "levels": body.as_dict(),
+            "provenance": provenance.build_read(
+                environment=environment,
+                geography=None,
+                qc_policy=qc_policy,
+                execution={
+                    "source": "postgresql",
+                    "rows": len(body.rows),
+                    "run_ids": [str(header[0]["last_scientific_run_id"])],
+                },
+                rows=head.rows + body.rows,
+                application_commit=self.application_commit,
+                transformation=transformation,
+            ),
         }
 
     # ----- POST /v1/query ------------------------------------------------------------------

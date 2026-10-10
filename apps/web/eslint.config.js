@@ -9,6 +9,7 @@ export default tseslint.config(
       "node_modules/**",
       "test-results/**",
       "src/api/schema.d.ts",
+      "src/map/land.json",
     ],
   },
   js.configs.recommended,

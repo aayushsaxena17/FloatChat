@@ -1,0 +1,67 @@
+{
+  "stage": 3,
+  "date": "2026-10-10",
+  "base_url": "http://127.0.0.1:5173",
+  "api_url": "http://127.0.0.1:8000",
+  "environment": {
+    "id": "a21ebf92-ecb9-4508-a67d-c1884f9f89cd",
+    "name": "floatchat-s1-acceptance-302412131a7c99fb",
+    "mode": "acceptance",
+    "reference_time": "2025-04-01T00:00:00Z",
+    "completed_runs": 2,
+    "hot_tier": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-04-01T00:00:00Z"
+    },
+    "postgresql_window": {
+      "start": "2024-04-01T00:00:00Z",
+      "end": "2025-04-01T00:00:00Z"
+    },
+    "latest_run": "8562e75d-0082-4a22-9e9d-ee31f8ab944e",
+    "ingested_at": "2026-10-09T11:59:11.478982Z",
+    "source_retrieved": {
+      "start": "2026-10-09T11:35:41.874831Z",
+      "end": "2026-10-09T11:57:50.913997Z"
+    }
+  },
+  "scenario": {
+    "region": "Arabian Sea",
+    "start": "2025-01-01T00:00:00Z",
+    "end": "2025-02-01T00:00:00Z",
+    "depth_min": "0",
+    "depth_max": "100",
+    "profiles": 132,
+    "coverage": {
+      "slots_total": 10,
+      "slots_covered": 9,
+      "slots_empty_verified": 1,
+      "slots_missing": 0,
+      "estimated_profiles": 291,
+      "estimated_levels": 185694,
+      "partial": false
+    }
+  },
+  "playwright": {
+    "exit_code": 0,
+    "elapsed_seconds": 20.6,
+    "specs": [
+      {
+        "title": "dashboard: Arabian Sea, January 2025, 0-100 dbar shows map points and a profile chart",
+        "ok": true,
+        "duration_ms": 13006
+      },
+      {
+        "title": "browser loads the shell and reaches the local API",
+        "ok": true,
+        "duration_ms": 3160
+      }
+    ],
+    "stderr_tail": ""
+  },
+  "screenshots": [
+    "01-dashboard.png",
+    "02-map.png",
+    "03-profiles.png"
+  ],
+  "passed": true
+}

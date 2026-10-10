@@ -1,5 +1,97 @@
 # Stage progress
 
+## Stage 3 - web dashboard complete, CI green on PR #8 (ADR-0061..0065), 2026-10-10
+
+Owner instruction 2026-10-09: Stage 2 (PR #6, merged) and the Stage 2 fixes (PR #7, open) are
+accepted; build Stage 3 on them and decide open questions without further approval. Branch
+`codex/stage-3` from `codex/stage-2-fixes` at `5cf262e`; the pull request targets `main` and is
+rebased after PR #7 merges. The plan [docs/stage3-plan.md](docs/stage3-plan.md) was written
+against the merged code; the advisor reviewed the approach before the plan was written
+(ADR-0039 convention) and the written plan is recorded below once reviewed.
+
+- [x] Plan corrections recorded in the plan's section 0: branch base, seeded e2e data in CI,
+  typed response models, provenance on reads, view timestamps for the coverage panel,
+  `APPLICATION_COMMIT` wiring, library majors, offline basemap, one unit per chart, the map
+  point cap, the kept Stage 0 browser check, cold Vite in the integration stack.
+- [x] Advisor review of the written plan recorded 2026-10-09 (ADR-0039 convention): agreed with the
+  plan and ADR-0061..0065 with four amendments folded in before implementation: the WebGL2
+  probe is stated for this host only; MapLibre text layers need a glyph server, so labels are DOM
+  overlays (ADR-0062); the objects seeding step verifies the regenerated part bytes against the
+  catalogue before uploading; the environment model keeps the tier intervals and timestamps
+  optional for a database without a completed run.
+- [x] ADR-0061 (scope, branch, routes, pins), ADR-0062 (offline basemap, clustering, point cap),
+  ADR-0063 (shared seed, seeded integration project, local acceptance), ADR-0064 (typed
+  responses, provenance on reads, migration 0017, application commit), ADR-0065 (chart rules).
+- [x] W1 API additions (ADR-0064): typed response models with `extra="allow"` and
+  `response_model_exclude_unset` (payloads unchanged), `provenance.build_read` on the four read
+  endpoints, migration `0017_query_env_times` (the first name exceeded alembic's 32-character
+  version column and was renamed before any database took it), `APPLICATION_COMMIT` from Git
+  through Compose; `apps/api/openapi.json` and `apps/web/src/api/schema.d.ts` regenerated; the
+  contract-test doubles typed; `tests/stage3/test_provenance_read.py`.
+- [x] W2 `scripts/science_seed.py` (ADR-0063): the Stage 2 seed moved out of the conftest,
+  `STAGE3_PROFILES` (four January 2025 Arabian Sea profiles, polygon membership checked on
+  PostGIS), `database` and `objects` entry points with catalogue verification; shipped in the API
+  image; `scripts/integration.py` seeds the disposable project, restarts the API (warm-up over the
+  seeded parts) and asserts the scenario lists five profiles; `tests/stage3/test_science_seed.py`.
+  The Stage 2 integration suite passes unchanged on the shared seed (12 cases, 2026-10-09).
+- [x] W3 shell and state: `react-router` 7.18.4, `@tanstack/react-query` 5.104.1; `/` redirects
+  to `/dashboard`; stubs name their stage; filters parsed from and written to the URL
+  (`explorer/filters.ts`, 100% of the model under Vitest); hooks with bounded page following.
+- [x] W4 map (ADR-0062): `maplibre-gl` 6.13.0 over the bundled Natural Earth land layer
+  (`scripts/build_basemap.py`, 193 KB, 314 polygons, source SHA-256 recorded), built-in
+  clustering with DOM count markers (no glyph server), trajectory, region bounding box, hover
+  popups, a profile list as the keyboard path, 5,000-point cap label. MapLibre 6 resolves its
+  worker relative to its module URL, which Vite's pre-bundle breaks; the worker is imported
+  through Vite (`?url`) and set with `setWorkerUrl`.
+- [x] W5 charts (ADR-0065): `plotly.js-cartesian-dist-min` 4.1.2 through a 20-line wrapper;
+  `charts/spec.ts` translates the contract (allow-listed keys only) into one figure per unit
+  group with units on every axis, the validated reference palette by series identity, folding to
+  one colour past three profiles, a table view for every figure; profile charts from
+  `/v1/profiles/{id}` (temperature and salinity against pressure downwards, T-S diagram, QC and
+  data-mode summary).
+- [x] W6 panels: coverage (range, region, manifest counts, slot states and missing tiles, source
+  retrieval window, ingestion timestamp, reference time, tiers) and provenance on every result.
+- [x] W7 accessibility and attribution: skip link, landmarks, labelled controls with errors beside
+  them, live regions, visible focus tokens, UTC and longitude conventions stated, non-colour
+  status badges, footer citing Argo, Argovis, Marine Regions and Natural Earth.
+- [x] W8 tests: 47 Vitest cases (filters, chart translation, profile figures, units, points,
+  coverage panel, provenance panel, profile charts, dashboard with a fetch stub over recorded
+  fixtures, app shell and stubs) with MapLibre and Plotly mocked under jsdom; recorded fixtures
+  from the dev API (`scripts/capture_web_fixtures.py`); Playwright `e2e/dashboard.spec.ts`
+  (the build prompt's scenario through the controls, URL assertions, the map's live count, list
+  selection, profile chart with axis titles and table rows, provenance) and the adapted Stage 0
+  shell check; both pass against the dev dataset on this host (2026-10-09).
+- [x] W9 `scripts/stage3_acceptance.py` on the imported dataset:
+  [reports/stage3-acceptance-2026-10-10.json](reports/stage3-acceptance-2026-10-10.json) passed
+  (132 profiles in the scenario, 9 of 10 slots covered and 1 verified empty, screenshots under
+  `reports/stage3-acceptance-2026-10-10/`).
+- [x] `scripts/integration.py` on this host (2026-10-10): complete, project
+  `floatchat-stage0-test-ac9dd329caa2`, empty-volume start-up 27.4 s, 5 seeded profiles in the
+  scenario, the Stage 0 probes and outage checks, both Playwright specs green on the
+  containerised Vite server (7.9 s, 3.8 s) ([report](reports/stage0-integration.json)).
+- [x] Full offline suite on `56900f4`: `pytest -m 'not integration'` 1,870 passed, 1 skipped;
+  `pnpm test` 47 passed; `make lint` and `make typecheck` clean; `pnpm build` green.
+- [x] Gate report [docs/stage3-gate.md](docs/stage3-gate.md); branch pushed as
+  `origin/codex/stage-3` through the owner's stored GitHub credential.
+- [x] Pull request [#8](https://github.com/aayushsaxena17/FloatChat/pull/8) into `main` opened
+  2026-10-10 (base `codex/stage-2-fixes`; rebased after PR #7 merges).
+- [x] Advisor review of the implemented Stage 3 recorded 2026-10-10 (ADR-0039 convention): agreed
+  with the implementation at `5b5bd54` with two open items, both closed in the next commit: the
+  default landing view (Indian Ocean, the whole quarter) asked for a per-profile histogram over
+  5,814 profiles and received `result_too_large` (the contract bounds a series to 5,000 points),
+  so the dashboard now withholds that request above the published `chart_points_per_series`
+  bound and says how to narrow the filters; and the Playwright and secrets checks were run on the
+  final head (`pnpm exec playwright test` 2 passed; `make secrets-current` reports only the
+  owner's git-ignored `.env.txt` of ADR-0039, which CI never sees).
+- [x] CI green: run 38007878218 on `5b5bd54` and run 38008497585 on the final head `815751a`,
+  all seven jobs including the seeded `integration` e2e and `stage1-offline-components` with
+  `tests/stage3`. Later commits on the branch: the histogram bound, the map overlay position,
+  category axes for month and day keys (48 Vitest cases). Stage 3 gate closed 2026-10-10;
+  merge of PR #8 is the owner's decision (rebase onto `main` after PR #7).
+- [x] 2026-10-10: a re-run of the `integration` job failed on a real race in the URL filter hook
+  (fast successive control changes dropped `end`); fixed in `explorer/useFilters.ts` with a
+  regression test (50 Vitest cases); CI re-checked on the fix commit.
+
 ## Stage 2 - post-gate fixes on `codex/stage-2-fixes` (ADR-0058 amendment), 2026-10-09
 
 Stage 2 merged into `main` as `cf0e58b` (PR #6). The two risks named in the gate are addressed on

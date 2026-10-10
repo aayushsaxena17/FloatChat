@@ -25,6 +25,12 @@ ENVIRONMENT = {
     "name": "dev",
     "mode": "dev",
     "reference_time": "2025-04-01T00:00:00Z",
+    "completed_runs": 1,
+    "hot_tier": {"start": "2025-01-01T00:00:00Z", "end": "2025-04-01T00:00:00Z"},
+    "postgresql_window": {"start": "2024-04-01T00:00:00Z", "end": "2025-04-01T00:00:00Z"},
+    "latest_run": "00000000-0000-4000-8000-000000000001",
+    "ingested_at": "2025-04-01T01:00:00Z",
+    "source_retrieved": {"start": "2025-04-01T00:10:00Z", "end": "2025-04-01T00:50:00Z"},
 }
 TABLE = {
     "columns": [{"name": "platform_number", "type": "string", "unit": None}],
@@ -34,6 +40,47 @@ TABLE = {
     "non_finite_values": 0,
 }
 QC_POLICY = {"name": "science_ready", "version": "qc-policy-v1", "description": "good data"}
+GEOGRAPHY = {
+    "kind": "named_region",
+    "name": "Arabian Sea",
+    "version": "iho-v3-simplified-0.05-min50km2-v1",
+    "sha256": "8" * 64,
+    "clipped": False,
+}
+SLOT = {
+    "slot": "argovis/core/2025-01/60:10/indian-ocean-v1/argovis-core-v1/scientific-json-v2",
+    "month": "2025-01",
+    "tile": {"west": 60, "south": 10},
+    "state": "covered",
+    "gaps": [],
+    "profiles": 3,
+    "levels": 12,
+    "parts": 1,
+}
+COVERAGE_SUMMARY = {
+    "requested": {"start": "2025-01-01T00:00:00Z", "end": "2025-02-01T00:00:00Z"},
+    "months": ["2025-01"],
+    "tiles": [{"west": 60, "south": 10}],
+    "slots_total": 1,
+    "slots_covered": 1,
+    "slots_empty_verified": 0,
+    "slots_missing": 0,
+    "missing": [],
+    "estimated_profiles": 3,
+    "estimated_levels": 12,
+    "partial": False,
+}
+PROVENANCE = {
+    "source": "argovis",
+    "environment": ENVIRONMENT,
+    "versions": {"mapping": "argovis-core-v1", "plan_schema": "stage2-plan-v1"},
+    "geography": GEOGRAPHY,
+    "execution": {"source": "postgresql", "rows": 1},
+    "result_sha256": "0" * 64,
+    "application_commit": "unknown",
+    "transformation": "profile headers newest first",
+    "attribution": {"argo": "Argo (2000)", "argovis": "Tucker et al. (2020)"},
+}
 PARAMETERS = {
     "plan_schema": "stage2-plan-v1",
     "variables": [{"name": "temperature", "unit": "degree_Celsius"}],
@@ -41,9 +88,9 @@ PARAMETERS = {
 }
 COVERAGE = {
     "environment": ENVIRONMENT,
-    "geography": {"kind": "named_region", "value": "Arabian Sea"},
-    "coverage": {"profiles": 3, "levels": 12},
-    "slots": [{"month": "2025-01", "tile": "t1", "state": "covered"}],
+    "geography": GEOGRAPHY,
+    "coverage": COVERAGE_SUMMARY,
+    "slots": [SLOT],
 }
 FLOATS = {
     "environment": ENVIRONMENT,
@@ -51,31 +98,48 @@ FLOATS = {
     "geography": None,
     "result": TABLE,
     "next_cursor": "opaque-cursor",
+    "provenance": {**PROVENANCE, "geography": None},
 }
 FLOAT = {
     "environment": ENVIRONMENT,
-    "float": {"platform_number": "5900001", "profile_count": 3},
+    "float": {"platform_number": "5900001", "source": "argovis", "profile_count": 3},
     "trajectory": TABLE,
     "next_cursor": None,
+    "provenance": {**PROVENANCE, "geography": None},
 }
-PROFILES = {**FLOATS, "qc_policy": QC_POLICY, "next_cursor": None}
+PROFILES = {**FLOATS, "qc_policy": QC_POLICY, "next_cursor": None, "provenance": PROVENANCE}
 PROFILE = {
     "environment": ENVIRONMENT,
-    "profile": {"id": PROFILE_ID, "platform_number": "5900001"},
+    "profile": {
+        "id": PROFILE_ID,
+        "source": "argovis",
+        "source_profile_id": "5900001_1",
+        "platform_number": "5900001",
+        "cycle_number": 1,
+        "direction": "A",
+        "observed_at": "2025-01-10T00:00:00Z",
+        "observation_month": "2025-01-01",
+        "longitude": 65.0,
+        "latitude": 15.0,
+        "level_count": 4,
+        "content_hash": "1" * 64,
+        "last_scientific_run_id": "00000000-0000-4000-8000-000000000001",
+    },
     "qc_policy": QC_POLICY,
     "levels": TABLE,
+    "provenance": {**PROVENANCE, "geography": None},
 }
 QUERY = {
     "plan": {"dataset": "core"},
     "result": TABLE,
     "next_cursor": None,
     "chart": None,
-    "coverage": {"profiles": 3},
+    "coverage": COVERAGE_SUMMARY,
     "partial": False,
     "missing": [],
     "execution": {"source": "postgresql", "elapsed_ms": 4, "rows": 1},
     "interpretation": {"summary": "profiles in the Arabian Sea"},
-    "provenance": {"source": "argovis", "result_sha256": "0" * 64},
+    "provenance": {**PROVENANCE, "coverage": COVERAGE_SUMMARY, "plan_sha256": "2" * 64},
 }
 PLAN = {"dataset": "core", "variables": ["temperature"]}
 # (method, path, the double's payload)

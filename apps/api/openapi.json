@@ -1,13 +1,221 @@
 {
   "components": {
     "schemas": {
+      "Box": {
+        "additionalProperties": true,
+        "properties": {
+          "east": {
+            "title": "East",
+            "type": "number"
+          },
+          "north": {
+            "title": "North",
+            "type": "number"
+          },
+          "south": {
+            "title": "South",
+            "type": "number"
+          },
+          "west": {
+            "title": "West",
+            "type": "number"
+          }
+        },
+        "required": [
+          "west",
+          "south",
+          "east",
+          "north"
+        ],
+        "title": "Box",
+        "type": "object"
+      },
+      "ChartAxes": {
+        "additionalProperties": true,
+        "properties": {
+          "x": {
+            "$ref": "#/components/schemas/ChartAxis"
+          },
+          "y": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChartAxis"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "x"
+        ],
+        "title": "ChartAxes",
+        "type": "object"
+      },
+      "ChartAxis": {
+        "additionalProperties": true,
+        "properties": {
+          "field": {
+            "title": "Field",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "reversed": {
+            "default": false,
+            "title": "Reversed",
+            "type": "boolean"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          }
+        },
+        "required": [
+          "field",
+          "label"
+        ],
+        "title": "ChartAxis",
+        "type": "object"
+      },
+      "ChartData": {
+        "additionalProperties": true,
+        "properties": {
+          "inline": {
+            "title": "Inline",
+            "type": "boolean"
+          },
+          "points": {
+            "title": "Points",
+            "type": "integer"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "inline",
+          "points"
+        ],
+        "title": "ChartData",
+        "type": "object"
+      },
+      "ChartEncodings": {
+        "additionalProperties": true,
+        "properties": {
+          "series": {
+            "$ref": "#/components/schemas/ChartAxis"
+          },
+          "x": {
+            "$ref": "#/components/schemas/ChartAxis"
+          },
+          "y": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChartAxis"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "x",
+          "series"
+        ],
+        "title": "ChartEncodings",
+        "type": "object"
+      },
+      "ChartSpec": {
+        "additionalProperties": true,
+        "description": "The PRD 11.3 contract; ``plotly`` stays loose (allow-listed trace keys, see chart.py).",
+        "properties": {
+          "aggregation": {
+            "title": "Aggregation",
+            "type": "string"
+          },
+          "axis": {
+            "$ref": "#/components/schemas/ChartAxes"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ChartData"
+          },
+          "encodings": {
+            "$ref": "#/components/schemas/ChartEncodings"
+          },
+          "missing_value_policy": {
+            "title": "Missing Value Policy",
+            "type": "string"
+          },
+          "plotly": {
+            "additionalProperties": true,
+            "title": "Plotly",
+            "type": "object"
+          },
+          "provenance_ref": {
+            "title": "Provenance Ref",
+            "type": "string"
+          },
+          "series": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Series",
+            "type": "array"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "encodings",
+          "axis",
+          "series",
+          "missing_value_policy",
+          "aggregation",
+          "data",
+          "provenance_ref",
+          "plotly"
+        ],
+        "title": "ChartSpec",
+        "type": "object"
+      },
       "CollectionResponse": {
         "additionalProperties": true,
         "properties": {
           "environment": {
-            "additionalProperties": true,
-            "title": "Environment",
-            "type": "object"
+            "$ref": "#/components/schemas/Environment"
+          },
+          "geography": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GeographyInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "next_cursor": {
             "anyOf": [
@@ -20,39 +228,87 @@
             ],
             "title": "Next Cursor"
           },
+          "provenance": {
+            "$ref": "#/components/schemas/Provenance"
+          },
+          "qc_policy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QcPolicy"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "result": {
             "$ref": "#/components/schemas/ResultTable"
+          },
+          "time_range": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TimeInterval"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
           "environment",
           "result",
-          "next_cursor"
+          "next_cursor",
+          "provenance"
         ],
         "title": "CollectionResponse",
         "type": "object"
       },
+      "Column": {
+        "additionalProperties": true,
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          }
+        },
+        "required": [
+          "name",
+          "type"
+        ],
+        "title": "Column",
+        "type": "object"
+      },
       "CoverageResponse": {
+        "additionalProperties": true,
         "properties": {
           "coverage": {
-            "additionalProperties": true,
-            "title": "Coverage",
-            "type": "object"
+            "$ref": "#/components/schemas/CoverageSummary"
           },
           "environment": {
-            "additionalProperties": true,
-            "title": "Environment",
-            "type": "object"
+            "$ref": "#/components/schemas/Environment"
           },
           "geography": {
-            "additionalProperties": true,
-            "title": "Geography",
-            "type": "object"
+            "$ref": "#/components/schemas/GeographyInfo"
           },
           "slots": {
             "items": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/SlotCoverage"
             },
             "title": "Slots",
             "type": "array"
@@ -65,6 +321,170 @@
           "slots"
         ],
         "title": "CoverageResponse",
+        "type": "object"
+      },
+      "CoverageSummary": {
+        "additionalProperties": true,
+        "properties": {
+          "estimated_levels": {
+            "title": "Estimated Levels",
+            "type": "integer"
+          },
+          "estimated_profiles": {
+            "title": "Estimated Profiles",
+            "type": "integer"
+          },
+          "missing": {
+            "items": {
+              "$ref": "#/components/schemas/SlotCoverage"
+            },
+            "title": "Missing",
+            "type": "array"
+          },
+          "months": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Months",
+            "type": "array"
+          },
+          "partial": {
+            "title": "Partial",
+            "type": "boolean"
+          },
+          "requested": {
+            "$ref": "#/components/schemas/TimeInterval"
+          },
+          "slots_covered": {
+            "title": "Slots Covered",
+            "type": "integer"
+          },
+          "slots_empty_verified": {
+            "title": "Slots Empty Verified",
+            "type": "integer"
+          },
+          "slots_missing": {
+            "title": "Slots Missing",
+            "type": "integer"
+          },
+          "slots_total": {
+            "title": "Slots Total",
+            "type": "integer"
+          },
+          "tiles": {
+            "items": {
+              "$ref": "#/components/schemas/Tile"
+            },
+            "title": "Tiles",
+            "type": "array"
+          }
+        },
+        "required": [
+          "requested",
+          "months",
+          "tiles",
+          "slots_total",
+          "slots_covered",
+          "slots_empty_verified",
+          "slots_missing",
+          "missing",
+          "estimated_profiles",
+          "estimated_levels",
+          "partial"
+        ],
+        "title": "CoverageSummary",
+        "type": "object"
+      },
+      "Environment": {
+        "additionalProperties": true,
+        "properties": {
+          "completed_runs": {
+            "title": "Completed Runs",
+            "type": "integer"
+          },
+          "hot_tier": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TimeInterval"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "ingested_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ingested At"
+          },
+          "latest_run": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Run"
+          },
+          "mode": {
+            "title": "Mode",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "postgresql_window": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TimeInterval"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reference_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Time"
+          },
+          "source_retrieved": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TimeInterval"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "mode",
+          "completed_runs"
+        ],
+        "title": "Environment",
         "type": "object"
       },
       "ErrorBody": {
@@ -113,18 +533,105 @@
         "title": "ErrorResponse",
         "type": "object"
       },
+      "Execution": {
+        "additionalProperties": true,
+        "properties": {
+          "elapsed_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Elapsed Ms"
+          },
+          "estimated_levels": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Levels"
+          },
+          "estimated_profiles": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Profiles"
+          },
+          "partitions": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partitions"
+          },
+          "rows": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rows"
+          },
+          "run_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Ids"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          }
+        },
+        "title": "Execution",
+        "type": "object"
+      },
       "FloatResponse": {
         "additionalProperties": true,
         "properties": {
           "environment": {
-            "additionalProperties": true,
-            "title": "Environment",
-            "type": "object"
+            "$ref": "#/components/schemas/Environment"
           },
           "float": {
-            "additionalProperties": true,
-            "title": "Float",
-            "type": "object"
+            "$ref": "#/components/schemas/FloatSummary"
           },
           "next_cursor": {
             "anyOf": [
@@ -137,6 +644,19 @@
             ],
             "title": "Next Cursor"
           },
+          "provenance": {
+            "$ref": "#/components/schemas/Provenance"
+          },
+          "time_range": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TimeInterval"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "trajectory": {
             "$ref": "#/components/schemas/ResultTable"
           }
@@ -145,42 +665,414 @@
           "environment",
           "float",
           "trajectory",
-          "next_cursor"
+          "next_cursor",
+          "provenance"
         ],
         "title": "FloatResponse",
+        "type": "object"
+      },
+      "FloatSummary": {
+        "additionalProperties": true,
+        "properties": {
+          "first_cycle": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Cycle"
+          },
+          "first_observed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Observed At"
+          },
+          "last_cycle": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Cycle"
+          },
+          "last_latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Latitude"
+          },
+          "last_longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Longitude"
+          },
+          "last_observed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Observed At"
+          },
+          "platform_number": {
+            "title": "Platform Number",
+            "type": "string"
+          },
+          "profile_count": {
+            "title": "Profile Count",
+            "type": "integer"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "platform_number",
+          "source",
+          "profile_count"
+        ],
+        "title": "FloatSummary",
+        "type": "object"
+      },
+      "GeographyInfo": {
+        "additionalProperties": true,
+        "properties": {
+          "boxes": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Box"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Boxes"
+          },
+          "clipped": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clipped"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "radius_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Radius M"
+          },
+          "sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha256"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "GeographyInfo",
+        "type": "object"
+      },
+      "ProfileHeader": {
+        "additionalProperties": true,
+        "properties": {
+          "content_hash": {
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "cycle_number": {
+            "title": "Cycle Number",
+            "type": "integer"
+          },
+          "direction": {
+            "title": "Direction",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "last_scientific_run_id": {
+            "title": "Last Scientific Run Id",
+            "type": "string"
+          },
+          "latitude": {
+            "title": "Latitude",
+            "type": "number"
+          },
+          "level_count": {
+            "title": "Level Count",
+            "type": "integer"
+          },
+          "longitude": {
+            "title": "Longitude",
+            "type": "number"
+          },
+          "observation_month": {
+            "title": "Observation Month",
+            "type": "string"
+          },
+          "observed_at": {
+            "title": "Observed At",
+            "type": "string"
+          },
+          "platform_number": {
+            "title": "Platform Number",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "source_profile_id": {
+            "title": "Source Profile Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "source_profile_id",
+          "platform_number",
+          "cycle_number",
+          "direction",
+          "observed_at",
+          "observation_month",
+          "longitude",
+          "latitude",
+          "level_count",
+          "content_hash",
+          "last_scientific_run_id"
+        ],
+        "title": "ProfileHeader",
         "type": "object"
       },
       "ProfileResponse": {
         "additionalProperties": true,
         "properties": {
           "environment": {
-            "additionalProperties": true,
-            "title": "Environment",
-            "type": "object"
+            "$ref": "#/components/schemas/Environment"
           },
           "levels": {
             "$ref": "#/components/schemas/ResultTable"
           },
           "profile": {
-            "additionalProperties": true,
-            "title": "Profile",
-            "type": "object"
+            "$ref": "#/components/schemas/ProfileHeader"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/Provenance"
           },
           "qc_policy": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "title": "Qc Policy",
-            "type": "object"
+            "$ref": "#/components/schemas/QcPolicy"
           }
         },
         "required": [
           "environment",
           "profile",
           "qc_policy",
-          "levels"
+          "levels",
+          "provenance"
         ],
         "title": "ProfileResponse",
+        "type": "object"
+      },
+      "Provenance": {
+        "additionalProperties": true,
+        "properties": {
+          "application_commit": {
+            "title": "Application Commit",
+            "type": "string"
+          },
+          "attribution": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Attribution",
+            "type": "object"
+          },
+          "coverage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CoverageSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "environment": {
+            "$ref": "#/components/schemas/Environment"
+          },
+          "execution": {
+            "$ref": "#/components/schemas/Execution"
+          },
+          "geography": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GeographyInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "plan_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Sha256"
+          },
+          "result_sha256": {
+            "title": "Result Sha256",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "transformation": {
+            "title": "Transformation",
+            "type": "string"
+          },
+          "versions": {
+            "additionalProperties": true,
+            "title": "Versions",
+            "type": "object"
+          }
+        },
+        "required": [
+          "source",
+          "environment",
+          "versions",
+          "execution",
+          "result_sha256",
+          "application_commit",
+          "transformation",
+          "attribution"
+        ],
+        "title": "Provenance",
+        "type": "object"
+      },
+      "QcPolicy": {
+        "additionalProperties": true,
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "version",
+          "description"
+        ],
+        "title": "QcPolicy",
         "type": "object"
       },
       "QueryRequest": {
@@ -296,28 +1188,23 @@
         "type": "object"
       },
       "QueryResponse": {
+        "additionalProperties": true,
         "properties": {
           "chart": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/ChartSpec"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Chart"
+            ]
           },
           "coverage": {
-            "additionalProperties": true,
-            "title": "Coverage",
-            "type": "object"
+            "$ref": "#/components/schemas/CoverageSummary"
           },
           "execution": {
-            "additionalProperties": true,
-            "title": "Execution",
-            "type": "object"
+            "$ref": "#/components/schemas/Execution"
           },
           "interpretation": {
             "additionalProperties": true,
@@ -326,8 +1213,7 @@
           },
           "missing": {
             "items": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/SlotCoverage"
             },
             "title": "Missing",
             "type": "array"
@@ -353,9 +1239,7 @@
             "type": "object"
           },
           "provenance": {
-            "additionalProperties": true,
-            "title": "Provenance",
-            "type": "object"
+            "$ref": "#/components/schemas/Provenance"
           },
           "result": {
             "$ref": "#/components/schemas/ResultTable"
@@ -381,8 +1265,7 @@
         "properties": {
           "columns": {
             "items": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/Column"
             },
             "title": "Columns",
             "type": "array"
@@ -416,6 +1299,105 @@
           "non_finite_values"
         ],
         "title": "ResultTable",
+        "type": "object"
+      },
+      "SlotCoverage": {
+        "additionalProperties": true,
+        "properties": {
+          "gaps": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Gaps",
+            "type": "array"
+          },
+          "levels": {
+            "title": "Levels",
+            "type": "integer"
+          },
+          "month": {
+            "title": "Month",
+            "type": "string"
+          },
+          "parts": {
+            "title": "Parts",
+            "type": "integer"
+          },
+          "profiles": {
+            "title": "Profiles",
+            "type": "integer"
+          },
+          "slot": {
+            "title": "Slot",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "tile": {
+            "$ref": "#/components/schemas/Tile"
+          }
+        },
+        "required": [
+          "slot",
+          "month",
+          "tile",
+          "state",
+          "gaps",
+          "profiles",
+          "levels",
+          "parts"
+        ],
+        "title": "SlotCoverage",
+        "type": "object"
+      },
+      "Tile": {
+        "additionalProperties": true,
+        "properties": {
+          "south": {
+            "title": "South",
+            "type": "number"
+          },
+          "west": {
+            "title": "West",
+            "type": "number"
+          }
+        },
+        "required": [
+          "west",
+          "south"
+        ],
+        "title": "Tile",
+        "type": "object"
+      },
+      "TimeInterval": {
+        "additionalProperties": true,
+        "properties": {
+          "end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          }
+        },
+        "title": "TimeInterval",
         "type": "object"
       }
     }
