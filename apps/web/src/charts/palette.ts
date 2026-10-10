@@ -12,10 +12,10 @@ export const CATEGORICAL = [
   "#e34948",
 ] as const;
 
-export const SURFACE = "#fcfcfb";
-export const TEXT_PRIMARY = "#0b0b0b";
-export const TEXT_SECONDARY = "#52514e";
-export const GRID = "#e6e5e1";
+export const SURFACE = "#ffffff";
+export const TEXT_PRIMARY = "#182c36";
+export const TEXT_SECONDARY = "#5b6e79";
+export const GRID = "#e8edf0";
 
 /** Map roles: profile points, the selected float's trajectory, the selected profile. */
 export const MAP_COLORS = {

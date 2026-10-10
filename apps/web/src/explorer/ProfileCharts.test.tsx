@@ -31,7 +31,7 @@ describe("ProfileCharts", () => {
     const first = screen
       .getByRole("heading", { name: "Temperature versus pressure" })
       .closest("section") as HTMLElement;
-    await userEvent.click(within(first).getByRole("button", { name: "Table" }));
+    await userEvent.click(within(first).getByRole("tab", { name: "Table" }));
     expect(
       within(first).getByRole("columnheader", { name: "Pressure (dbar)" }),
     ).toBeInTheDocument();

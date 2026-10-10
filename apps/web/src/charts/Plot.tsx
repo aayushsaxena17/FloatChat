@@ -21,7 +21,21 @@ export function Plot({
       responsive: true,
       modeBarButtonsToRemove: ["lasso2d", "select2d", "autoScale2d"],
     });
+    // Container widths change at responsive breakpoints, even without a window resize.
+    let frame = 0;
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(() => {
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(() => {
+              void Plotly.Plots.resize(node);
+            });
+          });
+    observer?.observe(node);
     return () => {
+      observer?.disconnect();
+      cancelAnimationFrame(frame);
       Plotly.purge(node);
     };
   }, [data, layout]);

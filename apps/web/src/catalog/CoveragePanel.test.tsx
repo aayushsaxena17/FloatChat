@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import type { CoverageResponse } from "../api/types";
 import { CoveragePanel } from "./CoveragePanel";
@@ -7,12 +8,20 @@ import coverage from "../test/fixtures/coverage.json";
 const response = coverage as unknown as CoverageResponse;
 
 describe("CoveragePanel", () => {
-  it("shows the range, region, counts, missingness, source and ingestion timestamps", () => {
+  it("shows the range, region, counts, missingness, source and ingestion timestamps", async () => {
     render(<CoveragePanel coverage={response} />);
     expect(
       screen.getByRole("heading", { name: /Coverage/ }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/2025-01-01 to 2025-02-01/)).toBeInTheDocument();
+    const details = within(
+      screen
+        .getByText("Coverage & ingestion details")
+        .closest("details") as HTMLElement,
+    );
+    expect(details.getByText("FloatChat ingestion")).not.toBeVisible();
+    await userEvent.click(screen.getByText("Coverage & ingestion details"));
+    expect(details.getByText("FloatChat ingestion")).toBeVisible();
+    expect(details.getByText(/2025-01-01 to 2025-02-01/)).toBeInTheDocument();
     expect(screen.getByText(/Arabian Sea \(iho-v3/)).toBeInTheDocument();
     expect(
       screen.getByText(String(response.coverage.estimated_profiles)),
@@ -55,9 +64,10 @@ describe("CoveragePanel", () => {
     };
     render(<CoveragePanel coverage={partial} />);
     expect(screen.getByText("partial coverage")).toBeInTheDocument();
+    expect(screen.getByText("Some source data is missing")).toBeVisible();
     expect(
       screen.getByText(/2025-01: 50°E\/0°N \(fetch_coverage\)/),
-    ).toBeInTheDocument();
+    ).toBeVisible();
   });
 
   it("says when no completed run defines the timestamps", () => {

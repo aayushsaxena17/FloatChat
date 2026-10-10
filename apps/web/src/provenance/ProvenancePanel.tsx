@@ -53,7 +53,7 @@ export function ProvenancePanel({
   };
   return (
     <details className="provenance" open={open} data-testid="provenance">
-      <summary>Provenance (PRD §17)</summary>
+      <summary>Data source & processing details</summary>
       <Facts
         entries={[
           ["Source", `${provenance.source} (${versions.mapping as string})`],

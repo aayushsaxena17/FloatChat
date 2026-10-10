@@ -24,6 +24,7 @@ test("dashboard: Arabian Sea, January 2025, 0-100 dbar shows map points and a pr
   await filters.getByLabel("Region").selectOption("Arabian Sea");
   await filters.getByLabel("Start (UTC day, inclusive)").fill("2025-01-01");
   await filters.getByLabel("End (UTC day, exclusive)").fill("2025-02-01");
+  await filters.locator(".advanced-filters > summary").click();
   await filters.getByLabel("Pressure from (dbar)").fill("0");
   await filters.getByLabel("Pressure to (dbar)").fill("100");
   await expect(page).toHaveURL(/region=Arabian\+Sea/);
@@ -43,6 +44,8 @@ test("dashboard: Arabian Sea, January 2025, 0-100 dbar shows map points and a pr
   await expect(mapStatus).toHaveText(/[1-9]\d* profiles plotted/, {
     timeout: 60_000,
   });
+  const mapBounds = await page.locator(".map-canvas").boundingBox();
+  expect(mapBounds?.height).toBeGreaterThan(250);
   await expect(
     page.getByRole("heading", { name: "Temperature mean (°C)" }),
   ).toBeVisible({ timeout: 60_000 });
@@ -81,7 +84,7 @@ test("dashboard: Arabian Sea, January 2025, 0-100 dbar shows map points and a pr
   await expect(first.locator(".chart")).toContainText("Pressure (dbar)", {
     timeout: 30_000,
   });
-  await first.getByRole("button", { name: "Table" }).click();
+  await first.getByRole("tab", { name: "Table" }).click();
   await expect(
     first.getByRole("columnheader", { name: "Temperature (°C)" }),
   ).toBeVisible();
