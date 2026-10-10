@@ -125,6 +125,29 @@ describe("figuresFromChart", () => {
     });
     expect(figure.layout.yaxis?.title).toEqual({ text: "Temperature (°C)" });
     expect(figure.layout.yaxis?.autorange).toBe(true);
+    // The fixture holds three profiles: each keeps its own slot and the legend shows.
+    expect(figure.layout.showlegend).toBe(true);
+    const colours = (data: unknown[]) =>
+      new Set(
+        data.map(
+          (trace) => (trace as { marker: { color: string } }).marker.color,
+        ),
+      ).size;
+    expect(colours(figure.data)).toBe(3);
+    // Past three profiles the identity folds to one colour and no legend (ADR-0065).
+    const chart = tsResponse.chart as ChartSpec;
+    const traces = (
+      chart.plotly as unknown as { traces: Array<Record<string, unknown>> }
+    ).traces;
+    const many: ChartSpec = {
+      ...chart,
+      series: [...chart.series, "extra"],
+      plotly: { traces: [...traces, { ...traces[0], name: "extra" }] },
+    };
+    const [folded] = figuresFromChart(many, tsResponse.result);
+    expect(folded.data.length).toBe(4);
+    expect(folded.layout.showlegend).toBe(false);
+    expect(colours(folded.data)).toBe(1);
   });
 
   it("points the pressure axis downwards for a profile plot", () => {

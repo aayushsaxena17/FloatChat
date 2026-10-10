@@ -5,6 +5,7 @@ import type { Data, Layout } from "plotly.js";
 import type { ChartAxis, ChartSpec, ResultTable } from "../api/types";
 import { axisTitle, columnLabel, unitLabel } from "../catalog/units";
 import {
+  CATEGORICAL,
   GRID,
   SURFACE,
   TEXT_PRIMARY,
@@ -246,14 +247,17 @@ export function figuresFromChart(
       };
     });
   }
-  // profile_plot and ts_diagram: one figure, one trace per profile, pressure downwards.
+  // profile_plot and ts_diagram: one figure, one trace per profile, pressure downwards. Past
+  // three profiles the colours fold to one slot (ADR-0065): identity stays on hover and in
+  // the table, and no legend of opaque identifiers competes with the axes.
   const y = chart.axis.y;
   const reversed = Boolean(y?.reversed);
   const yLabel = y?.label ?? "";
+  const folded = traces.length > 3;
   const data = traces.map((trace) =>
     markerTrace(
       trace,
-      seriesColor(trace.name ?? "", series),
+      folded ? CATEGORICAL[2] : seriesColor(trace.name ?? "", series),
       trace.mode ?? "markers",
       hoverTemplate(xLabel, xUnit, yLabel, unitLabel(y?.unit)),
     ),
@@ -263,7 +267,7 @@ export function figuresFromChart(
     axisTitle(yLabel, y?.unit),
     reversed,
   );
-  layout.showlegend = traces.length > 1;
+  layout.showlegend = traces.length > 1 && !folded;
   return [
     {
       key: chart.type,

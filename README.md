@@ -2,7 +2,7 @@
 
 FloatChat is a research workspace for exploring Argo ocean observations through a conversational interface. This repository is being rebuilt from a hackathon prototype into a Python/React monorepo. Stage 0 provides local infrastructure and a tested scaffold; scientific ingestion, query features, and LLM integration belong to later stages.
 
-**Status: under construction. Stage 1 (Argovis ingestion, Jan-Mar 2025 Indian Ocean acceptance) is accepted and merged; Stage 2 (query engine and API) is in progress on `codex/stage-2`.**
+**Status: under construction. Stage 1 (Argovis ingestion, Jan-Mar 2025 Indian Ocean acceptance) and Stage 2 (query engine and API) are accepted and merged; Stage 3 (web dashboard) is in progress on `codex/stage-3`.**
 
 ## Local development
 
@@ -70,6 +70,29 @@ make stop
 `make stop` preserves volumes. `make restart` restarts application services. There is no ordinary reset/volume-deletion command. Integration uses a unique project and unused loopback ports, stops that project afterward, and retains its volumes. It never interrupts the normal development project. Restricted configuration and diagnostic logs are retained outside Git alongside those volumes. The reports identify retained test projects for later owner-controlled cleanup.
 
 Empty-volume startup must finish within 300 seconds after builds; subsequent startup must finish within 120 seconds. Readiness returns a sanitized `503` within five seconds when a required dependency is unavailable. Liveness remains `200` while the API process runs. Database and Redis have no published ports; API and web bind to loopback only. The application bucket is private.
+
+### Stage 3 web dashboard
+
+The React dashboard (Vite, React Router, TanStack Query, MapLibre GL, Plotly) runs at
+http://127.0.0.1:5173 against the local API: `/dashboard` (coverage panel, profile map, time
+series and distribution charts), `/explore/map` (clustered profile locations, float trajectories,
+the region bounding box, a profile list as the keyboard path) and `/explore/profiles` (profile
+list, temperature and salinity against pressure, temperature-salinity diagrams). Every filter
+lives in the URL, for example:
+
+```text
+http://127.0.0.1:5173/dashboard?region=Arabian%20Sea&start=2025-01-01&end=2025-02-01&depth_min=0&depth_max=100&qc=science_ready
+```
+
+Every result shows its PRD §17 provenance; every chart has a table view and units on its axes;
+the basemap is a bundled Natural Earth land layer (no tile server, nothing fetched from the
+network; see ADR-0062). The other PRD §14.1 routes are stubs naming the stage that delivers
+them. Design and decisions: [docs/stage3-plan.md](docs/stage3-plan.md), ADR-0061 to ADR-0065.
+
+Screenshots of the acceptance run on the imported Jan-Mar 2025 dataset are under
+`reports/stage3-acceptance-<date>/` with the report `reports/stage3-acceptance-<date>.json`
+(`scripts/stage3_acceptance.py`). The end-to-end scenario (`apps/web/e2e/dashboard.spec.ts`)
+runs in CI against the Docker stack seeded by `scripts/science_seed.py` (ADR-0063).
 
 ## Security gate
 
