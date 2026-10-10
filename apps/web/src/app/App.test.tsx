@@ -19,7 +19,10 @@ describe("App shell", () => {
     stubApi({ "/v1/health/ready": { status: "ok" } });
     render(<App />);
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Dashboard" }),
+      await screen.findByRole("heading", {
+        level: 1,
+        name: /An ocean of data/,
+      }),
     ).toBeInTheDocument();
     expect(await screen.findByText("Local services ready")).toBeInTheDocument();
     expect(

@@ -26,7 +26,15 @@ export function ProfilesView() {
   );
   return (
     <>
-      <h1>Explore: profiles</h1>
+      <div className="page-heading explorer-heading">
+        <div>
+          <p className="eyebrow">THE OBSERVATORY / VERTICAL EXPLORATION</p>
+          <h1>Explore: profiles</h1>
+          <p className="page-description">
+            Read the water column through temperature, salinity, and pressure.
+          </p>
+        </div>
+      </div>
       <FilterBar
         filters={filters}
         update={update}

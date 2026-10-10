@@ -50,6 +50,16 @@ describe("Dashboard", () => {
     expect(await screen.findByTestId("map-status")).toHaveTextContent(
       /\d+ profiles plotted/,
     );
+    const heroMapLink = screen.getByRole("link", { name: "Explore the ocean" });
+    const destination = new URL(
+      heroMapLink.getAttribute("href")!,
+      "http://localhost",
+    );
+    expect(destination.pathname).toBe("/explore/map");
+    for (const [key, value] of new URL(SCENARIO, "http://localhost")
+      .searchParams) {
+      expect(destination.searchParams.get(key)).toBe(value);
+    }
     // The stub answers both plan queries with the line fixture, so each heading appears twice.
     expect(
       (await screen.findAllByRole("heading", { name: "Temperature mean (°C)" }))

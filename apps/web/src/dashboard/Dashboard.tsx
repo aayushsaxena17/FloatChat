@@ -28,6 +28,7 @@ import {
 import { MapView } from "../explorer/MapView";
 import { useExplorerData } from "../explorer/useExplorerData";
 import { ProvenancePanel } from "../provenance/ProvenancePanel";
+import { OceanHero } from "./OceanHero";
 
 /** The contract's chart_points_per_series limit as the parameter catalogue publishes it. */
 export function chartPointBound(parameters: unknown): number | null {
@@ -78,12 +79,13 @@ export function Dashboard() {
   const exploreQuery = toSearchParams(filters).toString();
   return (
     <div className="dashboard">
-      <div className="page-heading">
+      <OceanHero query={exploreQuery} />
+      <div className="workspace-heading" id="observations" tabIndex={-1}>
         <div>
-          <p className="eyebrow">OCEAN DATA EXPLORER</p>
-          <h1>Dashboard</h1>
+          <p className="eyebrow">01 / OBSERVATION WORKSPACE</p>
+          <h2>Your ocean, in focus.</h2>
           <p className="page-description">
-            Explore Argo observations across the Indian Ocean.
+            A closer look at the Indian Ocean, one observation at a time.
           </p>
         </div>
         <Button asChild variant="outline">
@@ -212,7 +214,7 @@ export function Dashboard() {
       <section className="analysis-section" aria-labelledby="trends-title">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">OBSERVATIONS OVER TIME</p>
+            <p className="eyebrow">02 / OBSERVATIONS OVER TIME</p>
             <h2 id="trends-title">Temperature & salinity</h2>
             <p className="page-description">
               Profile-balanced averages and the number of contributing profiles.
@@ -270,6 +272,7 @@ export function Dashboard() {
       >
         <div className="section-heading">
           <div>
+            <p className="eyebrow">03 / BENEATH THE AVERAGES</p>
             <h2 id="distribution-title">Profile distribution</h2>
             <p className="page-description">
               How individual profile averages are spread across the selection.
