@@ -88,6 +88,9 @@ against the merged code; the advisor reviewed the approach before the plan was w
   `tests/stage3`. Later commits on the branch: the histogram bound, the map overlay position,
   category axes for month and day keys (48 Vitest cases). Stage 3 gate closed 2026-10-10;
   merge of PR #8 is the owner's decision (rebase onto `main` after PR #7).
+- [x] 2026-10-10: a re-run of the `integration` job failed on a real race in the URL filter hook
+  (fast successive control changes dropped `end`); fixed in `explorer/useFilters.ts` with a
+  regression test (50 Vitest cases); CI re-checked on the fix commit.
 
 ## Stage 2 - post-gate fixes on `codex/stage-2-fixes` (ADR-0058 amendment), 2026-10-09
 

@@ -93,7 +93,7 @@ Local (WSL2 Ubuntu 24.04, Docker Desktop); the Python and web suites re-run on t
 | `ruff check`, `ruff format --check`, `pnpm lint`, `pnpm format:check` | clean |
 | `mypy` (strict, 53 source files), `tsc --noEmit` | clean |
 | `pytest -m 'not integration'` (Stages 0-3) | 1,870 passed, 1 skipped, 122 integration deselected (97.2 s on `1f3ac89`) |
-| `pnpm test` (Vitest, jsdom, MapLibre and Plotly mocked) | 48 passed in 11 files |
+| `pnpm test` (Vitest, jsdom, MapLibre and Plotly mocked) | 50 passed in 12 files |
 | `pytest tests/stage2/test_integration.py -m integration` (disposable PostGIS, migration 0017, read provenance) | 12 passed |
 | `pnpm build` (Vite) | built; chunks `index` 503 kB, `maplibre` 1,058 kB, `plotly` 1,512 kB (gzip 159, 288, 504 kB), worker 508 kB |
 | `make secrets-current` (gitleaks 8.30.1) | one finding, the owner's git-ignored `.env.txt` (ADR-0039); nothing tracked |
@@ -150,6 +150,11 @@ containerised Vite dev server.
 
 - The `docker` and `integration` jobs pull base images and can hit Docker Hub's anonymous rate
   limit as PR #7 did; both runs of this stage passed without it.
+- A re-run of the CI `integration` job on PR #8 failed: the end-to-end test filled the date and
+  depth controls faster than React re-rendered, and each filter update rebuilt the URL from the
+  last render's filters, so a later write dropped `end`. Fixed by building every update on the
+  latest URL the hook wrote (`explorer/useFilters.ts`), with a regression test that fails on the
+  old hook. Earlier green runs had simply not hit the race.
 - The Vitest suite showed one timing-dependent failure in `Dashboard.test.tsx` during a run with
   Docker builds in parallel on this host; it did not reproduce in two further runs or in CI.
 - Bundle size: Plotly's cartesian bundle and MapLibre total about 950 kB gzipped; they are split
