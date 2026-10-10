@@ -86,19 +86,19 @@ uv run --all-packages --frozen python scripts/stage3_acceptance.py --base-url ht
 
 ## Tests and CI
 
-Local, on `56900f4` and re-run on `815751a` for the web and Python suites (WSL2 Ubuntu 24.04, Docker Desktop):
+Local (WSL2 Ubuntu 24.04, Docker Desktop); the Python and web suites re-run on the gate head `1f3ac89`, the Docker acceptance and the integration suite on `56900f4` (no Python source changed afterwards):
 
 | Check | Result |
 |---|---|
 | `ruff check`, `ruff format --check`, `pnpm lint`, `pnpm format:check` | clean |
 | `mypy` (strict, 53 source files), `tsc --noEmit` | clean |
-| `pytest -m 'not integration'` (Stages 0-3) | 1,870 passed, 1 skipped, 122 integration deselected (75.7 s) |
+| `pytest -m 'not integration'` (Stages 0-3) | 1,870 passed, 1 skipped, 122 integration deselected (97.2 s on `1f3ac89`) |
 | `pnpm test` (Vitest, jsdom, MapLibre and Plotly mocked) | 48 passed in 11 files |
 | `pytest tests/stage2/test_integration.py -m integration` (disposable PostGIS, migration 0017, read provenance) | 12 passed |
 | `pnpm build` (Vite) | built; chunks `index` 503 kB, `maplibre` 1,058 kB, `plotly` 1,512 kB (gzip 159, 288, 504 kB), worker 508 kB |
 | `make secrets-current` (gitleaks 8.30.1) | one finding, the owner's git-ignored `.env.txt` (ADR-0039); nothing tracked |
 | `scripts/integration.py` (Docker acceptance: empty-database checks, seed of 9 profiles with catalogue and objects, API restart with warm-up, probes, outages, repeat start-up, Playwright e2e) | complete; [reports/stage0-integration.json](../reports/stage0-integration.json), project `floatchat-stage0-test-ac9dd329caa2`, empty-volume start-up 27.4 s, 5 profiles in the scenario, both e2e specs passed (7.9 s and 3.8 s) |
-| Playwright against the imported dataset (host Vite, dev API) | 2 passed ([report](../reports/stage3-acceptance-2026-10-10.json)) |
+| Playwright against the imported dataset (the `web` container on 5173, dev API) | 2 passed ([report](../reports/stage3-acceptance-2026-10-10.json)) |
 
 CI (GitHub Actions, workflow `CI`) on the pull-request heads: run
 [38007878218](https://github.com/aayushsaxena17/FloatChat/actions/runs/38007878218) on `5b5bd54` and
@@ -124,7 +124,7 @@ screenshots `01-dashboard.png`, `02-map.png`, `03-profiles.png` under
 | Profiles listed and plotted | 132 |
 | Coverage slots (month x tile): covered / verified empty / missing | 9 / 1 / 0 of 10 |
 | Profiles and levels in the manifests for the scenario's region and month | 291; 185,694 |
-| Playwright: dashboard scenario; shell check | 13.4 s; 2.2 s (both passed) |
+| Playwright: dashboard scenario; shell check | 13.0 s; 3.2 s (both passed, on the `web` container) |
 
 Seeded Docker project ([reports/stage0-integration.json](../reports/stage0-integration.json)):
 5 profiles in the scenario (the seed's January Arabian Sea rows), e2e passed in 7.9 s on the
