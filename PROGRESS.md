@@ -65,8 +65,15 @@ against the merged code; the advisor reviewed the approach before the plan was w
   [reports/stage3-acceptance-2026-10-10.json](reports/stage3-acceptance-2026-10-10.json) passed
   (132 profiles in the scenario, 9 of 10 slots covered and 1 verified empty, screenshots under
   `reports/stage3-acceptance-2026-10-10/`).
-- [ ] `scripts/integration.py` (seeded Docker acceptance with the e2e) on this host; CI on the
-  pushed head; gate report `docs/stage3-gate.md`.
+- [x] `scripts/integration.py` on this host (2026-10-10): complete, project
+  `floatchat-stage0-test-ac9dd329caa2`, empty-volume start-up 27.4 s, 5 seeded profiles in the
+  scenario, the Stage 0 probes and outage checks, both Playwright specs green on the
+  containerised Vite server (7.9 s, 3.8 s) ([report](reports/stage0-integration.json)).
+- [x] Full offline suite on `56900f4`: `pytest -m 'not integration'` 1,870 passed, 1 skipped;
+  `pnpm test` 47 passed; `make lint` and `make typecheck` clean; `pnpm build` green.
+- [x] Gate report [docs/stage3-gate.md](docs/stage3-gate.md); branch pushed as
+  `origin/codex/stage-3` through the owner's stored GitHub credential.
+- [ ] CI on the pushed head and the pull request into `main` (recorded below once known).
 
 ## Stage 2 - post-gate fixes on `codex/stage-2-fixes` (ADR-0058 amendment), 2026-10-09
 
