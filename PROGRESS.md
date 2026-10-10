@@ -73,7 +73,9 @@ against the merged code; the advisor reviewed the approach before the plan was w
   `pnpm test` 47 passed; `make lint` and `make typecheck` clean; `pnpm build` green.
 - [x] Gate report [docs/stage3-gate.md](docs/stage3-gate.md); branch pushed as
   `origin/codex/stage-3` through the owner's stored GitHub credential.
-- [ ] CI on the pushed head and the pull request into `main` (recorded below once known).
+- [x] Pull request [#8](https://github.com/aayushsaxena17/FloatChat/pull/8) into `main` opened
+  2026-10-10 (base `codex/stage-2-fixes`; rebased after PR #7 merges).
+- [ ] CI on the pull-request head (recorded here once the run completes).
 
 ## Stage 2 - post-gate fixes on `codex/stage-2-fixes` (ADR-0058 amendment), 2026-10-09
 

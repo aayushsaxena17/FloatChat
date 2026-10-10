@@ -1,7 +1,8 @@
 # Stage 3 gate - web dashboard
 
 **Stage 3 - complete locally; CI pending on the pushed head.** Branch `codex/stage-3` from
-`codex/stage-2-fixes` (`5cf262e`, PR #7); the pull request targets `main` and is rebased once PR #7
+`codex/stage-2-fixes` (`5cf262e`, PR #7); pull request
+[#8](https://github.com/aayushsaxena17/FloatChat/pull/8) targets `main` and is rebased once PR #7
 is squash-merged (ADR-0061). Scope: build prompt "Stage 3", PRD §2.1, §5.1, §5.10, §11.3, §14,
 §17; reviewed plan [docs/stage3-plan.md](stage3-plan.md); decisions ADR-0061 to ADR-0065. Owner
 instruction 2026-10-09: build on the accepted Stage 2 and decide open questions without approval;
