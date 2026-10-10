@@ -1,4 +1,6 @@
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
@@ -16,13 +18,22 @@ def create_app(
     timeout: float | None = None,
     query_service: QueryService | None = None,
 ) -> FastAPI:
+    runtime = QueryRuntime(service=query_service)
+
+    @asynccontextmanager
+    async def lifespan(_application: FastAPI) -> AsyncIterator[None]:
+        # The part cache warms in a background thread; readiness and requests never wait on it.
+        runtime.start_warmup()
+        yield
+
     app = FastAPI(
         title="FloatChat",
         version=API_VERSION,
         description="Argo ocean observations: catalogue, floats, profiles and validated query "
         "plans compiled to parameterised SQL or bounded DuckDB (Stage 2).",
+        lifespan=lifespan,
     )
-    install(app, QueryRuntime(service=query_service))
+    install(app, runtime)
     _configure_logging()
 
     @app.get("/v1/health/live")

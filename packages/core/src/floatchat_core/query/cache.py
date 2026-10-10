@@ -13,12 +13,24 @@ import time
 from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeout
+from dataclasses import dataclass
 from pathlib import Path
 
 from .errors import QueryError
 
 OBJECT_KEY = re.compile(r"^normalised/sha256/([0-9a-f]{64})\.parquet$")
 Fetch = Callable[[str, int], bytes]
+
+
+@dataclass(frozen=True)
+class Fill:
+    """Outcome of one cache fill: every path verified, counts of fetched and reused parts."""
+
+    paths: list[Path]
+    fetched: int
+    fetched_bytes: int
+    reused: int
+    seconds: float
 
 
 class PartCache:
@@ -34,6 +46,10 @@ class PartCache:
 
     def path(self, object_key: str, sha256: str, byte_count: int) -> Path:
         """The verified local file for a catalogue part, fetching and verifying if absent."""
+        return self._resolve(object_key, sha256, byte_count)[0]
+
+    def _resolve(self, object_key: str, sha256: str, byte_count: int) -> tuple[Path, bool]:
+        """The verified file and whether this call fetched it (False: reused from the cache)."""
         match = OBJECT_KEY.fullmatch(object_key)
         if match is None or match.group(1) != sha256:
             raise QueryError("execution_failed", message="Catalogue object key is malformed.")
@@ -41,7 +57,7 @@ class PartCache:
         try:
             if target.stat().st_size == byte_count:
                 os.utime(target)
-                return target
+                return target, False
         except FileNotFoundError:
             pass
         payload = self.fetch(object_key, byte_count)
@@ -59,7 +75,7 @@ class PartCache:
                 Path(temporary).unlink(missing_ok=True)
                 raise
             self._evict(keep=target)
-        return target
+        return target, True
 
     def _evict(self, *, keep: Path) -> None:
         """Least-recently-used eviction above the bound; the part just stored always survives."""
@@ -76,6 +92,40 @@ class PartCache:
             path.unlink(missing_ok=True)
             total -= size
 
+    def fill(
+        self,
+        items: Sequence[tuple[str, str, int]],
+        *,
+        workers: int = 4,
+        deadline_seconds: float = 120.0,
+    ) -> Fill:
+        """Verified local files for several parts, fetched in parallel under one time budget."""
+        started = time.monotonic()
+        with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
+            futures = [
+                pool.submit(self._resolve, key, sha256, byte_count)
+                for key, sha256, byte_count in items
+            ]
+            paths: list[Path] = []
+            fetched = fetched_bytes = reused = 0
+            for future, (_key, _sha256, byte_count) in zip(futures, items, strict=True):
+                remaining = deadline_seconds - (time.monotonic() - started)
+                try:
+                    path, was_fetched = future.result(timeout=max(0.0, remaining))
+                except FutureTimeout:
+                    for pending in futures:
+                        pending.cancel()
+                    raise QueryError(
+                        "execution_failed", message="Object fetch exceeded its time budget."
+                    ) from None
+                paths.append(path)
+                if was_fetched:
+                    fetched += 1
+                    fetched_bytes += byte_count
+                else:
+                    reused += 1
+        return Fill(paths, fetched, fetched_bytes, reused, round(time.monotonic() - started, 3))
+
     def paths(
         self,
         items: Sequence[tuple[str, str, int]],
@@ -83,24 +133,7 @@ class PartCache:
         workers: int = 4,
         deadline_seconds: float = 120.0,
     ) -> list[Path]:
-        """Verified local files for several parts, fetched in parallel under one time budget."""
-        started = time.monotonic()
-        with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
-            futures = [
-                pool.submit(self.path, key, sha256, byte_count) for key, sha256, byte_count in items
-            ]
-            results: list[Path] = []
-            for future in futures:
-                remaining = deadline_seconds - (time.monotonic() - started)
-                try:
-                    results.append(future.result(timeout=max(0.0, remaining)))
-                except FutureTimeout:
-                    for pending in futures:
-                        pending.cancel()
-                    raise QueryError(
-                        "execution_failed", message="Object fetch exceeded its time budget."
-                    ) from None
-        return results
+        return self.fill(items, workers=workers, deadline_seconds=deadline_seconds).paths
 
     def size(self) -> int:
         return sum(
