@@ -1,6 +1,6 @@
 # Stage progress
 
-## Stage 3 - plan reviewed and authorized (ADR-0061..0065), 2026-10-09
+## Stage 3 - web dashboard complete, CI green on PR #8 (ADR-0061..0065), 2026-10-10
 
 Owner instruction 2026-10-09: Stage 2 (PR #6, merged) and the Stage 2 fixes (PR #7, open) are
 accepted; build Stage 3 on them and decide open questions without further approval. Branch
@@ -83,7 +83,11 @@ against the merged code; the advisor reviewed the approach before the plan was w
   bound and says how to narrow the filters; and the Playwright and secrets checks were run on the
   final head (`pnpm exec playwright test` 2 passed; `make secrets-current` reports only the
   owner's git-ignored `.env.txt` of ADR-0039, which CI never sees).
-- [ ] CI on the pull-request head (recorded here once the run completes).
+- [x] CI green: run 38007878218 on `5b5bd54` and run 38008497585 on the final head `815751a`,
+  all seven jobs including the seeded `integration` e2e and `stage1-offline-components` with
+  `tests/stage3`. Later commits on the branch: the histogram bound, the map overlay position,
+  category axes for month and day keys (48 Vitest cases). Stage 3 gate closed 2026-10-10;
+  merge of PR #8 is the owner's decision (rebase onto `main` after PR #7).
 
 ## Stage 2 - post-gate fixes on `codex/stage-2-fixes` (ADR-0058 amendment), 2026-10-09
 

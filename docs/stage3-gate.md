@@ -1,6 +1,6 @@
 # Stage 3 gate - web dashboard
 
-**Stage 3 - complete locally; CI pending on the pushed head.** Branch `codex/stage-3` from
+**Stage 3 - complete.** CI green on `815751a` (run 38008497585, all seven jobs) and on `5b5bd54` (run 38007878218). Branch `codex/stage-3` from
 `codex/stage-2-fixes` (`5cf262e`, PR #7); pull request
 [#8](https://github.com/aayushsaxena17/FloatChat/pull/8) targets `main` and is rebased once PR #7
 is squash-merged (ADR-0061). Scope: build prompt "Stage 3", PRD §2.1, §5.1, §5.10, §11.3, §14,
@@ -86,22 +86,27 @@ uv run --all-packages --frozen python scripts/stage3_acceptance.py --base-url ht
 
 ## Tests and CI
 
-Local, on `56900f4` (WSL2 Ubuntu 24.04, Docker Desktop):
+Local, on `56900f4` and re-run on `815751a` for the web and Python suites (WSL2 Ubuntu 24.04, Docker Desktop):
 
 | Check | Result |
 |---|---|
 | `ruff check`, `ruff format --check`, `pnpm lint`, `pnpm format:check` | clean |
 | `mypy` (strict, 53 source files), `tsc --noEmit` | clean |
 | `pytest -m 'not integration'` (Stages 0-3) | 1,870 passed, 1 skipped, 122 integration deselected (75.7 s) |
-| `pnpm test` (Vitest, jsdom, MapLibre and Plotly mocked) | 47 passed in 11 files |
+| `pnpm test` (Vitest, jsdom, MapLibre and Plotly mocked) | 48 passed in 11 files |
 | `pytest tests/stage2/test_integration.py -m integration` (disposable PostGIS, migration 0017, read provenance) | 12 passed |
 | `pnpm build` (Vite) | built; chunks `index` 503 kB, `maplibre` 1,058 kB, `plotly` 1,512 kB (gzip 159, 288, 504 kB), worker 508 kB |
 | `make secrets-current` (gitleaks 8.30.1) | one finding, the owner's git-ignored `.env.txt` (ADR-0039); nothing tracked |
 | `scripts/integration.py` (Docker acceptance: empty-database checks, seed of 9 profiles with catalogue and objects, API restart with warm-up, probes, outages, repeat start-up, Playwright e2e) | complete; [reports/stage0-integration.json](../reports/stage0-integration.json), project `floatchat-stage0-test-ac9dd329caa2`, empty-volume start-up 27.4 s, 5 profiles in the scenario, both e2e specs passed (7.9 s and 3.8 s) |
 | Playwright against the imported dataset (host Vite, dev API) | 2 passed ([report](../reports/stage3-acceptance-2026-10-10.json)) |
 
-CI on the pushed head is recorded in PROGRESS.md once the run completes (the Stage 2 fixes PR
-saw Docker Hub rate limits on the image-building jobs; the same may recur).
+CI (GitHub Actions, workflow `CI`) on the pull-request heads: run
+[38007878218](https://github.com/aayushsaxena17/FloatChat/actions/runs/38007878218) on `5b5bd54` and
+run [38008497585](https://github.com/aayushsaxena17/FloatChat/actions/runs/38008497585) on the final
+head `815751a`: `python`, `web`, `docker`, `integration` (the seeded Docker acceptance with both
+Playwright specs), `secrets-current`, `secrets-history` and `stage1-offline-components` (with
+`tests/stage3` and the Stage 2 integration step) all succeeded. The Docker Hub rate limit that hit
+PR #7 did not recur.
 
 ## Measured results
 
@@ -143,8 +148,10 @@ containerised Vite dev server.
 
 ## Known issues and risks
 
-- CI result pending at the time of writing; the `docker` and `integration` jobs pull base images
-  and may hit Docker Hub's anonymous rate limit as PR #7 did.
+- The `docker` and `integration` jobs pull base images and can hit Docker Hub's anonymous rate
+  limit as PR #7 did; both runs of this stage passed without it.
+- The Vitest suite showed one timing-dependent failure in `Dashboard.test.tsx` during a run with
+  Docker builds in parallel on this host; it did not reproduce in two further runs or in CI.
 - Bundle size: Plotly's cartesian bundle and MapLibre total about 950 kB gzipped; they are split
   into their own cacheable chunks but not lazy-loaded per route (follow-up).
 - The map eases to a selected profile at zoom 8.2 so it leaves its cluster; on a narrow viewport
