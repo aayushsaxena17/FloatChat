@@ -25,6 +25,7 @@ describe("figuresFromChart", () => {
       expect(figure.layout.yaxis?.title).toEqual({ text: figure.title });
       expect(figure.layout.xaxis?.title).toEqual({ text: "Day" });
       expect(figure.layout.yaxis?.autorange).toBe(true);
+      expect(figure.layout.xaxis?.type).toBe("category");
     }
     const counts = figures[1];
     expect(

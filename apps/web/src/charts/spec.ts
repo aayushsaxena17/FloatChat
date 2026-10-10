@@ -196,6 +196,10 @@ export function figuresFromChart(
       const yTitle = groupTitle(group, unit);
       const layout = baseLayout(axisTitle(xLabel, x.unit), yTitle, false);
       layout.showlegend = group.length > 1;
+      // Month and day keys are calendar labels, not instants: categories keep the ticks on
+      // the keys themselves instead of Plotly's weekly date ticks.
+      if (x.field === "month" || x.field === "day")
+        layout.xaxis = { ...layout.xaxis, type: "category" };
       return {
         key: `${chart.type}:${unit ?? group[0]?.name ?? ""}`,
         title: yTitle,
