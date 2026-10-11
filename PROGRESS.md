@@ -1,5 +1,28 @@
 # Stage progress
 
+## Dashboard latency (ADR-0066..0068), 2026-10-11
+
+Owner request 2026-10-11: one local checkout synced with `main`, and a faster dashboard through
+concurrency and proper DuckDB use. The advisor reviewed the plan before work started (ADR-0039
+convention) and its amendments were applied: archive before deleting, the Windows Docker project
+left alone, the DuckDB security lock proven before choosing the native reader, ADRs recorded.
+
+- [x] Single checkout `~/FloatChat` on `main` (`7efeb2d`); the Stage 0 clones and the perf worktree
+  deleted after archiving their unique files and a bundle of every local branch under
+  `~/FloatChat-archive`; 32 old Docker test and acceptance projects removed (the dev stack, the
+  accepted session `302412131a7c99fb` and the Windows project kept); hard-coded checkout paths
+  fixed in pull request #10.
+- [x] ADR-0066: shared locked DuckDB engine with native `read_parquet`, all CPUs, a concurrency
+  bound; `POST /v1/query` off the event loop.
+- [x] ADR-0067: in-process result and coverage memo keyed by the dataset version.
+- [x] ADR-0068: IndexedDB persistence of finished answers with a dataset-version guard; Plotly and
+  MapLibre loaded on demand (entry 139 kB gzipped).
+- [x] Evidence: [reports/dashboard_latency_2026-10-11.md](reports/dashboard_latency_2026-10-11.md)
+  (whole-quarter median 2.7 s before, 0.63-0.92 s after, repeats 17-21 ms; health during
+  aggregates about 10 ms instead of 1.3 s); route agreement re-proven
+  ([reports/stage2-route-check_2026-10-11.md](reports/stage2-route-check_2026-10-11.md), 10 of 10).
+- [ ] CI on the pull request.
+
 ## Stage 3 - web dashboard complete, CI green on PR #8 (ADR-0061..0065), 2026-10-10
 
 Owner instruction 2026-10-09: Stage 2 (PR #6, merged) and the Stage 2 fixes (PR #7, open) are

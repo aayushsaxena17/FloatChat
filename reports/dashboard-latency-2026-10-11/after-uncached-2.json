@@ -1,0 +1,1 @@
+{"whole_quarter_ms": [1361, 790, 544, 595, 627], "arabian_sea_ms": [1468, 201, 298, 234, 193], "health_live_during_uncached_aggregates_ms": {"max": 32, "median": 8, "samples": 34, "aggregates_ms": [863, 547, 609]}, "parallel_pair_ms": {"wall": 681, "arabian": 274, "whole": 680}}

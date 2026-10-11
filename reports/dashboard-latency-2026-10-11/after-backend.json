@@ -1,0 +1,54 @@
+{
+ "whole_quarter": [
+  [
+   1605,
+   "duckdb",
+   null
+  ],
+  [
+   21,
+   "duckdb",
+   true
+  ],
+  [
+   17,
+   "duckdb",
+   true
+  ]
+ ],
+ "arabian_sea": [
+  [
+   970,
+   "postgresql",
+   null
+  ],
+  [
+   9,
+   "postgresql",
+   true
+  ],
+  [
+   8,
+   "postgresql",
+   true
+  ]
+ ],
+ "health_live_during_aggregate_ms": {
+  "max": 9,
+  "median": 3,
+  "samples": 96
+ },
+ "parallel_pair": {
+  "wall_ms": 35,
+  "whole": [
+   15,
+   "duckdb",
+   true
+  ],
+  "arabian": [
+   34,
+   "postgresql",
+   true
+  ]
+ }
+}
