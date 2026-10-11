@@ -1,12 +1,30 @@
 import { test, expect, type Page } from "@playwright/test";
+import type { ProfileResponse } from "../src/api/types";
 
 test("profile with bad salinity shows reasons instead of empty axes", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1818, height: 1000 });
+  // CI seeds five synthetic profiles; use an available observation and simulate bad
+  // salinity in its response rather than depending on a locally imported profile ID.
+  await page.route("**/v1/profiles/*", async (route) => {
+    const response = await route.fetch();
+    const profile = (await response.json()) as ProfileResponse;
+    const names = profile.levels.columns.map((column) => column.name);
+    for (const row of profile.levels.rows) {
+      row[names.indexOf("salinity")] = null;
+      row[names.indexOf("salinity_qc")] = "4";
+    }
+    await route.fulfill({ response, json: profile });
+  });
   await page.goto(
-    "/explore/profiles?region=Indian+Ocean&start=2025-01-01&end=2025-04-01&qc=science_ready&platform=5906257&profile=f85f411b-9a3f-4de7-a073-e2ca8818f2be",
+    "/explore/profiles?region=Arabian+Sea&start=2025-01-01&end=2025-02-01&qc=science_ready",
   );
+  await page
+    .getByTestId("profile-list")
+    .getByRole("button", { name: "Show profile" })
+    .first()
+    .click();
   const charts = page.getByTestId("profile-charts");
   await expect(charts.getByText("No readings", { exact: true })).toHaveCount(2);
   const salinity = charts
