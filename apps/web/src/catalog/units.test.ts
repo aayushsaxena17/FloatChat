@@ -3,6 +3,8 @@ import {
   axisTitle,
   columnLabel,
   formatNumber,
+  formatDay,
+  formatCoordinate,
   formatUtc,
   unitLabel,
   variableOf,
@@ -32,8 +34,13 @@ describe("units", () => {
     expect(formatNumber(25.82271601)).toBe("25.823");
     expect(formatNumber(null)).toBe("—");
     expect(formatUtc("2025-01-31T23:23:01.002000Z")).toBe(
-      "2025-01-31 23:23 UTC",
+      "31 Jan 2025 · 23:23 UTC",
     );
     expect(formatUtc(null)).toBe("—");
+    expect(formatDay("2025-01-01T00:00:00Z")).toBe("1 Jan 2025");
+    expect(formatDay("2024-02-29")).toBe("29 Feb 2024");
+    expect(formatDay(null)).toBe("—");
+    expect(formatDay("unknown")).toBe("unknown");
+    expect(formatCoordinate(-43.451, "N", "S")).toBe("43.451°S");
   });
 });

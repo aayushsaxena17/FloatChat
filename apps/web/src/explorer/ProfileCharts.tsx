@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { ProfileResponse } from "../api/types";
-import { formatUtc } from "../catalog/units";
+import { formatCoordinate, formatNumber, formatUtc } from "../catalog/units";
 import { ChartPanel } from "../charts/ChartPanel";
 import { levelSummary, profileFigures } from "../charts/profile";
 import { ProvenancePanel } from "../provenance/ProvenancePanel";
@@ -11,7 +11,12 @@ export function ProfileCharts({ profile }: { profile: ProfileResponse }) {
   const figures = useMemo(() => profileFigures(profile), [profile]);
   const summary = useMemo(() => levelSummary(profile), [profile]);
   const header = profile.profile;
-  const caption = `Float ${header.platform_number}, cycle ${header.cycle_number}, ${formatUtc(header.observed_at)}, ${header.longitude.toFixed(3)}°E ${header.latitude.toFixed(3)}°N; ${profile.levels.row_count} of ${header.level_count} levels after ${profile.qc_policy.name}.`;
+  const qualityName =
+    {
+      science_ready: "Science ready",
+      raw: "Raw measurements",
+      mode_selected: "Mode selected",
+    }[profile.qc_policy.name] ?? profile.qc_policy.name;
   return (
     <div className="profile-analysis" data-testid="profile-charts">
       <div className="profile-charts-grid">
@@ -19,7 +24,6 @@ export function ProfileCharts({ profile }: { profile: ProfileResponse }) {
           <ChartPanel
             key={figure.key}
             figure={figure}
-            caption={caption}
             interactive
             description={
               [
@@ -36,6 +40,69 @@ export function ProfileCharts({ profile }: { profile: ProfileResponse }) {
           />
         ))}
       </div>
+      <section className="panel profile-method">
+        <details>
+          <summary>How these charts are built</summary>
+          <div className="profile-method-content">
+            <dl className="profile-method-facts">
+              <div>
+                <dt>Observation</dt>
+                <dd>
+                  Float {header.platform_number} · Cycle {header.cycle_number}
+                </dd>
+              </div>
+              <div>
+                <dt>Recorded at</dt>
+                <dd>{formatUtc(header.observed_at)}</dd>
+              </div>
+              <div>
+                <dt>Location</dt>
+                <dd>
+                  {formatCoordinate(header.latitude, "N", "S")} ·{" "}
+                  {formatCoordinate(header.longitude, "E", "W")}
+                </dd>
+              </div>
+              <div>
+                <dt>Quality policy</dt>
+                <dd>{qualityName}</dd>
+              </div>
+            </dl>
+            <div className="profile-method-grid">
+              {figures.map((figure, index) => (
+                <div key={figure.key}>
+                  <h3>
+                    {
+                      [
+                        "Temperature and pressure",
+                        "Salinity and pressure",
+                        "Temperature and salinity",
+                      ][index]
+                    }
+                  </h3>
+                  <p>
+                    {
+                      [
+                        "Each valid temperature reading is placed at its measured pressure. Read from top to bottom to move deeper.",
+                        "Each valid salinity reading is placed at its measured pressure. Bends in the line reflect changes in the recorded water column.",
+                        "Each point pairs temperature and salinity from the same level. Point colour shows that level’s pressure.",
+                      ][index]
+                    }
+                  </p>
+                  <strong>
+                    {formatNumber(figure.pointCount)}{" "}
+                    {index === 2 ? "paired readings" : "readings"} shown
+                  </strong>
+                </div>
+              ))}
+            </div>
+            <p className="profile-method-note">
+              The pressure charts follow measurements without smoothing. Missing
+              or excluded readings leave gaps; the temperature–salinity chart
+              includes only levels where both values are available.
+            </p>
+          </div>
+        </details>
+      </section>
       <section className="panel profile-quality">
         <details>
           <summary>

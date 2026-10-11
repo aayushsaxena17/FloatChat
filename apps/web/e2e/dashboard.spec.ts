@@ -51,6 +51,14 @@ test("dashboard: Arabian Sea, January 2025, 0-100 dbar shows map points and a pr
   await expect(
     page.getByRole("heading", { name: "Temperature mean (°C)" }),
   ).toBeVisible({ timeout: 60_000 });
+  const coverageCard = await page.locator(".coverage").boundingBox();
+  const locationsCard = await page.locator(".locations-panel").boundingBox();
+  expect(coverageCard?.y).toBe(locationsCard?.y);
+  expect(coverageCard?.height).toBeCloseTo(locationsCard?.height ?? 0, 0);
+  expect(coverageCard?.width).toBeCloseTo(locationsCard?.width ?? 0, 0);
+  await expect(page.locator(".coverage-scope")).toContainText(
+    "1 Jan 2025 to 1 Feb 2025",
+  );
 
   await checkpoint(page, "01-dashboard");
   await page.getByRole("link", { name: "Open the map" }).click();
@@ -81,6 +89,13 @@ test("dashboard: Arabian Sea, January 2025, 0-100 dbar shows map points and a pr
   await expect(
     charts.getByRole("heading", { name: "Temperature-salinity diagram" }),
   ).toBeVisible();
+  const listCard = await page.locator(".profiles-list-panel").boundingBox();
+  const summaryCard = await page.locator(".profile-summary").boundingBox();
+  expect(listCard?.y).toBe(summaryCard?.y);
+  expect(listCard?.height).toBeCloseTo(summaryCard?.height ?? 0, 0);
+  await charts.getByText("How these charts are built", { exact: true }).click();
+  await expect(charts.getByText("Recorded at", { exact: true })).toBeVisible();
+  await expect(charts.getByText(/paired readings shown/)).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Temperature-salinity diagram" }),
   ).toHaveCount(1);

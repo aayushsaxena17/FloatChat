@@ -1,13 +1,9 @@
 import { Layers, ArrowDown, ArrowRight } from "lucide-react";
 import type { ProfileResponse } from "../api/types";
-import { formatNumber, formatUtc } from "../catalog/units";
+import { formatCoordinate, formatNumber, formatUtc } from "../catalog/units";
 import { levelsOf } from "../charts/profile";
 import { Panel } from "../components/Panel";
 import { Button } from "../components/ui/button";
-
-function coordinate(value: number, positive: string, negative: string) {
-  return `${Math.abs(value).toFixed(3)}°${value < 0 ? negative : positive}`;
-}
 
 export function ProfileSummary({
   profile,
@@ -67,8 +63,8 @@ export function ProfileSummary({
         <dd>{formatUtc(header.observed_at)}</dd>
         <dt>Location</dt>
         <dd>
-          {coordinate(header.latitude, "N", "S")} ·{" "}
-          {coordinate(header.longitude, "E", "W")}
+          {formatCoordinate(header.latitude, "N", "S")} ·{" "}
+          {formatCoordinate(header.longitude, "E", "W")}
         </dd>
         <dt>Retained levels</dt>
         <dd>

@@ -21,7 +21,7 @@ describe("CoveragePanel", () => {
     expect(details.getByText("FloatChat ingestion")).not.toBeVisible();
     await userEvent.click(screen.getByText("Coverage & ingestion details"));
     expect(details.getByText("FloatChat ingestion")).toBeVisible();
-    expect(details.getByText(/2025-01-01 to 2025-02-01/)).toBeInTheDocument();
+    expect(details.getByText(/1 Jan 2025 to 1 Feb 2025/)).toBeInTheDocument();
     expect(screen.getByText(/Arabian Sea \(iho-v3/)).toBeInTheDocument();
     expect(
       screen.getByText(String(response.coverage.estimated_profiles)),
@@ -32,7 +32,7 @@ describe("CoveragePanel", () => {
     expect(screen.getByText(/Source retrieved/)).toBeInTheDocument();
     expect(screen.getByText(/FloatChat ingestion/)).toBeInTheDocument();
     expect(
-      screen.getByText(/2026-10-09 \d\d:\d\d UTC to 2026-10-09/),
+      screen.getByText(/9 Oct 2026 · \d\d:\d\d UTC to 9 Oct 2026/),
     ).toBeInTheDocument();
     expect(
       screen.getByText(

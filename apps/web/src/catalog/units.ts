@@ -60,14 +60,32 @@ export function formatNumber(
     : value.toLocaleString("en-GB", { maximumFractionDigits: digits });
 }
 
-/** UTC timestamp rendered as `2025-01-31 23:23 UTC`; the convention is always stated. */
+/** A readable calendar date, independent of the computer's local time zone. */
+export function formatDay(value: string | null | undefined): string {
+  if (!value) return "—";
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (!match) return value;
+  const date = new Date(`${match[0]}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+}
+
+/** UTC timestamp rendered as `31 Jan 2025 · 23:23 UTC`. */
 export function formatUtc(value: string | null | undefined): string {
   if (!value) return "—";
   const match = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/.exec(value);
-  return match ? `${match[1]} ${match[2]} UTC` : value;
+  return match ? `${formatDay(match[1])} · ${match[2]} UTC` : value;
 }
 
-export function formatDay(value: string | null | undefined): string {
-  if (!value) return "—";
-  return value.slice(0, 10);
+export function formatCoordinate(
+  value: number,
+  positive: string,
+  negative: string,
+): string {
+  return `${Math.abs(value).toFixed(3)}°${value < 0 ? negative : positive}`;
 }

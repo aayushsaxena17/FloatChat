@@ -1,4 +1,5 @@
 import { StatusMessage } from "../components/StatusMessage";
+import { Panel } from "../components/Panel";
 import { FilterBar } from "./FilterBar";
 import { ProfileCharts } from "./ProfileCharts";
 import { ProfileList } from "./ProfileList";
@@ -30,23 +31,27 @@ export function ProfilesView() {
             loading={profiles.isPending && profiles.fetchStatus !== "idle"}
             error={profiles.error}
           >
-            <h2>Profiles ({points.length.toLocaleString("en-GB")})</h2>
-            <p className="profiles-list-note">
-              Newest observations first. Choose a row to inspect its water
-              column.
-            </p>
-            {points.length === 0 && profiles.data ? (
-              <p className="status" role="status">
-                No profiles match these filters.
+            <Panel
+              title={`Profiles (${points.length.toLocaleString("en-GB")})`}
+              className="profiles-list-panel"
+            >
+              <p className="profiles-list-note">
+                Newest observations first. Choose a row to inspect its water
+                column.
               </p>
-            ) : (
-              <ProfileList
-                points={points}
-                selectedProfile={filters.profile}
-                onSelect={data.select}
-                limit={100}
-              />
-            )}
+              {points.length === 0 && profiles.data ? (
+                <p className="status" role="status">
+                  No profiles match these filters.
+                </p>
+              ) : (
+                <ProfileList
+                  points={points}
+                  selectedProfile={filters.profile}
+                  onSelect={data.select}
+                  limit={100}
+                />
+              )}
+            </Panel>
           </StatusMessage>
         </div>
         <div>

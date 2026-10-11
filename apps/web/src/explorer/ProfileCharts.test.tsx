@@ -28,6 +28,11 @@ describe("ProfileCharts", () => {
       screen.getByRole("heading", { name: "Temperature-salinity diagram" }),
     ).toBeInTheDocument();
     expect(screen.getAllByTestId("plot")).toHaveLength(3);
+    await userEvent.click(screen.getByText("How these charts are built"));
+    expect(screen.getByText("Recorded at")).toBeVisible();
+    expect(screen.getByText("Quality policy")).toBeVisible();
+    expect(screen.getByText(/paired readings shown/)).toBeVisible();
+    expect(screen.queryByText("Calculation details")).not.toBeInTheDocument();
     const first = screen
       .getByRole("heading", { name: "Temperature versus pressure" })
       .closest("section") as HTMLElement;
