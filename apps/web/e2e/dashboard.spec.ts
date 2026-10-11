@@ -93,8 +93,11 @@ test("dashboard: Arabian Sea, January 2025, 0-100 dbar shows map points and a pr
   await expect(mapStatus).toHaveText(/[1-9]\d* profiles plotted/, {
     timeout: 60_000,
   });
-  const mapBounds = await page.locator(".map-canvas").boundingBox();
-  expect(mapBounds?.height).toBeGreaterThan(250);
+  // boundingBox() does not wait; poll until the map is laid out at its full height.
+  await expect(async () => {
+    const mapBounds = await page.locator(".map-canvas").boundingBox();
+    expect(mapBounds?.height ?? 0).toBeGreaterThan(250);
+  }).toPass({ timeout: 30_000 });
   await expect(
     page.getByRole("heading", { name: "Temperature mean (°C)" }),
   ).toBeVisible({ timeout: 60_000 });
