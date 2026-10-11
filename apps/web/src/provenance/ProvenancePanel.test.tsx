@@ -11,9 +11,9 @@ const listing = profiles as unknown as CollectionResponse;
 describe("ProvenancePanel", () => {
   it("renders the section 17 fields of a query result", () => {
     render(<ProvenancePanel provenance={queryResponse.provenance} open />);
-    const text = screen.getByTestId("provenance").textContent ?? "";
+    const text = screen.getByRole("dialog").textContent ?? "";
     expect(text).toContain("argovis (argovis-core-v1)");
-    expect(text).toContain("reference time 2025-04-01 00:00 UTC");
+    expect(text).toContain("reference time 1 Apr 2025 · 00:00 UTC");
     expect(text).toContain("Arabian Sea (iho-v3");
     expect(text).toContain("slots covered");
     expect(text).toContain("qc-policy-v1/science_ready");
@@ -29,10 +29,10 @@ describe("ProvenancePanel", () => {
 
   it("explains what a read has no plan or coverage for", () => {
     render(<ProvenancePanel provenance={listing.provenance} open />);
-    const text = screen.getByTestId("provenance").textContent ?? "";
+    const text = screen.getByRole("dialog").textContent ?? "";
     expect(text).toContain("not resolved for a read");
     expect(text).toContain("Plan SHA-256none (read)");
     expect(text).toContain("runs ");
-    expect(text).toContain("Ingested2026-10-09");
+    expect(text).toContain("Ingested9 Oct 2026");
   });
 });

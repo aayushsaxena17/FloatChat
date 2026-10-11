@@ -1,5 +1,17 @@
 import { useMemo } from "react";
 import { Link } from "react-router";
+import {
+  ArrowUpRight,
+  CalendarDays,
+  Database,
+  Layers,
+  Radio,
+  Info,
+  Download,
+} from "lucide-react";
+import { Button } from "../components/ui/button";
+import { Card } from "../components/ui/card";
+import { formatNumber } from "../catalog/units";
 import { useCoverage, usePlanQuery } from "../api/hooks";
 import { CoveragePanel } from "../catalog/CoveragePanel";
 import { ChartPanel } from "../charts/ChartPanel";
@@ -16,6 +28,7 @@ import {
 import { MapView } from "../explorer/MapView";
 import { useExplorerData } from "../explorer/useExplorerData";
 import { ProvenancePanel } from "../provenance/ProvenancePanel";
+import { OceanHero } from "./OceanHero";
 
 /** The contract's chart_points_per_series limit as the parameter catalogue publishes it. */
 export function chartPointBound(parameters: unknown): number | null {
@@ -65,8 +78,24 @@ export function Dashboard() {
   );
   const exploreQuery = toSearchParams(filters).toString();
   return (
-    <>
-      <h1>Dashboard</h1>
+    <div className="dashboard">
+      <OceanHero query={exploreQuery} />
+      <div className="workspace-heading" id="observations" tabIndex={-1}>
+        <div>
+          <p className="eyebrow">01 / OBSERVATION WORKSPACE</p>
+          <h2>Your ocean, in focus.</h2>
+          <p className="page-description">
+            A closer look at the Indian Ocean, one observation at a time.
+          </p>
+        </div>
+        <Button asChild variant="outline">
+          <Link to={`/explore/profiles?${exploreQuery}`}>
+            <Layers aria-hidden="true" />
+            Browse profiles
+            <ArrowUpRight aria-hidden="true" />
+          </Link>
+        </Button>
+      </div>
       <FilterBar
         filters={filters}
         update={update}
@@ -80,17 +109,78 @@ export function Dashboard() {
             : "Loading the environment's reference window…"}
         </p>
       ) : null}
-      <div className="grid">
-        <StatusMessage
-          loading={coverage.isPending && coverage.fetchStatus !== "idle"}
-          error={coverage.error}
-        >
-          {coverage.data ? <CoveragePanel coverage={coverage.data} /> : null}
-        </StatusMessage>
+      <div
+        className="summary-grid"
+        aria-label="Selection summary"
+        aria-busy={coverage.isFetching}
+      >
+        {[
+          {
+            label: "Profiles in coverage",
+            value: formatNumber(coverage.data?.coverage.estimated_profiles),
+            note: "Recorded in source manifests",
+            icon: Database,
+          },
+          {
+            label: "Measurement levels",
+            value: formatNumber(coverage.data?.coverage.estimated_levels),
+            note: "Across covered profiles",
+            icon: Layers,
+          },
+          {
+            label: "Floats on the map",
+            value: profiles.data
+              ? formatNumber(
+                  new Set(points.map((point) => point.platform)).size,
+                )
+              : "—",
+            note: profiles.data?.truncated
+              ? "From the first 5,000 profiles"
+              : "Distinct observing instruments",
+            icon: Radio,
+          },
+          {
+            label: "Months in selection",
+            value: coverage.data
+              ? formatNumber(coverage.data.coverage.months.length)
+              : "—",
+            note: "Coverage is checked month by month",
+            icon: CalendarDays,
+          },
+        ].map(({ label, value, note, icon: Icon }) => (
+          <Card key={label} className="summary-card">
+            <div className="summary-label">
+              {label}
+              <Icon size={17} aria-hidden="true" />
+            </div>
+            <strong>{value}</strong>
+            <p>{note}</p>
+          </Card>
+        ))}
+      </div>
+      <p className="summary-note">
+        Coverage totals describe source records before pressure and quality
+        filtering.
+      </p>
+      <div className="overview-grid">
+        <div className="coverage-column">
+          <StatusMessage
+            loading={coverage.isPending && coverage.fetchStatus !== "idle"}
+            error={coverage.error}
+          >
+            {coverage.data ? <CoveragePanel coverage={coverage.data} /> : null}
+          </StatusMessage>
+        </div>
         <Panel
           title="Profile locations"
+          className="locations-panel"
           actions={
-            <Link to={`/explore/map?${exploreQuery}`}>Open the map</Link>
+            <Button asChild variant="ghost" size="sm">
+              <Link to={`/explore/map?${exploreQuery}`}>
+                Open the map
+                <ArrowUpRight aria-hidden="true" />
+              </Link>
+            </Button>
           }
         >
           <StatusMessage
@@ -120,86 +210,124 @@ export function Dashboard() {
             ) : null}
           </StatusMessage>
         </Panel>
-        <div className="wide">
-          <StatusMessage
-            loading={series.isPending && series.fetchStatus !== "idle"}
-            error={series.error}
-          >
-            <div className="grid">
-              {seriesFigures.map((figure) => (
-                <ChartPanel
-                  key={figure.key}
-                  figure={figure}
-                  caption={series.data?.interpretation.transformation as string}
-                />
-              ))}
-            </div>
-            {series.data ? (
-              <div className="panel" style={{ marginTop: 14 }}>
-                <p className="chart-caption">
-                  Time series of{" "}
-                  {series.data.plan.variables
-                    ? (series.data.plan.variables as string[]).join(" and ")
-                    : ""}{" "}
-                  by{" "}
-                  {(
-                    series.data.plan.operation as { group_by?: string[] }
-                  ).group_by?.join(", ")}
-                  ; route {series.data.execution.source},{" "}
-                  {series.data.execution.elapsed_ms} ms
-                  {series.data.partial
-                    ? "; coverage partial (see the coverage panel)"
-                    : ""}
-                  .
-                </p>
-                <ProvenancePanel provenance={series.data.provenance} />
-              </div>
-            ) : null}
-          </StatusMessage>
+      </div>
+      <section className="analysis-section" aria-labelledby="trends-title">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">02 / OBSERVATIONS OVER TIME</p>
+            <h2 id="trends-title">Temperature & salinity</h2>
+            <p className="page-description">
+              Profile-balanced averages and the number of contributing profiles.
+            </p>
+          </div>
+          <span className="section-note">
+            UTC ·{" "}
+            {filters.depthMin === null && filters.depthMax === null
+              ? "All pressures"
+              : `${filters.depthMin ?? 0}–${filters.depthMax ?? 12000} dbar`}
+          </span>
         </div>
-        <div className="wide">
-          {coverage.data && !histogramAllowed ? (
-            <p className="status" role="status" data-testid="histogram-bound">
+        <StatusMessage
+          loading={series.isPending && series.fetchStatus !== "idle"}
+          error={series.error}
+        >
+          <div className="trend-grid">
+            {seriesFigures.map((figure) => (
+              <ChartPanel
+                key={figure.key}
+                compact
+                figure={figure}
+                caption={series.data?.interpretation.transformation as string}
+              />
+            ))}
+          </div>
+          {series.data ? (
+            <div className="query-details">
+              <p className="chart-caption">
+                Averages of{" "}
+                {series.data.plan.variables
+                  ? (series.data.plan.variables as string[]).join(" and ")
+                  : ""}{" "}
+                by{" "}
+                {(
+                  series.data.plan.operation as { group_by?: string[] }
+                ).group_by?.join(", ")}
+                · {series.data.execution.source} ·{" "}
+                {series.data.execution.elapsed_ms == null
+                  ? "timing unavailable"
+                  : `${(series.data.execution.elapsed_ms / 1000).toFixed(2)} seconds`}
+                {series.data.partial
+                  ? "; coverage partial (see the coverage panel)"
+                  : ""}
+                .
+              </p>
+              <ProvenancePanel provenance={series.data.provenance} />
+            </div>
+          ) : null}
+        </StatusMessage>
+      </section>
+      <section
+        className="distribution-section"
+        aria-labelledby="distribution-title"
+      >
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">03 / BENEATH THE AVERAGES</p>
+            <h2 id="distribution-title">Profile distribution</h2>
+            <p className="page-description">
+              How individual profile averages are spread across the selection.
+            </p>
+          </div>
+        </div>
+        {coverage.data && !histogramAllowed ? (
+          <p className="status" role="status" data-testid="histogram-bound">
+            <Info size={18} aria-hidden="true" />
+            <span>
               The per-profile distribution is available for at most{" "}
               {bound?.toLocaleString("en-GB") ?? "?"} profiles; this selection
               holds {estimated?.toLocaleString("en-GB") ?? "?"} in its coverage
               manifests. Narrow the region or the dates to see it.
-            </p>
-          ) : null}
-          <StatusMessage
-            loading={
-              distribution.isPending && distribution.fetchStatus !== "idle"
-            }
-            error={distribution.error}
-          >
-            <div className="grid">
-              {histogramFigures.map((figure) => (
-                <ChartPanel
-                  key={figure.key}
-                  figure={figure}
-                  caption={
-                    distribution.data?.interpretation.transformation as string
-                  }
-                />
-              ))}
+            </span>
+          </p>
+        ) : null}
+        <StatusMessage
+          loading={
+            distribution.isPending && distribution.fetchStatus !== "idle"
+          }
+          error={distribution.error}
+        >
+          <div className="trend-grid">
+            {histogramFigures.map((figure) => (
+              <ChartPanel
+                key={figure.key}
+                compact
+                figure={figure}
+                caption={
+                  distribution.data?.interpretation.transformation as string
+                }
+              />
+            ))}
+          </div>
+          {distribution.data ? (
+            <div className="panel" style={{ marginTop: 14 }}>
+              <ProvenancePanel provenance={distribution.data.provenance} />
             </div>
-            {distribution.data ? (
-              <div className="panel" style={{ marginTop: 14 }}>
-                <ProvenancePanel provenance={distribution.data.provenance} />
-              </div>
-            ) : null}
-          </StatusMessage>
-        </div>
-        <Panel title="Export">
+          ) : null}
+        </StatusMessage>
+      </section>
+      <div className="export-notice">
+        <Download size={18} aria-hidden="true" />
+        <div>
+          <h2>Dataset export</h2>
           <p className="chart-caption">
             Exporting the filtered dataset (CSV and Parquet with a manifest)
-            arrives with Stage 5.
+            will be available in a later release.
           </p>
-          <button type="button" disabled>
-            Export filtered dataset (Stage 5)
-          </button>
-        </Panel>
+        </div>
+        <Button type="button" variant="outline" disabled>
+          Export filtered dataset
+        </Button>
       </div>
-    </>
+    </div>
   );
 }

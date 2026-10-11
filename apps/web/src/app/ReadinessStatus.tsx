@@ -1,20 +1,40 @@
 import { useEffect, useState } from "react";
 
-/** The Stage 0 readiness indicator, kept in the shell (e2e/scaffold.spec.ts asserts it). */
+/** A bounded health check that recovers after startup and tracks dependency outages. */
 export function ReadinessStatus() {
   const [state, setState] = useState<"checking" | "ready" | "unavailable">(
     "checking",
   );
   useEffect(() => {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 5000);
-    fetch("/v1/health/ready", { signal: controller.signal })
-      .then((response) => setState(response.ok ? "ready" : "unavailable"))
-      .catch(() => setState("unavailable"))
-      .finally(() => clearTimeout(timer));
+    let disposed = false;
+    let controller: AbortController | undefined;
+    let deadline: ReturnType<typeof setTimeout> | undefined;
+    let nextCheck: ReturnType<typeof setTimeout> | undefined;
+    const check = async () => {
+      const attempt = new AbortController();
+      controller = attempt;
+      deadline = setTimeout(() => attempt.abort(), 5000);
+      try {
+        const response = await fetch("/v1/health/ready", {
+          signal: attempt.signal,
+        });
+        if (!disposed) setState(response.ok ? "ready" : "unavailable");
+      } catch {
+        if (!disposed) setState("unavailable");
+      } finally {
+        clearTimeout(deadline);
+        if (!disposed)
+          nextCheck = setTimeout(() => {
+            void check();
+          }, 15000);
+      }
+    };
+    void check();
     return () => {
-      controller.abort();
-      clearTimeout(timer);
+      disposed = true;
+      controller?.abort();
+      clearTimeout(deadline);
+      clearTimeout(nextCheck);
     };
   }, []);
   const text =

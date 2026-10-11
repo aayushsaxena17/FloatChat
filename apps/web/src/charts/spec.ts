@@ -31,6 +31,7 @@ export interface Figure {
   layout: Partial<Layout>;
   table: { columns: string[]; rows: Array<Array<string | number | null>> };
   pointCount: number;
+  emptyReason?: string;
 }
 
 type ContractTrace = {
@@ -65,7 +66,11 @@ export function baseLayout(
     margin: { l: 64, r: 16, t: 12, b: 52 },
     paper_bgcolor: SURFACE,
     plot_bgcolor: SURFACE,
-    font: { family: "system-ui, sans-serif", size: 12, color: TEXT_PRIMARY },
+    font: {
+      family: "Segoe UI, system-ui, sans-serif",
+      size: 11,
+      color: TEXT_PRIMARY,
+    },
     hovermode: "closest",
     xaxis: {
       title: { text: xTitle },
