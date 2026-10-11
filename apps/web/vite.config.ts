@@ -1,8 +1,10 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
+  resolve: { alias: { "@": new URL("./src", import.meta.url).pathname } },
   server: {
     proxy: { "/v1": process.env.API_PROXY_TARGET ?? "http://127.0.0.1:8000" },
   },
@@ -30,6 +32,9 @@ export default defineConfig({
     ],
   },
   test: {
+    // Full dashboard interaction tests share the WSL host with the local Docker stack.
+    maxWorkers: 2,
+    testTimeout: 10000,
     environment: "jsdom",
     setupFiles: ["./src/test-setup.ts"],
     include: ["src/**/*.test.{ts,tsx}"],

@@ -6,6 +6,7 @@ import { MapView } from "./MapView";
 import { ProfileList } from "./ProfileList";
 import { useExplorerData } from "./useExplorerData";
 import { toSearchParams } from "./filters";
+import { MAP_COLORS } from "../charts/palette";
 
 export function MapPage() {
   const data = useExplorerData();
@@ -13,7 +14,16 @@ export function MapPage() {
   const first = profiles.data?.pages[0];
   return (
     <>
-      <h1>Explore: map</h1>
+      <div className="page-heading explorer-heading">
+        <div>
+          <p className="eyebrow">THE OBSERVATORY / SPATIAL EXPLORATION</p>
+          <h1>Explore: map</h1>
+          <p className="page-description">
+            Follow an instrument. Trace its journey through the ocean.
+          </p>
+        </div>
+        <span className="explorer-coordinate">20°E — 120°E / 60°S — 30°N</span>
+      </div>
       <FilterBar
         filters={filters}
         update={update}
@@ -35,15 +45,24 @@ export function MapPage() {
             />
             <div className="legend" aria-label="Map legend">
               <span>
-                <span className="swatch" style={{ background: "#2a78d6" }} />
+                <span
+                  className="swatch"
+                  style={{ background: MAP_COLORS.profile }}
+                />
                 profile location (clusters show their count)
               </span>
               <span>
-                <span className="swatch" style={{ background: "#eb6834" }} />
+                <span
+                  className="swatch"
+                  style={{ background: MAP_COLORS.trajectory }}
+                />
                 trajectory of float {filters.platform ?? "(select a profile)"}
               </span>
               <span>
-                <span className="swatch" style={{ background: "#4a3aa7" }} />
+                <span
+                  className="swatch"
+                  style={{ background: MAP_COLORS.selected }}
+                />
                 selected profile
               </span>
               <span>
@@ -51,7 +70,7 @@ export function MapPage() {
                   className="swatch"
                   style={{
                     background: "transparent",
-                    border: "1px dashed #e34948",
+                    border: `1px dashed ${MAP_COLORS.region}`,
                   }}
                 />
                 region bounding box

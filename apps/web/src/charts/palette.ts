@@ -1,21 +1,21 @@
-// The validated reference categorical palette (data-visualisation method, light mode), in its
+// The validated reference categorical palette (ocean observatory theme), in its
 // fixed slot order: blue, orange, aqua, yellow, magenta, green, violet, red. Slots are assigned
 // by series identity and never cycled (ADR-0065); past three slots a scatter folds to "Other".
 export const CATEGORICAL = [
-  "#2a78d6",
-  "#eb6834",
-  "#1baf7a",
-  "#eda100",
-  "#e87ba4",
-  "#008300",
-  "#4a3aa7",
-  "#e34948",
+  "#74c7eb",
+  "#f3b27f",
+  "#7cdec0",
+  "#ead28c",
+  "#efa9c9",
+  "#97cd9c",
+  "#b5adf4",
+  "#f19696",
 ] as const;
 
-export const SURFACE = "#fcfcfb";
-export const TEXT_PRIMARY = "#0b0b0b";
-export const TEXT_SECONDARY = "#52514e";
-export const GRID = "#e6e5e1";
+export const SURFACE = "#0b202a";
+export const TEXT_PRIMARY = "#e1edea";
+export const TEXT_SECONDARY = "#a0b6bd";
+export const GRID = "#24404a";
 
 /** Map roles: profile points, the selected float's trajectory, the selected profile. */
 export const MAP_COLORS = {
@@ -23,10 +23,10 @@ export const MAP_COLORS = {
   trajectory: CATEGORICAL[1],
   selected: CATEGORICAL[6],
   cluster: CATEGORICAL[0],
-  sea: "#eaf2f7",
-  land: "#e9e6dd",
-  coast: "#b9b3a3",
-  graticule: "#cfd8df",
+  sea: "#081b27",
+  land: "#24404a",
+  coast: "#52727c",
+  graticule: "#1e3946",
   region: CATEGORICAL[7],
 } as const;
 

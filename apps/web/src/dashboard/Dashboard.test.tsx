@@ -50,6 +50,16 @@ describe("Dashboard", () => {
     expect(await screen.findByTestId("map-status")).toHaveTextContent(
       /\d+ profiles plotted/,
     );
+    const heroMapLink = screen.getByRole("link", { name: "Explore the ocean" });
+    const destination = new URL(
+      heroMapLink.getAttribute("href")!,
+      "http://localhost",
+    );
+    expect(destination.pathname).toBe("/explore/map");
+    for (const [key, value] of new URL(SCENARIO, "http://localhost")
+      .searchParams) {
+      expect(destination.searchParams.get(key)).toBe(value);
+    }
     // The stub answers both plan queries with the line fixture, so each heading appears twice.
     expect(
       (await screen.findAllByRole("heading", { name: "Temperature mean (°C)" }))
@@ -155,6 +165,34 @@ describe("Dashboard", () => {
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Start (UTC day, inclusive)")).toHaveValue(
       "2025-01-01",
+    );
+  });
+
+  it("clears advanced filters while keeping the chosen region and dates", async () => {
+    stubApi({
+      "/v1/catalog/parameters": parameters,
+      "/v1/catalog/coverage": coverage,
+      "/v1/profiles": profiles,
+      "/v1/query": line,
+    });
+    renderWithProviders(<Dashboard />, `${SCENARIO}&platform=1900001`);
+    const form = await screen.findByRole("form", { name: "Filters" });
+    await userEvent.click(
+      within(form).getByRole("button", { name: "Clear advanced filters" }),
+    );
+    expect(within(form).getByLabelText("Pressure from (dbar)")).toHaveValue(
+      null,
+    );
+    expect(within(form).getByLabelText("Pressure to (dbar)")).toHaveValue(null);
+    expect(within(form).getByLabelText("Float (platform number)")).toHaveValue(
+      "",
+    );
+    expect(within(form).getByLabelText("Region")).toHaveValue("Arabian Sea");
+    expect(
+      within(form).getByLabelText("Start (UTC day, inclusive)"),
+    ).toHaveValue("2025-01-01");
+    expect(within(form).getByLabelText("End (UTC day, exclusive)")).toHaveValue(
+      "2025-02-01",
     );
   });
 });

@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { Card, CardHeader, CardContent } from "./ui/card";
 
 export function Panel({
   title,
@@ -15,15 +16,19 @@ export function Panel({
 }) {
   const id = useId();
   return (
-    <section className={`panel ${className ?? ""}`} aria-labelledby={id}>
-      <div className="panel-header">
+    <Card
+      className={`panel ${className ?? ""}`}
+      role="region"
+      aria-labelledby={id}
+    >
+      <CardHeader className="panel-header">
         <h2 id={id}>
           {title}
           {badge}
         </h2>
         {actions ? <div className="panel-actions">{actions}</div> : null}
-      </div>
-      {children}
-    </section>
+      </CardHeader>
+      <CardContent className="panel-content">{children}</CardContent>
+    </Card>
   );
 }

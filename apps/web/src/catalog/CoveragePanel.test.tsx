@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import type { CoverageResponse } from "../api/types";
 import { CoveragePanel } from "./CoveragePanel";
@@ -7,12 +8,21 @@ import coverage from "../test/fixtures/coverage.json";
 const response = coverage as unknown as CoverageResponse;
 
 describe("CoveragePanel", () => {
-  it("shows the range, region, counts, missingness, source and ingestion timestamps", () => {
+  it("shows the range, region, counts, missingness, source and ingestion timestamps", async () => {
     render(<CoveragePanel coverage={response} />);
     expect(
       screen.getByRole("heading", { name: /Coverage/ }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/2025-01-01 to 2025-02-01/)).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    const trigger = screen.getByRole("button", {
+      name: "Coverage & ingestion details",
+    });
+    await userEvent.click(trigger);
+    const details = within(
+      screen.getByRole("dialog", { name: "Coverage & ingestion details" }),
+    );
+    expect(details.getByText("FloatChat ingestion")).toBeVisible();
+    expect(details.getByText(/1 Jan 2025 to 1 Feb 2025/)).toBeInTheDocument();
     expect(screen.getByText(/Arabian Sea \(iho-v3/)).toBeInTheDocument();
     expect(
       screen.getByText(String(response.coverage.estimated_profiles)),
@@ -23,16 +33,19 @@ describe("CoveragePanel", () => {
     expect(screen.getByText(/Source retrieved/)).toBeInTheDocument();
     expect(screen.getByText(/FloatChat ingestion/)).toBeInTheDocument();
     expect(
-      screen.getByText(/2026-10-09 \d\d:\d\d UTC to 2026-10-09/),
+      screen.getByText(/9 Oct 2026 · \d\d:\d\d UTC to 9 Oct 2026/),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
         response.coverage.partial ? "partial coverage" : "coverage complete",
       ),
     ).toBeInTheDocument();
+    await userEvent.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
   });
 
-  it("labels partial coverage in text and lists the missing tiles", () => {
+  it("labels partial coverage in text and lists the missing tiles", async () => {
     const partial: CoverageResponse = {
       ...response,
       coverage: {
@@ -55,12 +68,16 @@ describe("CoveragePanel", () => {
     };
     render(<CoveragePanel coverage={partial} />);
     expect(screen.getByText("partial coverage")).toBeInTheDocument();
+    expect(screen.getByText("Some source data is missing")).toBeVisible();
+    await userEvent.click(
+      screen.getByRole("button", { name: "Coverage & ingestion details" }),
+    );
     expect(
       screen.getByText(/2025-01: 50°E\/0°N \(fetch_coverage\)/),
-    ).toBeInTheDocument();
+    ).toBeVisible();
   });
 
-  it("says when no completed run defines the timestamps", () => {
+  it("says when no completed run defines the timestamps", async () => {
     const bare: CoverageResponse = {
       ...response,
       environment: {
@@ -71,6 +88,9 @@ describe("CoveragePanel", () => {
       },
     };
     render(<CoveragePanel coverage={bare} />);
+    await userEvent.click(
+      screen.getByRole("button", { name: "Coverage & ingestion details" }),
+    );
     expect(
       screen.getByText(/unknown \(no completed run\)/),
     ).toBeInTheDocument();
