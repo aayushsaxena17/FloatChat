@@ -31,6 +31,7 @@ export function ChartPanel({
   interactive?: boolean;
 }) {
   const id = useId();
+  const empty = figure.pointCount === 0;
   const [reset, setReset] = useState(0);
   const displayData = useMemo(
     () =>
@@ -59,68 +60,82 @@ export function ChartPanel({
   return (
     <section className="chart-section" aria-labelledby={id}>
       <Card
-        className={`panel chart-panel${interactive ? " profile-chart-panel" : ""}`}
+        className={`panel chart-panel${interactive ? " profile-chart-panel" : ""}${empty ? " chart-panel-empty" : ""}`}
       >
         <Tabs defaultValue="chart">
           <CardHeader className="panel-header">
             <h2 id={id}>{figure.title}</h2>
-            <TabsList aria-label={`${figure.title} view`}>
-              <TabsTrigger value="chart">
-                <ChartNoAxesCombined aria-hidden="true" />
-                Chart
-              </TabsTrigger>
-              <TabsTrigger value="table">
-                <Table2 aria-hidden="true" />
-                Table
-              </TabsTrigger>
-            </TabsList>
+            {!empty ? (
+              <TabsList aria-label={`${figure.title} view`}>
+                <TabsTrigger value="chart">
+                  <ChartNoAxesCombined aria-hidden="true" />
+                  Chart
+                </TabsTrigger>
+                <TabsTrigger value="table">
+                  <Table2 aria-hidden="true" />
+                  Table
+                </TabsTrigger>
+              </TabsList>
+            ) : null}
             {description ? (
               <p className="chart-description">{description}</p>
             ) : null}
           </CardHeader>
           <CardContent className="panel-content">
-            <TabsContent value="table">
-              <DataTable columns={columns} rows={figure.table.rows} />
-            </TabsContent>
-            <TabsContent value="chart">
-              <Plot
-                key={reset}
-                data={displayData}
-                layout={layout}
-                label={`${figure.title}; use the table view for the values`}
-              />
-            </TabsContent>
-            {explanation ? (
-              <p className="chart-explanation">{explanation}</p>
-            ) : null}
-            {interactive ? (
-              <div className="chart-tools">
-                <span>Hover for readings · Drag to zoom</span>
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  onClick={() => setReset((value) => value + 1)}
-                >
-                  <RotateCcw aria-hidden="true" />
-                  Reset view
-                </Button>
+            {empty ? (
+              <div className="chart-empty" style={{ minHeight: layout.height }}>
+                <strong>No readings</strong>
+                <p>
+                  {figure.emptyReason ??
+                    "No values are available for this selection."}
+                </p>
               </div>
-            ) : null}
-            <p className="chart-caption">
-              {figure.pointCount.toLocaleString("en-GB")} plotted values ·
-              Switch to Table for numerical values.
-            </p>
-            {caption ? (
-              <div className="calculation-details">
-                <DetailsDialog
-                  title={`${figure.title}: calculation details`}
-                  trigger="Calculation details"
-                  description="How the displayed values were calculated for this selection."
-                >
-                  <p>{caption}</p>
-                </DetailsDialog>
-              </div>
-            ) : null}
+            ) : (
+              <>
+                <TabsContent value="table">
+                  <DataTable columns={columns} rows={figure.table.rows} />
+                </TabsContent>
+                <TabsContent value="chart">
+                  <Plot
+                    key={reset}
+                    data={displayData}
+                    layout={layout}
+                    label={`${figure.title}; use the table view for the values`}
+                  />
+                </TabsContent>
+                {explanation ? (
+                  <p className="chart-explanation">{explanation}</p>
+                ) : null}
+                {interactive ? (
+                  <div className="chart-tools">
+                    <span>Hover for readings · Drag to zoom</span>
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      onClick={() => setReset((value) => value + 1)}
+                    >
+                      <RotateCcw aria-hidden="true" />
+                      Reset view
+                    </Button>
+                  </div>
+                ) : null}
+                <p className="chart-caption">
+                  {figure.pointCount.toLocaleString("en-GB")} plotted values ·
+                  Switch to Table for numerical values.
+                </p>
+                {caption ? (
+                  <div className="calculation-details">
+                    <DetailsDialog
+                      title={`${figure.title}: calculation details`}
+                      trigger="Calculation details"
+                      description="How the displayed values were calculated for this selection."
+                    >
+                      <p>{caption}</p>
+                    </DetailsDialog>
+                  </div>
+                ) : null}
+              </>
+            )}
           </CardContent>
         </Tabs>
       </Card>

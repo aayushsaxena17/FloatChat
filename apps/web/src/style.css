@@ -990,6 +990,36 @@ h1 {
 .chart {
   min-height: 270px;
 }
+.chart-panel-empty [data-slot="tabs"] {
+  flex: 1;
+  min-height: 0;
+}
+.chart-panel-empty .panel-content {
+  display: flex;
+  flex: 1;
+}
+.chart-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex: 1;
+  text-align: center;
+  padding: 24px;
+}
+.chart-empty strong {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.chart-empty p {
+  max-width: 30ch;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
 .calculation-details {
   font-size: 10px;
   color: #a0b6bd;

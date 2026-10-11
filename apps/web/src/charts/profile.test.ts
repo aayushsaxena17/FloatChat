@@ -105,4 +105,62 @@ describe("profile figures", () => {
     expect(trace.x).toEqual(paired.map((level) => level.salinity));
     expect(trace.y).toEqual(paired.map((level) => level.temperature));
   });
+
+  it("explains bad salinity and the resulting missing T-S pairs", () => {
+    const modified = structuredClone(profile);
+    const names = modified.levels.columns.map((column) => column.name);
+    for (const row of modified.levels.rows) {
+      row[names.indexOf("salinity")] = null;
+      row[names.indexOf("salinity_qc")] = "4";
+    }
+    const figures = profileFigures(modified);
+    expect(figures[0].pointCount).toBeGreaterThan(0);
+    expect(figures[1].pointCount).toBe(0);
+    expect(figures[1].emptyReason).toBe(
+      "Salinity readings are marked as bad quality.",
+    );
+    expect(figures[2].pointCount).toBe(0);
+    expect(figures[2].emptyReason).toBe(
+      "No usable salinity readings to pair with temperature.",
+    );
+  });
+
+  it("does not blame quality control when salinity is simply missing", () => {
+    const modified = structuredClone(profile);
+    const names = modified.levels.columns.map((column) => column.name);
+    for (const row of modified.levels.rows) {
+      row[names.indexOf("salinity")] = null;
+      row[names.indexOf("salinity_qc")] = null;
+    }
+    expect(profileFigures(modified)[1].emptyReason).toBe(
+      "No salinity values are available for this selection.",
+    );
+  });
+
+  it("explains an empty pressure selection without claiming bad data", () => {
+    const modified = structuredClone(profile);
+    modified.levels.rows = [];
+    modified.levels.row_count = 0;
+    for (const figure of profileFigures(modified)) {
+      expect(figure.pointCount).toBe(0);
+      expect(figure.emptyReason).toBe(
+        "No readings match the selected pressure range.",
+      );
+    }
+  });
+
+  it("explains why readings at different levels cannot form T-S pairs", () => {
+    const modified = structuredClone(profile);
+    const names = modified.levels.columns.map((column) => column.name);
+    modified.levels.rows = modified.levels.rows.slice(0, 2);
+    modified.levels.rows[0][names.indexOf("salinity")] = null;
+    modified.levels.rows[1][names.indexOf("temperature")] = null;
+    const figures = profileFigures(modified);
+    expect(figures[0].pointCount).toBe(1);
+    expect(figures[1].pointCount).toBe(1);
+    expect(figures[2].pointCount).toBe(0);
+    expect(figures[2].emptyReason).toBe(
+      "Temperature and salinity are missing at matching levels.",
+    );
+  });
 });

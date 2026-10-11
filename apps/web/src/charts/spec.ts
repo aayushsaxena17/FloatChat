@@ -31,6 +31,7 @@ export interface Figure {
   layout: Partial<Layout>;
   table: { columns: string[]; rows: Array<Array<string | number | null>> };
   pointCount: number;
+  emptyReason?: string;
 }
 
 type ContractTrace = {

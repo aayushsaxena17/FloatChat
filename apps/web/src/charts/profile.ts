@@ -73,6 +73,32 @@ function unit(profile: ProfileResponse, column: string): string | null {
   );
 }
 
+/** Explain missing values using the returned data and flags, without guessing sensor faults. */
+function emptyProfileReason(
+  profile: ProfileResponse,
+  levels: Level[],
+  variable: "temperature" | "salinity",
+): string {
+  const records = tableRecords(profile.levels);
+  if (records.length === 0)
+    return "No readings match the selected pressure range.";
+  if (levels.length === 0) return "No usable pressure readings are available.";
+  const label = variable === "salinity" ? "Salinity" : "Temperature";
+  if (records.some((record) => typeof record[variable] === "number"))
+    return `${label} readings have no usable pressure values.`;
+  if (records.every((record) => record[`${variable}_qc`] === "4"))
+    return `${label} readings are marked as bad quality.`;
+  if (
+    profile.qc_policy.name === "science_ready" &&
+    records.every((record) => {
+      const flag = record[`${variable}_qc`];
+      return typeof flag === "string" && flag !== "1" && flag !== "2";
+    })
+  )
+    return `No ${variable} readings pass the quality check.`;
+  return `No ${variable} values are available for this selection.`;
+}
+
 function variableFigure(
   profile: ProfileResponse,
   levels: Level[],
@@ -118,6 +144,10 @@ function variableFigure(
       rows: kept.map((level) => [level.pressure, level[variable]]),
     },
     pointCount: kept.length,
+    emptyReason:
+      kept.length === 0
+        ? emptyProfileReason(profile, levels, variable)
+        : undefined,
   };
 }
 
@@ -195,6 +225,16 @@ export function profileFigures(profile: ProfileResponse): Figure[] {
       ]),
     },
     pointCount: both.length,
+    emptyReason:
+      both.length > 0
+        ? undefined
+        : levels.length === 0
+          ? emptyProfileReason(profile, levels, "salinity")
+          : !levels.some((level) => level.salinity !== null)
+            ? "No usable salinity readings to pair with temperature."
+            : !levels.some((level) => level.temperature !== null)
+              ? "No usable temperature readings to pair with salinity."
+              : "Temperature and salinity are missing at matching levels.",
   };
   return [
     variableFigure(profile, levels, "temperature", CATEGORICAL[0]),

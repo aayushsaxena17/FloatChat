@@ -1,5 +1,39 @@
 import { test, expect, type Page } from "@playwright/test";
 
+test("profile with bad salinity shows reasons instead of empty axes", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1818, height: 1000 });
+  await page.goto(
+    "/explore/profiles?region=Indian+Ocean&start=2025-01-01&end=2025-04-01&qc=science_ready&platform=5906257&profile=f85f411b-9a3f-4de7-a073-e2ca8818f2be",
+  );
+  const charts = page.getByTestId("profile-charts");
+  await expect(charts.getByText("No readings", { exact: true })).toHaveCount(2);
+  const salinity = charts
+    .getByRole("heading", { name: "Practical salinity versus pressure" })
+    .locator("../..");
+  const ts = charts
+    .getByRole("heading", { name: "Temperature-salinity diagram" })
+    .locator("../..");
+  await expect(salinity).toContainText(
+    "Salinity readings are marked as bad quality.",
+  );
+  await expect(ts).toContainText(
+    "No usable salinity readings to pair with temperature.",
+  );
+  await expect(salinity.locator(".chart")).toHaveCount(0);
+  await expect(ts.locator(".chart")).toHaveCount(0);
+  await expect(charts.getByRole("button", { name: "Reset view" })).toHaveCount(
+    1,
+  );
+  const cards = await charts.locator(".chart-panel").all();
+  const heights = await Promise.all(
+    cards.map(async (card) => (await card.boundingBox())?.height),
+  );
+  expect(heights[1]).toBe(heights[0]);
+  expect(heights[2]).toBe(heights[0]);
+});
+
 // scripts/stage3_acceptance.py sets STAGE3_SHOTS_DIR to keep screenshots of the checkpoints.
 async function checkpoint(page: Page, name: string) {
   const directory = process.env.STAGE3_SHOTS_DIR;
