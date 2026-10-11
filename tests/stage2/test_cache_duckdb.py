@@ -163,10 +163,26 @@ def parts_table(levels=LEVELS) -> pa.Table:
     return pa.table(columns, schema=SCHEMA)
 
 
-def write_part(tmp_path, levels=LEVELS, name="part.parquet"):
-    path = tmp_path / name
-    pq.write_table(parts_table(levels), path)
-    return compile_duckdb.parts_dataset([path])
+def cache_dir(tmp_path):
+    directory = tmp_path / "cache"
+    directory.mkdir(exist_ok=True)
+    return directory
+
+
+def write_part(tmp_path, levels=LEVELS):
+    """A part written into the cache directory under its content address, as PartCache does."""
+    import io
+
+    buffer = io.BytesIO()
+    pq.write_table(parts_table(levels), buffer)
+    payload = buffer.getvalue()
+    path = cache_dir(tmp_path) / f"{hashlib.sha256(payload).hexdigest()}.parquet"
+    path.write_bytes(payload)
+    return [path]
+
+
+def engine(tmp_path, limits=LIMITS):
+    return compile_duckdb.DuckEngine(cache_dir(tmp_path), limits)
 
 
 def members(*profiles):
@@ -195,8 +211,8 @@ def run(tmp_path, operation, *, levels=LEVELS, profiles=MEMBERS, **changes):
     statement = compile_duckdb.aggregate_statement(
         plan_for(operation, **changes), label="Arabian Sea", max_rows=100
     )
-    dataset = write_part(tmp_path, levels)
-    return compile_duckdb.run(statement, dataset, members(*profiles), LIMITS, 10)
+    paths = write_part(tmp_path, levels)
+    return engine(tmp_path).run(statement, paths, members(*profiles), 10)
 
 
 def test_science_ready_aggregates_and_the_manifest_semi_join(tmp_path):
@@ -298,7 +314,7 @@ def test_run_refuses_external_access_and_reconfiguration(tmp_path, template):
     pq.write_table(pa.table({"x": [1]}), outside)
     statement = DuckStatement(template.format(path=outside), {}, ())
     with pytest.raises(QueryError) as caught:
-        compile_duckdb.run(statement, write_part(tmp_path), members(*MEMBERS), LIMITS, 10)
+        engine(tmp_path).run(statement, write_part(tmp_path), members(*MEMBERS), 10)
     assert caught.value.code == "execution_failed" and str(outside) not in caught.value.text
     assert not (tmp_path / "outside.parquet.out").exists()
 
@@ -307,8 +323,8 @@ def test_run_interrupts_a_statement_that_cannot_finish(tmp_path):
     sql = "SELECT sum(a.range + b.range) FROM range(100000000) a, range(100000000) b"
     started = time.monotonic()
     with pytest.raises(QueryError) as caught:
-        compile_duckdb.run(
-            DuckStatement(sql, {}, ()), write_part(tmp_path), members(*MEMBERS), LIMITS, 0.2
+        engine(tmp_path).run(
+            DuckStatement(sql, {}, ()), write_part(tmp_path), members(*MEMBERS), 0.2
         )
     assert caught.value.code == "statement_timeout" and caught.value.status == 504
     assert time.monotonic() - started < 15
@@ -317,14 +333,116 @@ def test_run_interrupts_a_statement_that_cannot_finish(tmp_path):
 def test_run_maps_memory_exhaustion_to_cost_over_budget(tmp_path):
     sql = "SELECT string_agg(range::VARCHAR, ',') FROM range(100000000)"
     with pytest.raises(QueryError) as caught:
-        compile_duckdb.run(
-            DuckStatement(sql, {}, ()),
-            write_part(tmp_path),
-            members(*MEMBERS),
-            QueryLimits(duckdb_memory_mib=64),
-            20,
+        engine(tmp_path, QueryLimits(duckdb_memory_mib=64)).run(
+            DuckStatement(sql, {}, ()), write_part(tmp_path), members(*MEMBERS), 20
         )
     assert caught.value.code == "cost_over_budget"
+
+
+def test_engine_reads_the_cache_and_nothing_else(tmp_path):
+    duck = engine(tmp_path)
+    inside = write_part(tmp_path)[0]
+    assert duck.run(
+        DuckStatement("SELECT count(*) FROM read_parquet($f)", {"f": [str(inside)]}, ()),
+        [],
+        members(*MEMBERS),
+        10,
+    ) == [(sum(len(rows) for *_head, rows in LEVELS),)]
+    sibling = tmp_path / "cache-sibling"
+    sibling.mkdir()
+    for outside in (tmp_path / "outside.parquet", sibling / "x.parquet"):
+        pq.write_table(pa.table({"x": [1]}), outside)
+        statement = DuckStatement(f"SELECT * FROM read_parquet('{outside}')", {}, ())
+        with pytest.raises(QueryError) as caught:
+            duck.run(statement, [], members(*MEMBERS), 10)
+        assert caught.value.code == "execution_failed"
+    for setting in (
+        "SET enable_external_access = true",
+        f"SET allowed_directories = ['{tmp_path}/']",
+        "SET threads = 1",
+        "SET lock_configuration = false",
+    ):
+        with pytest.raises(QueryError):
+            duck.run(DuckStatement(setting, {}, ()), [], members(*MEMBERS), 10)
+
+
+def test_engine_only_passes_content_addressed_cache_files(tmp_path):
+    duck = engine(tmp_path)
+    template = compile_duckdb.aggregate_statement(
+        plan_for({"unit": "measurement"}), label="Arabian Sea", max_rows=10
+    )
+    good = write_part(tmp_path)
+    assert duck.verified_files(good) == [str(good[0].resolve())]
+    renamed = cache_dir(tmp_path) / "part.parquet"
+    renamed.write_bytes(good[0].read_bytes())
+    elsewhere = tmp_path / good[0].name
+    elsewhere.write_bytes(good[0].read_bytes())
+    for bad in (renamed, elsewhere, cache_dir(tmp_path) / ".." / good[0].name):
+        with pytest.raises(QueryError) as caught:
+            duck.run(template, [bad], members(*MEMBERS), 10)
+        assert caught.value.code == "internal_error"
+
+
+def test_engine_is_reused_across_executions_and_threads(tmp_path):
+    import threading
+
+    duck = engine(tmp_path, QueryLimits(duckdb_concurrency=2))
+    statement = compile_duckdb.aggregate_statement(
+        plan_for({"unit": "measurement", "group_by": ["month"]}), label="Arabian Sea", max_rows=10
+    )
+    paths = write_part(tmp_path)
+    expected = duck.run(statement, paths, members(*MEMBERS), 10)
+    results, errors = [], []
+
+    def work():
+        try:
+            results.append(duck.run(statement, paths, members(*MEMBERS), 10))
+        except Exception as error:  # pragma: no cover - surfaced by the assertion below
+            errors.append(error)
+
+    threads = [threading.Thread(target=work) for _ in range(6)]
+    [thread.start() for thread in threads]
+    [thread.join() for thread in threads]
+    assert not errors and results == [expected] * 6
+
+
+def test_engine_bounds_concurrency_within_the_deadline(tmp_path):
+    import threading
+
+    duck = engine(tmp_path, QueryLimits(duckdb_concurrency=1))
+    slow = DuckStatement(
+        "SELECT sum(a.range + b.range) FROM range(100000000) a, range(100000000) b", {}, ()
+    )
+    blocker = threading.Thread(
+        target=lambda: pytest.raises(QueryError, duck.run, slow, [], members(*MEMBERS), 1.5)
+    )
+    blocker.start()
+    time.sleep(0.2)
+    started = time.monotonic()
+    with pytest.raises(QueryError) as caught:
+        duck.run(DuckStatement("SELECT 1", {}, ()), [], members(*MEMBERS), 0.3)
+    assert caught.value.code == "statement_timeout"
+    assert time.monotonic() - started < 1.0
+    blocker.join()
+    assert duck.run(DuckStatement("SELECT 1", {}, ()), [], members(*MEMBERS), 5) == [(1,)]
+
+
+def test_threads_default_to_every_visible_cpu(tmp_path):
+    assert engine(tmp_path).threads == compile_duckdb.default_threads() >= 1
+    assert engine(tmp_path, QueryLimits(duckdb_threads=3)).threads == 3
+
+
+def test_members_from_columns_matches_members_table():
+    rows = [
+        {"profile_id": P1, "profile_hash": "h1", "platform_number": "5900001", "observed_at": JAN},
+        {"profile_id": P3, "profile_hash": "h3", "platform_number": "5900003", "observed_at": JAN},
+    ]
+    manifest = {"slot": [{"profile_id": P1, "hash": "h1"}]}
+    names = list(rows[0])
+    tuples = [tuple(row.values()) for row in rows]
+    assert compile_duckdb.members_from_columns(names, tuples, manifest) == (
+        compile_duckdb.members_table(rows, manifest)
+    )
 
 
 def test_paths_fetches_each_part_once_in_order_and_times_out(tmp_path):

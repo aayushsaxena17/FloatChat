@@ -26,8 +26,14 @@ class QueryLimits(BaseSettings):
     chart_series: int = Field(default=20, ge=1, le=1000)
     query_timeout_seconds: float = Field(default=10.0, gt=0, le=600)
     duckdb_memory_mib: int = Field(default=512, ge=64, le=65536)
-    duckdb_threads: int = Field(default=2, ge=1, le=64)
+    # 0 means every CPU the process sees (ADR-0066); a container reports the host's CPUs.
+    duckdb_threads: int = Field(default=0, ge=0, le=256)
+    duckdb_concurrency: int = Field(default=2, ge=1, le=64)
     object_cache_bytes: int = Field(default=2 * 1024**3, ge=1024 * 1024, le=1024**4)
+    # In-process memo of finished results and coverage (ADR-0067); 0 entries disables it.
+    result_memo_entries: int = Field(default=256, ge=0, le=100_000)
+    result_memo_bytes: int = Field(default=64 * 1024 * 1024, ge=0, le=16 * 1024**3)
+    coverage_memo_entries: int = Field(default=512, ge=0, le=100_000)
     histogram_bins: int = Field(default=200, ge=1, le=10_000)
     trajectory_points: int = Field(default=1000, ge=1, le=100_000)
     profile_levels: int = Field(default=10_000, ge=1, le=10_000)

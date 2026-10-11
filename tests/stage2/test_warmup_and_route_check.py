@@ -137,20 +137,20 @@ def test_cold_fill_timeout_is_retried_once(monkeypatch: pytest.MonkeyPatch, tmp_
     service = QueryService(FakeCatalogue([part]), limits, cache, "test")  # type: ignore[arg-type]
     attempts: list[int] = []
 
-    def run(statement: Any, parts: Any, members: Any, run_limits: Any, timeout: float) -> list:
+    def run(statement: Any, paths: Any, members: Any, timeout: float) -> list:
         attempts.append(len(attempts))
         if len(attempts) == 1:
             raise QueryError("statement_timeout")
         return [("2025-01", 1.5, 2)]
 
-    monkeypatch.setattr(router_module.compile_duckdb, "run", run)
+    assert service.duck is not None
+    monkeypatch.setattr(service.duck, "run", run)
     monkeypatch.setattr(
-        router_module.compile_duckdb, "parts_dataset", lambda paths: ("dataset", tuple(paths))
+        router_module.compile_duckdb,
+        "members_from_columns",
+        lambda names, rows, m: SimpleNamespace(num_rows=0),
     )
-    monkeypatch.setattr(
-        router_module.compile_duckdb, "members_table", lambda rows, m: SimpleNamespace(num_rows=0)
-    )
-    monkeypatch.setattr(service, "_rows", lambda statement: [])
+    monkeypatch.setattr(service, "_columns", lambda statement: ([], []))
     plan = router_module.validate_plan(
         {
             "time_range": {"start": "2025-01-01T00:00:00Z", "end": "2025-02-01T00:00:00Z"},

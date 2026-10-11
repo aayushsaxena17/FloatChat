@@ -420,3 +420,21 @@ def test_warm_cache_fills_every_active_part(database, tmp_path, allow_loopback):
     )
     assert response["execution"]["objects_fetched"] == 0
     assert response["execution"]["objects_reused"] == len(PROFILES)
+
+
+def test_repeated_query_is_served_from_the_memo(database, tmp_path, allow_loopback):
+    """ADR-0067: the second identical plan returns the stored answer, rows unchanged."""
+    service = _service(database, tmp_path, allow_loopback, postgres_level_budget=1)
+    plan = _plan(
+        geography={"kind": "named_region", "value": "Indian Ocean"},
+        operation={"kind": "aggregate", "group_by": ["month"], "metrics": ["mean", "count"]},
+        presentation={"kind": "line_chart"},
+    )
+    first = service.query(plan)
+    assert first["execution"]["source"] == "duckdb" and "cached" not in first["execution"]
+    second = service.query(plan)
+    assert second["execution"]["cached"] is True
+    assert second["execution"]["elapsed_ms"] == first["execution"]["elapsed_ms"]
+    assert second["result"] == first["result"]
+    assert second["provenance"]["result_sha256"] == first["provenance"]["result_sha256"]
+    assert service.results.hits == 1 and len(service.results) == 1

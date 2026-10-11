@@ -345,7 +345,10 @@ def test_duckdb_statement_uses_named_parameters_only(unit):
         statement = compile_duckdb.aggregate_statement(plan, label=label, max_rows=500)
         sql = statement.sql
         texts.add(sql)
-        assert set(re.findall(r"\$([A-Za-z_]\w*)", sql)) == set(statement.parameters)
+        # $parts_files is bound by DuckEngine.run to the verified cache paths (ADR-0066).
+        assert set(re.findall(r"\$([A-Za-z_]\w*)", sql)) == set(statement.parameters) | {
+            "parts_files"
+        }
         assert "?" not in sql and label not in sql and "321" not in sql and "7.5" not in sql
         assert statement.parameters == {
             "row_limit": 501,
