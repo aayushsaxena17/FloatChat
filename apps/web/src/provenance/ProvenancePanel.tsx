@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { Provenance } from "../api/types";
 import { formatUtc } from "../catalog/units";
+import { DetailsDialog } from "../components/DetailsDialog";
+import { Button } from "../components/ui/button";
 
 function Facts({ entries }: { entries: Array<[string, React.ReactNode]> }) {
   return (
@@ -52,59 +54,64 @@ export function ProvenancePanel({
     }
   };
   return (
-    <details className="provenance" open={open} data-testid="provenance">
-      <summary>Data source & processing details</summary>
-      <Facts
-        entries={[
-          ["Source", `${provenance.source} (${versions.mapping as string})`],
-          [
-            "Environment",
-            `${environment.name} (${environment.mode}); reference time ${formatUtc(environment.reference_time)}`,
-          ],
-          [
-            "Ingested",
-            `${formatUtc(environment.ingested_at)}; run ${environment.latest_run ?? "—"}`,
-          ],
-          [
-            "Source retrieved",
-            environment.source_retrieved
-              ? `${formatUtc(environment.source_retrieved.start)} to ${formatUtc(environment.source_retrieved.end)}`
-              : "—",
-          ],
-          ["Geography", geographyText(provenance)],
-          [
-            "Coverage",
-            provenance.coverage
-              ? `${provenance.coverage.slots_covered} of ${provenance.coverage.slots_total} slots covered, ${provenance.coverage.slots_missing} missing${provenance.coverage.partial ? " (partial)" : ""}; ${provenance.coverage.estimated_profiles.toLocaleString("en-GB")} profiles, ${provenance.coverage.estimated_levels.toLocaleString("en-GB")} levels in the manifests`
-              : "not resolved for a read",
-          ],
-          [
-            "QC policy",
-            (versions.qc_policy as string | undefined) ?? "none (read)",
-          ],
-          [
-            "Versions",
-            `hash ${versions.hash as string}; qc ${versions.qc as string}; geometry ${versions.geometry as string}; schema ${versions.schema as string}; plan ${versions.plan_schema as string}${region ? `; region ${region.name} ${region.version}` : ""}`,
-          ],
-          ["Transformation", provenance.transformation],
-          [
-            "Execution",
-            `${execution.source ?? "—"}${execution.elapsed_ms !== undefined && execution.elapsed_ms !== null ? `, ${execution.elapsed_ms} ms` : ""}${execution.rows !== undefined && execution.rows !== null ? `, ${execution.rows} rows` : ""}${execution.run_ids ? `; runs ${execution.run_ids.join(", ")}` : ""}${execution.partitions ? `; ${execution.partitions.length} partitions` : ""}`,
-          ],
-          ["Plan SHA-256", provenance.plan_sha256 ?? "none (read)"],
-          ["Result SHA-256", provenance.result_sha256],
-          ["Application commit", provenance.application_commit],
-          [
-            "Attribution",
-            `${provenance.attribution.argo} · ${provenance.attribution.argovis}`,
-          ],
-        ]}
-      />
-      <p>
-        <button type="button" onClick={copy}>
-          {copied ? "Copied" : "Copy JSON"}
-        </button>
-      </p>
-    </details>
+    <div className="provenance" data-testid="provenance">
+      <DetailsDialog
+        title="Data source & processing details"
+        description="Trace this result to its source, quality policy and processing run. Identifiers are included for reproducibility."
+        defaultOpen={open}
+        footer={
+          <Button variant="secondary" size="sm" onClick={copy}>
+            {copied ? "Copied" : "Copy JSON"}
+          </Button>
+        }
+      >
+        <Facts
+          entries={[
+            ["Source", `${provenance.source} (${versions.mapping as string})`],
+            [
+              "Environment",
+              `${environment.name} (${environment.mode}); reference time ${formatUtc(environment.reference_time)}`,
+            ],
+            [
+              "Ingested",
+              `${formatUtc(environment.ingested_at)}; run ${environment.latest_run ?? "—"}`,
+            ],
+            [
+              "Source retrieved",
+              environment.source_retrieved
+                ? `${formatUtc(environment.source_retrieved.start)} to ${formatUtc(environment.source_retrieved.end)}`
+                : "—",
+            ],
+            ["Geography", geographyText(provenance)],
+            [
+              "Coverage",
+              provenance.coverage
+                ? `${provenance.coverage.slots_covered} of ${provenance.coverage.slots_total} slots covered, ${provenance.coverage.slots_missing} missing${provenance.coverage.partial ? " (partial)" : ""}; ${provenance.coverage.estimated_profiles.toLocaleString("en-GB")} profiles, ${provenance.coverage.estimated_levels.toLocaleString("en-GB")} levels in the manifests`
+                : "not resolved for a read",
+            ],
+            [
+              "QC policy",
+              (versions.qc_policy as string | undefined) ?? "none (read)",
+            ],
+            [
+              "Versions",
+              `hash ${versions.hash as string}; qc ${versions.qc as string}; geometry ${versions.geometry as string}; schema ${versions.schema as string}; plan ${versions.plan_schema as string}${region ? `; region ${region.name} ${region.version}` : ""}`,
+            ],
+            ["Transformation", provenance.transformation],
+            [
+              "Execution",
+              `${execution.source ?? "—"}${execution.elapsed_ms !== undefined && execution.elapsed_ms !== null ? `, ${execution.elapsed_ms} ms` : ""}${execution.rows !== undefined && execution.rows !== null ? `, ${execution.rows} rows` : ""}${execution.run_ids ? `; runs ${execution.run_ids.join(", ")}` : ""}${execution.partitions ? `; ${execution.partitions.length} partitions` : ""}`,
+            ],
+            ["Plan SHA-256", provenance.plan_sha256 ?? "none (read)"],
+            ["Result SHA-256", provenance.result_sha256],
+            ["Application commit", provenance.application_commit],
+            [
+              "Attribution",
+              `${provenance.attribution.argo} · ${provenance.attribution.argovis}`,
+            ],
+          ]}
+        />
+      </DetailsDialog>
+    </div>
   );
 }

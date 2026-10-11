@@ -10,6 +10,7 @@ import {
   TabsContent,
 } from "../components/ui/tabs";
 import { DataTable } from "../components/DataTable";
+import { DetailsDialog } from "../components/DetailsDialog";
 import { Plot } from "./Plot";
 import type { Figure } from "./spec";
 
@@ -110,10 +111,15 @@ export function ChartPanel({
               Switch to Table for numerical values.
             </p>
             {caption ? (
-              <details className="calculation-details">
-                <summary>Calculation details</summary>
-                <p>{caption}</p>
-              </details>
+              <div className="calculation-details">
+                <DetailsDialog
+                  title={`${figure.title}: calculation details`}
+                  trigger="Calculation details"
+                  description="How the displayed values were calculated for this selection."
+                >
+                  <p>{caption}</p>
+                </DetailsDialog>
+              </div>
             ) : null}
           </CardContent>
         </Tabs>

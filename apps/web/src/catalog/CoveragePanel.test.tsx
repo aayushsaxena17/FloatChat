@@ -13,13 +13,14 @@ describe("CoveragePanel", () => {
     expect(
       screen.getByRole("heading", { name: /Coverage/ }),
     ).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    const trigger = screen.getByRole("button", {
+      name: "Coverage & ingestion details",
+    });
+    await userEvent.click(trigger);
     const details = within(
-      screen
-        .getByText("Coverage & ingestion details")
-        .closest("details") as HTMLElement,
+      screen.getByRole("dialog", { name: "Coverage & ingestion details" }),
     );
-    expect(details.getByText("FloatChat ingestion")).not.toBeVisible();
-    await userEvent.click(screen.getByText("Coverage & ingestion details"));
     expect(details.getByText("FloatChat ingestion")).toBeVisible();
     expect(details.getByText(/1 Jan 2025 to 1 Feb 2025/)).toBeInTheDocument();
     expect(screen.getByText(/Arabian Sea \(iho-v3/)).toBeInTheDocument();
@@ -39,9 +40,12 @@ describe("CoveragePanel", () => {
         response.coverage.partial ? "partial coverage" : "coverage complete",
       ),
     ).toBeInTheDocument();
+    await userEvent.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
   });
 
-  it("labels partial coverage in text and lists the missing tiles", () => {
+  it("labels partial coverage in text and lists the missing tiles", async () => {
     const partial: CoverageResponse = {
       ...response,
       coverage: {
@@ -65,12 +69,15 @@ describe("CoveragePanel", () => {
     render(<CoveragePanel coverage={partial} />);
     expect(screen.getByText("partial coverage")).toBeInTheDocument();
     expect(screen.getByText("Some source data is missing")).toBeVisible();
+    await userEvent.click(
+      screen.getByRole("button", { name: "Coverage & ingestion details" }),
+    );
     expect(
       screen.getByText(/2025-01: 50°E\/0°N \(fetch_coverage\)/),
     ).toBeVisible();
   });
 
-  it("says when no completed run defines the timestamps", () => {
+  it("says when no completed run defines the timestamps", async () => {
     const bare: CoverageResponse = {
       ...response,
       environment: {
@@ -81,6 +88,9 @@ describe("CoveragePanel", () => {
       },
     };
     render(<CoveragePanel coverage={bare} />);
+    await userEvent.click(
+      screen.getByRole("button", { name: "Coverage & ingestion details" }),
+    );
     expect(
       screen.getByText(/unknown \(no completed run\)/),
     ).toBeInTheDocument();

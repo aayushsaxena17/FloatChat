@@ -59,28 +59,40 @@ export function ProfileSummary({
         </div>
       </div>
       <dl className="profile-summary-facts">
-        <dt>Observed</dt>
-        <dd>{formatUtc(header.observed_at)}</dd>
-        <dt>Location</dt>
-        <dd>
-          {formatCoordinate(header.latitude, "N", "S")} ·{" "}
-          {formatCoordinate(header.longitude, "E", "W")}
-        </dd>
-        <dt>Retained levels</dt>
-        <dd>
-          {formatNumber(levels.length)} of {formatNumber(header.level_count)}
-        </dd>
-        <dt>Pressure range</dt>
-        <dd>
-          {range(
-            levels.map((level) => level.pressure),
-            "dbar",
-          )}
-        </dd>
-        <dt>Temperature range</dt>
-        <dd>{range(temperatures, "°C")}</dd>
-        <dt>Salinity range</dt>
-        <dd>{range(salinities, "PSS-78")}</dd>
+        <div>
+          <dt>Observed</dt>
+          <dd>{formatUtc(header.observed_at)}</dd>
+        </div>
+        <div>
+          <dt>Location</dt>
+          <dd>
+            {formatCoordinate(header.latitude, "N", "S")} ·{" "}
+            {formatCoordinate(header.longitude, "E", "W")}
+          </dd>
+        </div>
+        <div>
+          <dt>Retained levels</dt>
+          <dd>
+            {formatNumber(levels.length)} of {formatNumber(header.level_count)}
+          </dd>
+        </div>
+        <div>
+          <dt>Pressure range</dt>
+          <dd>
+            {range(
+              levels.map((level) => level.pressure),
+              "dbar",
+            )}
+          </dd>
+        </div>
+        <div>
+          <dt>Temperature range</dt>
+          <dd>{range(temperatures, "°C")}</dd>
+        </div>
+        <div>
+          <dt>Salinity range</dt>
+          <dd>{range(salinities, "PSS-78")}</dd>
+        </div>
       </dl>
       <p className="profile-summary-guide">
         <ArrowDown size={16} aria-hidden="true" /> Read the charts below:

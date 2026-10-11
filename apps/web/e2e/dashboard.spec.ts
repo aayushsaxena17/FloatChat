@@ -36,12 +36,7 @@ test("dashboard: Arabian Sea, January 2025, 0-100 dbar shows map points and a pr
   await expect(page).toHaveURL(/depth_max=100/);
 
   await expect(page.getByRole("heading", { name: /Coverage/ })).toBeVisible();
-  await expect(
-    page
-      .getByRole("heading", { name: /Coverage/ })
-      .locator("..")
-      .locator(".."),
-  ).toContainText("Arabian Sea (iho-v3");
+  await expect(page.locator(".coverage-scope")).toContainText("Arabian Sea");
   const mapStatus = page.getByTestId("map-status");
   await expect(mapStatus).toHaveText(/[1-9]\d* profiles plotted/, {
     timeout: 60_000,
@@ -60,6 +55,37 @@ test("dashboard: Arabian Sea, January 2025, 0-100 dbar shows map points and a pr
     "1 Jan 2025 to 1 Feb 2025",
   );
 
+  await page
+    .getByRole("button", { name: "Coverage & ingestion details" })
+    .click();
+  const coverageDialog = page.getByRole("dialog", {
+    name: "Coverage & ingestion details",
+  });
+  await expect(coverageDialog).toBeVisible();
+  await expect(coverageDialog).toContainText("Arabian Sea (iho-v3");
+  await expect(
+    coverageDialog.getByText("FloatChat ingestion", { exact: true }),
+  ).toBeVisible();
+  const coverageAfterOpen = await page.locator(".coverage").boundingBox();
+  expect(coverageAfterOpen?.height).toBe(coverageCard?.height);
+  expect((await page.locator(".locations-panel").boundingBox())?.height).toBe(
+    locationsCard?.height,
+  );
+  await page.keyboard.press("Escape");
+  await expect(coverageDialog).not.toBeVisible();
+  await page
+    .locator(".locations-panel")
+    .getByRole("button", { name: "Data source & processing details" })
+    .click();
+  const sourceDialog = page.getByRole("dialog", {
+    name: "Data source & processing details",
+  });
+  await expect(sourceDialog).toBeVisible();
+  await expect(
+    sourceDialog.getByText("Result SHA-256", { exact: true }),
+  ).toBeVisible();
+  await sourceDialog.getByRole("button", { name: "Done", exact: true }).click();
+  await expect(sourceDialog).not.toBeVisible();
   await checkpoint(page, "01-dashboard");
   await page.getByRole("link", { name: "Open the map" }).click();
   await expect(page).toHaveURL(/\/explore\/map\?.*region=Arabian\+Sea/);
