@@ -81,16 +81,52 @@ test("dashboard: Arabian Sea, January 2025, 0-100 dbar shows map points and a pr
   await expect(
     charts.getByRole("heading", { name: "Temperature-salinity diagram" }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Temperature-salinity diagram" }),
+  ).toHaveCount(1);
+  await expect(charts.getByRole("button", { name: "Reset view" })).toHaveCount(
+    3,
+  );
+  const tsChart = charts
+    .getByRole("heading", { name: "Temperature-salinity diagram" })
+    .locator("../..");
+  await expect(tsChart.locator(".chart")).toContainText("Pressure", {
+    timeout: 30_000,
+  });
   const first = charts.locator("section").first();
   await expect(first.locator(".chart")).toBeVisible();
   await expect(first.locator(".chart")).toContainText("Pressure (dbar)", {
     timeout: 30_000,
   });
+  const ticks = first.locator(".ytick");
+  const originalTicks = await ticks.allTextContents();
+  await first.locator(".nsewdrag").scrollIntoViewIfNeeded();
+  const plotArea = await first.locator(".nsewdrag").boundingBox();
+  expect(plotArea).not.toBeNull();
+  if (plotArea) {
+    await page.mouse.move(
+      plotArea.x + plotArea.width * 0.2,
+      plotArea.y + plotArea.height * 0.2,
+    );
+    await page.mouse.down();
+    await page.mouse.move(
+      plotArea.x + plotArea.width * 0.8,
+      plotArea.y + plotArea.height * 0.7,
+      { steps: 8 },
+    );
+    await page.mouse.up();
+    await expect.poll(() => ticks.allTextContents()).not.toEqual(originalTicks);
+    await first.getByRole("button", { name: "Reset view" }).click();
+    await expect.poll(() => ticks.allTextContents()).toEqual(originalTicks);
+  }
   await first.getByRole("tab", { name: "Table" }).click();
   await expect(
     first.getByRole("columnheader", { name: "Temperature (°C)" }),
   ).toBeVisible();
   expect(await first.locator("tbody tr").count()).toBeGreaterThan(0);
+  await charts
+    .getByText("Quality & processing details", { exact: true })
+    .click();
   await expect(charts.getByTestId("provenance").first()).toBeVisible();
   await checkpoint(page, "03-profiles");
 });

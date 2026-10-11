@@ -1,29 +1,13 @@
-import { useMemo } from "react";
-import { usePlanQuery } from "../api/hooks";
-import { ChartPanel } from "../charts/ChartPanel";
-import { figuresFromChart } from "../charts/spec";
 import { StatusMessage } from "../components/StatusMessage";
-import { ProvenancePanel } from "../provenance/ProvenancePanel";
 import { FilterBar } from "./FilterBar";
-import { isReady, tsDiagramPlan, TS_PROFILE_LIMIT } from "./filters";
 import { ProfileCharts } from "./ProfileCharts";
 import { ProfileList } from "./ProfileList";
+import { ProfileSummary } from "./ProfileSummary";
 import { useExplorerData } from "./useExplorerData";
 
 export function ProfilesView() {
   const data = useExplorerData();
   const { filters, update, profiles, points, profile } = data;
-  const ready = isReady(filters);
-  const plan = useMemo(
-    () => (ready ? tsDiagramPlan(filters) : null),
-    [filters, ready],
-  );
-  const ts = usePlanQuery(plan);
-  const tsFigures = useMemo(
-    () =>
-      ts.data?.chart ? figuresFromChart(ts.data.chart, ts.data.result) : [],
-    [ts.data],
-  );
   return (
     <>
       <div className="page-heading explorer-heading">
@@ -40,13 +24,17 @@ export function ProfilesView() {
         update={update}
         parameters={data.parameters.data}
       />
-      <div className="map-layout">
+      <div className="profiles-layout">
         <div>
           <StatusMessage
             loading={profiles.isPending && profiles.fetchStatus !== "idle"}
             error={profiles.error}
           >
             <h2>Profiles ({points.length.toLocaleString("en-GB")})</h2>
+            <p className="profiles-list-note">
+              Newest observations first. Choose a row to inspect its water
+              column.
+            </p>
             {points.length === 0 && profiles.data ? (
               <p className="status" role="status">
                 No profiles match these filters.
@@ -63,23 +51,28 @@ export function ProfilesView() {
         </div>
         <div>
           <StatusMessage
-            loading={ts.isPending && ts.fetchStatus !== "idle"}
-            error={ts.error}
+            loading={Boolean(filters.profile) && profile.isPending}
+            error={profile.error}
           >
-            {tsFigures.map((figure) => (
-              <ChartPanel
-                key={figure.key}
-                figure={figure}
-                caption={`Newest ${Math.min(TS_PROFILE_LIMIT, ts.data?.chart?.series.length ?? 0)} profiles; ${ts.data?.interpretation.transformation as string}`}
-              />
-            ))}
-            {ts.data ? (
-              <ProvenancePanel provenance={ts.data.provenance} />
-            ) : null}
+            <ProfileSummary
+              profile={profile.data}
+              onSelectNewest={
+                points[0] ? () => data.select(points[0]) : undefined
+              }
+            />
           </StatusMessage>
         </div>
       </div>
-      <h2 style={{ marginTop: 16 }}>Selected profile</h2>
+      <div className="section-heading profile-analysis-heading">
+        <div>
+          <p className="eyebrow">ONE OBSERVATION / THE WATER COLUMN</p>
+          <h2>Selected profile</h2>
+          <p className="page-description">
+            Temperature and salinity at each measured pressure. Hover for
+            values; drag to zoom.
+          </p>
+        </div>
+      </div>
       {!filters.profile ? (
         <p className="status" role="status">
           Select a profile from the list (or on the map) to see its temperature,

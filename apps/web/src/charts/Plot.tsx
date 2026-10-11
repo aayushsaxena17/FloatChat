@@ -16,7 +16,9 @@ export function Plot({
   useEffect(() => {
     const node = element.current;
     if (!node) return;
-    void Plotly.react(node, data, layout, {
+    // Plotly mutates axis ranges during zoom. Keep React's figure unchanged so a
+    // remount (Reset view or returning from Table) restores the original axes.
+    void Plotly.react(node, structuredClone(data), structuredClone(layout), {
       displaylogo: false,
       responsive: true,
       modeBarButtonsToRemove: ["lasso2d", "select2d", "autoScale2d"],

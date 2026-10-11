@@ -23,17 +23,19 @@ describe("profile figures", () => {
       "Temperature-salinity diagram",
     ]);
     expect(figures[0].layout.yaxis?.autorange).toBe("reversed");
-    expect(figures[0].layout.yaxis?.title).toEqual({ text: "Pressure (dbar)" });
-    expect(figures[0].layout.xaxis?.title).toEqual({
+    expect(figures[0].layout.yaxis?.title).toMatchObject({
+      text: "Pressure (dbar)",
+    });
+    expect(figures[0].layout.xaxis?.title).toMatchObject({
       text: "Temperature (°C)",
     });
-    expect(figures[1].layout.xaxis?.title).toEqual({
-      text: "Practical salinity (PSS-78, dimensionless)",
+    expect(figures[1].layout.xaxis?.title).toMatchObject({
+      text: "Salinity (PSS-78)",
     });
-    expect(figures[2].layout.xaxis?.title).toEqual({
-      text: "Practical salinity (PSS-78, dimensionless)",
+    expect(figures[2].layout.xaxis?.title).toMatchObject({
+      text: "Salinity (PSS-78)",
     });
-    expect(figures[2].layout.yaxis?.title).toEqual({
+    expect(figures[2].layout.yaxis?.title).toMatchObject({
       text: "Temperature (°C)",
     });
     expect(figures[0].table.columns).toEqual([
@@ -56,5 +58,51 @@ describe("profile figures", () => {
       expect(row.modes).toMatch(/[RAD]: \d+/);
       expect(row.qc).toMatch(/\d: \d+/);
     }
+  });
+
+  it("preserves gaps and excludes missing pressure rather than fabricating a surface reading", () => {
+    const modified = structuredClone(profile);
+    const names = modified.levels.columns.map((column) => column.name);
+    modified.levels.rows[1][names.indexOf("temperature")] = null;
+    modified.levels.rows[2][names.indexOf("pressure")] = null;
+    const levels = levelsOf(modified);
+    expect(levels).toHaveLength(profile.levels.row_count - 1);
+    const figures = profileFigures(modified);
+    const trace = figures[0].data[0] as {
+      x: Array<number | null>;
+      mode: string;
+      connectgaps: boolean;
+    };
+    expect(trace.x).toEqual(levels.map((level) => level.temperature));
+    expect(trace.x).toContain(null);
+    expect(trace.connectgaps).toBe(false);
+    expect(trace.mode).toBe("lines");
+    expect(figures[0].table.rows).toHaveLength(
+      levels.filter((level) => level.temperature !== null).length,
+    );
+  });
+
+  it("colours each T-S pair by its actual pressure and keeps every valid pair in the table", () => {
+    const figure = profileFigures(profile)[2];
+    const paired = levelsOf(profile).filter(
+      (level) => level.temperature !== null && level.salinity !== null,
+    );
+    const trace = figure.data[0] as {
+      x: number[];
+      y: number[];
+      customdata: number[];
+      marker: { color: number[] };
+    };
+    expect(trace.customdata).toEqual(paired.map((level) => level.pressure));
+    expect(trace.marker.color).toEqual(trace.customdata);
+    expect(figure.table.rows).toEqual(
+      paired.map((level) => [
+        level.pressure,
+        level.salinity,
+        level.temperature,
+      ]),
+    );
+    expect(trace.x).toEqual(paired.map((level) => level.salinity));
+    expect(trace.y).toEqual(paired.map((level) => level.temperature));
   });
 });
