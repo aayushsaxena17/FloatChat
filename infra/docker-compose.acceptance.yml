@@ -4,10 +4,10 @@ x-runtime: &runtime
   image: ${ACCEPTANCE_API_IMAGE:?Cached image digest required}
   pull_policy: never
   user: ${ACCEPTANCE_UID:?}:${ACCEPTANCE_GID:?}
-  working_dir: /home/floatchat/FloatChat-stage1
+  working_dir: ${FLOATCHAT_ROOT:-/home/floatchat/FloatChat}
   mem_limit: 1g
   environment: &runtime-environment
-    PYTHONPATH: /home/floatchat/FloatChat-stage1/packages/core/src:/home/floatchat/FloatChat-stage1/workers/src:/home/floatchat/FloatChat-stage1/.venv/lib/python3.12/site-packages
+    PYTHONPATH: ${FLOATCHAT_ROOT:-/home/floatchat/FloatChat}/packages/core/src:${FLOATCHAT_ROOT:-/home/floatchat/FloatChat}/workers/src:${FLOATCHAT_ROOT:-/home/floatchat/FloatChat}/.venv/lib/python3.12/site-packages
     PYTHONDONTWRITEBYTECODE: "1"
     HOME: /home/acceptance
     INGESTION_DATABASE_URL: ${INGESTION_DATABASE_URL:?}
@@ -22,7 +22,7 @@ x-runtime: &runtime
     INGESTION_APPLICATION_COMMIT: ${INGESTION_APPLICATION_COMMIT:?}
     FLOATCHAT_LIVE_INGESTION_ENABLED: "false"
   volumes:
-    - /home/floatchat/FloatChat-stage1:/home/floatchat/FloatChat-stage1:ro
+    - ${FLOATCHAT_ROOT:-/home/floatchat/FloatChat}:${FLOATCHAT_ROOT:-/home/floatchat/FloatChat}:ro
     - ${ACCEPTANCE_PRIVATE_DIRECTORY:?}:/home/acceptance/private
 
 services:
@@ -77,8 +77,8 @@ services:
       OBJECT_STORAGE_BUCKET: ${INGESTION_BUCKET:?}
       ACCEPTANCE_CONTROL_BUCKET: ${ACCEPTANCE_CONTROL_BUCKET:?}
     volumes:
-      - /home/floatchat/FloatChat-stage1/scripts/bootstrap_storage.py:/bootstrap_storage.py:ro
-      - /home/floatchat/FloatChat-stage1/scripts/stage1_acceptance_storage.py:/stage1_acceptance_storage.py:ro
+      - ${FLOATCHAT_ROOT:-/home/floatchat/FloatChat}/scripts/bootstrap_storage.py:/bootstrap_storage.py:ro
+      - ${FLOATCHAT_ROOT:-/home/floatchat/FloatChat}/scripts/stage1_acceptance_storage.py:/stage1_acceptance_storage.py:ro
     command: [python, /stage1_acceptance_storage.py]
     restart: "no"
   # Worker sizing. Production (8 GB host): process `--workers 4` in a 4g container

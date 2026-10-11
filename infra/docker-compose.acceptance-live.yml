@@ -4,7 +4,7 @@
 services:
   live-acquire:
     extends:
-      file: /home/floatchat/FloatChat-stage1/infra/docker-compose.acceptance.yml
+      file: docker-compose.acceptance.yml
       service: acquire
     command: [python, scripts/stage1_acceptance_runtime.py, acquire, --stdin-key]
     environment:

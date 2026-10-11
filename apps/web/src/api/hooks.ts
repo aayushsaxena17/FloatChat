@@ -1,6 +1,6 @@
 // TanStack Query owns server state (PRD 14.3). Keys derive from the filters so a URL change
 // refetches exactly what changed; errors surface as ApiError with code and correlation id.
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
   ApiError,
   getCatalogParameters,
@@ -91,6 +91,9 @@ export function useProfilesAll(filters: Filters) {
       return { pages, truncated: true };
     },
     enabled: isReady(filters),
+    // Keep the current points while a filter change loads the next list: the map stays
+    // mounted (rebuilding MapLibre is slow) and updates in place when the new list arrives.
+    placeholderData: keepPreviousData,
   });
 }
 
