@@ -20,7 +20,8 @@ from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 
-ROOT = Path("/home/floatchat/FloatChat-stage1")
+# The checkout this script lives in; the acceptance compose files mount it at the same path.
+ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from scripts.stage1_verify import source_hash  # noqa: E402
 
@@ -421,6 +422,7 @@ def prepare():
     admin_password, worker_password = secrets.token_hex(24), secrets.token_hex(24)
     environment = {
         "COMPOSE_PROJECT_NAME": project,
+        "FLOATCHAT_ROOT": str(ROOT),
         "ACCEPTANCE_DATABASE": database,
         "ACCEPTANCE_UID": str(os.getuid()),
         "ACCEPTANCE_GID": str(os.getgid()),
