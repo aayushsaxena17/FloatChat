@@ -25,7 +25,7 @@ import {
   timeSeriesPlan,
   toSearchParams,
 } from "../explorer/filters";
-import { MapView } from "../explorer/MapView";
+import { LazyMapView as MapView } from "../explorer/LazyMapView";
 import { useExplorerData } from "../explorer/useExplorerData";
 import { ProvenancePanel } from "../provenance/ProvenancePanel";
 import { OceanHero } from "./OceanHero";
