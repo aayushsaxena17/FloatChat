@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useRef } from "react";
-import { useSearchParams } from "react-router";
+import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
+import { useLocation, useSearchParams } from "react-router";
 import type { Environment } from "../api/types";
 import { parseFilters, toSearchParams, type Filters } from "./filters";
 
@@ -16,17 +16,22 @@ export function useFilters(environment?: Environment): {
   update: (patch: Partial<Filters>) => void;
 } {
   const [params, setParams] = useSearchParams();
+  const { key } = useLocation();
   const latest = useRef(params);
   const pending = useRef<string[]>([]);
-  const current = params.toString();
-  const arrived = pending.current.indexOf(current);
-  if (arrived >= 0) {
-    // One of our writes reached the router; later writes are still on their way.
-    pending.current = pending.current.slice(arrived + 1);
-  } else if (pending.current.length === 0) {
-    // A navigation this hook did not make (a link, back, a first render).
-    latest.current = params;
-  }
+  useLayoutEffect(() => {
+    // A render can be interrupted and replayed with the old URL. Only a committed
+    // navigation may acknowledge writes, otherwise that replay loses pending edits.
+    const arrived = pending.current.lastIndexOf(params.toString());
+    if (arrived >= 0) {
+      pending.current = pending.current.slice(arrived + 1);
+    } else {
+      // A link or history navigation supersedes any unfinished filter navigation.
+      pending.current = [];
+    }
+    if (pending.current.length === 0) latest.current = params;
+    // The location key also distinguishes navigations to the same query string.
+  }, [key, params]);
   const filters = useMemo(
     () => parseFilters(params, environment),
     [params, environment],
