@@ -11,16 +11,9 @@ export default defineConfig({
   // The heavy libraries are pre-bundled at start so the first request in the integration
   // stack does not pay for them inside the e2e budget (docs/stage3-plan.md section 0).
   build: {
-    // The map and chart libraries change rarely; separate chunks keep them cacheable across
-    // application releases.
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          maplibre: ["maplibre-gl"],
-          plotly: ["plotly.js-cartesian-dist-min"],
-        },
-      },
-    },
+    // MapLibre and Plotly are imported dynamically (ADR-0068), so each becomes its own
+    // cacheable chunk loaded on first use; manual chunks would pull shared helpers into them
+    // and force the entry to preload them.
     chunkSizeWarningLimit: 1600,
   },
   optimizeDeps: {

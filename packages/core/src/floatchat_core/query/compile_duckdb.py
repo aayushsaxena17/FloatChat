@@ -1,12 +1,20 @@
-"""DuckDB compiler and runner (ADR-0058): bounded, external access disabled, manifest semi-join.
+"""DuckDB compiler and engine (ADR-0058, amended by ADR-0066): bounded, locked, manifest semi-join.
 
-The statement is a fixed template over two registered relations: ``parts`` (a pyarrow dataset
-of the verified local part files, read by pyarrow with projection pushdown) and ``members``
-(the profiles the PostgreSQL side selected, intersected with the slot membership manifests).
-DuckDB never opens a path or a network endpoint.
+The statement is a fixed template over ``parts`` and ``members``. ``parts`` is DuckDB's own
+Parquet reader over the verified local part files (``read_parquet`` with the file list bound as a
+parameter, so DuckDB reads row groups in parallel and pushes the projection down); ``members`` is
+the profiles the PostgreSQL side selected, intersected with the slot membership manifests.
+
+One :class:`DuckEngine` per service holds a long-lived in-memory database configured once and
+locked: only the part-cache directory is readable, external access and extension loading are off,
+and the configuration cannot change afterwards. Each execution runs on its own cursor with its own
+interrupt deadline, and a semaphore bounds how many run at once so the shared memory limit holds.
 """
 
+import os
+import re
 import threading
+import time
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC
@@ -15,7 +23,6 @@ from typing import Any
 
 import duckdb
 import pyarrow as pa
-import pyarrow.dataset as ds
 
 from .errors import QueryError
 from .limits import QueryLimits
@@ -106,6 +113,10 @@ def aggregate_statement(plan: QueryPlan, *, label: str, max_rows: int) -> DuckSt
     joined = (
         "parts p JOIN members m ON p.profile_id = m.profile_id AND p.profile_hash = m.profile_hash"
     )
+    # The engine binds $parts_files to the verified cache paths (DuckEngine.run).
+    parts_cte = (
+        f"WITH parts AS (SELECT {', '.join(PARTS_COLUMNS)} FROM read_parquet($parts_files)) "
+    )
     variables = list(plan.ordered_variables)
     columns: list[str] = list(keys)
     if operation.unit == "measurement":
@@ -119,7 +130,7 @@ def aggregate_statement(plan: QueryPlan, *, label: str, max_rows: int) -> DuckSt
         group = f" GROUP BY {', '.join(key_sql[key] for key in grouped)}" if grouped else ""
         order = f" ORDER BY {', '.join(grouped)}" if grouped else ""
         sql = (
-            f"SELECT {', '.join(selects)} FROM {joined} WHERE {' AND '.join(where)}"
+            f"{parts_cte}SELECT {', '.join(selects)} FROM {joined} WHERE {' AND '.join(where)}"
             f"{group}{order} LIMIT $row_limit"
         )
         return DuckStatement(sql, parameters, tuple(columns))
@@ -141,7 +152,7 @@ def aggregate_statement(plan: QueryPlan, *, label: str, max_rows: int) -> DuckSt
     group = f" GROUP BY {', '.join('key_' + key for key in keys)}" if keys else ""
     order = f" ORDER BY {', '.join('key_' + key for key in keys)}" if keys else ""
     sql = (
-        f"SELECT {', '.join(outer_selects)} FROM ({inner}) per_profile{group}{order} "
+        f"{parts_cte}SELECT {', '.join(outer_selects)} FROM ({inner}) per_profile{group}{order} "
         "LIMIT $row_limit"
     )
     return DuckStatement(sql, parameters, tuple(columns))
@@ -168,44 +179,112 @@ def members_table(rows: Sequence[dict[str, Any]], manifests: dict[str, list[Any]
     )
 
 
-def parts_dataset(paths: Sequence[Path]) -> ds.Dataset:
-    return ds.dataset([str(path) for path in paths], format="parquet")
-
-
-def run(
-    statement: DuckStatement,
-    parts: ds.Dataset,
-    members: pa.Table,
-    limits: QueryLimits,
-    timeout_seconds: float,
-) -> list[tuple[Any, ...]]:
-    """Execute under a bounded, locked configuration with an interrupt deadline."""
-    connection = duckdb.connect(
-        database=":memory:",
-        config={
-            "enable_external_access": "false",
-            "autoinstall_known_extensions": "false",
-            "autoload_known_extensions": "false",
-            "memory_limit": f"{limits.duckdb_memory_mib}MiB",
-            "threads": str(limits.duckdb_threads),
+def members_from_columns(
+    names: Sequence[str], rows: Sequence[tuple[Any, ...]], manifests: dict[str, list[Any]]
+) -> pa.Table:
+    """``members_table`` over plain tuples (the PostgreSQL selection fetched without mapping)."""
+    index = {name: position for position, name in enumerate(names)}
+    allowed = {
+        (str(entry["profile_id"]), str(entry["hash"]))
+        for manifest in manifests.values()
+        for entry in manifest
+    }
+    pid, digest = index["profile_id"], index["profile_hash"]
+    kept = [row for row in rows if (row[pid], row[digest]) in allowed]
+    platform, observed = index["platform_number"], index["observed_at"]
+    return pa.Table.from_pydict(
+        {
+            "profile_id": [row[pid] for row in kept],
+            "profile_hash": [row[digest] for row in kept],
+            "platform_number": [row[platform] for row in kept],
+            "observed_at": [row[observed].astimezone(UTC).replace(tzinfo=None) for row in kept],
         },
+        schema=MEMBERS_SCHEMA,
     )
-    timer = threading.Timer(max(0.05, timeout_seconds), connection.interrupt)
-    try:
-        connection.execute("SET lock_configuration = true")
-        connection.register("parts", parts)
-        connection.register("members", members)
-        timer.start()
+
+
+PART_NAME = re.compile(r"^[0-9a-f]{64}\.parquet$")
+
+
+def default_threads() -> int:
+    """CPUs visible to the process (inside a container: the host's, not the cgroup quota)."""
+    return max(1, os.cpu_count() or 1)
+
+
+class DuckEngine:
+    """A long-lived, locked DuckDB database reading only the verified part cache (ADR-0066)."""
+
+    def __init__(self, cache_directory: Path, limits: QueryLimits) -> None:
+        self.directory = cache_directory.resolve()
+        self.limits = limits
+        threads = limits.duckdb_threads or default_threads()
+        self._connection = duckdb.connect(
+            database=":memory:",
+            config={
+                "autoinstall_known_extensions": "false",
+                "autoload_known_extensions": "false",
+                "memory_limit": f"{limits.duckdb_memory_mib}MiB",
+                "threads": str(threads),
+            },
+        )
+        # allowed_directories can only be set once the database is running, and must be set
+        # before external access is switched off; the lock then freezes every setting.
+        literal = str(self.directory).replace("'", "''") + "/"
+        self._connection.execute(f"SET allowed_directories = ['{literal}']")
+        self._connection.execute("SET parquet_metadata_cache = true")
+        self._connection.execute("SET enable_external_access = false")
+        self._connection.execute("SET lock_configuration = true")
+        self.threads = threads
+        self._slots = threading.BoundedSemaphore(limits.duckdb_concurrency)
+        self._closed = False
+
+    def verified_files(self, paths: Sequence[Path]) -> list[str]:
+        """Only content-addressed files directly inside the cache directory reach DuckDB."""
+        files = []
+        for path in paths:
+            resolved = Path(path).resolve()
+            if resolved.parent != self.directory or not PART_NAME.match(resolved.name):
+                raise QueryError("internal_error", message="A part path is outside the cache.")
+            files.append(str(resolved))
+        return files
+
+    def run(
+        self,
+        statement: DuckStatement,
+        paths: Sequence[Path],
+        members: pa.Table,
+        timeout_seconds: float,
+    ) -> list[tuple[Any, ...]]:
+        """Execute on a fresh cursor under the interrupt deadline and the concurrency bound."""
+        parameters = dict(statement.parameters)
+        if "$parts_files" in statement.sql:
+            parameters["parts_files"] = self.verified_files(paths)
+        deadline = time.monotonic() + max(0.05, timeout_seconds)
+        # Waiting for a slot counts against the same deadline as the execution itself.
+        if not self._slots.acquire(timeout=max(0.0, deadline - time.monotonic())):
+            raise QueryError("statement_timeout")
         try:
-            return connection.execute(statement.sql, dict(statement.parameters)).fetchall()
-        except duckdb.InterruptException:
-            raise QueryError("statement_timeout") from None
-        except duckdb.OutOfMemoryException:
-            raise QueryError(
-                "cost_over_budget", message="The scan exceeded its memory budget."
-            ) from None
-        except duckdb.Error:
-            raise QueryError("execution_failed") from None
-    finally:
-        timer.cancel()
-        connection.close()
+            cursor = self._connection.cursor()
+            timer = threading.Timer(max(0.05, deadline - time.monotonic()), cursor.interrupt)
+            try:
+                cursor.register("members", members)
+                timer.start()
+                return cursor.execute(statement.sql, parameters).fetchall()
+            except duckdb.InterruptException:
+                raise QueryError("statement_timeout") from None
+            except duckdb.OutOfMemoryException:
+                raise QueryError(
+                    "cost_over_budget", message="The scan exceeded its memory budget."
+                ) from None
+            except duckdb.Error:
+                raise QueryError("execution_failed") from None
+            finally:
+                timer.cancel()
+                cursor.close()
+        finally:
+            self._slots.release()
+
+    def close(self) -> None:
+        if not self._closed:
+            self._closed = True
+            self._connection.close()

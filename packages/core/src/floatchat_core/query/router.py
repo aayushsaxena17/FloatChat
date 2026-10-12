@@ -13,7 +13,7 @@ import uuid
 from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.sql import Select
@@ -26,6 +26,7 @@ from .catalogue import Coverage, EnvironmentInfo, QueryCatalogue, translate_erro
 from .errors import Detail, QueryError
 from .geography import ResolvedGeography, resolve_geography
 from .limits import QueryLimits
+from .memo import Memo, dataset_version
 from .plan import (
     DEPTH_BIN_SIZES,
     GROUP_KEYS,
@@ -177,8 +178,24 @@ class QueryService:
         self.limits = limits or QueryLimits()
         self.cache = cache
         self.application_commit = application_commit
+        # Finished answers and coverage keyed by the dataset version (ADR-0067).
+        self.results = Memo(self.limits.result_memo_entries, self.limits.result_memo_bytes)
+        self.coverages = Memo(self.limits.coverage_memo_entries, 1024**4)
+        # One locked DuckDB database for the service's lifetime (ADR-0066).
+        self.duck = (
+            None if cache is None else compile_duckdb.DuckEngine(cache.directory, self.limits)
+        )
 
     # ----- helpers -------------------------------------------------------------------------
+
+    def _columns(self, statement: Select[Any]) -> tuple[list[str], list[tuple[Any, ...]]]:
+        """Column names and plain tuples: no per-row mapping for large selections."""
+        try:
+            with self.catalogue.engine.connect() as connection:
+                result = connection.execute(statement)
+                return list(result.keys()), [tuple(row) for row in result.all()]
+        except SQLAlchemyError as error:
+            raise translate_error(error) from None
 
     def _rows(self, statement: Select[Any]) -> list[dict[str, Any]]:
         try:
@@ -211,8 +228,20 @@ class QueryService:
     def _coverage(
         self, environment: EnvironmentInfo, interval: Interval, geography: ResolvedGeography
     ) -> Coverage:
+        key = (
+            "coverage",
+            dataset_version(environment),
+            interval.start.isoformat(),
+            interval.end.isoformat(),
+            json.dumps(geography.describe(), sort_keys=True, default=str),
+        )
+        cached = self.coverages.get(key)
+        if cached is not None:
+            return cast(Coverage, cached)
         tiles = self.catalogue.tiles_for(geography)
-        return self.catalogue.coverage(environment.id, interval, tiles)
+        coverage = self.catalogue.coverage(environment.id, interval, tiles)
+        self.coverages.put(key, coverage, size=1)
+        return coverage
 
     @staticmethod
     def _profile_cursor(cursor: str | None) -> tuple[datetime, str] | None:
@@ -503,6 +532,13 @@ class QueryService:
         plan = validate_plan(payload, self.limits)
         geography = resolve_geography(plan.geography)
         environment = self.catalogue.environment()
+        memo_key = ("query", dataset_version(environment), plan.plan_sha256)
+        remembered = self.results.get(memo_key)
+        if remembered is not None:
+            # The stored answer keeps its original execution record; `served_ms` is this call.
+            remembered["execution"]["cached"] = True
+            remembered["execution"]["served_ms"] = round((time.monotonic() - started) * 1000, 1)
+            return cast(dict[str, Any], remembered)
         interval = _interval(plan.time_range.start, plan.time_range.end)
         coverage = self._coverage(environment, interval, geography)
         if not coverage.slots or all(slot.state == "missing" for slot in coverage.slots):
@@ -544,7 +580,7 @@ class QueryService:
                 }
             )
         )
-        return {
+        response = {
             "plan": plan.canonical(),
             "result": result.as_dict(),
             "next_cursor": next_cursor,
@@ -565,6 +601,8 @@ class QueryService:
             },
             "provenance": record,
         }
+        self.results.put(memo_key, response)
+        return response
 
     def _profiles_operation(
         self, plan: QueryPlan, geography: ResolvedGeography, execution: dict[str, Any]
@@ -679,12 +717,12 @@ class QueryService:
             raise QueryError(
                 "cost_over_budget", message="The parts to scan exceed the object byte budget."
             )
-        selected = self._rows(
+        names, selected = self._columns(
             compile_sql.profile_slot_statement(
                 plan, geography, [slot.logical_key for slot in coverage.covered]
             )
         )
-        members = compile_duckdb.members_table(selected, coverage.manifests)
+        members = compile_duckdb.members_from_columns(names, selected, coverage.manifests)
         parts = [part for slot in coverage.covered for part in slot.parts]
         partitions = [{"id": str(part.partition_id), "sha256": part.sha256} for part in parts]
         # The object fill has its own byte and time budgets (plan section 4.4); the query
@@ -723,13 +761,8 @@ class QueryService:
     def _run_duckdb(
         self, statement: compile_duckdb.DuckStatement, paths: list[Path], members: Any
     ) -> list[tuple[Any, ...]]:
-        return compile_duckdb.run(
-            statement,
-            compile_duckdb.parts_dataset(paths),
-            members,
-            self.limits,
-            self.limits.query_timeout_seconds,
-        )
+        assert self.duck is not None
+        return self.duck.run(statement, paths, members, self.limits.query_timeout_seconds)
 
     def warm_cache(self) -> dict[str, Any]:
         """Fill the part cache with the environment's active parts, newest months first.
