@@ -72,7 +72,9 @@ come from the opt-in offline provider (labelled as not an LLM result).
   worktree (environmental), the chat page test pastes its question under a 30 s budget, the
   gate's CI line marked pending. The CI integration script passed locally
   (`reports/stage0-integration.json`, `stage4-chat-offline-plan-and-execute`).
-- [ ] CI on the pull request.
+- [x] CI green on pull request #13 at `e6e00c4` (all seven jobs, including the Stage 1 component
+  job once the semantic store test moved to its loopback step):
+  https://github.com/aayushsaxena17/FloatChat/actions/runs/38294847877.
 - [ ] Owner: Gemini key, live adapter verification, gold-plan review, the real RQ1 number.
 
 ## Dashboard latency (ADR-0066..0068), 2026-10-11

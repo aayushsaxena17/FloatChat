@@ -92,9 +92,9 @@ Per-item outcomes are in `reports/eval_nl_2026-10-12.json`.
 - Dev stack: rebuilt with `LLM_PROVIDER=offline`, corpus seeded on start, chat answers through
   the API (JSON and SSE), the held-out harness executed 93 plans through `POST /v1/query`,
   Playwright chat scenario passed.
-- CI: pending on the pull request (the `integration` job seeds the corpus, probes the chat
-  endpoint and runs the chat scenario with the offline provider); the run link is added to
-  PROGRESS.md once it exists.
+- CI: green on pull request #13 (all seven jobs; the `integration` job seeds the corpus,
+  probes the chat endpoint and runs the chat scenario with the offline provider):
+  https://github.com/aayushsaxena17/FloatChat/actions/runs/38294847877.
 
 ## Known issues and limitations
 

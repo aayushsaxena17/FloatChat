@@ -1,6 +1,6 @@
 # Stage 4 plan - natural-language assistant, RAG and benchmark (reviewed 2026-10-12)
 
-Status: **implemented 2026-10-12; gate report in [docs/stage4-gate.md](stage4-gate.md)** (owner instruction 2026-10-12:
+Status: **implemented 2026-10-12; CI green on pull request #13; gate report in [docs/stage4-gate.md](stage4-gate.md)** (owner instruction 2026-10-12:
 `main` holds the accepted Stage 3 and the dashboard-latency work; build Stage 4 on it on a new
 branch; decide open questions without further approval). Scope: build prompt "Stage 4", PRD §5.6,
 §5.11, §6.8, §9.2, §10, §13, §14, §16.3, §20.4, §22, §30.1-§30.3. Branch `codex/stage-4` from
