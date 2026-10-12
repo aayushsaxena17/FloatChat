@@ -1,5 +1,35 @@
 # Stage progress
 
+## Stage 4 - natural-language assistant, RAG and benchmark (ADR-0069..0074), 2026-10-12
+
+Owner instruction 2026-10-12: `main` (`dff185a`) holds the accepted Stage 3 and the
+dashboard-latency work; build Stage 4 on a new branch and decide open questions without further
+approval. Branch `codex/stage-4` from `main`; one pull request into `main`. The advisor reviewed
+the approach before the plan was written (ADR-0039 convention) and its eleven amendments are
+folded into [docs/stage4-plan.md](docs/stage4-plan.md) section 0; the review of the written plan
+is recorded below.
+
+- [x] Plan corrections recorded in the plan's section 0: no key on this host, offline opt-in,
+  offline numbers labelled, gold plans validated with recorded gold kinds, `httpx` runtime
+  dependency, client ownership header, one 768-dimension vector column, wire format from the
+  reference, pricing as configuration with a token backstop, injection items, harness without a
+  database, one structured planning call.
+- [ ] Advisor review of the written plan recorded.
+- [x] ADR-0069 (scope, branch, provider default, pins), ADR-0070 (adapter, resilience, ledger,
+  caps), ADR-0071 (corpus, `semantic_document`, embeddings, retrievers), ADR-0072 (chat flow,
+  store, ownership), ADR-0073 (injection and hallucination controls), ADR-0074 (benchmark,
+  harness, integrity).
+- [ ] W1 migration `0018_semantic_chat` and stores.
+- [ ] W2 provider adapter (Gemini, OpenAI-compatible, offline), policy, pricing, ledger.
+- [ ] W3 corpus, embeddings, retrievers, `scripts/semantic_seed.py`.
+- [ ] W4 chat pipeline.
+- [ ] W5 chat API, SSE, OpenAPI and client types.
+- [ ] W6 web `/chat`.
+- [ ] W7 golden benchmark (dev and test splits).
+- [ ] W8 harness, `make eval-nl`, report.
+- [ ] W9 tests; CI.
+- [ ] W10 gate report, README, `.env.example`.
+
 ## Dashboard latency (ADR-0066..0068), 2026-10-11
 
 Owner request 2026-10-11: one local checkout synced with `main`, and a faster dashboard through
@@ -21,7 +51,7 @@ left alone, the DuckDB security lock proven before choosing the native reader, A
   (whole-quarter median 2.7 s before, 0.63-0.92 s after, repeats 17-21 ms; health during
   aggregates about 10 ms instead of 1.3 s); route agreement re-proven
   ([reports/stage2-route-check_2026-10-11.md](reports/stage2-route-check_2026-10-11.md), 10 of 10).
-- [ ] CI on the pull request.
+- [x] CI on the pull request (#11 merged into `main` at `dff185a`).
 
 ## Stage 3 - web dashboard complete, CI green on PR #8 (ADR-0061..0065), 2026-10-10
 
