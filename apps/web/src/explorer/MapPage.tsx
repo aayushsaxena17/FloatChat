@@ -2,7 +2,7 @@ import { Link } from "react-router";
 import { StatusMessage } from "../components/StatusMessage";
 import { ProvenancePanel } from "../provenance/ProvenancePanel";
 import { FilterBar } from "./FilterBar";
-import { MapView } from "./MapView";
+import { LazyMapView as MapView } from "./LazyMapView";
 import { ProfileList } from "./ProfileList";
 import { useExplorerData } from "./useExplorerData";
 import { toSearchParams } from "./filters";

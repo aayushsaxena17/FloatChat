@@ -28,6 +28,7 @@ from floatchat_core.query.limits import QueryLimits
 from floatchat_core.query.plan import BoundingBox, DepthRange, NamedRegion
 from floatchat_core.query.router import QueryService
 from pydantic import BaseModel, ConfigDict, Field
+from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 log = logging.getLogger("floatchat.api")
@@ -619,7 +620,9 @@ def install(app: FastAPI, runtime: QueryRuntime) -> None:
             raise QueryError(
                 "plan_invalid", (Detail("plan", "invalid_value", "JSON object required"),)
             )
-        return runtime.service().query(document)
+        # The query is synchronous (PostgreSQL, DuckDB, the part cache); on the event loop it
+        # would hold every other request until it finished (ADR-0066).
+        return await run_in_threadpool(lambda: runtime.service().query(document))
 
     @app.exception_handler(StarletteHTTPException)
     async def http_error(request: Request, error: StarletteHTTPException) -> JSONResponse:

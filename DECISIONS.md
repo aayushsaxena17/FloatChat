@@ -1816,3 +1816,83 @@ Decision:
 
 Alternatives: dual-axis charts (rejected: units on every axis is unreadable with two scales);
 colour cycling (rejected: identity must be stable); server-rendered images (rejected by PRD §5.10).
+
+## ADR-0066 - DuckDB engine: native Parquet reads, shared locked database, concurrency bound (amends ADR-0058)
+
+Status: accepted under the owner's authority (ADR-0039; owner instruction 2026-10-11 to make the
+dashboard faster with concurrency and proper DuckDB use). Advisor reviewed the plan on 2026-10-11.
+
+Context: measured on 2026-10-11, a whole-quarter monthly aggregate took 2.6-2.9 s in-process. DuckDB
+read through a registered pyarrow dataset that rediscovered 206 files' metadata per request, at 2
+threads, on a new connection per request; and `POST /v1/query` ran on FastAPI's event loop, so
+every other request waited behind it.
+
+Decision:
+
+1. One `DuckEngine` per `QueryService`: a long-lived in-memory DuckDB database configured once:
+   `SET allowed_directories = ['<part cache>/']`, `SET parquet_metadata_cache = true`,
+   `SET enable_external_access = false`, `SET lock_configuration = true` (in that order:
+   `allowed_directories` can only be set on a running database, before external access is
+   switched off). Extension autoload and autoinstall stay off. Verified on duckdb 1.5.6: the cache
+   is readable, any other path raises a permission error, and no setting can change afterwards.
+2. The aggregate template reads `WITH parts AS (SELECT <columns> FROM read_parquet($parts_files))`;
+   the file list is a bound parameter, and the engine passes only resolved paths directly inside
+   the cache directory whose names are `<64 hex>.parquet` (the SHA-256-verified cache entries).
+3. Each execution uses its own cursor, its own interrupt deadline and registers its own `members`
+   table; a semaphore (`QUERY_DUCKDB_CONCURRENCY`, default 2) bounds concurrent executions under
+   the shared `QUERY_DUCKDB_MEMORY_MIB`; waiting for a slot counts against the same deadline.
+4. `QUERY_DUCKDB_THREADS` defaults to 0, meaning every CPU the process sees. Inside a container
+   that is the host's CPU count, not a cgroup quota; set it explicitly where a quota applies.
+5. `POST /v1/query` runs the query in Starlette's thread pool; the other endpoints were already
+   synchronous handlers (thread pool) and the health checks are asynchronous.
+
+Evidence: `reports/dashboard_latency_2026-10-11.md` (whole-quarter median 2.7 s before, 0.63-0.92 s
+after; `/v1/health/live` during aggregates 1.27 s median before, about 10 ms after);
+`reports/stage2-route-check_2026-10-11.md` (10 of 10 plans agree, maximum relative difference
+5.9e-14). Tests: `tests/stage2/test_cache_duckdb.py` (cache-only reads, path checks, the lock,
+reuse across threads, the concurrency bound), `tests/stage3/test_concurrency.py`.
+
+Alternatives: keep pyarrow scanning with more threads (measured 0.64-0.99 s, slower than the
+native reader's 0.39-0.43 s); a worker process (PRD §4.1, Stage 5 territory; the bounded in-process
+engine of ADR-0058 stays the design); raising the memory limit instead of bounding concurrency
+(rejected: the host has 3.7 GB).
+
+## ADR-0067 - In-process result memo for queries and coverage
+
+Status: accepted under the owner's authority (ADR-0039).
+
+Decision: `QueryService` keeps a bounded least-recently-used memo of finished `POST /v1/query`
+answers (`QUERY_RESULT_MEMO_ENTRIES`, default 256; `QUERY_RESULT_MEMO_BYTES`, default 64 MiB) and of
+coverage resolutions (`QUERY_COVERAGE_MEMO_ENTRIES`, default 512). Keys carry the dataset version
+`(environment id, latest completed run id, completed run count)` from migration 0017 plus the
+plan's SHA-256 (or the interval and geography for coverage), so a newly completed ingestion run
+makes older entries unreachable. A served answer keeps its original `execution` record and adds
+`cached: true` and `served_ms`. Values are deep-copied in and out.
+
+This is not PRD §8.4's persistent result cache (Stage 5): it lives in one API process, and it is
+correct between ingestion runs. Publication that changes data without completing a run is Stage
+5's concern and must invalidate it then.
+
+Alternatives: Redis (rejected for now: one API process, and serialising answers costs more than
+it saves at this size); no memo (rejected: the dashboard asks the same two plans on every load).
+
+## ADR-0068 - Browser persistence of finished answers; Plotly and MapLibre loaded on demand
+
+Status: accepted under the owner's authority (ADR-0039).
+
+Decision:
+
+1. TanStack Query's cache persists to IndexedDB through `@tanstack/react-query-persist-client`
+   and `@tanstack/query-async-storage-persister` 5.104.1 (the same release as
+   `@tanstack/react-query`; a small hand-written IndexedDB store, no extra library). Only the
+   parameter catalogue, coverage summaries and plan results persist, for at most 24 hours; the
+   environment and the profile lists (about 1.3 MB) are always fetched. A buster string versions
+   the stored shape, and `DatasetGuard` drops persisted answers when the server's dataset version
+   differs from the one last seen (marker in localStorage). IndexedDB rather than localStorage or
+   sessionStorage: asynchronous, larger, and it does not block the page.
+2. Plotly loads with the first chart and MapLibre with the first map (`import()` and
+   `React.lazy`); the manual chunks are removed because they pulled shared helpers into the
+   library chunks and made the entry preload them. The entry is 139 kB gzipped.
+
+Alternatives: sessionStorage (rejected: per tab, synchronous, about 5 MB); persisting everything
+(rejected: profile lists are large and change with every filter).
