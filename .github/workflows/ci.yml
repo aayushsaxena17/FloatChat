@@ -1,6 +1,5 @@
 name: CI
-# One run per change: pull requests and pushes to main. A push to a feature branch that
-# has an open pull request would otherwise run the same seven jobs twice.
+# Application checks run on PRs and main. Secret scans run separately on every push.
 on:
   pull_request:
   push:
@@ -8,50 +7,91 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
-  stage1-components:
-    name: stage1-offline-components
+  backend-components:
+    name: backend-components
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
         with: { version: '0.10.4', python-version: '3.12.12' }
-      - name: Prepare dependency/image caches separately from acceptance
-        run: |
-          uv sync --all-packages --frozen
-          docker build -t floatchat-stage1-postgres-offline -f infra/docker/postgres.Dockerfile .
-          docker build -t floatchat-stage1-api-offline -f infra/docker/api.Dockerfile .
-          docker build -t floatchat-stage1-minio-offline -f infra/docker/minio.Dockerfile .
-          docker pull redis@sha256:02419de7eddf55aa5bcf49efb74e88fa8d931b4d77c07eff8a6b2144472b6952
-      - name: Offline component tests (no upstream or credential)
+      - run: uv sync --all-packages --frozen
+      - uses: docker/setup-buildx-action@v4
+      # Each image has its own cache scope; load locally before disabling networking.
+      - name: Prepare PostgreSQL image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: infra/docker/postgres.Dockerfile
+          tags: floatchat-stage1-postgres-offline
+          load: true
+          cache-from: type=gha,scope=components-postgres
+          cache-to: type=gha,scope=components-postgres,mode=max
+      - name: Prepare API image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: infra/docker/api.Dockerfile
+          tags: floatchat-stage1-api-offline
+          load: true
+          cache-from: type=gha,scope=components-api
+          cache-to: type=gha,scope=components-api,mode=max
+      - name: Prepare MinIO image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: infra/docker/minio.Dockerfile
+          tags: floatchat-stage1-minio-offline
+          load: true
+          cache-from: type=gha,scope=components-minio
+          cache-to: type=gha,scope=components-minio,mode=max
+      - name: Offline component tests (parallel, no upstream or credential)
         run: |
           sudo unshare --net -- env \
             PATH="$PATH" UV_OFFLINE=true \
             STAGE1_POSTGRES_IMAGE=floatchat-stage1-postgres-offline \
             STAGE1_API_IMAGE=floatchat-stage1-api-offline \
             STAGE1_MINIO_IMAGE=floatchat-stage1-minio-offline \
-            "$PWD/.venv/bin/python" -m pytest tests/stage1 tests/stage2 tests/stage3 -q \
-            --deselect tests/stage2/test_integration.py \
-            --deselect tests/stage2/test_semantic_store.py \
-            --junitxml=reports/stage1-ci-components.xml
+            bash -eu -o pipefail <<'OFFLINE'
+          # Queue fault recovery uses isolated UUID-named containers and can overlap the
+          # database/storage proofs. Non-integration tests run once in the python job.
+          .venv/bin/python -m pytest tests/stage1/test_broker.py -q -m integration \
+            --durations=15 --junitxml=reports/ci-queue.xml &
+          queue_pid=$!
+          .venv/bin/python -m pytest tests/stage1 tests/stage2 tests/stage3 -q -m integration \
+            --ignore=tests/stage1/test_broker.py \
+            --ignore=tests/stage2/test_integration.py \
+            --ignore=tests/stage2/test_semantic_store.py \
+            --durations=15 --junitxml=reports/ci-components.xml &
+          components_pid=$!
+          # Wait for both groups, and propagate failure from either background process.
+          status=0
+          wait "$queue_pid" || status=1
+          wait "$components_pid" || status=1
+          exit "$status"
+          OFFLINE
       # The Stage 2 integration fixture reaches its disposable PostGIS server through a
       # published loopback port, which a detached network namespace cannot see; the tests
       # themselves deny every other socket (tests/stage2/conftest.py). The Stage 4 semantic
       # store test reuses that fixture (migration 0018, pgvector ranking, store, ledger).
-      - name: Stage 2 integration tests (disposable PostGIS, loopback only)
+      - name: Query and semantic-store integration (disposable PostGIS, loopback only)
         run: |
           env UV_OFFLINE=true STAGE1_POSTGRES_IMAGE=floatchat-stage1-postgres-offline \
             "$PWD/.venv/bin/python" -m pytest tests/stage2/test_integration.py \
             tests/stage2/test_semantic_store.py -q \
-            -m integration --junitxml=reports/stage2-ci-integration.xml
+            -m integration --durations=15 --junitxml=reports/ci-query.xml
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: stage1-components
+          name: backend-components
           path: |
-            reports/stage1-ci-components.xml
-            reports/stage2-ci-integration.xml
+            reports/ci-queue.xml
+            reports/ci-components.xml
+            reports/ci-query.xml
             reports/stage1-broker-evidence.json
             reports/stage1-parquet-resource.json
             reports/stage1-ingestion-example.json
@@ -66,12 +106,12 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with: { version: '0.10.4', python-version: '3.12.12' }
       - run: uv sync --all-packages --frozen
-      - run: python scripts/security/install_gitleaks.py
       - run: uv run --all-packages --frozen ruff check .
       - run: uv run --all-packages --frozen ruff format --check .
       - run: uv run --all-packages --frozen mypy
       - run: uv run --all-packages --frozen python scripts/export_openapi.py --check
-      - run: uv run --all-packages --frozen python -m pytest -m 'not integration'
+      # Scanner/hook regression tests run with the push-only security workflow.
+      - run: uv run --all-packages --frozen python -m pytest -m 'not integration' --ignore=tests/test_security.py
   web:
     name: web
     runs-on: ubuntu-24.04
@@ -86,8 +126,8 @@ jobs:
       - run: git diff --exit-code apps/web/src/api
       - run: pnpm lint
       - run: pnpm format:check
-      - run: pnpm typecheck
       - run: pnpm test
+      # build already runs tsc --noEmit before Vite.
       - run: pnpm build
   docker:
     name: docker
@@ -113,20 +153,3 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @floatchat/web exec playwright install --with-deps chromium
       - run: uv run --all-packages --frozen python -m scripts.integration
-  secrets-current:
-    name: secrets-current
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - run: python scripts/security/install_gitleaks.py
-      - run: python scripts/security/scan.py current
-  secrets-history:
-    name: secrets-history
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      - name: Fetch advertised branches and tags for history coverage
-        run: git fetch --no-recurse-submodules origin '+refs/heads/*:refs/remotes/origin/*' '+refs/tags/*:refs/tags/*'
-      - run: python scripts/security/install_gitleaks.py
-      - run: python scripts/security/scan.py history
