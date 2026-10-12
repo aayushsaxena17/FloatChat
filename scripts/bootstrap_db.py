@@ -43,6 +43,11 @@ STAGE1_TABLES = frozenset(
 # Stage 2 read-only reference tables (ADR-0058): the query login reads them through the
 # migration's grants; the application role gets nothing, never blanket DML.
 STAGE2_READ_ONLY_TABLES = frozenset({"named_region"})
+# Stage 4 (ADR-0071, ADR-0072): the application login writes the semantic corpus, the
+# conversations and the LLM call ledger; the query login reads semantic_document only.
+STAGE4_APPLICATION_TABLES = frozenset(
+    {"semantic_document", "chat_conversation", "chat_message", "llm_call"}
+)
 WITHHELD_TABLES = STAGE1_TABLES | STAGE2_READ_ONLY_TABLES
 
 

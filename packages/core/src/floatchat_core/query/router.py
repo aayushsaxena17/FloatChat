@@ -306,6 +306,10 @@ class QueryService:
             },
         }
 
+    def environment_info(self) -> dict[str, Any]:
+        """The environment description (reference time, window) for the chat planner."""
+        return self.catalogue.environment().describe()
+
     def coverage(
         self, *, start: datetime | None, end: datetime | None, geography: Geography | None
     ) -> dict[str, Any]:

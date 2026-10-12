@@ -22,7 +22,7 @@ from psycopg import sql
 
 # Alembic head the isolated database must reach (tests/stage1/test_acceptance_preparation.py
 # keeps this equal to the newest file in infra/migrations/versions).
-MIGRATION_HEAD = "0017_query_env_times"  # Stage 2 and 3 view changes are additive
+MIGRATION_HEAD = "0018_semantic_chat"  # Stage 2-4 additions are additive
 
 
 def initialize():

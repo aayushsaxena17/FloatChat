@@ -76,6 +76,17 @@ services:
       QUERY_OBJECT_CACHE_DIR: /var/lib/floatchat/query-cache
       # Stage 3 (ADR-0064): provenance names the commit; scripts/dev.py sets it from Git.
       APPLICATION_COMMIT: ${APPLICATION_COMMIT:-unknown}
+      # Stage 4 (ADR-0069): the assistant's provider and key; empty values leave the chat
+      # unavailable and the rest of the API untouched.
+      LLM_PROVIDER: ${LLM_PROVIDER:-gemini}
+      LLM_MODEL: ${LLM_MODEL:-gemini-3.8-flash}
+      LLM_EMBEDDING_MODEL: ${LLM_EMBEDDING_MODEL:-gemini-embedding-001}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      LLM_SECOND_MODEL: ${LLM_SECOND_MODEL:-}
+      LLM_DAILY_USD_CAP: ${LLM_DAILY_USD_CAP:-1.0}
+      LLM_DAILY_TOKEN_CAP: ${LLM_DAILY_TOKEN_CAP:-2000000}
     volumes: [query_cache:/var/lib/floatchat/query-cache]
     ports: ["127.0.0.1:${API_PORT:-8000}:8000"]
     depends_on:

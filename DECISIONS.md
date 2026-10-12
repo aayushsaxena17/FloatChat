@@ -1998,7 +1998,7 @@ Decision:
    committed data: parameter definitions, units, QC policies and meanings, aggregation units,
    operations, presentations and limits; region records with hand-written aliases
    (`regions/aliases.json`); help texts; and the curated natural-language-to-plan examples in
-   `eval/corpus/examples.json` (at least 30). Numeric observations are never embedded (PRD §5.6).
+   `floatchat_core/rag/examples.json` (at least 30). Numeric observations are never embedded (PRD §5.6).
 4. Two retrievers share one ranking (cosine similarity, exact scan, top-k per document type with
    a floor): `PgVectorRetriever` (the API, `<=>` on pgvector) and `MemoryRetriever` (the harness
    and the unit tests, no database). A test proves they order the same documents the same way.

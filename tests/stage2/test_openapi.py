@@ -17,6 +17,10 @@ PATHS = {
     "/v1/profiles",
     "/v1/profiles/{profile_id}",
     "/v1/query",
+    # Stage 4 (ADR-0072).
+    "/v1/chat/messages",
+    "/v1/chat/conversations",
+    "/v1/chat/conversations/{conversation_id}",
 }
 FORBIDDEN = {"sql", "query_sql"}
 METHODS = {"get", "put", "post", "delete", "options", "head", "patch", "trace"}
@@ -44,6 +48,7 @@ def test_methods_are_the_planned_ones() -> None:
         for path, item in schema()["paths"].items()
     }
     assert operations.pop("/v1/query") == {"post"}
+    assert operations.pop("/v1/chat/messages") == {"post"}
     assert all(methods == {"get"} for methods in operations.values())
 
 

@@ -31,6 +31,8 @@ select = ["E", "F", "I", "UP", "B", "ASYNC"]
 "scripts/science_seed.py" = ["E501"]
 "tests/stage3/test_build_basemap.py" = ["E501"]
 "scripts/build_named_regions.py" = ["E501"]
+# The rule-based planner is regular expressions; splitting them would obscure the rules.
+"packages/core/src/floatchat_core/llm/offline.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.12"

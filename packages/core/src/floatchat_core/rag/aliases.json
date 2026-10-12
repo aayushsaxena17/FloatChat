@@ -1,0 +1,81 @@
+{
+  "schema": "region-aliases-v1",
+  "note": "Hand-written aliases for the committed named regions (ADR-0060, ADR-0071). Lower case; matched as whole words by the offline planner and embedded as region_alias documents for the model.",
+  "regions": {
+    "Arabian Sea": [
+      "arabian",
+      "arabian basin",
+      "north-western indian ocean",
+      "northwestern indian ocean",
+      "north west indian ocean",
+      "west coast of india",
+      "western indian waters",
+      "off oman",
+      "off the omani coast",
+      "off the coast of oman",
+      "off somalia"
+    ],
+    "Bay of Bengal": [
+      "bob",
+      "bengal",
+      "bengal bay",
+      "north-eastern indian ocean",
+      "northeastern indian ocean",
+      "north east indian ocean",
+      "east coast of india",
+      "off bangladesh",
+      "off the bangladeshi coast",
+      "off chennai",
+      "off odisha"
+    ],
+    "Laccadive Sea": [
+      "laccadive",
+      "lakshadweep sea",
+      "lakshadweep",
+      "south-west of india",
+      "southwest of india",
+      "off kerala",
+      "off the kerala coast",
+      "west of sri lanka",
+      "around the maldives",
+      "maldives region"
+    ],
+    "Andaman Sea": [
+      "andaman",
+      "andaman basin",
+      "andaman waters",
+      "off the andaman islands",
+      "east of the andaman islands",
+      "east of the andaman and nicobar islands",
+      "west of thailand",
+      "off myanmar",
+      "off the myanmar coast",
+      "off phuket"
+    ],
+    "Indian Ocean (IHO)": [
+      "iho indian ocean",
+      "indian ocean proper",
+      "indian ocean by the iho definition",
+      "indian ocean iho"
+    ],
+    "Indian Ocean": [
+      "whole indian ocean",
+      "entire indian ocean",
+      "all of the indian ocean",
+      "indian ocean basin",
+      "the whole dataset",
+      "whole dataset",
+      "entire dataset",
+      "all available data",
+      "everywhere",
+      "anywhere"
+    ],
+    "Southern Indian Ocean": [
+      "south indian ocean",
+      "southern part of the indian ocean",
+      "south of the equator in the indian ocean",
+      "southern hemisphere indian ocean",
+      "southern indian waters"
+    ]
+  }
+}

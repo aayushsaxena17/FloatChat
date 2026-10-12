@@ -1,6 +1,6 @@
 # Stage 4 plan - natural-language assistant, RAG and benchmark (reviewed 2026-10-12)
 
-Status: **plan written 2026-10-12; implementation in progress** (owner instruction 2026-10-12:
+Status: **implemented 2026-10-12; gate report in [docs/stage4-gate.md](stage4-gate.md)** (owner instruction 2026-10-12:
 `main` holds the accepted Stage 3 and the dashboard-latency work; build Stage 4 on it on a new
 branch; decide open questions without further approval). Scope: build prompt "Stage 4", PRD §5.6,
 §5.11, §6.8, §9.2, §10, §13, §14, §16.3, §20.4, §22, §30.1-§30.3. Branch `codex/stage-4` from
@@ -135,7 +135,7 @@ circuit breaker, the daily USD and token caps, the ledger write, the `llm_unavai
 `floatchat_core/rag/`: `corpus.py` builds the documents from the live catalogue code (variables,
 units, descriptions, QC policies, aggregation units, operations, presentations, limits), the
 region records plus hand-written aliases (`regions/aliases.json`), help texts and the curated
-examples (`eval/corpus/examples.json`, at least 30, disjoint from the held-out split);
+examples (`floatchat_core/rag/examples.json`, at least 30, disjoint from the held-out split);
 `embeddings.py` (`hash-embed-v1`: hashed word and character trigram features, L2-normalised, 768
 dimensions; provider embeddings through the adapter); `retriever.py` (`Retriever` protocol,
 `MemoryRetriever`, `PgVectorRetriever` with cosine distance filtered by `embedding_model`,

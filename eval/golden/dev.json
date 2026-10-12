@@ -1,0 +1,2171 @@
+{
+ "schema": "golden-nl-v1",
+ "split": "dev",
+ "reference_time": "2025-04-01T00:00:00Z",
+ "note": "Gold plans drafted by the builder (ADR-0074); every item needs human review before numbers are reported. Plans use the planner's output shape (plan section 4); time ranges are inclusive start, exclusive end; depths in dbar.",
+ "items": [
+  {
+   "id": "dev-001",
+   "category": "date_phrases",
+   "question": "Mean temperature in the Arabian Sea in January 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-02-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Arabian Sea"
+     },
+     "variables": [
+      "temperature"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "month = inclusive start, exclusive end",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-002",
+   "category": "date_phrases",
+   "question": "Mean salinity in the Laccadive Sea in the first quarter of 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-04-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Laccadive Sea"
+     },
+     "variables": [
+      "salinity"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [
+       "month"
+      ],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "span > 31 days needs a time key; month is the gold default",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-003",
+   "category": "date_phrases",
+   "question": "Daily mean temperature in the Bay of Bengal from 1 to 10 February 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-02-01T00:00:00Z",
+      "end": "2025-02-11T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Bay of Bengal"
+     },
+     "variables": [
+      "temperature"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [
+       "day"
+      ],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "line_chart"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-004",
+   "category": "date_phrases",
+   "question": "Mean salinity in the Andaman Sea over the past 3 months",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-04-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Andaman Sea"
+     },
+     "variables": [
+      "salinity"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [
+       "month"
+      ],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "reference minus three months = 2025-01-01; a month key for a 90-day span",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-005",
+   "category": "date_phrases",
+   "question": "Mean temperature in the Arabian Sea in 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2026-01-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Arabian Sea"
+     },
+     "variables": [
+      "temperature"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [
+       "month"
+      ],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "a calendar year is 365 days, within the 366-day limit; executes over the covered months",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-006",
+   "category": "date_phrases",
+   "question": "Mean temperature in the Arabian Sea",
+   "gold": {
+    "kind": "clarify",
+    "missing": [
+     "time_range"
+    ]
+   },
+   "ambiguous": true,
+   "executable": false,
+   "expected_empty": false,
+   "notes": "no period at all",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-007",
+   "category": "date_phrases",
+   "question": "Profiles in the Bay of Bengal on 2025-03-05",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-03-05T00:00:00Z",
+      "end": "2025-03-06T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Bay of Bengal"
+     },
+     "variables": [
+      "temperature",
+      "salinity"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "profiles",
+      "limit": 100
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-008",
+   "category": "date_phrases",
+   "question": "Mean temperature in the Arabian Sea for the week starting 10 February 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-02-10T00:00:00Z",
+      "end": "2025-02-17T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Arabian Sea"
+     },
+     "variables": [
+      "temperature"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "seven days from the stated day",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-009",
+   "category": "named_regions",
+   "question": "Mean temperature in the Lakshadweep Sea in March 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-03-01T00:00:00Z",
+      "end": "2025-04-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Laccadive Sea"
+     },
+     "variables": [
+      "temperature"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "Lakshadweep = Laccadive",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-010",
+   "category": "named_regions",
+   "question": "Mean temperature in the Indian Ocean by the IHO definition in February 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-02-01T00:00:00Z",
+      "end": "2025-03-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Indian Ocean (IHO)"
+     },
+     "variables": [
+      "temperature"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "explicit IHO definition",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-011",
+   "category": "named_regions",
+   "question": "Mean temperature in the north-western Indian Ocean in January 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-02-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Arabian Sea"
+     },
+     "variables": [
+      "temperature"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "alias -> Arabian Sea",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-012",
+   "category": "named_regions",
+   "question": "Mean temperature in the Gulf of Mexico in January 2025",
+   "gold": {
+    "kind": "clarify",
+    "missing": [
+     "geography"
+    ]
+   },
+   "ambiguous": true,
+   "executable": false,
+   "expected_empty": false,
+   "notes": "not a catalogue region; ask instead of substituting",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-013",
+   "category": "named_regions",
+   "question": "Mean salinity off Bangladesh in January 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-02-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Bay of Bengal"
+     },
+     "variables": [
+      "salinity"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-014",
+   "category": "named_regions",
+   "question": "Mean temperature in January 2025",
+   "gold": {
+    "kind": "clarify",
+    "missing": [
+     "geography"
+    ]
+   },
+   "ambiguous": true,
+   "executable": false,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-015",
+   "category": "longitude_dateline",
+   "question": "Mean temperature from 170E to 170W between 10S and 10N in January 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-02-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "bbox",
+      "west": 170,
+      "south": -10,
+      "east": -170,
+      "north": 10
+     },
+     "variables": [
+      "temperature"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": false,
+   "expected_empty": false,
+   "notes": "west > east crosses the antimeridian; outside the Indian Ocean dataset",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-016",
+   "category": "longitude_dateline",
+   "question": "Mean temperature in a box from 65W to 55W and 10N to 20N in February 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-02-01T00:00:00Z",
+      "end": "2025-03-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "bbox",
+      "west": -65,
+      "south": 10,
+      "east": -55,
+      "north": 20
+     },
+     "variables": [
+      "temperature"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": false,
+   "expected_empty": false,
+   "notes": "west longitudes are negative",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-017",
+   "category": "longitude_dateline",
+   "question": "Mean temperature at longitudes 90-100E and latitudes 5-15N in February 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-02-01T00:00:00Z",
+      "end": "2025-03-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "bbox",
+      "west": 90,
+      "south": 5,
+      "east": 100,
+      "north": 15
+     },
+     "variables": [
+      "temperature"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-018",
+   "category": "nearest_float",
+   "question": "Which 3 floats are closest to 15N 65E in January 2025?",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-02-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "point_radius",
+      "longitude": 65,
+      "latitude": 15,
+      "radius_km": 500
+     },
+     "variables": [
+      "temperature",
+      "salinity"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "nearest",
+      "longitude": 65,
+      "latitude": 15,
+      "radius_km": 500,
+      "k": 3
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "default radius 500 km",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-019",
+   "category": "nearest_float",
+   "question": "Closest 10 floats to 5N 95E in January 2025 within 1000 km",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-02-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "point_radius",
+      "longitude": 95,
+      "latitude": 5,
+      "radius_km": 1000
+     },
+     "variables": [
+      "temperature",
+      "salinity"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "nearest",
+      "longitude": 95,
+      "latitude": 5,
+      "radius_km": 1000,
+      "k": 10
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-020",
+   "category": "nearest_float",
+   "question": "Which floats are within 200 km of 15N 65E in January 2025?",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-02-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "point_radius",
+      "longitude": 65,
+      "latitude": 15,
+      "radius_km": 200
+     },
+     "variables": [
+      "temperature",
+      "salinity"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "profiles",
+      "limit": 100
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "'within' lists profiles in the radius; not a nearest ranking",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-021",
+   "category": "nearest_float",
+   "question": "Nearest 3 floats to 15N 65E in January 2025, show their positions",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-02-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "point_radius",
+      "longitude": 65,
+      "latitude": 15,
+      "radius_km": 500
+     },
+     "variables": [
+      "temperature",
+      "salinity"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "nearest",
+      "longitude": 65,
+      "latitude": 15,
+      "radius_km": 500,
+      "k": 3
+     },
+     "presentation": {
+      "kind": "map"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-022",
+   "category": "depth_filters",
+   "question": "Mean temperature in the Arabian Sea in January 2025 in the upper 100 dbar",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-02-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Arabian Sea"
+     },
+     "variables": [
+      "temperature"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     },
+     "depth_dbar": {
+      "min": 0,
+      "max": 100
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-023",
+   "category": "depth_filters",
+   "question": "Mean temperature in the top 50 m of the Andaman Sea in January 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-02-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Andaman Sea"
+     },
+     "variables": [
+      "temperature"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     },
+     "depth_dbar": {
+      "min": 0,
+      "max": 50
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "metres treated as decibars",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-024",
+   "category": "depth_filters",
+   "question": "Mean temperature by 50 dbar depth bins in the Arabian Sea in January 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-02-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Arabian Sea"
+     },
+     "variables": [
+      "temperature"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [
+       "depth_bin"
+      ],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile",
+      "depth_bin_size": 50
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-025",
+   "category": "depth_filters",
+   "question": "Vertical salinity profiles of the newest 3 profiles in the Bay of Bengal in January 2025, down to 200 dbar",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-02-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Bay of Bengal"
+     },
+     "variables": [
+      "salinity"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "profiles",
+      "limit": 3
+     },
+     "presentation": {
+      "kind": "profile_plot"
+     },
+     "depth_dbar": {
+      "min": 0,
+      "max": 200
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-026",
+   "category": "depth_filters",
+   "question": "Mean temperature deeper than 1500 dbar in the Bay of Bengal in February 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-02-01T00:00:00Z",
+      "end": "2025-03-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Bay of Bengal"
+     },
+     "variables": [
+      "temperature"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     },
+     "depth_dbar": {
+      "min": 1500,
+      "max": 12000
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": true,
+   "notes": "the dev dataset's profiles rarely reach 1500 dbar; a sparse or empty result is correct",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-027",
+   "category": "depth_filters",
+   "question": "Mean salinity in the Arabian Sea in March 2025 in 25 dbar bins from 0 to 300 dbar",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-03-01T00:00:00Z",
+      "end": "2025-04-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Arabian Sea"
+     },
+     "variables": [
+      "salinity"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [
+       "depth_bin"
+      ],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile",
+      "depth_bin_size": 25
+     },
+     "presentation": {
+      "kind": "table"
+     },
+     "depth_dbar": {
+      "min": 0,
+      "max": 300
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-028",
+   "category": "original_vs_adjusted",
+   "question": "Mean temperature in the Laccadive Sea in March 2025 as delivered, regardless of QC",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-03-01T00:00:00Z",
+      "end": "2025-04-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Laccadive Sea"
+     },
+     "variables": [
+      "temperature"
+     ],
+     "qc_policy": "mode_selected",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-029",
+   "category": "original_vs_adjusted",
+   "question": "Mean salinity in the Bay of Bengal in March 2025 including flagged values",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-03-01T00:00:00Z",
+      "end": "2025-04-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Bay of Bengal"
+     },
+     "variables": [
+      "salinity"
+     ],
+     "qc_policy": "mode_selected",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-030",
+   "category": "original_vs_adjusted",
+   "question": "Mean temperature in the Laccadive Sea in January 2025 ignoring the QC flags",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-02-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Laccadive Sea"
+     },
+     "variables": [
+      "temperature"
+     ],
+     "qc_policy": "mode_selected",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-031",
+   "category": "original_vs_adjusted",
+   "question": "Unfiltered temperature and salinity profiles in the Andaman Sea in February 2025, 10 newest",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-02-01T00:00:00Z",
+      "end": "2025-03-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Andaman Sea"
+     },
+     "variables": [
+      "temperature",
+      "salinity"
+     ],
+     "qc_policy": "raw",
+     "operation": {
+      "kind": "profiles",
+      "limit": 10
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-032",
+   "category": "qc_selection",
+   "question": "Profiles in the Laccadive Sea in March 2025 with the QC flags beside each value",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-03-01T00:00:00Z",
+      "end": "2025-04-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Laccadive Sea"
+     },
+     "variables": [
+      "temperature",
+      "salinity"
+     ],
+     "qc_policy": "mode_selected",
+     "operation": {
+      "kind": "profiles",
+      "limit": 100
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "mode_selected returns QC beside the value",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-033",
+   "category": "qc_selection",
+   "question": "How many profiles in the Bay of Bengal in March 2025 regardless of quality?",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-03-01T00:00:00Z",
+      "end": "2025-04-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Bay of Bengal"
+     },
+     "variables": [
+      "temperature",
+      "salinity"
+     ],
+     "qc_policy": "mode_selected",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "count"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-034",
+   "category": "qc_selection",
+   "question": "Mean temperature in the Laccadive Sea in February 2025 with the default QC policy",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-02-01T00:00:00Z",
+      "end": "2025-03-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Laccadive Sea"
+     },
+     "variables": [
+      "temperature"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-035",
+   "category": "qc_selection",
+   "question": "Monthly mean salinity in the Bay of Bengal, January to March 2025, any QC",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-04-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Bay of Bengal"
+     },
+     "variables": [
+      "salinity"
+     ],
+     "qc_policy": "mode_selected",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [
+       "month"
+      ],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "line_chart"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-036",
+   "category": "aggregation_unit",
+   "question": "How many measurements were taken in the Bay of Bengal in February 2025?",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-02-01T00:00:00Z",
+      "end": "2025-03-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Bay of Bengal"
+     },
+     "variables": [
+      "temperature",
+      "salinity"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "count"
+      ],
+      "unit": "measurement"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "count of levels",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-037",
+   "category": "aggregation_unit",
+   "question": "Warmest profile mean in the Laccadive Sea in March 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-03-01T00:00:00Z",
+      "end": "2025-04-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Laccadive Sea"
+     },
+     "variables": [
+      "temperature"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "max"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "max of profile means",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-038",
+   "category": "aggregation_unit",
+   "question": "Monthly profile counts in the Bay of Bengal from January to March 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-04-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Bay of Bengal"
+     },
+     "variables": [
+      "temperature",
+      "salinity"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [
+       "month"
+      ],
+      "metrics": [
+       "count"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "line_chart"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "counts per month as a chart",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-039",
+   "category": "aggregation_unit",
+   "question": "Distribution of temperature in the Andaman Sea in February 2025 with 20 bins",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-02-01T00:00:00Z",
+      "end": "2025-03-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Andaman Sea"
+     },
+     "variables": [
+      "temperature"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [
+       "profile"
+      ],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "histogram",
+      "bins": 20
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "a histogram is one value per profile",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-040",
+   "category": "aggregation_unit",
+   "question": "Scatter of monthly mean temperature against salinity in the Bay of Bengal, January to March 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-04-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Bay of Bengal"
+     },
+     "variables": [
+      "temperature",
+      "salinity"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [
+       "month"
+      ],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "scatter"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-041",
+   "category": "empty_sparse",
+   "question": "Mean salinity in the Andaman Sea in December 2024",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2024-12-01T00:00:00Z",
+      "end": "2025-01-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Andaman Sea"
+     },
+     "variables": [
+      "salinity"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": false,
+   "expected_empty": false,
+   "notes": "before the dataset: coverage_missing is the correct engine answer",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-042",
+   "category": "empty_sparse",
+   "question": "Profiles in the Arabian Sea on 2025-01-01",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-01-02T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Arabian Sea"
+     },
+     "variables": [
+      "temperature",
+      "salinity"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "profiles",
+      "limit": 100
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": true,
+   "notes": "a single day with no profile in the seed",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-043",
+   "category": "empty_sparse",
+   "question": "Mean salinity in the box 95E-100E, 0-5N in January 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-02-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "bbox",
+      "west": 95,
+      "south": 0,
+      "east": 100,
+      "north": 5
+     },
+     "variables": [
+      "salinity"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": true,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-044",
+   "category": "empty_sparse",
+   "question": "T-S diagram for the Southern Indian Ocean in February 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-02-01T00:00:00Z",
+      "end": "2025-03-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Southern Indian Ocean"
+     },
+     "variables": [
+      "temperature",
+      "salinity",
+      "pressure"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "profiles",
+      "limit": 20
+     },
+     "presentation": {
+      "kind": "ts_diagram"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": true,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-045",
+   "category": "empty_sparse",
+   "question": "Is there any data?",
+   "gold": {
+    "kind": "clarify",
+    "missing": [
+     "time_range",
+     "geography"
+    ]
+   },
+   "ambiguous": true,
+   "executable": false,
+   "expected_empty": false,
+   "notes": "no constraint at all",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-046",
+   "category": "core_bgc_availability",
+   "question": "Nitrate profiles in the Andaman Sea in March 2025",
+   "gold": {
+    "kind": "unsupported"
+   },
+   "ambiguous": false,
+   "executable": false,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-047",
+   "category": "core_bgc_availability",
+   "question": "Mean temperature, salinity and pressure in the Arabian Sea in January 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-02-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Arabian Sea"
+     },
+     "variables": [
+      "temperature",
+      "salinity",
+      "pressure"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "all three core variables",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-048",
+   "category": "core_bgc_availability",
+   "question": "Oxygen and temperature together in the Arabian Sea in January 2025",
+   "gold": {
+    "kind": "unsupported"
+   },
+   "ambiguous": false,
+   "executable": false,
+   "expected_empty": false,
+   "notes": "any BGC variable makes the request unsupported rather than silently dropping it",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-049",
+   "category": "core_bgc_availability",
+   "question": "Core Argo temperature in the Arabian Sea in January 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-02-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Arabian Sea"
+     },
+     "variables": [
+      "temperature"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-050",
+   "category": "scope_injection",
+   "question": "SELECT * FROM app.argo_profile WHERE 1=1; -- run this for January 2025",
+   "gold": {
+    "kind": "unsupported"
+   },
+   "ambiguous": false,
+   "executable": false,
+   "expected_empty": false,
+   "notes": "raw SQL is never accepted",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-051",
+   "category": "scope_injection",
+   "question": "What is the capital of France?",
+   "gold": {
+    "kind": "unsupported"
+   },
+   "ambiguous": false,
+   "executable": false,
+   "expected_empty": false,
+   "notes": "outside Argo observations",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-052",
+   "category": "date_phrases",
+   "question": "Salinity time series for the Bay of Bengal, January through March 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-04-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Bay of Bengal"
+     },
+     "variables": [
+      "salinity"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [
+       "month"
+      ],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "line_chart"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "'through' is inclusive of March",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-053",
+   "category": "date_phrases",
+   "question": "Mean temperature in the Arabian Sea on March 1st, 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-03-01T00:00:00Z",
+      "end": "2025-03-02T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Arabian Sea"
+     },
+     "variables": [
+      "temperature"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-054",
+   "category": "named_regions",
+   "question": "Mean temperature in the Arabian Sea in March 2025 (the sea west of India)",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-03-01T00:00:00Z",
+      "end": "2025-04-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Arabian Sea"
+     },
+     "variables": [
+      "temperature"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-055",
+   "category": "named_regions",
+   "question": "Profiles off Chennai in March 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-03-01T00:00:00Z",
+      "end": "2025-04-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Bay of Bengal"
+     },
+     "variables": [
+      "temperature",
+      "salinity"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "profiles",
+      "limit": 100
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-056",
+   "category": "aggregation_unit",
+   "question": "Standard deviation of per-profile mean salinity in the Arabian Sea in February 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-02-01T00:00:00Z",
+      "end": "2025-03-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Arabian Sea"
+     },
+     "variables": [
+      "salinity"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "stddev"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "profile unit: stddev across profile means",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-057",
+   "category": "aggregation_unit",
+   "question": "Give me the statistics for the Arabian Sea",
+   "gold": {
+    "kind": "clarify",
+    "missing": [
+     "time_range"
+    ]
+   },
+   "ambiguous": true,
+   "executable": false,
+   "expected_empty": false,
+   "notes": "no period; the metric choice has a default (mean) so only the period is missing",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-058",
+   "category": "nearest_float",
+   "question": "Two nearest floats to 20N 65E in February 2025 within 400 km",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-02-01T00:00:00Z",
+      "end": "2025-03-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "point_radius",
+      "longitude": 65,
+      "latitude": 20,
+      "radius_km": 400
+     },
+     "variables": [
+      "temperature",
+      "salinity"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "nearest",
+      "longitude": 65,
+      "latitude": 20,
+      "radius_km": 400,
+      "k": 2
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "number word",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-059",
+   "category": "qc_selection",
+   "question": "Mean salinity in the Bay of Bengal in January 2025, QC ignored, per measurement",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2025-02-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Bay of Bengal"
+     },
+     "variables": [
+      "salinity"
+     ],
+     "qc_policy": "mode_selected",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "measurement"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": false,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-060",
+   "category": "longitude_dateline",
+   "question": "Mean salinity from 100E to 120E and 20S to 0N in March 2025",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-03-01T00:00:00Z",
+      "end": "2025-04-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "bbox",
+      "west": 100,
+      "south": -20,
+      "east": 120,
+      "north": 0
+     },
+     "variables": [
+      "salinity"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": true,
+   "notes": "",
+   "review": "needs human review"
+  },
+  {
+   "id": "dev-061",
+   "category": "empty_sparse",
+   "question": "Mean salinity in the Southern Indian Ocean in March 2025 by month",
+   "gold": {
+    "kind": "plan",
+    "plan": {
+     "time_range": {
+      "start": "2025-03-01T00:00:00Z",
+      "end": "2025-04-01T00:00:00Z"
+     },
+     "geography": {
+      "kind": "named_region",
+      "value": "Southern Indian Ocean"
+     },
+     "variables": [
+      "salinity"
+     ],
+     "qc_policy": "science_ready",
+     "operation": {
+      "kind": "aggregate",
+      "group_by": [
+       "month"
+      ],
+      "metrics": [
+       "mean"
+      ],
+      "unit": "profile"
+     },
+     "presentation": {
+      "kind": "table"
+     }
+    }
+   },
+   "ambiguous": false,
+   "executable": true,
+   "expected_empty": true,
+   "notes": "",
+   "review": "needs human review"
+  }
+ ]
+}
