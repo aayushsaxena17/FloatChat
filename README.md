@@ -2,7 +2,7 @@
 
 FloatChat is a research workspace for exploring Argo ocean observations through a conversational interface. This repository is being rebuilt from a hackathon prototype into a Python/React monorepo. Stage 0 provides local infrastructure and a tested scaffold; scientific ingestion, query features, and LLM integration belong to later stages.
 
-**Status: under construction. Stage 1 (Argovis ingestion, Jan-Mar 2025 Indian Ocean acceptance) and Stage 2 (query engine and API) are accepted and merged; Stage 3 (web dashboard) is in progress on `codex/stage-3`.**
+**Status: under construction. Stages 1 (Argovis ingestion), 2 (query engine and API) and 3 (web dashboard) are accepted and merged; Stage 4 (natural-language assistant, retrieval and the golden benchmark) is in review on `codex/stage-4`.**
 
 ## Local development
 
@@ -93,6 +93,36 @@ Screenshots of the acceptance run on the imported Jan-Mar 2025 dataset are under
 `reports/stage3-acceptance-<date>/` with the report `reports/stage3-acceptance-<date>.json`
 (`scripts/stage3_acceptance.py`). The end-to-end scenario (`apps/web/e2e/dashboard.spec.ts`)
 runs in CI against the Docker stack seeded by `scripts/science_seed.py` (ADR-0063).
+
+### Stage 4 natural-language assistant
+
+The `/chat` route turns a question into a validated `stage2-plan-v1` document, runs it through
+the same query engine as the dashboard and shows "How FloatChat interpreted your request"
+(period, area, depth, variables, QC policy, operation, presentation, retrieved documents, the
+model and prompt version, the plan and its hash). Numbers in an answer come from the executed
+query; a model narrative is kept only when every number it states is in the result summary.
+
+- Provider: `LLM_PROVIDER=gemini` by default with `GEMINI_API_KEY`; without a key the chat
+  answers `llm_unavailable` and the dashboard, map, profiles and `POST /v1/query` are unaffected.
+  `LLM_PROVIDER=offline` opts into a deterministic rule-based planner (`offline-rules-v1`) that
+  the tests, CI and the harness use; it names itself in the interpretation panel.
+- Corpus: `python3 -m scripts.dev seed-corpus` embeds parameter, QC, region (with aliases),
+  help and example documents into `app.semantic_document` (pgvector, 768 dimensions); `make dev`
+  does it at the end of start-up.
+- Costs: every model call is a row in `app.llm_call`; `LLM_DAILY_USD_CAP` and
+  `LLM_DAILY_TOKEN_CAP` stop the assistant for the UTC day; prices are configuration
+  (`packages/core/src/floatchat_core/llm/pricing.py`, versioned, with the source URL).
+- Benchmark: `eval/golden` (61 development and 121 held-out items, drafted by the builder and
+  awaiting human review); `make eval-nl` writes `reports/eval_nl_<date>.md`.
+
+#### Results
+
+| Report | Provider | Split | Plan exact match (schema-only / with retrieval) | Result accuracy |
+|---|---|---|---|---|
+| [eval_nl_2026-10-12](reports/eval_nl_2026-10-12.md) | `offline-rules-v1` (**not an LLM**; no key existed on the host) | held-out, 121 items | 72.0% / 83.0% | 89.2% (93 executed) |
+
+The Stage 4 research number (RQ1, PRD §30.1) is the held-out plan accuracy of a model run; it is
+reported here only when a committed report from `make eval-nl` with a model key exists.
 
 ## Security gate
 
