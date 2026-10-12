@@ -1,10 +1,10 @@
 {
-  "project": "floatchat-stage0-test-ac9dd329caa2",
+  "project": "floatchat-stage0-test-c5ebbccfd712",
   "complete": true,
   "checks": [
     {
       "check": "empty-volume-startup",
-      "seconds": 27.36351858600392
+      "seconds": 63.61717542400038
     },
     {
       "check": "stage2-catalogue-on-empty-database",
@@ -13,6 +13,10 @@
     {
       "check": "stage3-science-seed",
       "profiles_in_scenario": 5
+    },
+    {
+      "check": "stage4-chat-offline-plan-and-execute",
+      "passed": true
     },
     {
       "check": "postgis-metadata-permissions-and-repeat-bootstrap",
@@ -36,7 +40,7 @@
     },
     {
       "check": "repeat-startup-persistence",
-      "seconds": 20.214161043004424
+      "seconds": 15.082448033000219
     },
     {
       "check": "worker-storage-migrations-browser",

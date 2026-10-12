@@ -1,4 +1,4 @@
-.PHONY: dev stop restart build setup test integration bench lint typecheck eval secrets-current secrets-history
+.PHONY: dev stop restart build setup test integration bench lint typecheck eval eval-nl seed-corpus secrets-current secrets-history
 dev:
 	python3 -m scripts.dev dev
 stop:
@@ -26,8 +26,11 @@ lint:
 typecheck:
 	uv run --all-packages --frozen mypy
 	pnpm typecheck
-eval:
-	@echo "not yet implemented"
+eval: eval-nl
+eval-nl:
+	uv run --all-packages --frozen python -m eval.nl.harness --split test --ablations all
+seed-corpus:
+	python3 -m scripts.dev seed-corpus
 secrets-current:
 	python3 scripts/security/scan.py current
 secrets-history:

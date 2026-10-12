@@ -4,21 +4,27 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from floatchat_core.chat.pipeline import ChatService
+from floatchat_core.chat.store import ConversationStore
 from floatchat_core.config import Settings
 from floatchat_core.query.router import QueryService
 
+from floatchat_api.chat_api import ChatRuntime, install_chat
 from floatchat_api.health import Check, dependency_checks, ready
 from floatchat_api.query_api import QueryRuntime, install
 
-API_VERSION = "0.2.0"
+API_VERSION = "0.3.0"
 
 
 def create_app(
     checks: dict[str, Check] | None = None,
     timeout: float | None = None,
     query_service: QueryService | None = None,
+    chat_service: ChatService | None = None,
+    chat_store: ConversationStore | None = None,
 ) -> FastAPI:
     runtime = QueryRuntime(service=query_service)
+    chat_runtime = ChatRuntime(runtime, service=chat_service, store=chat_store)
 
     @asynccontextmanager
     async def lifespan(_application: FastAPI) -> AsyncIterator[None]:
@@ -29,11 +35,13 @@ def create_app(
     app = FastAPI(
         title="FloatChat",
         version=API_VERSION,
-        description="Argo ocean observations: catalogue, floats, profiles and validated query "
-        "plans compiled to parameterised SQL or bounded DuckDB (Stage 2).",
+        description="Argo ocean observations: catalogue, floats, profiles, validated query "
+        "plans compiled to parameterised SQL or bounded DuckDB (Stage 2) and a conversational "
+        "assistant whose plans pass the same validator (Stage 4).",
         lifespan=lifespan,
     )
     install(app, runtime)
+    install_chat(app, chat_runtime)
     _configure_logging()
 
     @app.get("/v1/health/live")

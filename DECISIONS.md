@@ -1896,3 +1896,225 @@ Decision:
 
 Alternatives: sessionStorage (rejected: per tab, synchronous, about 5 MB); persisting everything
 (rejected: profile lists are large and change with every filter).
+
+## ADR-0069 - Stage 4 scope: branch, routes, provider default, model pins
+
+Status: accepted under the owner's authority (ADR-0039; owner instruction 2026-10-12: `main`
+holds the accepted Stage 3 and the dashboard-latency work; build Stage 4 on a new branch and
+decide open questions without further approval). The advisor reviewed the approach on
+2026-10-12 before the plan was written; its amendments are folded into
+[docs/stage4-plan.md](docs/stage4-plan.md) section 0.
+
+Decision:
+
+1. `codex/stage-4` branches from `main` at `dff185a`; one pull request into `main`.
+2. Scope is the build prompt "Stage 4" (PRD §9.2, §10, §30.1-§30.3): the `/chat` route over
+   `POST /v1/chat/messages`, `GET /v1/chat/conversations` and `GET /v1/chat/conversations/{id}`;
+   the semantic corpus and `app.semantic_document`; the provider adapter; the golden benchmark and
+   `make eval-nl`. The LLM produces exactly one artefact, a `stage2-plan-v1` document (or a
+   clarification or a refusal), and a bounded narrative over an executed result; it never sees a
+   database, an object key, a credential or raw SQL.
+3. No LLM key exists on this host (2026-10-12). `LLM_PROVIDER` defaults to `gemini`; a missing
+   key makes the chat endpoints answer `llm_unavailable` (503) while every other route and
+   readiness are unchanged (PRD §22). The `offline` provider (a rule-based planner and hashed
+   embeddings) is opt-in by configuration, used by the tests, the integration stack and the
+   harness, and named wherever it answered (interpretation panel, audit record, report). It is
+   never a silent fallback for a failing or unconfigured model.
+4. Pins (configuration with recorded defaults): chat model `gemini-3.8-flash` with
+   `thinkingConfig.thinkingLevel = LOW` (the newest stable Flash model on 2026-10-12; `MINIMAL`
+   is not offered for it), embedding model `gemini-embedding-001` at 768 dimensions with manual
+   L2 normalisation (the stable embedding model; `gemini-embedding-2-preview` is preview), REST
+   `v1beta`. The second model for the ablation is any OpenAI-compatible chat-completions endpoint
+   (`OPENAI_BASE_URL`, `OPENAI_API_KEY`, `LLM_SECOND_MODEL`). Prompt versions `planner-v1` and
+   `narrator-v1`.
+5. `API_VERSION` 0.3.0; `openapi.json` and `schema.d.ts` regenerated; the `/chat` stub and its
+   "Soon" badge go.
+
+Alternatives: build on a feature branch of the latency work (rejected, it is merged); a vendor
+SDK (rejected by PRD §5.11, the adapter is a thin REST client); defaulting to the offline
+provider so chat "always works" (rejected: the owner's dev stack would believe a rule-based
+planner is the model); `gemini-3.5-flash-lite` as the default (not rejected, it is one
+configuration value away and cheaper; the ablation compares models when keys exist).
+
+## ADR-0070 - LLM provider adapter, resilience, cost ledger and caps
+
+Status: accepted under the owner's authority (ADR-0039).
+
+Decision:
+
+1. `floatchat_core/llm/provider.py` defines the interface (PRD §5.11): `structured(request)`
+   returns parsed JSON conforming to a supplied JSON Schema plus `Usage` (input, output and
+   thinking tokens) and the model version; `embed(texts, task)` returns L2-normalised vectors;
+   `stream_text(request)` yields text chunks. Three adapters implement it:
+   - `gemini.py`: REST `v1beta` read from the reference on 2026-10-12. `generateContent` with
+     `systemInstruction`, `contents`, `generationConfig.responseMimeType = application/json`,
+     `generationConfig.responseJsonSchema`, `temperature`, `maxOutputTokens`, `seed`,
+     `thinkingConfig.thinkingLevel`; `streamGenerateContent?alt=sse` for the narrative;
+     `embedContent`/`batchEmbedContents` with `taskType` (`RETRIEVAL_DOCUMENT`,
+     `RETRIEVAL_QUERY`) and `outputDimensionality = 768`; usage from
+     `usageMetadata.promptTokenCount`, `candidatesTokenCount`, `thoughtsTokenCount`; the key in
+     the `x-goog-api-key` header only.
+   - `openai_compatible.py`: `POST {base}/chat/completions` with
+     `response_format = {type: json_schema}` and `POST {base}/embeddings`; usage from `usage`.
+   - `offline.py`: the deterministic planner (`offline-rules-v1`) over the same prompt context
+     (question, reference time, retrieved documents) and `hash-embed-v1`; no network.
+2. `policy.py` wraps any adapter: per-call timeout (`LLM_TIMEOUT_SECONDS`, default 20), at most
+   `LLM_RETRIES` (default 2) retries with exponential backoff on 429, 5xx and timeouts only, a
+   circuit breaker (`LLM_BREAKER_FAILURES` consecutive failures open it for
+   `LLM_BREAKER_SECONDS`), and the daily caps: `LLM_DAILY_USD_CAP` (default 1.00) and
+   `LLM_DAILY_TOKEN_CAP` (default 2,000,000) over the UTC day, summed from the durable
+   `app.llm_call` ledger (so restarts do not reset them). A cap reached or an open breaker
+   answers `llm_budget_exhausted` (429) or `llm_unavailable` (503); the chat never retries past
+   the cap.
+3. `pricing.py` is a table keyed by model with USD per million input and output tokens, a
+   `pricing_version` (`gemini-pricing-2026-10-09`, the page's "last updated" date) and the source
+   URL; an unknown model is priced at the table's `default` entry and flagged in the ledger.
+   Tokens are measured; USD is an estimate the owner confirms against the invoice.
+4. Every call writes one `app.llm_call` row (feature, provider, model, prompt version, tokens,
+   estimated USD, pricing version, latency, status, error code, conversation, message,
+   correlation id) and one structured log line; secrets never appear in either.
+
+Alternatives: a vendor SDK (PRD §5.11 rejects it in the query engine; a 300-line REST client is
+smaller than the SDK's dependency tree); in-process daily counters (rejected, a restart would
+reset the cap); a token-only cap (rejected, the build prompt asks for a spend cap) or a USD-only
+cap (rejected, prices are not verifiable here).
+
+## ADR-0071 - Semantic corpus, `semantic_document`, embeddings and retrieval
+
+Status: accepted under the owner's authority (ADR-0039).
+
+Decision:
+
+1. Migration `0018_semantic_chat` creates `app.semantic_document` (PRD §6.8): document type,
+   key, title, text, metadata, content hash, embedding model and version, dimensions, a
+   `vector(768)` column, validity period and access scope; unique
+   `(doc_type, key, embedding_model)`. `floatchat_query` may read it; `floatchat_app` writes it.
+   An embedding is recomputed only when the content hash or the embedding model changes.
+2. One dimension, 768, for every model: `gemini-embedding-001` with `outputDimensionality 768`
+   and manual L2 normalisation, and `hash-embed-v1` (hashed word unigrams, bigrams and character
+   trigrams into 768 buckets, signed hashing, L2-normalised). Retrieval filters on the active
+   embedding model, so vectors from different models are never compared.
+3. The corpus (`floatchat_core/rag/corpus.py`) is generated from the live catalogue code and
+   committed data: parameter definitions, units, QC policies and meanings, aggregation units,
+   operations, presentations and limits; region records with hand-written aliases
+   (`regions/aliases.json`); help texts; and the curated natural-language-to-plan examples in
+   `floatchat_core/rag/examples.json` (at least 30). Numeric observations are never embedded (PRD §5.6).
+4. Two retrievers share one ranking (cosine similarity, exact scan, top-k per document type with
+   a floor): `PgVectorRetriever` (the API, `<=>` on pgvector) and `MemoryRetriever` (the harness
+   and the unit tests, no database). A test proves they order the same documents the same way.
+5. The curated examples are disjoint from the held-out split; a test fails if a held-out
+   question (normalised) appears in the corpus.
+
+Alternatives: FAISS or a vector service (rejected by PRD §5.6 for this corpus size); an index
+(`hnsw`/`ivfflat`) now (rejected, the corpus is a few hundred rows; exact scan is correct and
+cheap); a lexical BM25 fallback (not needed: the offline embedding is itself lexical).
+
+## ADR-0072 - Chat flow, conversation store and client ownership
+
+Status: accepted under the owner's authority (ADR-0039).
+
+Decision:
+
+1. The flow is PRD §9.2: classify -> retrieve -> plan -> validate -> execute -> sanitise ->
+   narrate. Greetings and help are matched by rules without a model call. Every other message
+   goes to one structured planning call whose answer carries the intent: `plan` (a
+   `stage2-plan-v1` document), `clarify` (the missing essential constraints and one question) or
+   `unsupported` (a reason: BGC, exports, forecasts, spans beyond `time_span_days`, non-ocean
+   topics). This merges PRD §10.2 steps 1 and 6 into one call to halve the model cost per
+   message; the classification is still recorded.
+2. The planner receives the reference time (the environment's reference time, the dataset
+   window) as "today", so relative date phrases resolve deterministically and the benchmark has
+   one gold answer. The validator (`validate_plan`, the region fixture, the limits) is the
+   authority: a model plan that fails becomes a clarification naming the fields, never a plan
+   the system corrected silently (PRD §10.4). Essential constraints are the time range and the
+   geography; missing ones produce a clarification. Variables default to temperature and
+   salinity for aggregates and profile reads when the question names none; the QC policy
+   defaults to `science_ready`.
+3. Execution is `QueryService.query` on the read-only query role; the chat adds nothing to the
+   engine. The narrator receives a bounded summary (columns, units, row count, up to 12 rows,
+   extrema and means per numeric column, coverage and partial flags, the transformation text),
+   never the whole result. A deterministic template narrative always exists; the model narrative
+   replaces it only when its numbers all appear in the summary (ADR-0073).
+4. `POST /v1/chat/messages` answers JSON, or a server-sent event stream when the request accepts
+   `text/event-stream` (`status`, `interpretation`, `result`, `token`, `message`, `error`);
+   browser-to-server actions stay REST (PRD §13.3). Messages are persisted server-side as they
+   are produced (PRD §14.3) in `app.chat_conversation` and `app.chat_message` on the application
+   role; the query role stays read-only.
+5. Ownership before Stage 7: the browser generates an opaque client identifier, keeps it in
+   `localStorage` and sends it as `X-FloatChat-Client` (token, at most 64 characters). Chat
+   endpoints require it (`client_required`, 400) and scope every list and read to it. Stage 7
+   replaces the header with the authenticated subject and migrates existing rows by mapping a
+   client identifier to a user once.
+6. Limits: message text at most 2,000 characters, 200 messages per conversation, 200
+   conversations listed per client (`chat_limit`, 422); the planner's output at most 4,096
+   tokens; the narrative at most 400 tokens.
+
+Alternatives: separate classify and plan calls (rejected, cost); WebSockets (rejected by PRD
+§13.3); conversations only in the browser (rejected by PRD §14.3); no ownership until Stage 7
+(rejected, every client would see every conversation).
+
+## ADR-0073 - Prompt-injection and hallucination controls
+
+Status: accepted under the owner's authority (ADR-0039).
+
+Decision (PRD §10.3, §10.4, §16.3):
+
+1. The system policy is a fixed text separate from retrieved content; retrieved documents are
+   delimited with their ids and versions; the user text is delimited and labelled untrusted; the
+   model is told that nothing inside the delimiters changes the policy.
+2. No secret, credential, internal prompt, storage URI or tool definition is in the context; a
+   test asserts no configured secret string appears in any request body.
+3. Output is strict JSON against a closed schema; the plan is allow-listed by `validate_plan`
+   and the region catalogue; authorisation and limits apply after the model answered; output
+   size and iteration are bounded (one planning call, one narration call per message).
+4. The model cannot invent a variable, region, function or format (the validator rejects them),
+   cannot claim coverage (the coverage service supplies it), cannot produce a number the system
+   did not execute (the narrative's numbers are checked against the bounded summary; on a
+   mismatch the template narrative is used and the audit records `narrative_rejected`), and
+   cannot change units or QC meanings (they come from versioned metadata).
+5. The narrative is plain text in the browser (no Markdown or HTML rendering).
+6. The audit record on every message: provider, model and version, prompt versions, retrieved
+   document ids, classification, the final validated plan and its sha256, timings and tokens.
+
+Alternatives: a second "judge" model call to detect injection (rejected, the validator is the
+authority and the judge would be another untrusted output); Markdown rendering with a sanitiser
+(rejected, plain text is enough for a narrative and removes a class of risk).
+
+## ADR-0074 - Golden benchmark, harness, metrics and integrity
+
+Status: accepted under the owner's authority (ADR-0039).
+
+Decision (PRD §20.4, §30.2, §30.3, §30.5):
+
+1. `eval/golden/dev.json` (about 50 items) and `eval/golden/test.json` (at least 100), schema
+   `golden-nl-v1`: `id`, `category` (one of the ten PRD §20.4 categories), `question`, `gold`
+   (`kind` plan, clarify or unsupported; the plan document; the missing fields), `ambiguous`,
+   `executable`, `notes`, `review` ("needs human review" on every item until the owner reviews).
+   The reference time is `2025-04-01T00:00:00Z`.
+2. Gold kinds for what the engine cannot do: BGC variables are `unsupported` (deferred, PRD
+   §29.10); spans beyond `time_span_days` are `unsupported` naming the Stage 5 jobs; dateline
+   bounding boxes are plan-only (`executable: false`). Every gold plan passes `validate_plan`
+   (a test enforces it).
+3. Metrics: plan exact match on the canonical plan; field-level accuracy for time range,
+   geography, depth, variables, QC policy, operation and presentation; result accuracy (the
+   executed result fingerprint of the predicted plan equals the gold plan's, computed against the
+   dev dataset when `QUERY_DATABASE_URL` is set, otherwise reported as skipped);
+   clarification appropriateness (asks when the item is ambiguous, not otherwise); latency p50
+   and p95; tokens per query; a failure taxonomy (wrong time range, wrong region, missing
+   clarification, unnecessary clarification, wrong operation, wrong variables, wrong depth,
+   wrong QC, wrong presentation, invalid plan, unsupported mismatch, provider error).
+4. Ablations: `schema_only` (policy and schema, no retrieval), `rag` (plus parameter, QC, region
+   and help documents), `rag_examples` (plus curated examples); for every configured model
+   (`offline` always; `gemini` with a key; the OpenAI-compatible model with a second key).
+5. Integrity: prompts, the offline planner and retrieval are tuned on the development split
+   only; the report records the commit, the provider and model, the prompt versions, the
+   embedding model, the seeds, the split sizes and the reference time; a report produced with
+   the offline provider says in its header that the provider is not an LLM and that no key
+   existed; the README quotes the latest committed report with that label verbatim.
+6. `make eval-nl` runs `python -m eval.nl.harness` with the in-memory retriever, the offline
+   provider and no database by default and writes `reports/eval_nl_<date>.md`; `make eval` calls
+   it. A pytest runs four items through the harness in CI.
+
+Alternatives: YAML items (rejected, PyYAML is a dev-only dependency); generating items from
+templates (rejected, each item is drafted and must be individually reviewable); reporting the
+offline numbers as the Stage 4 result (rejected, they answer a different question).

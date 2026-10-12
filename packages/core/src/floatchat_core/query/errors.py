@@ -44,6 +44,19 @@ REGISTRY = MappingProxyType(
         "execution_failed": (502, "The query could not be executed."),
         "internal_error": (500, "An internal error occurred."),
         "service_unavailable": (503, "The query service is not configured."),
+        # Stage 4 (ADR-0070, ADR-0072): the assistant's own failures; the rest of the API is
+        # unaffected by any of them (PRD section 22).
+        "llm_unavailable": (
+            503,
+            "The assistant is temporarily unavailable; the dashboard and direct queries "
+            "continue to work.",
+        ),
+        "llm_budget_exhausted": (
+            429,
+            "The assistant's daily budget is spent; it resumes at 00:00 UTC.",
+        ),
+        "chat_limit": (422, "The conversation or message exceeds a chat limit."),
+        "client_required": (400, "The X-FloatChat-Client header is required."),
     }
 )
 

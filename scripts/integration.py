@@ -62,6 +62,11 @@ def main() -> None:
             API_PORT=str(api_port),
             WEB_PORT=str(web_port),
             APPLICATION_COMMIT=application_commit(),
+            # Stage 4 (ADR-0069): the disposable project opts into the rule-based provider so
+            # the chat scenario runs without a key; the interpretation panel names it.
+            LLM_PROVIDER="offline",
+            GEMINI_API_KEY="",
+            OPENAI_API_KEY="",
         )
         command = [
             docker,
@@ -135,6 +140,29 @@ def main() -> None:
                 assert listing["result"]["row_count"] == 5, listing["result"]["row_count"]
                 assert listing["provenance"]["environment"]["ingested_at"]
             evidence.append({"check": "stage3-science-seed", "profiles_in_scenario": 5})
+            # Stage 4 (ADR-0071, ADR-0072): embed the corpus with the offline provider, then one
+            # chat message end to end: a validated plan, an executed result, the audit record.
+            compose("exec", "-T", "api", "python", "scripts/semantic_seed.py")
+            chat_request = urllib.request.Request(
+                f"http://127.0.0.1:{api_port}/v1/chat/messages",
+                data=json.dumps(
+                    {
+                        "text": "Monthly mean temperature in the Arabian Sea from January to "
+                        "March 2025 in the upper 100 dbar"
+                    }
+                ).encode(),
+                headers={"Content-Type": "application/json", "X-FloatChat-Client": "ci"},
+                method="POST",
+            )
+            with urllib.request.urlopen(chat_request, timeout=60) as response:
+                answer = json.loads(response.read())["message"]
+                assert answer["kind"] == "answer", answer["kind"]
+                audit = answer["payload"]["interpretation"]
+                assert audit["provider"] == "offline" and audit["model"] == "offline-rules-v1"
+                assert audit["plan"]["geography"]["value"] == "Arabian Sea"
+                assert any(hit["id"].startswith("region_alias:") for hit in audit["retrieved"])
+                assert answer["payload"]["result"]["result"]["row_count"] >= 1
+            evidence.append({"check": "stage4-chat-offline-plan-and-execute", "passed": True})
             compose(
                 "run",
                 "--rm",
