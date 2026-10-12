@@ -1,0 +1,30 @@
+name: Commit security
+# Scan every pushed branch/tag, including feature commits before a PR exists.
+# Keep these check names stable for main's required status checks.
+on:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  secrets-current:
+    name: secrets-current
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with: { version: '0.10.4', python-version: '3.12.12' }
+      - run: python scripts/security/install_gitleaks.py
+      - run: python scripts/security/scan.py current
+      - name: Verify scanner redaction and the pre-commit hook
+        run: uv run --all-packages --frozen python -m pytest tests/test_security.py -q
+  secrets-history:
+    name: secrets-history
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Fetch advertised branches and tags for history coverage
+        run: git fetch --no-recurse-submodules origin '+refs/heads/*:refs/remotes/origin/*' '+refs/tags/*:refs/tags/*'
+      - run: python scripts/security/install_gitleaks.py
+      - run: python scripts/security/scan.py history
