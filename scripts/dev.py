@@ -130,6 +130,22 @@ def compose(*args: str, timeout: int = 300) -> None:
     subprocess.run(command, cwd=ROOT, check=True, timeout=timeout, env=environment)
 
 
+def seed_corpus() -> None:
+    """Embed the semantic corpus with the configured provider (Stage 4, ADR-0071).
+
+    Skipped by the script itself when no provider key is configured; the chat then answers
+    llm_unavailable until the owner adds a key and runs ``scripts/dev.py seed-corpus``.
+    """
+    try:
+        compose("exec", "-T", "api", "python", "scripts/semantic_seed.py", timeout=600)
+    except (RuntimeError, subprocess.SubprocessError) as error:
+        print(
+            f"Corpus seeding did not complete ({type(error).__name__}); the stack is up and the "
+            "chat stays unavailable until `scripts/dev.py seed-corpus` succeeds.",
+            file=sys.stderr,
+        )
+
+
 def wait_ready(url: str, seconds: int) -> None:
     deadline = time.monotonic() + seconds
     while time.monotonic() < deadline:
@@ -159,7 +175,7 @@ def published_port(name: str, default: int) -> int:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=["dev", "stop", "build", "restart"])
+    parser.add_argument("action", choices=["dev", "stop", "build", "restart", "seed-corpus"])
     args = parser.parse_args()
     try:
         if args.action == "dev":
@@ -174,6 +190,10 @@ def main() -> None:
                 max(1, int(300 - (time.monotonic() - started))),
             )
             print(f"FloatChat ready: http://127.0.0.1:{published_port('WEB_PORT', 5173)}")
+            seed_corpus()
+        elif args.action == "seed-corpus":
+            docker_command()
+            seed_corpus()
         elif args.action == "build":
             initialize_configuration()
             compose("build", timeout=1200)

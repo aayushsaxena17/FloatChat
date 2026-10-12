@@ -1,0 +1,397 @@
+"""Provider adapters over a fake transport (ADR-0070): request shapes, parsing, resilience."""
+
+import json
+from datetime import UTC, datetime
+from typing import Any
+
+import httpx
+import pytest
+from floatchat_core.llm.config import LlmSettings
+from floatchat_core.llm.gemini import GeminiProvider
+from floatchat_core.llm.ledger import MemoryLedger
+from floatchat_core.llm.openai_compatible import OpenAICompatibleProvider
+from floatchat_core.llm.policy import ResilientProvider
+from floatchat_core.llm.pricing import PriceTable
+from floatchat_core.llm.provider import (
+    ProviderError,
+    StructuredRequest,
+    TextRequest,
+    Usage,
+    normalize,
+)
+from floatchat_core.query.errors import QueryError
+
+KEY = "fixture-header-value"
+SCHEMA = {"type": "object", "properties": {"kind": {"type": "string"}}, "required": ["kind"]}
+
+
+def gemini_answer(text: str, finish: str = "STOP", **extra: Any) -> dict[str, Any]:
+    return {
+        "candidates": [
+            {"content": {"role": "model", "parts": [{"text": text}]}, "finishReason": finish}
+        ],
+        "usageMetadata": {
+            "promptTokenCount": 120,
+            "candidatesTokenCount": 30,
+            "thoughtsTokenCount": 10,
+            "totalTokenCount": 160,
+        },
+        "modelVersion": "gemini-3.8-flash-001",
+        **extra,
+    }
+
+
+class Recorder:
+    def __init__(self, responder):
+        self.requests: list[httpx.Request] = []
+        self.responder = responder
+
+    def __call__(self, request: httpx.Request) -> httpx.Response:
+        self.requests.append(request)
+        return self.responder(request)
+
+    @property
+    def bodies(self) -> list[str]:
+        return [request.content.decode() for request in self.requests]
+
+
+def gemini(responder, **kwargs) -> tuple[GeminiProvider, Recorder]:
+    recorder = Recorder(responder)
+    provider = GeminiProvider(
+        KEY,
+        "gemini-3.8-flash",
+        "gemini-embedding-001",
+        transport=httpx.MockTransport(recorder),
+        **kwargs,
+    )
+    return provider, recorder
+
+
+def structured_request() -> StructuredRequest:
+    return StructuredRequest(
+        purpose="plan", system="policy", user="question", schema=SCHEMA, max_output_tokens=512
+    )
+
+
+def test_gemini_structured_request_and_parse():
+    provider, recorder = gemini(
+        lambda request: httpx.Response(200, json=gemini_answer('{"kind": "plan"}'))
+    )
+    result = provider.structured(structured_request())
+    assert result.data == {"kind": "plan"}
+    assert result.usage == Usage(120, 30, 10)
+    assert result.model_version == "gemini-3.8-flash-001"
+    request = recorder.requests[0]
+    assert request.url.path == "/v1beta/models/gemini-3.8-flash:generateContent"
+    assert request.headers["x-goog-api-key"] == KEY
+    body = json.loads(request.content)
+    assert body["systemInstruction"] == {"parts": [{"text": "policy"}]}
+    assert body["contents"] == [{"role": "user", "parts": [{"text": "question"}]}]
+    config = body["generationConfig"]
+    assert config["responseMimeType"] == "application/json"
+    assert config["responseJsonSchema"] == SCHEMA
+    assert config["thinkingConfig"] == {"thinkingLevel": "LOW"}
+    assert config["maxOutputTokens"] == 512 and config["temperature"] == 0.0
+    assert config["seed"] == 7 and config["candidateCount"] == 1
+    # The key is a header, never part of the URL or the body.
+    assert KEY not in str(request.url) and KEY not in request.content.decode()
+
+
+def test_gemini_thinking_config_omitted_when_blank():
+    provider, recorder = gemini(
+        lambda request: httpx.Response(200, json=gemini_answer('{"kind": "plan"}')),
+        thinking_level="",
+    )
+    provider.structured(structured_request())
+    assert "thinkingConfig" not in json.loads(recorder.requests[0].content)["generationConfig"]
+
+
+@pytest.mark.parametrize(
+    ("response", "kind"),
+    [
+        (httpx.Response(429, json={"error": {"message": "quota"}}), "rate_limited"),
+        (httpx.Response(503, json={"error": {"message": "down"}}), "server"),
+        (httpx.Response(400, json={"error": {"message": "bad"}}), "client"),
+        (httpx.Response(200, json=gemini_answer("not json")), "malformed"),
+        (httpx.Response(200, json=gemini_answer("{}", finish="MAX_TOKENS")), "malformed"),
+        (httpx.Response(200, json=gemini_answer("{}", finish="SAFETY")), "blocked"),
+        (
+            httpx.Response(200, json={"promptFeedback": {"blockReason": "SAFETY"}}),
+            "blocked",
+        ),
+        (httpx.Response(200, json={"candidates": []}), "malformed"),
+    ],
+)
+def test_gemini_failures_become_provider_errors(response, kind):
+    provider, _ = gemini(lambda request: response)
+    with pytest.raises(ProviderError) as info:
+        provider.structured(structured_request())
+    assert info.value.kind == kind
+    assert info.value.retryable == (kind in ("rate_limited", "server"))
+
+
+def test_gemini_timeout_is_retryable():
+    def responder(request):
+        raise httpx.ReadTimeout("slow", request=request)
+
+    provider, _ = gemini(responder)
+    with pytest.raises(ProviderError) as info:
+        provider.structured(structured_request())
+    assert info.value.kind == "timeout" and info.value.retryable
+
+
+def test_gemini_embeddings_batch_and_normalisation():
+    def responder(request):
+        body = json.loads(request.content)
+        assert request.url.path == "/v1beta/models/gemini-embedding-001:batchEmbedContents"
+        for item in body["requests"]:
+            assert item["model"] == "models/gemini-embedding-001"
+            assert item["taskType"] == "RETRIEVAL_DOCUMENT"
+            assert item["outputDimensionality"] == 768
+        vectors = [[2.0] + [0.0] * 767 for _ in body["requests"]]
+        return httpx.Response(
+            200,
+            json={
+                "embeddings": [{"values": values} for values in vectors],
+                "usageMetadata": {"promptTokenCount": 9},
+            },
+        )
+
+    provider, recorder = gemini(responder)
+    result = provider.embed(["a", "b"], "document")
+    assert len(result.vectors) == 2 and len(result.vectors[0]) == 768
+    assert result.vectors[0][0] == pytest.approx(1.0)
+    assert result.usage.input_tokens == 9
+    assert len(recorder.requests) == 1
+
+
+def test_gemini_query_embedding_task_type():
+    def responder(request):
+        assert json.loads(request.content)["requests"][0]["taskType"] == "RETRIEVAL_QUERY"
+        return httpx.Response(200, json={"embeddings": [{"values": [1.0] * 768}]})
+
+    provider, _ = gemini(responder)
+    provider.embed(["q"], "query")
+
+
+def test_gemini_stream_parses_sse_chunks_and_usage():
+    lines = [
+        "data: " + json.dumps(gemini_answer("The mean ")),
+        "",
+        "data: " + json.dumps(gemini_answer("is 27.1 degree_C.")),
+        "",
+    ]
+
+    def responder(request):
+        assert request.url.path == "/v1beta/models/gemini-3.8-flash:streamGenerateContent"
+        assert request.url.params["alt"] == "sse"
+        return httpx.Response(200, text="\n".join(lines) + "\n")
+
+    provider, _ = gemini(responder)
+    stream = provider.stream_text(
+        TextRequest(purpose="narrate", system="s", user="u", max_output_tokens=100)
+    )
+    assert "".join(stream) == "The mean is 27.1 degree_C."
+    assert stream.usage.input_tokens == 120
+
+
+def openai_answer(content: str) -> dict[str, Any]:
+    return {
+        "model": "gpt-test-2026",
+        "choices": [
+            {"message": {"role": "assistant", "content": content}, "finish_reason": "stop"}
+        ],
+        "usage": {
+            "prompt_tokens": 80,
+            "completion_tokens": 25,
+            "completion_tokens_details": {"reasoning_tokens": 5},
+        },
+    }
+
+
+def test_openai_compatible_structured_and_embeddings():
+    recorder = Recorder(
+        lambda request: (
+            httpx.Response(200, json=openai_answer('{"kind": "clarify"}'))
+            if request.url.path.endswith("/chat/completions")
+            else httpx.Response(
+                200,
+                json={
+                    "data": [
+                        {"index": 1, "embedding": [0.0] * 767 + [3.0]},
+                        {"index": 0, "embedding": [1.0] * 768},
+                    ],
+                    "usage": {"prompt_tokens": 4},
+                },
+            )
+        )
+    )
+    provider = OpenAICompatibleProvider(
+        KEY,
+        "gpt-test",
+        "text-embedding-3-small",
+        base_url="https://llm.example/v1/",
+        transport=httpx.MockTransport(recorder),
+    )
+    result = provider.structured(structured_request())
+    assert result.data == {"kind": "clarify"} and result.usage == Usage(80, 20, 5)
+    request = recorder.requests[0]
+    assert request.url == "https://llm.example/v1/chat/completions"
+    assert request.headers["authorization"] == f"Bearer {KEY}"
+    body = json.loads(request.content)
+    assert body["response_format"]["type"] == "json_schema"
+    assert body["response_format"]["json_schema"]["schema"] == SCHEMA
+    assert body["messages"][0] == {"role": "system", "content": "policy"}
+    embeddings = provider.embed(["a", "b"], "query")
+    assert json.loads(recorder.requests[1].content)["dimensions"] == 768
+    # Ordered by index, normalised.
+    assert embeddings.vectors[0][0] == pytest.approx(1 / 768**0.5)
+    assert embeddings.vectors[1][767] == pytest.approx(1.0)
+
+
+def test_openai_compatible_stream():
+    chunks = [
+        'data: {"choices": [{"delta": {"content": "Hello"}}]}',
+        'data: {"choices": [{"delta": {"content": " there"}}]}',
+        'data: {"choices": [], "usage": {"prompt_tokens": 3, "completion_tokens": 2}}',
+        "data: [DONE]",
+    ]
+    provider = OpenAICompatibleProvider(
+        KEY,
+        "gpt-test",
+        "e",
+        base_url="https://llm.example/v1",
+        transport=httpx.MockTransport(
+            lambda request: httpx.Response(200, text="\n".join(chunks) + "\n")
+        ),
+    )
+    stream = provider.stream_text(TextRequest(purpose="narrate", system="s", user="u"))
+    assert "".join(stream) == "Hello there"
+    assert stream.usage == Usage(3, 2, 0)
+
+
+# ----- the policy wrapper ------------------------------------------------------------------------
+
+
+class FlakyProvider:
+    name = "gemini"
+    model = "gemini-3.8-flash"
+    embedding_model = "gemini-embedding-001"
+
+    def __init__(self, failures: list[ProviderError]) -> None:
+        self.failures = failures
+        self.calls = 0
+
+    def structured(self, request):
+        self.calls += 1
+        if self.failures:
+            raise self.failures.pop(0)
+        from floatchat_core.llm.provider import StructuredResult
+
+        return StructuredResult({"kind": "plan"}, "{}", Usage(1000, 200, 100), self.model, "v1")
+
+    def embed(self, texts, task):
+        raise AssertionError("not used")
+
+    def stream_text(self, request):
+        raise AssertionError("not used")
+
+
+def wrap(provider, ledger=None, **settings) -> tuple[ResilientProvider, list[float]]:
+    sleeps: list[float] = []
+    clock = {"now": 0.0}
+    wrapped = ResilientProvider(
+        provider,
+        LlmSettings(
+            provider="gemini", retries=2, breaker_failures=2, breaker_seconds=30, **settings
+        ),
+        ledger or MemoryLedger(),
+        PriceTable(),
+        monotonic=lambda: clock["now"],
+        sleep=sleeps.append,
+        clock=lambda: datetime(2026, 10, 12, 12, tzinfo=UTC),
+    )
+    wrapped.clock_state = clock  # type: ignore[attr-defined]
+    return wrapped, sleeps
+
+
+def test_policy_retries_retryable_failures_then_succeeds_and_records():
+    ledger = MemoryLedger()
+    flaky = FlakyProvider([ProviderError("rate_limited"), ProviderError("timeout")])
+    wrapped, sleeps = wrap(flaky, ledger)
+    result = wrapped.structured(structured_request(), prompt_version="planner-v1")
+    assert result.data == {"kind": "plan"} and flaky.calls == 3
+    assert sleeps == [0.5, 1.0]
+    ((_day, call),) = ledger.calls
+    assert call.status == "ok" and call.input_tokens == 1000 and call.thinking_tokens == 100
+    # 1000 input at 0.75 and 300 output (output plus thinking) at 3.75 per million.
+    assert call.estimated_usd == pytest.approx((1000 * 0.75 + 300 * 3.75) / 1e6)
+    assert call.pricing_version == "gemini-pricing-2026-10-09" and not call.priced_as_default
+
+
+def test_policy_does_not_retry_client_errors():
+    flaky = FlakyProvider([ProviderError("client", status=400)])
+    wrapped, sleeps = wrap(flaky)
+    with pytest.raises(QueryError) as info:
+        wrapped.structured(structured_request(), prompt_version="planner-v1")
+    assert info.value.code == "llm_unavailable" and flaky.calls == 1 and sleeps == []
+
+
+def test_policy_breaker_opens_and_half_opens():
+    ledger = MemoryLedger()
+    flaky = FlakyProvider([ProviderError("server")] * 6)
+    wrapped, _ = wrap(flaky, ledger)
+    for _ in range(2):
+        with pytest.raises(QueryError):
+            wrapped.structured(structured_request(), prompt_version="planner-v1")
+    calls = flaky.calls
+    with pytest.raises(QueryError) as info:
+        wrapped.structured(structured_request(), prompt_version="planner-v1")
+    assert info.value.code == "llm_unavailable" and flaky.calls == calls  # breaker open
+    assert [call.status for _d, call in ledger.calls] == ["error", "error"]
+    wrapped.clock_state["now"] = 31.0  # type: ignore[attr-defined]
+    flaky.failures.clear()
+    assert wrapped.structured(structured_request(), prompt_version="planner-v1").data
+
+
+def test_policy_daily_caps_from_the_ledger():
+    ledger = MemoryLedger()
+    ledger.clock = lambda: datetime(2026, 10, 12, 1, tzinfo=UTC)
+    flaky = FlakyProvider([])
+    wrapped, _ = wrap(flaky, ledger, daily_usd_cap=0.002)
+    wrapped.structured(structured_request(), prompt_version="planner-v1")
+    wrapped.structured(structured_request(), prompt_version="planner-v1")
+    assert ledger.totals(datetime(2026, 10, 12, tzinfo=UTC).date()).usd >= 0.002
+    with pytest.raises(QueryError) as info:
+        wrapped.structured(structured_request(), prompt_version="planner-v1")
+    assert info.value.code == "llm_budget_exhausted" and flaky.calls == 2
+    wrapped_tokens, _ = wrap(FlakyProvider([]), ledger, daily_token_cap=100)
+    with pytest.raises(QueryError) as info:
+        wrapped_tokens.structured(structured_request(), prompt_version="planner-v1")
+    assert info.value.code == "llm_budget_exhausted"
+
+
+def test_unknown_model_is_priced_at_default_and_flagged():
+    usd, flagged = PriceTable().estimate("some-model", 1_000_000, 0)
+    assert flagged and usd == 2.0
+    assert LlmSettings(provider="gemini").configured is False
+    assert LlmSettings(provider="offline").configured is True
+
+
+def test_empty_key_is_no_key(monkeypatch):
+    """The .env.example default is ``GEMINI_API_KEY=``; an empty value must not configure."""
+    monkeypatch.setenv("GEMINI_API_KEY", "")
+    monkeypatch.setenv("OPENAI_API_KEY", "   ")
+    settings = LlmSettings(provider="gemini")
+    assert settings.key_for("gemini") is None and settings.key_for("openai") is None
+    assert settings.configured is False and settings.secrets() == []
+    with pytest.raises(QueryError) as info:
+        from floatchat_core.llm.factory import build_provider
+
+        build_provider(settings)
+    assert info.value.code == "llm_unavailable"
+
+
+def test_normalize_handles_zero_vector():
+    assert normalize([0.0, 0.0]) == [0.0, 0.0]
+    assert sum(value * value for value in normalize([3.0, 4.0])) == pytest.approx(1.0)

@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router";
+import { ChatPage } from "../chat/ChatPage";
 import { Dashboard } from "../dashboard/Dashboard";
 import { MapPage } from "../explorer/MapPage";
 import { ProfilesView } from "../explorer/ProfilesView";
@@ -13,6 +14,7 @@ export function AppRoutes() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/explore/map" element={<MapPage />} />
         <Route path="/explore/profiles" element={<ProfilesView />} />
+        <Route path="/chat" element={<ChatPage />} />
         {Object.keys(STUBS).map((path) => (
           <Route key={path} path={`${path}/*`} element={<Stub />} />
         ))}

@@ -15,7 +15,7 @@ const LINKS = [
   ["/dashboard", "Dashboard", LayoutDashboard, false],
   ["/explore/map", "Map", Map, false],
   ["/explore/profiles", "Profiles", Layers, false],
-  ["/chat", "Chat", MessageSquare, true],
+  ["/chat", "Chat", MessageSquare, false],
   ["/jobs", "Jobs", ListTodo, true],
   ["/forecasts", "Forecasts", ChartNoAxesCombined, true],
 ] as const;

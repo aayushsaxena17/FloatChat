@@ -1,0 +1,166 @@
+{
+ "kind": "answer",
+ "text": "The 3 nearest profiles to the point, 2025-01-01 to 2025-02-01, QC science_ready: 3 rows. longitude ranges from 63.816 degrees_east to 65.648 degrees_east. latitude ranges from 14.675 degrees_north to 15.949 degrees_north.",
+ "interpretation": {
+  "provider": "offline",
+  "model": "offline-rules-v1",
+  "prompt_version": "planner-v1",
+  "retrieval_mode": "rag_examples",
+  "plan": {
+   "dataset": "core",
+   "geography": {
+    "kind": "point_radius",
+    "latitude": 15.0,
+    "longitude": 65.0,
+    "radius_km": 500.0
+   },
+   "operation": {
+    "k": 3,
+    "kind": "nearest",
+    "latitude": 15.0,
+    "longitude": 65.0,
+    "radius_km": 500.0
+   },
+   "qc_policy": "science_ready",
+   "variables": [
+    "temperature",
+    "salinity"
+   ],
+   "depth_dbar": null,
+   "time_range": {
+    "end": "2025-02-01T00:00:00Z",
+    "start": "2025-01-01T00:00:00Z"
+   },
+   "plan_schema": "stage2-plan-v1",
+   "presentation": {
+    "bins": null,
+    "kind": "table"
+   }
+  },
+  "plan_sha256": "ce999ff13ff6755a741fdd1060c50c6d9097d084d2be01a58311d733775fd6b1",
+  "retrieved": [
+   {
+    "id": "operation:nearest",
+    "score": 0.1679,
+    "title": "operation nearest",
+    "doc_type": "operation"
+   },
+   {
+    "id": "help:conventions",
+    "score": 0.1362,
+    "title": "help conventions",
+    "doc_type": "help"
+   },
+   {
+    "id": "region_alias:Arabian Sea",
+    "score": 0.101,
+    "title": "aliases of Arabian Sea",
+    "doc_type": "region_alias"
+   },
+   {
+    "id": "region_alias:Indian Ocean",
+    "score": 0.0889,
+    "title": "aliases of Indian Ocean",
+    "doc_type": "region_alias"
+   },
+   {
+    "id": "limit:query",
+    "score": 0.0869,
+    "title": "query limits",
+    "doc_type": "limit"
+   },
+   {
+    "id": "region:Indian Ocean",
+    "score": 0.0845,
+    "title": "named region Indian Ocean",
+    "doc_type": "region"
+   },
+   {
+    "id": "presentation:map",
+    "score": 0.0783,
+    "title": "presentation map",
+    "doc_type": "presentation"
+   },
+   {
+    "id": "help:scope",
+    "score": 0.0737,
+    "title": "help scope",
+    "doc_type": "help"
+   },
+   {
+    "id": "region_alias:Andaman Sea",
+    "score": 0.068,
+    "title": "aliases of Andaman Sea",
+    "doc_type": "region_alias"
+   },
+   {
+    "id": "region_alias:Bay of Bengal",
+    "score": 0.0629,
+    "title": "aliases of Bay of Bengal",
+    "doc_type": "region_alias"
+   },
+   {
+    "id": "region_alias:Southern Indian Ocean",
+    "score": 0.0616,
+    "title": "aliases of Southern Indian Ocean",
+    "doc_type": "region_alias"
+   },
+   {
+    "id": "region:Indian Ocean (IHO)",
+    "score": 0.0606,
+    "title": "named region Indian Ocean (IHO)",
+    "doc_type": "region"
+   }
+  ],
+  "examples": [
+   {
+    "id": "example:ex-005",
+    "score": 0.3329,
+    "title": "Which 3 floats are nearest to 15N 65E in January 2025?",
+    "doc_type": "example"
+   },
+   {
+    "id": "example:ex-022",
+    "score": 0.2116,
+    "title": "Export the Arabian Sea profiles for January 2025 as CSV",
+    "doc_type": "example"
+   },
+   {
+    "id": "example:ex-024",
+    "score": 0.1496,
+    "title": "Mean temperature in January 2025",
+    "doc_type": "example"
+   },
+   {
+    "id": "example:ex-034",
+    "score": 0.118,
+    "title": "Scatter of monthly mean temperature and salinity in the Arabian Sea, January to March 2025",
+    "doc_type": "example"
+   },
+   {
+    "id": "example:ex-019",
+    "score": 0.1173,
+    "title": "Coldest temperature in the whole Indian Ocean in January 2025",
+    "doc_type": "example"
+   }
+  ],
+  "timings": {
+   "plan": 37.8,
+   "execute": 361.0,
+   "classify": 0.3,
+   "retrieve": 47.8,
+   "validate": 12.4
+  },
+  "narrative_source": "template"
+ },
+ "result_rows": 3,
+ "execution": {
+  "rows": 3,
+  "source": "postgresql",
+  "run_ids": [
+   "edebccd8-5a00-4628-9a08-ec890888571e"
+  ],
+  "elapsed_ms": 356.3
+ },
+ "result_sha256": "e67ca36c65c6e6e7a4d2be7e3678038247026d37c63877e943d7d2725baaf06c"
+}

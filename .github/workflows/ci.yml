@@ -33,14 +33,17 @@ jobs:
             STAGE1_MINIO_IMAGE=floatchat-stage1-minio-offline \
             "$PWD/.venv/bin/python" -m pytest tests/stage1 tests/stage2 tests/stage3 -q \
             --deselect tests/stage2/test_integration.py \
+            --deselect tests/stage2/test_semantic_store.py \
             --junitxml=reports/stage1-ci-components.xml
       # The Stage 2 integration fixture reaches its disposable PostGIS server through a
       # published loopback port, which a detached network namespace cannot see; the tests
-      # themselves deny every other socket (tests/stage2/conftest.py).
+      # themselves deny every other socket (tests/stage2/conftest.py). The Stage 4 semantic
+      # store test reuses that fixture (migration 0018, pgvector ranking, store, ledger).
       - name: Stage 2 integration tests (disposable PostGIS, loopback only)
         run: |
           env UV_OFFLINE=true STAGE1_POSTGRES_IMAGE=floatchat-stage1-postgres-offline \
-            "$PWD/.venv/bin/python" -m pytest tests/stage2/test_integration.py -q \
+            "$PWD/.venv/bin/python" -m pytest tests/stage2/test_integration.py \
+            tests/stage2/test_semantic_store.py -q \
             -m integration --junitxml=reports/stage2-ci-integration.xml
       - uses: actions/upload-artifact@v4
         if: always()
