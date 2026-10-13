@@ -1821,6 +1821,9 @@ details.provenance .facts {
   --chat-raised: #0f2a35;
   --chat-raised-line: #2a4c58;
   --chat-bubble: #17394a;
+  --chat-serif:
+    "Source Serif 4 Variable", "Source Serif 4", Georgia, "Times New Roman",
+    serif;
   flex: 1;
   display: grid;
   grid-template-columns: 264px minmax(0, 1fr);
@@ -1972,7 +1975,7 @@ details.provenance .facts {
   scrollbar-gutter: stable;
 }
 .chat-column {
-  max-width: 768px;
+  max-width: 720px;
   margin: 0 auto;
 }
 /* Before the first message the greeting and the composer sit together in the middle. */
@@ -2000,8 +2003,9 @@ details.provenance .facts {
   height: 24px;
 }
 .chat-welcome h1 {
-  font-size: 30px;
-  font-weight: 600;
+  font-family: var(--chat-serif);
+  font-size: 28px;
+  font-weight: 500;
   letter-spacing: -0.02em;
   margin: 0 0 10px;
 }
@@ -2009,13 +2013,13 @@ details.provenance .facts {
   margin: 0 auto;
   max-width: 560px;
   color: #a0b6bd;
-  font-size: 15.5px;
+  font-size: 14.5px;
   line-height: 1.6;
 }
 
 .chat-thread {
   display: grid;
-  gap: 30px;
+  gap: 22px;
 }
 .chat-message {
   min-width: 0;
@@ -2026,41 +2030,42 @@ details.provenance .facts {
 }
 .chat-user .chat-text {
   max-width: min(82%, 620px);
-  padding: 11px 17px;
-  border-radius: 20px 20px 6px 20px;
+  padding: 7px 14px;
+  border-radius: 18px 18px 5px 18px;
   background: var(--chat-bubble);
   border: 1px solid #22495a;
   color: #f2f8f9;
 }
 .chat-assistant {
   display: grid;
-  grid-template-columns: 30px minmax(0, 1fr);
-  gap: 14px;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 12px;
   align-items: start;
 }
 .chat-avatar {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 10px;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
   background: #11313c;
   border: 1px solid #24505d;
   color: var(--accent);
 }
 .chat-body {
   display: grid;
-  gap: 14px;
+  gap: 12px;
   min-width: 0;
-  padding-top: 3px;
+  padding-top: 1px;
 }
 .chat-text {
   margin: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  line-height: 1.7;
-  font-size: 15.5px;
+  font-family: var(--chat-serif);
+  line-height: 1.6;
+  font-size: 15px;
   color: #e4eff0;
 }
 .chat-streaming::after {
@@ -2081,8 +2086,9 @@ details.provenance .facts {
 }
 .chat-step {
   margin: 0;
-  font-size: 15px;
-  line-height: 1.7;
+  font-family: var(--chat-serif);
+  font-size: 14.5px;
+  line-height: 1.6;
   background: linear-gradient(90deg, #7f9aa3 0%, #d9f5ec 50%, #7f9aa3 100%);
   background-size: 200% 100%;
   -webkit-background-clip: text;
@@ -2128,9 +2134,9 @@ details.provenance .facts {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
-  padding: 12px 12px 12px 14px;
+  padding: 8px 8px 8px 12px;
   border: 1px solid #4a3f24;
-  border-radius: 14px;
+  border-radius: 12px;
   background: #1a1f1a;
 }
 .chat-problem-icon {
@@ -2139,21 +2145,22 @@ details.provenance .facts {
 }
 .chat-problem-text {
   margin: 0;
-  font-size: 14.5px;
-  line-height: 1.55;
+  font-family: var(--chat-serif);
+  font-size: 14px;
+  line-height: 1.5;
   color: #eadfc4;
 }
 .chat-retry {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 4px 10px;
   border: 1px solid #5a4c2c;
   border-radius: 999px;
   background: transparent;
   color: #f1e3c0;
   font: inherit;
-  font-size: 13px;
+  font-size: 12.5px;
   white-space: nowrap;
   cursor: pointer;
   transition:
@@ -2244,20 +2251,20 @@ details.provenance .facts {
 }
 
 .chat-composer-wrap {
-  padding: 0 24px 14px;
+  padding: 0 24px 10px;
   background: linear-gradient(to bottom, transparent, var(--surface-0) 18px);
 }
 .chat-composer-wrap > * {
-  max-width: 768px;
+  max-width: 720px;
   margin-left: auto;
   margin-right: auto;
 }
 .chat-composer {
   display: flex;
   align-items: flex-end;
-  gap: 10px;
-  padding: 12px 12px 12px 20px;
-  border-radius: 24px;
+  gap: 8px;
+  padding: 7px 7px 7px 16px;
+  border-radius: 18px;
   background: var(--chat-raised);
   border: 1px solid var(--chat-raised-line);
   box-shadow:
@@ -2277,15 +2284,15 @@ details.provenance .facts {
 .chat-composer textarea {
   flex: 1;
   resize: none;
-  min-height: 26px;
-  max-height: 220px;
-  padding: 5px 0;
+  min-height: 22px;
+  max-height: 200px;
+  padding: 4px 0;
   border: 0;
   background: transparent;
   color: #f1f7f8;
-  font: inherit;
-  font-size: 16px;
-  line-height: 1.55;
+  font-family: var(--chat-serif);
+  font-size: 15px;
+  line-height: 1.5;
   outline: none;
 }
 .chat-composer textarea::placeholder {
@@ -2299,10 +2306,10 @@ details.provenance .facts {
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--accent);
   color: #06201b;
   cursor: pointer;
@@ -2328,13 +2335,13 @@ details.provenance .facts {
   margin-top: 16px;
 }
 .chat-suggestions button {
-  padding: 12px 15px;
+  padding: 10px 13px;
   border: 1px solid #1d3b46;
-  border-radius: 14px;
+  border-radius: 12px;
   background: #0a1d26;
   color: #c9d9dd;
   font: inherit;
-  font-size: 13.5px;
+  font-size: 13px;
   line-height: 1.45;
   cursor: pointer;
   text-align: left;
@@ -2349,9 +2356,9 @@ details.provenance .facts {
   color: #f1f7f8;
 }
 .chat-footnote {
-  margin-top: 10px;
+  margin-top: 8px;
   margin-bottom: 0;
-  font-size: 12px;
+  font-size: 11px;
   color: #6f8d96;
   text-align: center;
 }

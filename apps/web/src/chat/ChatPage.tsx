@@ -184,7 +184,7 @@ export function ChatPage() {
         aria-label="Send"
         disabled={!draft.trim() || busy}
       >
-        <ArrowUp size={18} aria-hidden="true" />
+        <ArrowUp size={16} aria-hidden="true" />
       </button>
     </form>
   );

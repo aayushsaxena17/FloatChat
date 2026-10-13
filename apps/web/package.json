@@ -15,6 +15,7 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "@fontsource-variable/source-serif-4": "5.2.8",
     "@radix-ui/react-dialog": "1.2.0",
     "@radix-ui/react-slot": "1.4.0",
     "@radix-ui/react-tabs": "1.1.22",
