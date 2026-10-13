@@ -42,6 +42,9 @@ class LlmSettings(BaseSettings):
     breaker_seconds: float = Field(default=60.0, gt=0, le=3600)
     daily_usd_cap: float = Field(default=1.0, ge=0)
     daily_token_cap: int = Field(default=2_000_000, ge=0)
+    # False answers with the deterministic template only: one generation call per message
+    # instead of two, which matters on a rate-limited key (the template is always grounded).
+    narrate_with_model: bool = True
     planner_max_output_tokens: int = Field(default=4096, ge=256, le=65536)
     narrator_max_output_tokens: int = Field(default=400, ge=50, le=4096)
     retrieval_top_k: int = Field(default=12, ge=1, le=100)

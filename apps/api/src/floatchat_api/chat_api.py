@@ -142,6 +142,7 @@ class ChatRuntime:
             retriever,
             self._store,
             limits=self.query_runtime.limits,
+            narrate_with_model=llm.narrate_with_model,
             retrieval_top_k=llm.retrieval_top_k,
             planner_max_output_tokens=llm.planner_max_output_tokens,
             narrator_max_output_tokens=llm.narrator_max_output_tokens,
@@ -225,7 +226,7 @@ def install_chat(app: FastAPI, runtime: ChatRuntime) -> None:
                 if event.type == "conversation":
                     conversation_id = event.data["conversation_id"]
                 elif event.type == "error":
-                    failure = QueryError(event.data["code"])
+                    failure = QueryError(event.data["code"], message=event.data.get("message"))
                 elif event.type == "message":
                     message = event.data
             if failure is not None:

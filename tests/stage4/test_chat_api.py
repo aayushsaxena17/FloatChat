@@ -127,6 +127,44 @@ def test_clarification_and_unsupported_over_json(client):
     assert response.json()["message"]["kind"] == "unsupported"
 
 
+def test_json_error_keeps_the_pipeline_message(engine, retriever, store):
+    """The JSON path rebuilt the error from its code alone and lost the 'busy' wording."""
+    from floatchat_core.chat.pipeline import ChatService
+    from floatchat_core.llm.config import LlmSettings
+    from floatchat_core.llm.ledger import MemoryLedger
+    from floatchat_core.llm.policy import ResilientProvider
+    from floatchat_core.llm.provider import ProviderError
+
+    class Busy:
+        name = "gemini"
+        model = "busy-model"
+        embedding_model = "hash-embed-v1"
+
+        def structured(self, request):
+            raise ProviderError("server", status=503)
+
+        def embed(self, texts, task):
+            from floatchat_core.llm.offline import OfflineProvider
+
+            return OfflineProvider().embed(texts, task)
+
+        def stream_text(self, request):
+            raise AssertionError("not used")
+
+    wrapped = ResilientProvider(
+        Busy(), LlmSettings(provider="gemini", retries=0), MemoryLedger(), sleep=lambda s: None
+    )
+    service = ChatService(engine, wrapped, retriever, store)
+    app = create_app(query_service=FakeService(), chat_service=service, chat_store=store)
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/chat/messages", json={"text": QUESTION}, headers={HEADER: "browser-1"}
+        )
+    assert response.status_code == 503
+    body = response.json()["error"]
+    assert body["code"] == "llm_unavailable" and "busy" in body["message"]
+
+
 def test_request_validation(client):
     headers = {HEADER: "browser-1"}
     assert client.post("/v1/chat/messages", json={"text": ""}, headers=headers).status_code == 400

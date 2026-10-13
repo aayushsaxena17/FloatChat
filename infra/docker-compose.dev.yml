@@ -86,6 +86,7 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
       LLM_SECOND_MODEL: ${LLM_SECOND_MODEL:-}
+      LLM_NARRATE_WITH_MODEL: ${LLM_NARRATE_WITH_MODEL:-true}
       LLM_DAILY_USD_CAP: ${LLM_DAILY_USD_CAP:-1.0}
       LLM_DAILY_TOKEN_CAP: ${LLM_DAILY_TOKEN_CAP:-2000000}
     volumes: [query_cache:/var/lib/floatchat/query-cache]
