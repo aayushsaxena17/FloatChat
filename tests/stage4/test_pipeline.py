@@ -301,6 +301,26 @@ def test_template_reads_in_plain_words():
     )
 
 
+def test_template_states_counts_for_a_single_row():
+    summary = {
+        "operation": {"kind": "aggregate", "metrics": ["count"], "group_by": [], "unit": "profile"},
+        "variables": ["temperature", "salinity"],
+        "time_range": {"start": "2025-02-01T00:00:00Z", "end": "2025-03-01T00:00:00Z"},
+        "geography": {"kind": "named_region", "name": "Bay of Bengal"},
+        "qc_policy": "science_ready",
+        "row_count": 1,
+        "columns": [{"name": "temperature_count"}, {"name": "salinity_count"}],
+        "stats": {
+            "temperature_count": {"min": 83, "max": 83, "mean": 83, "count": 1},
+            "salinity_count": {"min": 81, "max": 81, "mean": 81, "count": 1},
+        },
+    }
+    text = narrate.template(summary)
+    assert ": 1 row." in text
+    assert "83 profiles have temperature values; 81 profiles have salinity values." in text
+    assert narrate.grounded(text, summary)
+
+
 def test_grounding_helpers():
     summary = {
         "rows": [["2025-01", 27.123, 12]],

@@ -168,9 +168,20 @@ def template(summary: dict[str, Any]) -> str:
         )
     else:
         first = f"Profiles in {where}, {when}{depth_text}, with {policy}: {rows} rows."
+    first = first.replace(": 1 rows.", ": 1 row.")
     sentences = [first]
     stats = summary.get("stats") or {}
     units = {column["name"]: column.get("unit") for column in summary.get("columns") or []}
+    counts = [
+        (name[: -len("_count")].replace("_", " "), values["min"])
+        for name, values in stats.items()
+        if name.endswith("_count") and values["count"] == 1
+    ]
+    if counts and rows == 1:
+        what = "profiles" if operation.get("unit", "profile") == "profile" else "measurements"
+        sentences.append(
+            "; ".join(f"{int(value)} {what} have {label} values" for label, value in counts) + "."
+        )
     for name, values in list(stats.items())[:4]:
         if name.endswith("_count") or name in ("level_count", "cycle_number", "level_index"):
             continue
