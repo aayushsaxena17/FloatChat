@@ -46,7 +46,7 @@ def test_answer_streams_the_documented_event_order(service, engine, store):
     interpretation = message["payload"]["interpretation"]
     assert interpretation["provider"] == "offline"
     assert interpretation["model"] == "offline-rules-v1"
-    assert interpretation["prompt_version"] == "planner-v1"
+    assert interpretation["prompt_version"] == "planner-v2"
     assert interpretation["retrieval_mode"] == "rag_examples"
     assert interpretation["plan"]["geography"] == {"kind": "named_region", "value": "Arabian Sea"}
     assert interpretation["plan"]["plan_schema"] == "stage2-plan-v1"
@@ -183,6 +183,50 @@ def test_unknown_region_from_the_model_is_a_clarification(engine, retriever):
     assert message["kind"] == "clarification"
     assert message["payload"]["clarification"]["missing"] == ["geography"]
     assert message["payload"]["interpretation"]["validation"][0]["code"] == "unknown_region"
+
+
+def test_the_model_decides_and_replies_without_a_query(engine, retriever):
+    reply = "Hola! I can look up Argo temperature, salinity and pressure for you."
+    service, provider = scripted_service(engine, retriever, {"kind": "reply", "reply": reply})
+    for text in ("ola", "Hello!"):
+        message = events_of(service, text)[-1].data
+        assert message["kind"] == "help" and message["text"] == reply
+        assert message["payload"]["interpretation"]["kind"] == "reply"
+    # Greetings reach the model too: it, not a keyword list, decides what a message is.
+    assert len([r for r in provider.requests if r.purpose == "plan"]) == 2
+    assert engine.calls == []
+
+
+def test_a_reply_never_states_a_number_the_model_was_not_shown(engine, retriever):
+    answer = {"kind": "reply", "reply": "The Arabian Sea averaged 27.9 degrees last winter."}
+    service, _ = scripted_service(engine, retriever, answer)
+    message = events_of(service, "how warm is the Arabian Sea usually?")[-1].data
+    assert message["kind"] == "help" and "27.9" not in message["text"]
+    assert message["payload"]["interpretation"]["validation"][0]["field"] == "reply"
+    # A date from the dataset window in the prompt may be repeated.
+    window = {"kind": "reply", "reply": "The loaded window starts in April 2024."}
+    service, _ = scripted_service(engine, retriever, window)
+    assert events_of(service, "which period?")[-1].data["text"] == window["reply"]
+    assert narrate.numbers_within("1 dbar is about 1 metre", "")
+    assert not narrate.numbers_within("about 3900 floats", "limit 500")
+
+
+def test_greetings_fall_back_to_rules_when_the_model_is_unavailable(engine, retriever):
+    from floatchat_core.llm.provider import ProviderError
+
+    class Down(ScriptedProvider):
+        def structured(self, request):
+            raise ProviderError("server", "503")
+
+    provider = Down({})
+    wrapped = ResilientProvider(provider, LlmSettings(provider="gemini"), MemoryLedger())
+    service = ChatService(engine, wrapped, retriever, MemoryStore())
+    message = events_of(service, "ola!")[-1].data
+    assert message["kind"] == "greeting" and "FloatChat" in message["text"]
+    events = events_of(service, QUESTION)
+    assert events[-1].data["kind"] == "error"
+    assert events[-1].data["payload"]["code"] == "llm_unavailable"
+    assert ";" not in events[-1].data["text"]
 
 
 def test_null_fields_from_the_model_are_stripped_before_validation():

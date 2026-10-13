@@ -41,15 +41,14 @@ REASON_CHARS = 300
 QUESTION_CHARS = 300
 HELP_TEXT = (
     "I answer questions about Argo temperature, salinity and pressure observations in the "
-    "Indian Ocean. Give a period and an area, for example 'monthly mean salinity in the Bay of "
-    "Bengal in February 2025 in the upper 200 dbar', 'list the 20 newest profiles in the "
-    "Arabian Sea in March 2025', 'T-S diagram for the Laccadive Sea in January 2025' or "
-    "'the 5 nearest floats to 15N 65E in January 2025'. Regions: Arabian Sea, Bay of Bengal, "
-    "Laccadive Sea, Andaman Sea, Indian Ocean, Southern Indian Ocean; or give a bounding box or "
-    "a point with a radius. The local dataset covers the Indian Ocean for the months the "
-    "dashboard's coverage panel lists (January to March 2025 on the development stack). "
-    "Exports, forecasts and biogeochemical variables arrive in later stages."
+    "Indian Ocean. Tell me a period and an area, and I can compute averages, list profiles, "
+    "draw T-S diagrams or find the nearest floats to a point. The named regions are the "
+    "Arabian Sea, Bay of Bengal, Laccadive Sea, Andaman Sea, Indian Ocean and Southern Indian "
+    "Ocean, and a bounding box or a point with a radius works too. The dashboard's coverage "
+    'panel shows which months are loaded. For example, ask for "monthly mean salinity in the '
+    'Bay of Bengal in February 2025 in the upper 200 dbar".'
 )
+REPLY_CHARS = 1200
 
 
 class QueryEngine(Protocol):
@@ -83,6 +82,7 @@ class PlanOutcome:
     model_version: str | None = None
     raw: Any = None
     timings: dict[str, float] = field(default_factory=dict)
+    reply: str | None = None
 
     @property
     def plan_sha256(self) -> str | None:
@@ -169,8 +169,29 @@ class ChatService:
 
         classification = classify(question)
         timings["classify"] = round((time.monotonic() - started) * 1000, 1)
-        if classification != "query":
+        # A model decides what every message is (ADR-0075); the rules answer greetings and help
+        # only when no model can.
+        if classification != "query" and self.provider.name == "offline":
             return PlanOutcome(classification, classification, timings=timings)
+        try:
+            return self._plan_with_model(
+                question, classification, timings, started, step, context, reference_time
+            )
+        except QueryError as error:
+            if classification != "query" and error.code.startswith("llm_"):
+                return PlanOutcome(classification, classification, timings=timings)
+            raise
+
+    def _plan_with_model(
+        self,
+        question: str,
+        classification: str,
+        timings: dict[str, float],
+        started: float,
+        step: Callable[[str], None],
+        context: CallContext | None,
+        reference_time: str | None,
+    ) -> PlanOutcome:
         step("retrieve")
         mark = time.monotonic()
         hits, examples = self.retrieve(question)
@@ -207,7 +228,7 @@ class ChatService:
         timings["plan"] = round((time.monotonic() - mark) * 1000, 1)
         step("validate")
         mark = time.monotonic()
-        outcome = self._validate(result.data, classification)
+        outcome = self._validate(result.data, classification, request.system + request.user)
         outcome.hits, outcome.examples = hits, examples
         outcome.usage, outcome.model, outcome.model_version = (
             result.usage,
@@ -220,13 +241,14 @@ class ChatService:
         outcome.latency_ms = round((time.monotonic() - started) * 1000, 1)
         return outcome
 
-    def _validate(self, data: Any, classification: str) -> PlanOutcome:
+    def _validate(self, data: Any, classification: str, prompt: str = "") -> PlanOutcome:
         if not isinstance(data, dict):
             return PlanOutcome(
                 classification,
                 "clarify",
                 clarification=_clarification(
-                    list(ESSENTIAL_FIELDS), "I could not understand the request; please restate it."
+                    list(ESSENTIAL_FIELDS),
+                    "Sorry, I didn't follow that. Could you rephrase it with a period and an area?",
                 ),
                 validation=[{"field": "plan", "code": "invalid_value", "message": "not an object"}],
             )
@@ -242,6 +264,22 @@ class ChatService:
                 "clarify",
                 clarification=_clarification(missing or list(ESSENTIAL_FIELDS), question),
             )
+        if kind == "reply":
+            reply = " ".join(str(data.get("reply") or "").split())[:REPLY_CHARS]
+            # ADR-0073 holds for replies too: a number the model was not shown is not stated.
+            if not reply or not narrate.numbers_within(reply, prompt):
+                fallback = GREETING_TEXT if classification == "greeting" else HELP_TEXT
+                return PlanOutcome(
+                    classification,
+                    "reply",
+                    reply=fallback,
+                    validation=[]
+                    if not reply
+                    else [
+                        {"field": "reply", "code": "invalid_value", "message": "ungrounded number"}
+                    ],
+                )
+            return PlanOutcome(classification, "reply", reply=reply)
         if kind == "unsupported":
             reason = str(data.get("reason") or "This request is outside what I can answer.")
             return PlanOutcome(classification, "unsupported", reason=reason[:REASON_CHARS])
@@ -250,7 +288,8 @@ class ChatService:
                 classification,
                 "clarify",
                 clarification=_clarification(
-                    list(ESSENTIAL_FIELDS), "I could not form a request; please restate it."
+                    list(ESSENTIAL_FIELDS),
+                    "Sorry, I didn't follow that. Could you rephrase it with a period and an area?",
                 ),
                 validation=[{"field": "kind", "code": "invalid_value", "message": "unknown kind"}],
             )
@@ -263,14 +302,18 @@ class ChatService:
             if error.code == "unknown_region":
                 details = [{"field": "geography", "code": "unknown_region", "message": error.text}]
             fields = sorted({detail["field"].split(".")[0] for detail in details}) or ["plan"]
-            text = "; ".join(f"{d['field']}: {d['message']}" for d in details[:5])
+            question = (
+                "I don't know that region. Could you name one of the listed regions, or give a "
+                "bounding box or a point?"
+                if error.code == "unknown_region"
+                else "I couldn't turn that into a query I can run. Could you rephrase it? The "
+                "interpretation below shows what didn't fit."
+            )
             return PlanOutcome(
                 classification,
                 "clarify",
                 document=document,
-                clarification=_clarification(
-                    fields, f"I could not form a valid request ({text}). Could you restate it?"
-                ),
+                clarification=_clarification(fields, question),
                 validation=details,
             )
         return PlanOutcome(classification, "plan", plan=plan, document=plan.canonical())
@@ -295,6 +338,7 @@ class ChatService:
             "plan_sha256": outcome.plan_sha256,
             "clarification": outcome.clarification,
             "reason": outcome.reason,
+            "reply": outcome.reply,
             "validation": outcome.validation,
             "timings": dict(outcome.timings),
             "tokens": {
@@ -408,6 +452,11 @@ class ChatService:
             yield Event("message", message.as_dict())
             return
         interpretation = self._interpretation(outcome, reference)
+        if outcome.kind == "reply":
+            # Stored under the existing "help" kind: a conversational answer with no query.
+            message = finish("help", outcome.reply or HELP_TEXT, {"interpretation": interpretation})
+            yield Event("message", message.as_dict())
+            return
         if outcome.kind == "clarify":
             assert outcome.clarification is not None
             message = finish(
@@ -435,8 +484,8 @@ class ChatService:
             interpretation["execution_error"] = error.code
             if error.code == "coverage_missing":
                 body = (
-                    "No committed data covers that period and area yet. Try the January to "
-                    "March 2025 window or another region."
+                    "No committed data covers that period and area yet. The dashboard's coverage "
+                    "panel shows the loaded months, so try one of those or another region."
                 )
                 message = finish(
                     "answer", body, {"interpretation": interpretation, "plan": outcome.document}

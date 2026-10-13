@@ -34,8 +34,12 @@ _string = {"type": "string"}
 PLANNER_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
-        "kind": {"type": "string", "enum": ["plan", "clarify", "unsupported"]},
+        "kind": {"type": "string", "enum": ["plan", "clarify", "reply", "unsupported"]},
         "reason": {"type": "string", "description": "One sentence; required for unsupported."},
+        "reply": {
+            "type": "string",
+            "description": "One to four plain sentences; required for reply.",
+        },
         "clarification": {
             "type": "object",
             "properties": {

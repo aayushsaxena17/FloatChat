@@ -8,6 +8,7 @@ import { ChartPanel } from "../charts/ChartPanel";
 import { figuresFromChart } from "../charts/spec";
 import { DataTable } from "../components/DataTable";
 import { StatusMessage } from "../components/StatusMessage";
+import { WaveMark } from "../components/WaveMark";
 import { ProvenancePanel } from "../provenance/ProvenancePanel";
 import {
   payloadOf,
@@ -97,7 +98,8 @@ function StoredResult({ plan }: { plan: Record<string, unknown> }) {
   );
 }
 
-/** A quiet one-line problem: what happened, a retry, and the code for support. */
+/** One calm card for anything that went wrong: what happened and a retry. The error code and
+ * the correlation id stay in the icon's tooltip for support, out of the reading flow. */
 export function Problem({
   text,
   code,
@@ -111,22 +113,29 @@ export function Problem({
 }) {
   return (
     <div className="chat-problem" role="alert">
-      <AlertCircle size={15} aria-hidden="true" className="chat-problem-icon" />
-      <div>
-        <p className="chat-text">{text}</p>
-        <p className="chat-problem-meta">
-          {onRetry ? (
-            <button type="button" className="chat-link" onClick={onRetry}>
-              <RotateCcw size={11} aria-hidden="true" />
-              Try again
-            </button>
-          ) : null}
-          <span title={reference ? `${code} · ${reference}` : code}>
-            {code.replace(/_/g, " ")}
-          </span>
-        </p>
-      </div>
+      <span
+        className="chat-problem-icon"
+        title={reference ? `${code} · ${reference}` : code}
+      >
+        <AlertCircle size={16} aria-hidden="true" />
+      </span>
+      <p className="chat-problem-text">{text}</p>
+      {onRetry ? (
+        <button type="button" className="chat-retry" onClick={onRetry}>
+          <RotateCcw size={13} aria-hidden="true" />
+          Try again
+        </button>
+      ) : null}
     </div>
+  );
+}
+
+/** The assistant's mark beside each reply; its waves drift while a reply is being written. */
+export function AssistantAvatar({ active = false }: { active?: boolean }) {
+  return (
+    <span className="chat-avatar" aria-hidden="true">
+      <WaveMark size={16} active={active} />
+    </span>
   );
 }
 
@@ -146,42 +155,54 @@ export function AssistantMessage({
     interpretation?.clarification?.missing ??
     [];
   const isError = message.kind === "error";
+  // Greetings and conversational replies ran no query: nothing to interpret.
+  const conversational = message.kind === "greeting" || message.kind === "help";
   return (
     <article
       className={`chat-message chat-assistant chat-kind-${message.kind}`}
       data-kind={message.kind}
     >
-      {isError ? (
-        <Problem
-          text={message.text}
-          code={payload.code ?? "error"}
-          reference={message.correlation_id}
-          onRetry={onRetry}
-        />
-      ) : (
-        <p className="chat-text">{message.text}</p>
-      )}
-      {message.kind === "clarification" && missing.length && onHint ? (
-        <div className="chat-chips" role="group" aria-label="Suggested details">
-          {missing.map((field) => (
-            <button
-              key={field}
-              type="button"
-              className="chat-chip"
-              onClick={() => onHint(HINTS[field] ?? field)}
-            >
-              {HINTS[field] ?? field}
-            </button>
-          ))}
-        </div>
-      ) : null}
-      {payload.result ? <ResultView response={payload.result} /> : null}
-      {!payload.result && payload.result_omitted && payload.plan ? (
-        <StoredResult plan={payload.plan} />
-      ) : null}
-      {interpretation && interpretation.kind && !isError ? (
-        <Interpretation data={interpretation} />
-      ) : null}
+      <AssistantAvatar />
+      <div className="chat-body">
+        {isError ? (
+          <Problem
+            text={message.text}
+            code={payload.code ?? "error"}
+            reference={message.correlation_id}
+            onRetry={onRetry}
+          />
+        ) : (
+          <p className="chat-text">{message.text}</p>
+        )}
+        {message.kind === "clarification" && missing.length && onHint ? (
+          <div
+            className="chat-chips"
+            role="group"
+            aria-label="Suggested details"
+          >
+            {missing.map((field) => (
+              <button
+                key={field}
+                type="button"
+                className="chat-chip"
+                onClick={() => onHint(HINTS[field] ?? field)}
+              >
+                {HINTS[field] ?? field}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        {payload.result ? <ResultView response={payload.result} /> : null}
+        {!payload.result && payload.result_omitted && payload.plan ? (
+          <StoredResult plan={payload.plan} />
+        ) : null}
+        {interpretation &&
+        interpretation.kind &&
+        !isError &&
+        !conversational ? (
+          <Interpretation data={interpretation} />
+        ) : null}
+      </div>
     </article>
   );
 }

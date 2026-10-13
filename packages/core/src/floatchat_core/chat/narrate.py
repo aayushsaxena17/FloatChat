@@ -252,3 +252,17 @@ def grounded(narrative: str, summary: dict[str, Any]) -> bool:
                 continue
             return False
     return True
+
+
+def numbers_within(text: str, source: str) -> bool:
+    """True when every number in ``text`` appears in ``source`` (a reply may repeat a date,
+    limit or depth from its prompt, never a new figure). Small counts up to 4 are words."""
+    allowed = _numbers(source)
+    for match in NUMBER.findall(text):
+        value = float(match)
+        if f"{value:.2f}" in allowed or f"{abs(value):.2f}" in allowed:
+            continue
+        if value.is_integer() and 0 <= value <= 4:
+            continue
+        return False
+    return True

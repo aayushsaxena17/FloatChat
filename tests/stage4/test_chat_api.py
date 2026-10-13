@@ -128,7 +128,7 @@ def test_clarification_and_unsupported_over_json(client):
 
 
 def test_json_error_keeps_the_pipeline_message(engine, retriever, store):
-    """The JSON path rebuilt the error from its code alone and lost the 'busy' wording."""
+    """The JSON path rebuilt the error from its code alone and lost the 'overloaded' wording."""
     from floatchat_core.chat.pipeline import ChatService
     from floatchat_core.llm.config import LlmSettings
     from floatchat_core.llm.ledger import MemoryLedger
@@ -162,7 +162,7 @@ def test_json_error_keeps_the_pipeline_message(engine, retriever, store):
         )
     assert response.status_code == 503
     body = response.json()["error"]
-    assert body["code"] == "llm_unavailable" and "busy" in body["message"]
+    assert body["code"] == "llm_unavailable" and "overloaded" in body["message"]
 
 
 def test_request_validation(client):

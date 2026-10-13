@@ -272,11 +272,50 @@ describe("ChatPage", () => {
     );
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("unavailable");
-    expect(alert).toHaveTextContent("llm unavailable");
+    // The code is for support, in the tooltip, not in the reading flow.
+    expect(alert).not.toHaveTextContent("llm unavailable");
     expect(within(alert).getByTitle(/t-9/)).toBeInTheDocument();
     expect(
       within(alert).getByRole("button", { name: "Try again" }),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Your question")).not.toBeDisabled();
+  });
+
+  it("shows a retried question once, with its latest outcome", async () => {
+    const ask = (id: string, seq: number) => ({
+      id,
+      conversation_id: "c1",
+      seq,
+      role: "user",
+      kind: "user",
+      text: "Hi what's happening?",
+      payload: {},
+      correlation_id: null,
+      created_at: "2026-10-12T00:00:00Z",
+    });
+    const failed = message(
+      "error",
+      "The assistant can't answer right now.",
+      { code: "llm_unavailable" },
+      2,
+    );
+    const reply = message(
+      "help",
+      "Hello! I look up Argo observations for you.",
+      { interpretation: { classification: "query", kind: "reply" } },
+      4,
+    );
+    stubChat("", 200, [ask("u1", 1), failed, ask("u3", 3), reply]);
+    renderWithProviders(<ChatPage />, "/chat?conversation=c1");
+    const thread = await screen.findByTestId("chat-thread");
+    await screen.findByText("Hello! I look up Argo observations for you.");
+    expect(within(thread).getAllByText("Hi what's happening?")).toHaveLength(1);
+    expect(within(thread).queryByRole("alert")).toBeNull();
+    // A conversational reply ran no query, so there is no interpretation to show.
+    expect(
+      screen.queryByRole("button", {
+        name: /How FloatChat interpreted your request/,
+      }),
+    ).toBeNull();
   });
 });

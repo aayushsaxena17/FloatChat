@@ -441,10 +441,10 @@ def test_budget_stops_the_route_ladder_and_the_message_names_the_busy_provider()
     )
     with pytest.raises(QueryError) as info:
         wrapped.structured(structured_request(), prompt_version="planner-v1")
-    assert info.value.code == "llm_unavailable" and "busy" in info.value.text
+    assert info.value.code == "llm_unavailable" and "overloaded" in info.value.text
     # The budget, not the retry count, bounded the attempts.
     assert primary.calls + slow.calls <= 4
-    assert ResilientProvider.unavailable(ProviderError("timeout")).text.startswith("The model took")
+    assert ResilientProvider.unavailable(ProviderError("timeout")).text.startswith("The language model took")
     assert ResilientProvider.unavailable(ProviderError("client")).text.startswith("The assistant")
 
 

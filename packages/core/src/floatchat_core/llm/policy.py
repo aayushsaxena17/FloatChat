@@ -260,13 +260,13 @@ class ResilientProvider:
         kind = None if error is None else error.kind
         if kind in ("rate_limited", "server"):
             message = (
-                "The model is busy right now (the provider reported high demand). Please try "
-                "again in a minute; the dashboard and direct queries keep working."
+                "The language model is overloaded at the moment. Give it a minute and try "
+                "again. The dashboard and map keep working in the meantime."
             )
         elif kind == "timeout":
-            message = "The model took too long to answer. Please try again."
+            message = "The language model took too long to answer. Please try again."
         elif kind == "blocked":
-            message = "The model declined this request. Please rephrase it."
+            message = "The language model declined this request. Could you rephrase it?"
         else:
             return QueryError("llm_unavailable")
         return QueryError("llm_unavailable", message=message)

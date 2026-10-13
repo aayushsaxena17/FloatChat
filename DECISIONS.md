@@ -2131,3 +2131,34 @@ Decision (PRD §20.4, §30.2, §30.3, §30.5):
 Alternatives: YAML items (rejected, PyYAML is a dev-only dependency); generating items from
 templates (rejected, each item is drafted and must be individually reviewable); reporting the
 offline numbers as the Stage 4 result (rejected, they answer a different question).
+
+## ADR-0075 - The model decides what a message is; conversational replies; chat as an app
+
+Status: accepted under the owner's authority (ADR-0039), 2026-10-13, after the owner's review
+of the live chat ("ola" was answered with a request for a period and an area).
+
+Decision (amends ADR-0072 and ADR-0073):
+
+1. With a model provider every message goes to the planner, which chooses one of `plan`,
+   `clarify`, `reply` or `unsupported` (prompt `planner-v2`). `reply` covers greetings and small
+   talk in any language, what FloatChat is and can do, what the dataset covers, and short
+   explanations of Argo and ocean concepts. Retrieval runs as before, so a reply can draw on the
+   catalogue, region and help documents. Off-topic requests stay `unsupported`.
+2. The keyword rules of ADR-0072 now answer greetings and help only with the offline provider
+   or when the model call fails with an `llm_*` error, so "hello" still gets an answer while
+   the provider is overloaded.
+3. ADR-0073 extends to replies: every number in a reply must appear in the prompt the model was
+   given (dates, regions, limits); otherwise the fixed greeting or help text is shown and the
+   interpretation records the rejected reply. A reply never states a measured value.
+4. Replies are stored under the existing `help` message kind with
+   `interpretation.kind = "reply"`; no migration. The interface shows no interpretation panel
+   for greetings and replies, since no query ran.
+5. The chat route fills the viewport: the thread scrolls in its own pane, the composer stays at
+   the bottom (centred with the greeting before the first message) and the page footer is not
+   shown. A question retried after an error shows once, with its latest outcome. Errors are one
+   card with a retry button; the code and correlation id stay in a tooltip.
+
+Alternatives: a separate classification call before planning (rejected, one more call per
+message on a rate-limited key); widening the keyword lists only (rejected, every unlisted
+greeting or language fails the same way); a new `reply` message kind (rejected, a constraint
+migration for no behavioural gain).
