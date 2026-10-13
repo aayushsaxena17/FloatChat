@@ -7,14 +7,15 @@ offline provider or while the model is unavailable.
 
 import re
 
-GREETING = re.compile(
-    r"^\s*(hi+|hello+|hey+|hiya|yo|ola|olá|hola|namaste|namaskar|hallo|bonjour|salut|ciao|"
-    r"howdy|greetings|sup|wh?at'?s up|wassup|what'?s happening|how are you( doing)?|"
-    r"good (morning|afternoon|evening|night)|morning|evening|"
-    r"thanks|thank you|thanks a lot|thx|ty|cheers|ok|okay|cool|great|nice|bye|goodbye)"
-    r"[\s!.,?]*(floatchat|there|bot|assistant|all|everyone)?[\s!.,?]*$",
-    re.IGNORECASE,
+GREETING_WORDS = (
+    r"hi+|hello+|hey+|hiya|yo|ola|olá|hola|namaste|namaskar|hallo|bonjour|salut|ciao|howdy|"
+    r"greetings|sup|wh?at'?s up|wassup|what'?s happening|what'?s new|how are you( doing)?|"
+    r"how'?s it going|good (morning|afternoon|evening|night)|morning|evening|thanks|thank you|"
+    r"thanks a lot|thx|ty|cheers|ok|okay|cool|great|nice|bye|goodbye|"
+    r"floatchat|there|bot|assistant|all|everyone"
 )
+# One or more greeting phrases ("Hi, what's happening?", "hey there, how are you?").
+GREETING = re.compile(rf"^\s*(?:(?:{GREETING_WORDS})[\s!.,?]*)+$", re.IGNORECASE)
 HELP = re.compile(
     r"^\s*(help|/help|\?+)\s*$|what can you (do|answer)|how (do|can|should) i (use|ask)|"
     r"what (questions|kind of questions|sort of questions)|what (data|datasets?) (do you|is) "

@@ -444,7 +444,9 @@ def test_budget_stops_the_route_ladder_and_the_message_names_the_busy_provider()
     assert info.value.code == "llm_unavailable" and "overloaded" in info.value.text
     # The budget, not the retry count, bounded the attempts.
     assert primary.calls + slow.calls <= 4
-    assert ResilientProvider.unavailable(ProviderError("timeout")).text.startswith("The language model took")
+    assert ResilientProvider.unavailable(ProviderError("timeout")).text.startswith(
+        "The language model took"
+    )
     assert ResilientProvider.unavailable(ProviderError("client")).text.startswith("The assistant")
 
 

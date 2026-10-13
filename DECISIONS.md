@@ -2149,7 +2149,7 @@ Decision (amends ADR-0072 and ADR-0073):
    the provider is overloaded.
 3. ADR-0073 extends to replies: every number in a reply must appear in the prompt the model was
    given (dates, regions, limits); otherwise the fixed greeting or help text is shown and the
-   interpretation records the rejected reply. A reply never states a measured value.
+   interpretation records the rejection. A reply never states a measured value.
 4. Replies are stored under the existing `help` message kind with
    `interpretation.kind = "reply"`; no migration. The interface shows no interpretation panel
    for greetings and replies, since no query ran.

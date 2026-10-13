@@ -2,6 +2,13 @@
 
 ## Stage 4 - natural-language assistant, RAG and benchmark built (ADR-0069..0074), 2026-10-12
 
+Follow-up 2026-10-13 (ADR-0075, branch `codex/stage4-model-fallback`): after the owner's review
+of the live chat, the model decides plan, clarify, reply or unsupported for every message, and
+the chat page became a viewport-height app with a pinned composer. The advisor reviewed the
+approach before the change and the result after it (greeting fallback for chained phrases, no
+time promise in the rate-limit message). Live model replies are unverified: the owner's
+free-tier Gemini key allows 20 requests per day per model and all three routes were spent.
+
 Owner instruction 2026-10-12: `main` (`dff185a`) holds the accepted Stage 3 and the
 dashboard-latency work; build Stage 4 on a new branch and decide open questions without further
 approval. Branch `codex/stage-4` from `main`; one pull request into `main`. The advisor reviewed

@@ -260,8 +260,8 @@ class ResilientProvider:
         kind = None if error is None else error.kind
         if kind in ("rate_limited", "server"):
             message = (
-                "The language model is overloaded at the moment. Give it a minute and try "
-                "again. The dashboard and map keep working in the meantime."
+                "The language model is overloaded or has reached its request limit. Please try "
+                "again later. The dashboard and map keep working in the meantime."
             )
         elif kind == "timeout":
             message = "The language model took too long to answer. Please try again."

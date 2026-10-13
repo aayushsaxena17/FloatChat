@@ -5,6 +5,7 @@ from collections.abc import Iterator
 import pytest
 from doubles import EngineDouble, offline_provider
 from floatchat_core.chat import narrate
+from floatchat_core.chat.classify import classify
 from floatchat_core.chat.pipeline import ChatService
 from floatchat_core.chat.prompts import PLANNER_POLICY, planner_system, planner_user
 from floatchat_core.chat.schema import PLANNER_SCHEMA, to_plan_document
@@ -221,8 +222,11 @@ def test_greetings_fall_back_to_rules_when_the_model_is_unavailable(engine, retr
     provider = Down({})
     wrapped = ResilientProvider(provider, LlmSettings(provider="gemini"), MemoryLedger())
     service = ChatService(engine, wrapped, retriever, MemoryStore())
-    message = events_of(service, "ola!")[-1].data
-    assert message["kind"] == "greeting" and "FloatChat" in message["text"]
+    for text in ("ola!", "Hi what's happening?", "Hey, how are you?", "hello there"):
+        message = events_of(service, text)[-1].data
+        assert message["kind"] == "greeting" and "FloatChat" in message["text"], text
+    assert classify("Hi, mean temperature in the Arabian Sea in January 2025") == "query"
+    assert classify("there") == "greeting" and classify("hi floatchat bot") == "greeting"
     events = events_of(service, QUESTION)
     assert events[-1].data["kind"] == "error"
     assert events[-1].data["payload"]["code"] == "llm_unavailable"
