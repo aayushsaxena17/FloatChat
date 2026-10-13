@@ -27,8 +27,11 @@ class LlmSettings(BaseSettings):
     # Gemini 3 models think by default; LOW bounds the thinking tokens for a planning call.
     # An empty value omits thinkingConfig (models without thinking reject it).
     thinking_level: Literal["", "MINIMAL", "LOW", "MEDIUM", "HIGH"] = "LOW"
-    timeout_seconds: float = Field(default=20.0, gt=0, le=120)
-    retries: int = Field(default=2, ge=0, le=5)
+    # A planning call on a loaded Flash model took 14 s on 2026-10-13; 503 "high demand"
+    # answers lasted minutes, hence the fallback model with its own breaker (ADR-0070).
+    fallback_model: str | None = "gemini-3.7-flash"
+    timeout_seconds: float = Field(default=45.0, gt=0, le=180)
+    retries: int = Field(default=3, ge=0, le=5)
     breaker_failures: int = Field(default=3, ge=1, le=100)
     breaker_seconds: float = Field(default=60.0, gt=0, le=3600)
     daily_usd_cap: float = Field(default=1.0, ge=0)

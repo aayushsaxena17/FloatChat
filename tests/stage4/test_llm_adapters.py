@@ -321,7 +321,7 @@ def test_policy_retries_retryable_failures_then_succeeds_and_records():
     wrapped, sleeps = wrap(flaky, ledger)
     result = wrapped.structured(structured_request(), prompt_version="planner-v1")
     assert result.data == {"kind": "plan"} and flaky.calls == 3
-    assert sleeps == [0.5, 1.0]
+    assert sleeps == [1.0, 2.0]
     ((_day, call),) = ledger.calls
     assert call.status == "ok" and call.input_tokens == 1000 and call.thinking_tokens == 100
     # 1000 input at 0.75 and 300 output (output plus thinking) at 3.75 per million.
@@ -352,6 +352,68 @@ def test_policy_breaker_opens_and_half_opens():
     wrapped.clock_state["now"] = 31.0  # type: ignore[attr-defined]
     flaky.failures.clear()
     assert wrapped.structured(structured_request(), prompt_version="planner-v1").data
+
+
+def test_fallback_model_answers_when_the_primary_fails_and_while_its_breaker_is_open():
+    ledger = MemoryLedger()
+    primary = FlakyProvider([ProviderError("server", status=503)] * 10)
+    fallback = FlakyProvider([])
+    fallback.model = "fallback-model"
+    sleeps: list[float] = []
+    clock = {"now": 0.0}
+    wrapped = ResilientProvider(
+        primary,
+        LlmSettings(provider="gemini", retries=1, breaker_failures=1, breaker_seconds=30),
+        ledger,
+        PriceTable(),
+        fallback=fallback,
+        monotonic=lambda: clock["now"],
+        sleep=sleeps.append,
+        clock=lambda: datetime(2026, 10, 13, 12, tzinfo=UTC),
+    )
+    result = wrapped.structured(structured_request(), prompt_version="planner-v1")
+    assert result.data == {"kind": "plan"} and result.model == "fallback-model"
+    assert primary.calls == 2 and fallback.calls == 1 and wrapped.fallback_calls == 1
+    rows = [(call.model, call.status) for _d, call in ledger.calls]
+    assert rows == [("gemini-3.8-flash", "error"), ("fallback-model", "ok")]
+    # The primary's breaker is open: the next call goes straight to the fallback.
+    wrapped.structured(structured_request(), prompt_version="planner-v1")
+    assert primary.calls == 2 and fallback.calls == 2
+    # Both open: unavailable without a provider call.
+    fallback.failures.extend([ProviderError("server", status=503)] * 4)
+    with pytest.raises(QueryError) as info:
+        wrapped.structured(structured_request(), prompt_version="planner-v1")
+    assert info.value.code == "llm_unavailable"
+    with pytest.raises(QueryError):
+        wrapped.structured(structured_request(), prompt_version="planner-v1")
+    assert fallback.calls == 4  # the breaker, not a provider call, answered the last one
+    # Non-retryable primary failure still falls back.
+    clock["now"] = 100.0
+    primary.failures[:] = [ProviderError("client", status=400)]
+    fallback.failures.clear()
+    assert (
+        wrapped.structured(structured_request(), prompt_version="planner-v1").model
+        == "fallback-model"
+    )
+
+
+def test_factory_builds_the_fallback_route(monkeypatch):
+    from floatchat_core.llm.factory import build_provider
+
+    settings = LlmSettings(
+        provider="gemini", gemini_api_key="fixture-value", fallback_model="gemini-3.7-flash"
+    )
+    wrapped = build_provider(settings, MemoryLedger())
+    assert wrapped.model == "gemini-3.8-flash" and wrapped.fallback_model == "gemini-3.7-flash"
+    same = build_provider(
+        LlmSettings(
+            provider="gemini", gemini_api_key="fixture-value", fallback_model="gemini-3.8-flash"
+        ),
+        MemoryLedger(),
+    )
+    assert same.fallback_model is None
+    offline = build_provider(LlmSettings(provider="offline"), MemoryLedger())
+    assert offline.fallback_model is None
 
 
 def test_policy_daily_caps_from_the_ledger():
