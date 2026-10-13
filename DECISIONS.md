@@ -2157,6 +2157,10 @@ Decision (amends ADR-0072 and ADR-0073):
    the bottom (centred with the greeting before the first message) and the page footer is not
    shown. A question retried after an error shows once, with its latest outcome. Errors are one
    card with a retry button; the code and correlation id stay in a tooltip.
+6. On a conversation's first message the same planning call also returns a two to six word
+   title (no extra request on a rate-limited key); the store renames the conversation when the
+   title is present and repeats only numbers from the prompt. Without a model the first message
+   stays the title. Long titles fade out at the rail's edge instead of scrolling.
 
 Alternatives: a separate classification call before planning (rejected, one more call per
 message on a rate-limited key); widening the keyword lists only (rejected, every unlisted

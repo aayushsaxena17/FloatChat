@@ -1897,7 +1897,8 @@ details.provenance .facts {
 .chat-conversations {
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   margin-top: 10px;
 }
 .chat-sidebar-label {
@@ -1911,6 +1912,7 @@ details.provenance .facts {
   margin: 0;
   padding: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 2px;
 }
 .chat-conversations button {
@@ -1925,12 +1927,21 @@ details.provenance .facts {
   font-size: 13.5px;
   text-align: left;
   cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   transition:
     background 120ms ease,
     color 120ms ease;
+}
+/* A long title fades out at the right edge instead of being cut or scrolled. */
+.chat-conversation-title {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    #000 calc(100% - 36px),
+    transparent
+  );
+  mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
 }
 .chat-conversations button:hover {
   background: #132f3a;

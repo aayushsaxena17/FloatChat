@@ -96,6 +96,8 @@ class ConversationStore(Protocol):
 
     def get(self, client_id: str, conversation_id: str) -> Conversation | None: ...
 
+    def rename(self, conversation_id: str, title: str) -> None: ...
+
     def list_for(self, client_id: str) -> list[Conversation]: ...
 
     def messages(self, conversation_id: str) -> list[Message]: ...
@@ -160,6 +162,18 @@ class MemoryStore:
         if conversation is None or conversation.client_id != client_id:
             return None
         return conversation
+
+    def rename(self, conversation_id: str, title: str) -> None:
+        with self._lock:
+            conversation = self._conversations[conversation_id]
+            self._conversations[conversation_id] = Conversation(
+                conversation.id,
+                conversation.client_id,
+                title[:TITLE_CHARS],
+                conversation.message_count,
+                conversation.created_at,
+                conversation.updated_at,
+            )
 
     def list_for(self, client_id: str) -> list[Conversation]:
         with self._lock:
@@ -232,6 +246,13 @@ class PostgresStore:
                 statement, {"id": conversation_id, "client_id": client_id}
             ).one_or_none()
         return None if row is None else _conversation(row)
+
+    def rename(self, conversation_id: str, title: str) -> None:
+        statement = text(
+            "UPDATE app.chat_conversation SET title = :title WHERE id = CAST(:id AS uuid)"
+        )
+        with self.engine.begin() as connection:
+            connection.execute(statement, {"id": conversation_id, "title": title[:TITLE_CHARS]})
 
     def list_for(self, client_id: str) -> list[Conversation]:
         statement = text(

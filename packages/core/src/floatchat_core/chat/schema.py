@@ -40,6 +40,10 @@ PLANNER_SCHEMA: dict[str, Any] = {
             "type": "string",
             "description": "One to four plain sentences; required for reply.",
         },
+        "title": {
+            "type": "string",
+            "description": "Only when asked: a two to six word title for the conversation.",
+        },
         "clarification": {
             "type": "object",
             "properties": {

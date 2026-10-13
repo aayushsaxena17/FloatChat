@@ -49,6 +49,7 @@ HELP_TEXT = (
     'Bay of Bengal in February 2025 in the upper 200 dbar".'
 )
 REPLY_CHARS = 1200
+TITLE_CHARS = 60
 
 
 class QueryEngine(Protocol):
@@ -83,6 +84,7 @@ class PlanOutcome:
     raw: Any = None
     timings: dict[str, float] = field(default_factory=dict)
     reply: str | None = None
+    title: str | None = None
 
     @property
     def plan_sha256(self) -> str | None:
@@ -94,6 +96,14 @@ class PlanOutcome:
         if self.document is None or self.plan is None:
             return None
         return {key: value for key, value in self.document.items() if key != "plan_schema"}
+
+
+def _title(value: Any, prompt: str) -> str | None:
+    """The model's conversation title, cleaned; None keeps the first message as the title."""
+    title = " ".join(str(value or "").split()).strip("\"'`“”‘’ ").rstrip(".!?;:,")
+    if not title or len(title) > TITLE_CHARS or not narrate.numbers_within(title, prompt):
+        return None
+    return title
 
 
 def _clarification(missing: list[str], question: str) -> dict[str, Any]:
@@ -159,6 +169,7 @@ class ChatService:
         context: CallContext | None = None,
         on_step: Callable[[str], None] | None = None,
         reference_time: str | None = None,
+        first: bool = False,
     ) -> PlanOutcome:
         started = time.monotonic()
         timings: dict[str, float] = {}
@@ -175,7 +186,7 @@ class ChatService:
             return PlanOutcome(classification, classification, timings=timings)
         try:
             return self._plan_with_model(
-                question, classification, timings, started, step, context, reference_time
+                question, classification, timings, started, step, context, reference_time, first
             )
         except QueryError as error:
             if classification != "query" and error.code.startswith("llm_"):
@@ -191,6 +202,7 @@ class ChatService:
         step: Callable[[str], None],
         context: CallContext | None,
         reference_time: str | None,
+        first: bool,
     ) -> PlanOutcome:
         step("retrieve")
         mark = time.monotonic()
@@ -210,6 +222,7 @@ class ChatService:
                 window,
                 [hit.document for hit in hits],
                 [hit.document for hit in examples],
+                first,
             ),
             schema=PLANNER_SCHEMA,
             max_output_tokens=self.planner_max_output_tokens,
@@ -229,6 +242,8 @@ class ChatService:
         step("validate")
         mark = time.monotonic()
         outcome = self._validate(result.data, classification, request.system + request.user)
+        if first and isinstance(result.data, dict):
+            outcome.title = _title(result.data.get("title"), request.user)
         outcome.hits, outcome.examples = hits, examples
         outcome.usage, outcome.model, outcome.model_version = (
             result.usage,
@@ -414,6 +429,7 @@ class ChatService:
             conversation = self.store.get(client_id, conversation_id)
             if conversation is None:
                 raise QueryError("not_found")
+        first = conversation is None
         if conversation is None:
             conversation = self.store.create(client_id, text)
         user_message = self.store.append(conversation.id, "user", "user", text, {}, correlation_id)
@@ -436,6 +452,7 @@ class ChatService:
                 text,
                 context=context,
                 on_step=lambda step: pending.append(Event("status", {"step": step})),
+                first=first,
             )
         except QueryError as error:
             message = finish("error", error.text, {"code": error.code})
@@ -444,6 +461,9 @@ class ChatService:
             yield Event("message", message.as_dict())
             return
         yield from pending
+        if outcome.title:
+            # A summary title, as chat apps show; without a model the first message stays.
+            self.store.rename(conversation.id, outcome.title)
         if outcome.kind in ("greeting", "help"):
             body = GREETING_TEXT if outcome.kind == "greeting" else HELP_TEXT
             message = finish(

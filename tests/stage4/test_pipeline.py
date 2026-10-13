@@ -212,6 +212,26 @@ def test_a_reply_never_states_a_number_the_model_was_not_shown(engine, retriever
     assert not narrate.numbers_within("about 3900 floats", "limit 500")
 
 
+def test_the_first_answer_names_the_conversation(engine, retriever):
+    answer = {"kind": "reply", "reply": "Hello! Ask me about Argo data.", "title": '"Greeting."'}
+    service, provider = scripted_service(engine, retriever, answer)
+    events = events_of(service, "ola, que tal?")
+    conversation_id = events[0].data["conversation_id"]
+    assert service.store.get("client-1", conversation_id).title == "Greeting"
+    assert "first message: yes" in provider.requests[0].user
+    # Follow-ups keep the title and do not ask for one.
+    provider.answer = {**answer, "title": "Something else"}
+    list(service.respond(client_id="client-1", conversation_id=conversation_id, text="thanks"))
+    assert service.store.get("client-1", conversation_id).title == "Greeting"
+    assert "first message" not in provider.requests[-1].user
+    # A missing or ungrounded title keeps the first message as the title.
+    for title in (None, "", "Mean of 27.9 degrees"):
+        service, _ = scripted_service(engine, retriever, {**answer, "title": title})
+        events = events_of(service, "hey there")
+        conversation = service.store.get("client-1", events[0].data["conversation_id"])
+        assert conversation.title == "hey there"
+
+
 def test_greetings_fall_back_to_rules_when_the_model_is_unavailable(engine, retriever):
     from floatchat_core.llm.provider import ProviderError
 

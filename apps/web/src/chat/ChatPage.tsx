@@ -249,7 +249,9 @@ export function ChatPage() {
                           if (!wideScreen()) setSidebar(false);
                         }}
                       >
-                        {row.title || "Untitled"}
+                        <span className="chat-conversation-title">
+                          {row.title || "Untitled"}
+                        </span>
                       </button>
                     </li>
                   ))}
