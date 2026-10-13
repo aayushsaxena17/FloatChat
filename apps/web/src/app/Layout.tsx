@@ -9,6 +9,7 @@ import {
   Waves,
   ArrowUpRight,
 } from "lucide-react";
+import { WaveMark } from "../components/WaveMark";
 import { ReadinessStatus } from "./ReadinessStatus";
 
 const LINKS = [
@@ -29,7 +30,7 @@ export function Layout() {
       <header className="topbar">
         <NavLink to="/dashboard" className="brand" aria-label="FloatChat home">
           <span className="brand-symbol">
-            <Waves size={22} aria-hidden="true" />
+            <WaveMark size={22} />
           </span>
           <span>
             FloatChat<span className="brand-subtitle">ARGO OBSERVATORY</span>

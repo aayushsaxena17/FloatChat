@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { AlertCircle, RotateCcw } from "lucide-react";
 import { usePlanQuery } from "../api/hooks";
 import type { QueryPlan } from "../api/client";
 import { tableRecords, type QueryResponse } from "../api/types";
@@ -14,15 +15,6 @@ import {
   type Interpretation as InterpretationData,
 } from "./client";
 import { Interpretation } from "./Interpretation";
-
-const KIND_LABEL: Record<string, string> = {
-  answer: "Answer",
-  clarification: "Needs one more detail",
-  greeting: "Hello",
-  help: "What I can do",
-  unsupported: "Not available",
-  error: "Something went wrong",
-};
 
 const HINTS: Record<string, string> = {
   time_range: "in January 2025",
@@ -49,7 +41,7 @@ function ResultView({ response }: { response: QueryResponse }) {
   return (
     <div className="chat-result" data-testid="chat-result">
       {response.partial ? (
-        <p className="status" data-kind="warning" role="status">
+        <p className="chat-note" role="status">
           Partial result: {response.missing.length} coverage slots are missing.
         </p>
       ) : null}
@@ -62,27 +54,35 @@ function ResultView({ response }: { response: QueryResponse }) {
         />
       ))}
       {records.length ? (
-        <DataTable
-          columns={columns}
-          rows={
-            response.result.rows as Array<
-              Array<string | number | boolean | null>
-            >
-          }
-          caption="Result rows"
-          limit={200}
-        />
+        <details className="chat-table" open={figures.length === 0}>
+          <summary>
+            {response.result.row_count.toLocaleString("en-GB")} rows
+            {response.result.row_count > 200 ? " (first 200 shown)" : ""}
+          </summary>
+          <DataTable
+            columns={columns}
+            rows={
+              response.result.rows as Array<
+                Array<string | number | boolean | null>
+              >
+            }
+            caption="Result rows"
+            limit={200}
+          />
+        </details>
       ) : (
-        <p className="status" role="status">
+        <p className="chat-note" role="status">
           No rows matched.
         </p>
       )}
-      <p className="chat-result-meta">
-        {response.result.row_count.toLocaleString("en-GB")} rows · source{" "}
-        {response.execution.source ?? "—"} · {response.coverage.slots_covered}/
-        {response.coverage.slots_total} coverage slots
-      </p>
-      <ProvenancePanel provenance={response.provenance} />
+      <div className="chat-result-foot">
+        <span>
+          source {response.execution.source ?? "—"} ·{" "}
+          {response.coverage.slots_covered}/{response.coverage.slots_total}{" "}
+          coverage slots
+        </span>
+        <ProvenancePanel provenance={response.provenance} />
+      </div>
     </div>
   );
 }
@@ -97,12 +97,47 @@ function StoredResult({ plan }: { plan: Record<string, unknown> }) {
   );
 }
 
+/** A quiet one-line problem: what happened, a retry, and the code for support. */
+export function Problem({
+  text,
+  code,
+  reference,
+  onRetry,
+}: {
+  text: string;
+  code: string;
+  reference?: string | null;
+  onRetry?: () => void;
+}) {
+  return (
+    <div className="chat-problem" role="alert">
+      <AlertCircle size={15} aria-hidden="true" className="chat-problem-icon" />
+      <div>
+        <p className="chat-text">{text}</p>
+        <p className="chat-problem-meta">
+          {onRetry ? (
+            <button type="button" className="chat-link" onClick={onRetry}>
+              <RotateCcw size={11} aria-hidden="true" />
+              Try again
+            </button>
+          ) : null}
+          <span title={reference ? `${code} · ${reference}` : code}>
+            {code.replace(/_/g, " ")}
+          </span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function AssistantMessage({
   message,
   onHint,
+  onRetry,
 }: {
   message: ChatMessage;
   onHint?: (hint: string) => void;
+  onRetry?: () => void;
 }) {
   const payload = payloadOf(message);
   const interpretation: InterpretationData | undefined = payload.interpretation;
@@ -110,18 +145,22 @@ export function AssistantMessage({
     payload.clarification?.missing ??
     interpretation?.clarification?.missing ??
     [];
+  const isError = message.kind === "error";
   return (
     <article
       className={`chat-message chat-assistant chat-kind-${message.kind}`}
       data-kind={message.kind}
     >
-      <header>
-        <span className="chat-role">FloatChat</span>
-        <span className="chat-kind">
-          {KIND_LABEL[message.kind] ?? message.kind}
-        </span>
-      </header>
-      <p className="chat-text">{message.text}</p>
+      {isError ? (
+        <Problem
+          text={message.text}
+          code={payload.code ?? "error"}
+          reference={message.correlation_id}
+          onRetry={onRetry}
+        />
+      ) : (
+        <p className="chat-text">{message.text}</p>
+      )}
       {message.kind === "clarification" && missing.length && onHint ? (
         <div className="chat-chips" role="group" aria-label="Suggested details">
           {missing.map((field) => (
@@ -136,19 +175,11 @@ export function AssistantMessage({
           ))}
         </div>
       ) : null}
-      {message.kind === "error" && payload.code ? (
-        <p className="status" data-kind="error" role="alert">
-          [{payload.code}]
-          {message.correlation_id
-            ? ` Correlation ID ${message.correlation_id}.`
-            : ""}
-        </p>
-      ) : null}
       {payload.result ? <ResultView response={payload.result} /> : null}
       {!payload.result && payload.result_omitted && payload.plan ? (
         <StoredResult plan={payload.plan} />
       ) : null}
-      {interpretation && interpretation.kind ? (
+      {interpretation && interpretation.kind && !isError ? (
         <Interpretation data={interpretation} />
       ) : null}
     </article>

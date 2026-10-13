@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import queryLine from "../test/fixtures/query-line.json";
@@ -271,9 +271,12 @@ describe("ChatPage", () => {
       )[0],
     );
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("temporarily unavailable");
-    expect(alert).toHaveTextContent("[llm_unavailable]");
-    expect(alert).toHaveTextContent("Correlation ID t-9");
+    expect(alert).toHaveTextContent("unavailable");
+    expect(alert).toHaveTextContent("llm unavailable");
+    expect(within(alert).getByTitle(/t-9/)).toBeInTheDocument();
+    expect(
+      within(alert).getByRole("button", { name: "Try again" }),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText("Your question")).not.toBeDisabled();
   });
 });
