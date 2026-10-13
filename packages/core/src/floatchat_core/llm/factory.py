@@ -56,7 +56,11 @@ def build_provider(
     )
     name = provider or settings.provider
     primary = raw_provider(settings, provider=provider, model=model)
-    fallback: Provider | None = None
-    if name != "offline" and settings.fallback_model and settings.fallback_model != primary.model:
-        fallback = raw_provider(settings, provider=provider, model=settings.fallback_model)
-    return ResilientProvider(primary, settings, ledger, prices, fallback=fallback)
+    fallbacks: list[Provider] = []
+    if name != "offline":
+        fallbacks = [
+            raw_provider(settings, provider=provider, model=candidate)
+            for candidate in settings.fallback_list
+            if candidate != primary.model
+        ]
+    return ResilientProvider(primary, settings, ledger, prices, fallbacks=fallbacks)

@@ -33,10 +33,16 @@ def summarize(response: dict[str, Any]) -> dict[str, Any]:
     coverage = response.get("coverage") or {}
     execution = response.get("execution") or {}
     interpretation = response.get("interpretation") or {}
+    # Rounded rows: the model copies what it is shown, and a narrative should read
+    # "25.823 degree_C", not a 15-digit float (first live run, 2026-10-13).
+    shown = [
+        [round(cell, 3) if isinstance(cell, float) else cell for cell in row]
+        for row in rows[:SUMMARY_ROWS]
+    ]
     return {
         "columns": [{"name": column.get("name"), "unit": column.get("unit")} for column in columns],
         "row_count": int(result.get("row_count") or len(rows)),
-        "rows": rows[:SUMMARY_ROWS],
+        "rows": shown,
         "rows_shown": min(len(rows), SUMMARY_ROWS),
         "stats": stats,
         "partial": bool(response.get("partial")),
@@ -81,47 +87,102 @@ def _geography_text(geography: dict[str, Any] | None) -> str:
     return "the requested area"
 
 
+UNIT_TEXT = {"degree_C": "°C", "dbar": "dbar", "1": "", "degrees_east": "°E", "degrees_north": "°N"}
+METRIC_TEXT = {
+    "mean": "mean",
+    "count": "count",
+    "min": "minimum",
+    "max": "maximum",
+    "stddev": "standard deviation",
+    "median": "median",
+}
+POLICY_TEXT = {
+    "science_ready": "science-ready QC",
+    "mode_selected": "all delivered values regardless of QC",
+    "raw": "raw stored columns",
+}
+MONTHS = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+]
+
+
+def _label(column: str) -> str:
+    """``temperature_mean`` -> ``mean temperature``; other names keep their words."""
+    parts = column.split("_")
+    if len(parts) >= 2 and parts[-1] in METRIC_TEXT:
+        return f"{METRIC_TEXT[parts[-1]]} {' '.join(parts[:-1])}"
+    return column.replace("_", " ")
+
+
+def _period_text(period: dict[str, Any]) -> str:
+    """Whole months read as month names; anything else as dates (end exclusive)."""
+    start, end = str(period.get("start", ""))[:10], str(period.get("end", ""))[:10]
+    try:
+        sy, sm, sd = (int(part) for part in start.split("-"))
+        ey, em, ed = (int(part) for part in end.split("-"))
+    except ValueError:
+        return f"{start} to {end}"
+    if sd == 1 and ed == 1:
+        last_month, last_year = (em - 1, ey) if em > 1 else (12, ey - 1)
+        first = f"{MONTHS[sm - 1]} {sy}"
+        last = f"{MONTHS[last_month - 1]} {last_year}"
+        return first if first == last else f"{first} to {last}"
+    return f"{start} to {end} (end exclusive)"
+
+
 def template(summary: dict[str, Any]) -> str:
-    """The deterministic narrative: what was computed and the extrema, nothing else."""
+    """The deterministic narrative: what was computed and the extrema, in plain words."""
     operation = summary.get("operation") or {}
     kind = operation.get("kind", "query")
-    variables = ", ".join(summary.get("variables") or [])
-    period = summary.get("time_range") or {}
-    span = f"{str(period.get('start', ''))[:10]} to {str(period.get('end', ''))[:10]}"
+    variables = " and ".join(summary.get("variables") or [])
+    when = _period_text(summary.get("time_range") or {})
     where = _geography_text(summary.get("geography"))
     depth = summary.get("depth_dbar")
     depth_text = f", {depth['min']:.0f} to {depth['max']:.0f} dbar" if depth else ""
-    policy = summary.get("qc_policy") or "science_ready"
+    policy = POLICY_TEXT.get(summary.get("qc_policy") or "science_ready", "science-ready QC")
     rows = summary.get("row_count", 0)
     if kind == "aggregate":
-        metrics = ", ".join(operation.get("metrics") or [])
+        metrics = " and ".join(METRIC_TEXT.get(m, m) for m in operation.get("metrics") or [])
         keys = operation.get("group_by") or []
-        grouping = f" by {', '.join(keys)}" if keys else ""
+        grouping = f" by {' and '.join(key.replace('_', ' ') for key in keys)}" if keys else ""
+        unit = operation.get("unit", "profile")
         first = (
-            f"{metrics} of {variables}{grouping} in {where}, {span}{depth_text}, "
-            f"QC {policy}: {rows} rows."
+            f"{metrics.capitalize()} {variables}{grouping} in {where}, {when}{depth_text}, "
+            f"one value per {unit} with {policy}: {rows} rows."
         )
     elif kind == "nearest":
         first = (
-            f"The {operation.get('k')} nearest profiles to the point, {span}, "
-            f"QC {policy}: {rows} rows."
+            f"The {operation.get('k')} nearest profiles to the point, {when}, with {policy}: "
+            f"{rows} rows."
         )
     else:
-        first = f"Profiles in {where}, {span}{depth_text}, QC {policy}: {rows} rows."
+        first = f"Profiles in {where}, {when}{depth_text}, with {policy}: {rows} rows."
     sentences = [first]
     stats = summary.get("stats") or {}
     units = {column["name"]: column.get("unit") for column in summary.get("columns") or []}
     for name, values in list(stats.items())[:4]:
         if name.endswith("_count") or name in ("level_count", "cycle_number", "level_index"):
             continue
-        unit = units.get(name)
-        unit_text = f" {unit}" if unit and unit != "1" else ""
+        unit = UNIT_TEXT.get(units.get(name) or "", units.get(name) or "")
+        unit_text = f" {unit}".rstrip() if unit else ""
+        label = _label(name).capitalize()
         if values["count"] > 1:
             sentences.append(
-                f"{name} ranges from {values['min']}{unit_text} to {values['max']}{unit_text}."
+                f"{label} ranges from {values['min']}{unit_text} to {values['max']}{unit_text}."
             )
         else:
-            sentences.append(f"{name} is {values['min']}{unit_text}.")
+            sentences.append(f"{label} is {values['min']}{unit_text}.")
     coverage = summary.get("coverage") or {}
     if summary.get("partial"):
         sentences.append(

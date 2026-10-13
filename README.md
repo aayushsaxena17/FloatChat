@@ -108,7 +108,7 @@ query; a model narrative is kept only when every number it states is in the resu
   the tests, CI and the harness use; it names itself in the interpretation panel.
 - The key belongs in `~/.local/state/FloatChat/development/.env` (the stack's config file),
   not in the repository `.env`; recreate the stack with `make dev` after adding it.
-  `LLM_FALLBACK_MODEL` (default `gemini-3.7-flash`) answers when the primary model fails or is
+  `LLM_FALLBACK_MODELS` (default `gemini-3.7-flash,gemini-3-flash-preview`) answers when the primary model fails or is
   overloaded.
 - Corpus: `python3 -m scripts.dev seed-corpus` embeds parameter, QC, region (with aliases),
   help and example documents into `app.semantic_document` (pgvector, 768 dimensions); `make dev`

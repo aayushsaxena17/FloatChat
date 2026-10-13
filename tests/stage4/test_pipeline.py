@@ -204,6 +204,25 @@ def test_null_fields_from_the_model_are_stripped_before_validation():
     assert document["geography"] == {"kind": "named_region", "value": "Arabian Sea"}
     assert document["operation"] == {"kind": "profiles", "limit": 10}
     assert document["qc_policy"] == "science_ready" and "depth_dbar" not in document
+    stray = to_plan_document(
+        {
+            **flat,
+            "operation": {"kind": "aggregate", "metrics": ["count"], "depth_bin_size": 10},
+        }
+    )
+    assert stray["operation"] == {"kind": "aggregate", "group_by": [], "metrics": ["count"]}
+    binned = to_plan_document(
+        {
+            **flat,
+            "operation": {
+                "kind": "aggregate",
+                "metrics": ["mean"],
+                "group_by": ["depth_bin"],
+                "depth_bin_size": 50,
+            },
+        }
+    )
+    assert binned["operation"]["depth_bin_size"] == 50
 
 
 def test_model_narrative_is_kept_only_when_grounded(engine, retriever):
@@ -233,6 +252,53 @@ def test_model_narrative_is_kept_only_when_grounded(engine, retriever):
     assert interpretation["narrative_source"] == "template"
     assert interpretation["narrative_rejected"] is True
     assert "31.7" not in message["text"] and "27.123" in message["text"]
+
+
+def test_summary_rows_are_rounded_for_the_narrator():
+    summary = narrate.summarize(
+        {
+            "result": {
+                "columns": [{"name": "t", "type": "number", "unit": "degree_C"}],
+                "rows": [[25.822716011711186], [None]],
+                "row_count": 2,
+            }
+        }
+    )
+    assert summary["rows"] == [[25.823], [None]]
+    assert summary["stats"]["t"]["mean"] == 25.823
+    assert narrate.grounded("The mean was 25.823 degree_C.", summary)
+
+
+def test_template_reads_in_plain_words():
+    summary = {
+        "operation": {
+            "kind": "aggregate",
+            "metrics": ["mean"],
+            "group_by": ["month"],
+            "unit": "profile",
+        },
+        "variables": ["temperature"],
+        "time_range": {"start": "2025-01-01T00:00:00Z", "end": "2025-04-01T00:00:00Z"},
+        "geography": {"kind": "named_region", "name": "Arabian Sea"},
+        "depth_dbar": {"min": 0.0, "max": 100.0},
+        "qc_policy": "science_ready",
+        "row_count": 3,
+        "columns": [{"name": "temperature_mean", "unit": "degree_C"}],
+        "stats": {"temperature_mean": {"min": 25.823, "max": 26.765, "mean": 26.2, "count": 3}},
+    }
+    text = narrate.template(summary)
+    assert text.startswith(
+        "Mean temperature by month in the Arabian Sea, January 2025 to March 2025, 0 to 100 "
+        "dbar, one value per profile with science-ready QC: 3 rows."
+    )
+    assert "Mean temperature ranges from 25.823 °C to 26.765 °C." in text
+    assert narrate.grounded(text, summary)
+    day = narrate._period_text({"start": "2025-02-10T00:00:00Z", "end": "2025-02-11T00:00:00Z"})
+    assert day == "2025-02-10 to 2025-02-11 (end exclusive)"
+    assert (
+        narrate._period_text({"start": "2025-02-01T00:00:00Z", "end": "2025-03-01T00:00:00Z"})
+        == "February 2025"
+    )
 
 
 def test_grounding_helpers():

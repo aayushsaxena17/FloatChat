@@ -161,6 +161,10 @@ def to_plan_document(flat: Any) -> dict[str, Any]:
         if kept.get("kind") == "aggregate":
             kept.setdefault("group_by", [])
             kept.setdefault("metrics", [])
+            # A bin size without the depth_bin key is a stray default, not an intent (seen
+            # live: a count question answered with depth_bin_size and no depth_bin).
+            if "depth_bin" not in (kept.get("group_by") or []):
+                kept.pop("depth_bin_size", None)
         plan["operation"] = kept
     presentation = plan.get("presentation")
     if isinstance(presentation, dict):

@@ -68,6 +68,13 @@ class CircuitBreaker:
             if self._consecutive >= self.failures:
                 self._opened_at = self.clock()
 
+    def trip(self) -> None:
+        """Open at once: a busy answer (429 or 503) means the model is not worth asking again
+        within the cool-down, whatever the consecutive-failure threshold says."""
+        with self._lock:
+            self._consecutive = self.failures
+            self._opened_at = self.clock()
+
 
 class CallContext:
     """Identifiers the ledger row carries; set per message by the pipeline."""
@@ -100,7 +107,7 @@ class ResilientProvider:
         ledger: Ledger | None = None,
         prices: PriceTable | None = None,
         *,
-        fallback: Provider | None = None,
+        fallbacks: Sequence[Provider] = (),
         monotonic: Callable[[], float] = time.monotonic,
         sleep: Callable[[float], None] = time.sleep,
         clock: Callable[[], datetime] = lambda: datetime.now(UTC),
@@ -116,14 +123,16 @@ class ResilientProvider:
             settings.breaker_failures, settings.breaker_seconds, monotonic
         )
         self.primary = _Route(provider, self.breaker, "primary")
-        self.fallback: _Route | None = None
-        if fallback is not None:
-            self.fallback = _Route(
-                fallback,
+        self.fallbacks = [
+            _Route(
+                candidate,
                 CircuitBreaker(settings.breaker_failures, settings.breaker_seconds, monotonic),
                 "fallback",
             )
+            for candidate in fallbacks
+        ]
         self.fallback_calls = 0
+        self._preferred: _Route | None = None
 
     @property
     def name(self) -> str:
@@ -134,8 +143,8 @@ class ResilientProvider:
         return self.provider.model
 
     @property
-    def fallback_model(self) -> str | None:
-        return None if self.fallback is None else self.fallback.provider.model
+    def fallback_models(self) -> list[str]:
+        return [route.provider.model for route in self.fallbacks]
 
     @property
     def embedding_model(self) -> str:
@@ -151,8 +160,16 @@ class ResilientProvider:
             raise QueryError("llm_budget_exhausted")
 
     def _routes(self) -> list[_Route]:
-        """The routes to try in order; a route with an open breaker is skipped."""
-        routes = [route for route in (self.primary, self.fallback) if route is not None]
+        """The routes to try in order; a route with an open breaker is skipped.
+
+        The route that answered last goes first ("sticky"): once the primary has shown itself
+        busy, the next call starts where the last one succeeded instead of walking the ladder
+        again (each rung costs seconds on an overloaded provider).
+        """
+        routes = [self.primary, *self.fallbacks]
+        if self._preferred is not None and self._preferred in routes:
+            routes.remove(self._preferred)
+            routes.insert(0, self._preferred)
         usable = [route for route in routes if not route.breaker.open]
         if not usable:
             raise QueryError("llm_unavailable")
@@ -208,7 +225,9 @@ class ResilientProvider:
             detail["error_status"] = error.status
         log.info(json.dumps({"event": "llm_call", **record.as_dict(), **detail}, default=str))
 
-    def _attempts(self, route: _Route, call: Callable[[Provider], Any]) -> Any:
+    def _attempts(
+        self, route: _Route, call: Callable[[Provider], Any], deadline: float | None = None
+    ) -> Any:
         """Bounded retries on retryable failures; the route's breaker counts the outcome."""
         delay = 1.0
         last: ProviderError | None = None
@@ -217,16 +236,40 @@ class ResilientProvider:
                 result = call(route.provider)
             except ProviderError as error:
                 last = error
-                if not error.retryable or attempt == self.settings.retries:
+                exhausted = deadline is not None and self._monotonic() >= deadline
+                if not error.retryable or attempt == self.settings.retries or exhausted:
                     break
                 self._sleep(min(delay, 8.0))
                 delay *= 2
                 continue
             route.breaker.succeed()
+            self._preferred = route
             return result
         assert last is not None
-        route.breaker.fail()
+        if last.kind in ("rate_limited", "server"):
+            route.breaker.trip()
+        else:
+            route.breaker.fail()
+        if self._preferred is route:
+            self._preferred = None
         raise last
+
+    @staticmethod
+    def unavailable(error: ProviderError | None) -> QueryError:
+        """The user-visible ``llm_unavailable`` with a fixed message for the failure class."""
+        kind = None if error is None else error.kind
+        if kind in ("rate_limited", "server"):
+            message = (
+                "The model is busy right now (the provider reported high demand). Please try "
+                "again in a minute; the dashboard and direct queries keep working."
+            )
+        elif kind == "timeout":
+            message = "The model took too long to answer. Please try again."
+        elif kind == "blocked":
+            message = "The model declined this request. Please rephrase it."
+        else:
+            return QueryError("llm_unavailable")
+        return QueryError("llm_unavailable", message=message)
 
     def _with_fallback(
         self,
@@ -234,11 +277,15 @@ class ResilientProvider:
         call: Callable[[Provider], Any],
         on_failure: Callable[[_Route, ProviderError], None],
     ) -> tuple[Any, _Route]:
-        """Try each usable route in order; a route's final failure is recorded before the next."""
+        """Try each usable route in order within the whole-call budget; a route's final
+        failure is recorded before the next route is tried."""
+        deadline = self._monotonic() + self.settings.total_budget_seconds
         last: ProviderError | None = None
         for route in routes:
+            if last is not None and self._monotonic() >= deadline:
+                break
             try:
-                return self._attempts(route, call), route
+                return self._attempts(route, call, deadline), route
             except ProviderError as error:
                 last = error
                 on_failure(route, error)
@@ -285,8 +332,8 @@ class ResilientProvider:
             answer, route = self._with_fallback(
                 routes, lambda provider: provider.structured(request), failed
             )
-        except ProviderError:
-            raise QueryError("llm_unavailable") from None
+        except ProviderError as error:
+            raise self.unavailable(error) from None
         result: StructuredResult = answer
         if route.role == "fallback":
             self.fallback_calls += 1
@@ -314,7 +361,7 @@ class ResilientProvider:
     ) -> EmbedResult:
         # Embeddings use one model; the fallback route is for generation only.
         self._before()
-        if self.primary.breaker.open and self.fallback is None:
+        if self.primary.breaker.open:
             raise QueryError("llm_unavailable")
         started = self._monotonic()
         try:
@@ -360,19 +407,32 @@ class ResilientProvider:
                 route=route.role,
             )
 
+        def open_stream(provider: Provider) -> tuple[TextStream, Any, str | None]:
+            # Adapters open the HTTP stream on the first read; priming it here puts the
+            # request inside the retry and fallback logic instead of the consumer's loop.
+            stream = provider.stream_text(request)
+            iterator = iter(stream)
+            try:
+                head: str | None = next(iterator)
+            except StopIteration:
+                head = None
+            return stream, iterator, head
+
         try:
-            opened, route = self._with_fallback(
-                routes, lambda provider: provider.stream_text(request), failed
-            )
-        except ProviderError:
-            raise QueryError("llm_unavailable") from None
-        inner: TextStream = opened
+            opened, route = self._with_fallback(routes, open_stream, failed)
+        except ProviderError as error:
+            raise self.unavailable(error) from None
+        inner: TextStream = opened[0]
+        rest: Any = opened[1]
+        head: str | None = opened[2]
         if route.role == "fallback":
             self.fallback_calls += 1
 
         def chunks() -> Any:
             try:
-                yield from inner
+                if head is not None:
+                    yield head
+                yield from rest
             except ProviderError as error:
                 route.breaker.fail()
                 self._record(

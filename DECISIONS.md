@@ -1985,8 +1985,10 @@ planning call worked as written, but `gemini-3.8-flash`, `3.6-flash` and `3.5-fl
 14 s. The policy wrapper therefore takes a configured fallback model (`LLM_FALLBACK_MODEL`,
 default `gemini-3.7-flash`) with its own circuit breaker: after the primary's retries fail, or
 while the primary's breaker is open, the fallback answers and the ledger records the model that
-did. The default timeout rises to 45 s and the retry budget to 3 attempts with 1, 2 and 4 s
-backoff. Embeddings keep one model. The operator log carries the provider's HTTP status and the
+did. The timeout is 30 s, one retry per route, and a whole-call budget of 45 s: an overloaded
+provider answers within seconds, so the user hears "busy, try again" within the budget, never
+after minutes (the first live message waited 85 s across two models before this amendment).
+The user-visible text names the failure class (busy, too slow, declined) with fixed strings. Embeddings keep one model. The operator log carries the provider's HTTP status and the
 route; user-visible errors are unchanged. `gemini-2.5-flash` is closed to new API users (404) and
 is no longer a fallback candidate.
 

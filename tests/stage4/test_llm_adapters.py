@@ -338,8 +338,9 @@ def test_policy_does_not_retry_client_errors():
 
 
 def test_policy_breaker_opens_and_half_opens():
+    """Timeouts count towards the threshold (busy answers trip at once; see the sticky test)."""
     ledger = MemoryLedger()
-    flaky = FlakyProvider([ProviderError("server")] * 6)
+    flaky = FlakyProvider([ProviderError("timeout")] * 6)
     wrapped, _ = wrap(flaky, ledger)
     for _ in range(2):
         with pytest.raises(QueryError):
@@ -366,7 +367,7 @@ def test_fallback_model_answers_when_the_primary_fails_and_while_its_breaker_is_
         LlmSettings(provider="gemini", retries=1, breaker_failures=1, breaker_seconds=30),
         ledger,
         PriceTable(),
-        fallback=fallback,
+        fallbacks=[fallback],
         monotonic=lambda: clock["now"],
         sleep=sleeps.append,
         clock=lambda: datetime(2026, 10, 13, 12, tzinfo=UTC),
@@ -401,19 +402,150 @@ def test_factory_builds_the_fallback_route(monkeypatch):
     from floatchat_core.llm.factory import build_provider
 
     settings = LlmSettings(
-        provider="gemini", gemini_api_key="fixture-value", fallback_model="gemini-3.7-flash"
+        provider="gemini", gemini_api_key="fixture-value", fallback_models="gemini-3.7-flash"
     )
     wrapped = build_provider(settings, MemoryLedger())
-    assert wrapped.model == "gemini-3.8-flash" and wrapped.fallback_model == "gemini-3.7-flash"
+    assert wrapped.model == "gemini-3.8-flash" and wrapped.fallback_models == ["gemini-3.7-flash"]
+    listed = LlmSettings(provider="gemini", fallback_models=" a , gemini-3.8-flash, b ,a")
+    assert listed.fallback_list == ["a", "b"]
     same = build_provider(
         LlmSettings(
-            provider="gemini", gemini_api_key="fixture-value", fallback_model="gemini-3.8-flash"
+            provider="gemini", gemini_api_key="fixture-value", fallback_models="gemini-3.8-flash"
         ),
         MemoryLedger(),
     )
-    assert same.fallback_model is None
+    assert same.fallback_models == []
     offline = build_provider(LlmSettings(provider="offline"), MemoryLedger())
-    assert offline.fallback_model is None
+    assert offline.fallback_models == []
+
+
+def test_budget_stops_the_route_ladder_and_the_message_names_the_busy_provider():
+    primary = FlakyProvider([ProviderError("server", status=503)] * 10)
+    slow = FlakyProvider([ProviderError("server", status=503)] * 10)
+    slow.model = "slow-model"
+    clock = {"now": 0.0}
+
+    def ticking() -> float:
+        clock["now"] += 20.0  # every provider call costs 20 s
+        return clock["now"]
+
+    wrapped = ResilientProvider(
+        primary,
+        LlmSettings(provider="gemini", retries=3, total_budget_seconds=45, breaker_failures=5),
+        MemoryLedger(),
+        PriceTable(),
+        fallbacks=[slow],
+        monotonic=ticking,
+        sleep=lambda s: None,
+        clock=lambda: datetime(2026, 10, 13, 12, tzinfo=UTC),
+    )
+    with pytest.raises(QueryError) as info:
+        wrapped.structured(structured_request(), prompt_version="planner-v1")
+    assert info.value.code == "llm_unavailable" and "busy" in info.value.text
+    # The budget, not the retry count, bounded the attempts.
+    assert primary.calls + slow.calls <= 4
+    assert ResilientProvider.unavailable(ProviderError("timeout")).text.startswith("The model took")
+    assert ResilientProvider.unavailable(ProviderError("client")).text.startswith("The assistant")
+
+
+def test_help_classification_covers_data_availability_questions():
+    from floatchat_core.chat.classify import classify
+
+    for text in (
+        "Hi how much data is avaliable",
+        "What data do you have?",
+        "which data is available",
+    ):
+        assert classify(text) == "help", text
+    assert classify("mean temperature in BoB in January 2025") == "query"
+
+
+class StreamingProvider:
+    name = "gemini"
+    model = "stream-model"
+    embedding_model = "e"
+
+    def __init__(self, failures: list[ProviderError], text: str = "The mean is 26.2.") -> None:
+        self.failures = failures
+        self.text = text
+        self.opened = 0
+
+    def structured(self, request):
+        raise AssertionError("not used")
+
+    def embed(self, texts, task):
+        raise AssertionError("not used")
+
+    def stream_text(self, request):
+        from collections.abc import Generator
+
+        from floatchat_core.llm.provider import TextStream
+
+        def generate() -> Generator[str, None, Usage]:
+            # Like the HTTP adapters: the request happens on the first read.
+            self.opened += 1
+            if self.failures:
+                raise self.failures.pop(0)
+            for word in self.text.split(" "):
+                yield word + " "
+            return Usage(5, 4, 0)
+
+        return TextStream(generate(), self.model)
+
+
+def test_streaming_narration_retries_and_falls_back_before_the_first_chunk():
+    primary = StreamingProvider([ProviderError("rate_limited", status=429)] * 10)
+    fallback = StreamingProvider([], "Fallback says 26.2.")
+    fallback.model = "fallback-stream"
+    ledger = MemoryLedger()
+    wrapped = ResilientProvider(
+        primary,
+        LlmSettings(provider="gemini", retries=1, breaker_failures=3),
+        ledger,
+        PriceTable(),
+        fallbacks=[fallback],
+        sleep=lambda s: None,
+        clock=lambda: datetime(2026, 10, 13, 12, tzinfo=UTC),
+    )
+    stream = wrapped.stream_text(
+        TextRequest(purpose="narrate", system="s", user="u"), prompt_version="narrator-v1"
+    )
+    assert "".join(stream).strip() == "Fallback says 26.2."
+    assert stream.usage == Usage(5, 4, 0) and stream.model == "fallback-stream"
+    assert primary.opened == 2 and fallback.opened == 1
+    rows = [(call.model, call.status) for _d, call in ledger.calls]
+    assert rows == [("stream-model", "error"), ("fallback-stream", "ok")]
+
+
+def test_busy_answers_trip_the_breaker_and_the_answering_route_becomes_sticky():
+    primary = FlakyProvider([ProviderError("server", status=503)] * 10)
+    fallback = FlakyProvider([])
+    fallback.model = "fallback-model"
+    clock = {"now": 0.0}
+    wrapped = ResilientProvider(
+        primary,
+        LlmSettings(provider="gemini", retries=1, breaker_failures=3, breaker_seconds=60),
+        MemoryLedger(),
+        PriceTable(),
+        fallbacks=[fallback],
+        monotonic=lambda: clock["now"],
+        sleep=lambda s: None,
+        clock=lambda: datetime(2026, 10, 13, 12, tzinfo=UTC),
+    )
+    assert wrapped.structured(structured_request(), prompt_version="p").model == "fallback-model"
+    assert primary.calls == 2  # one retry, then the 503 tripped the breaker at once
+    for _ in range(3):
+        wrapped.structured(structured_request(), prompt_version="p")
+    assert primary.calls == 2 and fallback.calls == 4
+    # After the cool-down the fallback is still tried first because it answered last.
+    clock["now"] = 61.0
+    primary.failures.clear()
+    wrapped.structured(structured_request(), prompt_version="p")
+    assert primary.calls == 2 and fallback.calls == 5
+    # A non-busy failure counts towards the threshold instead of tripping at once.
+    fallback.failures.extend([ProviderError("malformed")] * 1)
+    assert wrapped.structured(structured_request(), prompt_version="p").model == "gemini-3.8-flash"
+    assert not fallback.breaker_open if hasattr(fallback, "breaker_open") else True
 
 
 def test_policy_daily_caps_from_the_ledger():

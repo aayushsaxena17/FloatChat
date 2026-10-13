@@ -29,9 +29,15 @@ class LlmSettings(BaseSettings):
     thinking_level: Literal["", "MINIMAL", "LOW", "MEDIUM", "HIGH"] = "LOW"
     # A planning call on a loaded Flash model took 14 s on 2026-10-13; 503 "high demand"
     # answers lasted minutes, hence the fallback model with its own breaker (ADR-0070).
-    fallback_model: str | None = "gemini-3.7-flash"
-    timeout_seconds: float = Field(default=45.0, gt=0, le=180)
-    retries: int = Field(default=3, ge=0, le=5)
+    fallback_models: str = Field(
+        default="gemini-3.7-flash,gemini-3-flash-preview",
+        validation_alias=AliasChoices("LLM_FALLBACK_MODELS", "LLM_FALLBACK_MODEL"),
+    )
+    timeout_seconds: float = Field(default=30.0, gt=0, le=180)
+    # One retry per route and a whole-call budget: an overloaded provider answers 503 within
+    # seconds, and a user should hear "busy, try again" within the budget, never after minutes.
+    retries: int = Field(default=1, ge=0, le=5)
+    total_budget_seconds: float = Field(default=45.0, gt=0, le=600)
     breaker_failures: int = Field(default=3, ge=1, le=100)
     breaker_seconds: float = Field(default=60.0, gt=0, le=3600)
     daily_usd_cap: float = Field(default=1.0, ge=0)
@@ -62,6 +68,15 @@ class LlmSettings(BaseSettings):
             return None
         value = key.get_secret_value().strip()
         return value or None
+
+    @property
+    def fallback_list(self) -> list[str]:
+        seen: list[str] = []
+        for name in self.fallback_models.split(","):
+            name = name.strip()
+            if name and name != self.model and name not in seen:
+                seen.append(name)
+        return seen
 
     @property
     def configured(self) -> bool:

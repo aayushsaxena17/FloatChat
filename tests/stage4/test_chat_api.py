@@ -92,6 +92,29 @@ def test_sse_stream_event_order(client):
     )
 
 
+def test_answer_is_stored_even_when_the_client_disconnects_mid_stream(client, store):
+    """A reload during streaming closes the response; the pipeline still finishes (bug seen
+    live on 2026-10-13: a planned answer was never stored)."""
+    import time
+
+    headers = {HEADER: "browser-1", "Accept": "text/event-stream"}
+    with client.stream(
+        "POST", "/v1/chat/messages", json={"text": QUESTION}, headers=headers
+    ) as response:
+        first = next(response.iter_lines())
+        assert first.startswith("event: conversation")
+        # Leave the context: the client stops reading and the stream is closed.
+    conversation = store.list_for("browser-1")[0]
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline:
+        rows = store.messages(conversation.id)
+        if len(rows) == 2:
+            break
+        time.sleep(0.05)
+    rows = store.messages(conversation.id)
+    assert [row.kind for row in rows] == ["user", "answer"]
+
+
 def test_clarification_and_unsupported_over_json(client):
     headers = {HEADER: "browser-1"}
     response = client.post(

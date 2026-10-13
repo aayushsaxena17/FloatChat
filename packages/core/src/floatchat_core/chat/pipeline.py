@@ -46,8 +46,9 @@ HELP_TEXT = (
     "Arabian Sea in March 2025', 'T-S diagram for the Laccadive Sea in January 2025' or "
     "'the 5 nearest floats to 15N 65E in January 2025'. Regions: Arabian Sea, Bay of Bengal, "
     "Laccadive Sea, Andaman Sea, Indian Ocean, Southern Indian Ocean; or give a bounding box or "
-    "a point with a radius. Exports, forecasts and biogeochemical variables arrive in later "
-    "stages."
+    "a point with a radius. The local dataset covers the Indian Ocean for the months the "
+    "dashboard's coverage panel lists (January to March 2025 on the development stack). "
+    "Exports, forecasts and biogeochemical variables arrive in later stages."
 )
 
 

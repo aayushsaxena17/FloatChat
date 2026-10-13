@@ -80,7 +80,7 @@ services:
       # unavailable and the rest of the API untouched.
       LLM_PROVIDER: ${LLM_PROVIDER:-gemini}
       LLM_MODEL: ${LLM_MODEL:-gemini-3.8-flash}
-      LLM_FALLBACK_MODEL: ${LLM_FALLBACK_MODEL:-gemini-3.7-flash}
+      LLM_FALLBACK_MODELS: ${LLM_FALLBACK_MODELS:-gemini-3.7-flash,gemini-3-flash-preview}
       LLM_EMBEDDING_MODEL: ${LLM_EMBEDDING_MODEL:-gemini-embedding-001}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
