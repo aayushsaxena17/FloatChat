@@ -172,8 +172,8 @@
   gap: 28px;
   min-height: 64px;
   padding: 0 var(--gutter);
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(10px);
+  /* Opaque: a blurred bar scrolling over the live canvas is the first thing to stutter. */
+  background: var(--surface-1);
   border-bottom: 1px solid var(--border);
 }
 .brand {
@@ -732,8 +732,7 @@ details.provenance .facts {
   position: fixed;
   inset: 0;
   z-index: 10000;
-  background: rgba(3, 4, 94, 0.35);
-  backdrop-filter: blur(3px);
+  background: rgba(3, 4, 94, 0.38);
 }
 .dialog-content {
   position: fixed;
@@ -1320,7 +1319,7 @@ details.provenance .facts {
   pointer-events: none;
 }
 .hero-copy h1 {
-  max-width: 13ch;
+  max-width: 15ch;
   font-family: var(--font-serif);
   font-size: clamp(40px, 5.2vw, 66px);
   font-weight: 600;

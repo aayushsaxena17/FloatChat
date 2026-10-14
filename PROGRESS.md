@@ -810,3 +810,28 @@ Do not merge until Astra reports no remaining P1 or P2 findings. No review appro
 from local tests, and no published history is rewritten by this correction.
 
 See [the complete gate report](docs/stage0-gate.md). The tested foundation commit is `608e4356b312f4422ad40996e1604fb1ef28a640`; verified merged main is `dc3d409c5fc9605c48ec0e7f8ca230d6c5e719b2`. A documentation-only follow-up records the post-merge evidence without changing tested runtime source.
+
+## Web redesign - light ocean theme and the float hero (branch `design/ocean-light`)
+
+Owner's brief (2026-10-14): the dark observatory design read as generic; redesign on a light
+palette, a real three.js float on the ocean, components sourced from 21st.dev, no lag.
+
+- [x] ADR-0076 and `docs/web-design.md` (replaces the observatory design note).
+- [x] Light token set in `style.css`; `ocean.css` removed; chart and map palettes re-stepped and
+      validated for light surfaces; Figtree and Source Serif 4 self-hosted.
+- [x] Eyebrows, kickers, captions, taglines, Soon badges and the SVG illustration removed; data
+      caveats kept as secondary text.
+- [x] Three.js hero in an async chunk with the performance budget of ADR-0076 §5; reduced
+      motion and no-WebGL paths.
+- [x] 21st.dev: four crawls (236 pages) and a reviewer pass; licensed patterns taken for the
+      KPI grid, stat semantics and footer; no licensed water shader exists there, so the scene
+      is original; the shader gallery is skipped (no source, no licence; the `paper-*` presets'
+      package is Apache-2.0, pending the owner's view).
+- [x] Verified: 76 Vitest tests, TypeScript, ESLint, Prettier, production build (`oceanScene`
+      chunk separate, no three.js in the entry), all four Playwright scenarios against the dev
+      stack (the chat scenario on the offline provider), screenshots at 1440 px and 390 px with
+      and without reduced motion, no horizontal overflow.
+- [x] Advisor reviewed the approach before the build and the result before this note; the
+      remaining advice (opaque top bar instead of a blurred one, headline measure) is applied.
+- [ ] Owner: review the branch in the browser; decide on pushing and the pull request; decide
+      whether Apache-2.0 packages count as licence-equivalent for future 21st.dev picks.
