@@ -50,7 +50,7 @@ describe("Dashboard", () => {
     expect(await screen.findByTestId("map-status")).toHaveTextContent(
       /\d+ profiles plotted/,
     );
-    const heroMapLink = screen.getByRole("link", { name: "Explore the ocean" });
+    const heroMapLink = screen.getByRole("link", { name: "Explore the map" });
     const destination = new URL(
       heroMapLink.getAttribute("href")!,
       "http://localhost",

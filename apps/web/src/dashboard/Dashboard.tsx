@@ -80,253 +80,257 @@ export function Dashboard() {
   return (
     <div className="dashboard">
       <OceanHero query={exploreQuery} />
-      <div className="workspace-heading" id="observations" tabIndex={-1}>
-        <div>
-          <p className="eyebrow">01 / OBSERVATION WORKSPACE</p>
-          <h2>Your ocean, in focus.</h2>
-          <p className="page-description">
-            A closer look at the Indian Ocean, one observation at a time.
-          </p>
-        </div>
-        <Button asChild variant="outline">
-          <Link to={`/explore/profiles?${exploreQuery}`}>
-            <Layers aria-hidden="true" />
-            Browse profiles
-            <ArrowUpRight aria-hidden="true" />
-          </Link>
-        </Button>
-      </div>
-      <FilterBar
-        filters={filters}
-        update={update}
-        parameters={data.parameters.data}
-        showVariable
-      />
-      {!ready ? (
-        <p className="status" role="status">
-          {filters.start && filters.end
-            ? "Fix the filters to load data."
-            : "Loading the environment's reference window…"}
-        </p>
-      ) : null}
-      <div
-        className="summary-grid"
-        aria-label="Selection summary"
-        aria-busy={coverage.isFetching}
-      >
-        {[
-          {
-            label: "Profiles in coverage",
-            value: formatNumber(coverage.data?.coverage.estimated_profiles),
-            note: "Recorded in source manifests",
-            icon: Database,
-          },
-          {
-            label: "Measurement levels",
-            value: formatNumber(coverage.data?.coverage.estimated_levels),
-            note: "Across covered profiles",
-            icon: Layers,
-          },
-          {
-            label: "Floats on the map",
-            value: profiles.data
-              ? formatNumber(
-                  new Set(points.map((point) => point.platform)).size,
-                )
-              : "—",
-            note: profiles.data?.truncated
-              ? "From the first 5,000 profiles"
-              : "Distinct observing instruments",
-            icon: Radio,
-          },
-          {
-            label: "Months in selection",
-            value: coverage.data
-              ? formatNumber(coverage.data.coverage.months.length)
-              : "—",
-            note: "Coverage is checked month by month",
-            icon: CalendarDays,
-          },
-        ].map(({ label, value, note, icon: Icon }) => (
-          <Card key={label} className="summary-card">
-            <div className="summary-label">
-              {label}
-              <Icon size={17} aria-hidden="true" />
-            </div>
-            <strong>{value}</strong>
-            <p>{note}</p>
-          </Card>
-        ))}
-      </div>
-      <p className="summary-note">
-        Coverage totals describe source records before pressure and quality
-        filtering.
-      </p>
-      <div className="overview-grid">
-        <div className="coverage-column">
-          <StatusMessage
-            loading={coverage.isPending && coverage.fetchStatus !== "idle"}
-            error={coverage.error}
-          >
-            {coverage.data ? <CoveragePanel coverage={coverage.data} /> : null}
-          </StatusMessage>
-        </div>
-        <Panel
-          title="Profile locations"
-          className="locations-panel"
-          actions={
-            <Button asChild variant="ghost" size="sm">
-              <Link to={`/explore/map?${exploreQuery}`}>
-                Open the map
-                <ArrowUpRight aria-hidden="true" />
-              </Link>
-            </Button>
-          }
-        >
-          <StatusMessage
-            loading={profiles.isPending && profiles.fetchStatus !== "idle"}
-            error={profiles.error}
-          >
-            <MapView
-              points={points}
-              trajectory={trajectory}
-              selectedProfile={filters.profile}
-              regionBox={data.regionBox}
-              truncated={profiles.data?.truncated}
-              compact
-              onSelect={data.select}
-            />
-            <p className="chart-caption">
-              {points.length.toLocaleString("en-GB")} profiles from{" "}
-              {new Set(points.map((point) => point.platform)).size} floats;
-              click a point or use{" "}
-              <Link to={`/explore/profiles?${exploreQuery}`}>
-                the profile list
-              </Link>
-              .
-            </p>
-            {profiles.data?.pages[0] ? (
-              <ProvenancePanel provenance={profiles.data.pages[0].provenance} />
-            ) : null}
-          </StatusMessage>
-        </Panel>
-      </div>
-      <section className="analysis-section" aria-labelledby="trends-title">
-        <div className="section-heading">
+      <div className="dashboard-body">
+        <div className="workspace-heading" id="observations" tabIndex={-1}>
           <div>
-            <p className="eyebrow">02 / OBSERVATIONS OVER TIME</p>
-            <h2 id="trends-title">Temperature & salinity</h2>
+            <h2>Observations</h2>
             <p className="page-description">
-              Profile-balanced averages and the number of contributing profiles.
+              Choose a region and a period. Coverage, locations and averages
+              update as you go.
             </p>
           </div>
-          <span className="section-note">
-            UTC ·{" "}
-            {filters.depthMin === null && filters.depthMax === null
-              ? "All pressures"
-              : `${filters.depthMin ?? 0}–${filters.depthMax ?? 12000} dbar`}
-          </span>
+          <Button asChild variant="outline">
+            <Link to={`/explore/profiles?${exploreQuery}`}>
+              <Layers aria-hidden="true" />
+              Browse profiles
+              <ArrowUpRight aria-hidden="true" />
+            </Link>
+          </Button>
         </div>
-        <StatusMessage
-          loading={series.isPending && series.fetchStatus !== "idle"}
-          error={series.error}
-        >
-          <div className="trend-grid">
-            {seriesFigures.map((figure) => (
-              <ChartPanel
-                key={figure.key}
-                compact
-                figure={figure}
-                caption={series.data?.interpretation.transformation as string}
-              />
-            ))}
-          </div>
-          {series.data ? (
-            <div className="query-details">
-              <p className="chart-caption">
-                Averages of{" "}
-                {series.data.plan.variables
-                  ? (series.data.plan.variables as string[]).join(" and ")
-                  : ""}{" "}
-                by{" "}
-                {(
-                  series.data.plan.operation as { group_by?: string[] }
-                ).group_by?.join(", ")}
-                · {series.data.execution.source} ·{" "}
-                {series.data.execution.elapsed_ms == null
-                  ? "timing unavailable"
-                  : `${(series.data.execution.elapsed_ms / 1000).toFixed(2)} seconds`}
-                {series.data.partial
-                  ? "; coverage partial (see the coverage panel)"
-                  : ""}
-                .
-              </p>
-              <ProvenancePanel provenance={series.data.provenance} />
-            </div>
-          ) : null}
-        </StatusMessage>
-      </section>
-      <section
-        className="distribution-section"
-        aria-labelledby="distribution-title"
-      >
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">03 / BENEATH THE AVERAGES</p>
-            <h2 id="distribution-title">Profile distribution</h2>
-            <p className="page-description">
-              How individual profile averages are spread across the selection.
-            </p>
-          </div>
-        </div>
-        {coverage.data && !histogramAllowed ? (
-          <p className="status" role="status" data-testid="histogram-bound">
-            <Info size={18} aria-hidden="true" />
-            <span>
-              The per-profile distribution is available for at most{" "}
-              {bound?.toLocaleString("en-GB") ?? "?"} profiles; this selection
-              holds {estimated?.toLocaleString("en-GB") ?? "?"} in its coverage
-              manifests. Narrow the region or the dates to see it.
-            </span>
+        <FilterBar
+          filters={filters}
+          update={update}
+          parameters={data.parameters.data}
+          showVariable
+        />
+        {!ready ? (
+          <p className="status" role="status">
+            {filters.start && filters.end
+              ? "Fix the filters to load data."
+              : "Loading the environment's reference window…"}
           </p>
         ) : null}
-        <StatusMessage
-          loading={
-            distribution.isPending && distribution.fetchStatus !== "idle"
-          }
-          error={distribution.error}
+        <div
+          className="summary-grid"
+          aria-label="Selection summary"
+          aria-busy={coverage.isFetching}
         >
-          <div className="trend-grid">
-            {histogramFigures.map((figure) => (
-              <ChartPanel
-                key={figure.key}
-                compact
-                figure={figure}
-                caption={
-                  distribution.data?.interpretation.transformation as string
-                }
-              />
-            ))}
-          </div>
-          {distribution.data ? (
-            <div className="panel" style={{ marginTop: 14 }}>
-              <ProvenancePanel provenance={distribution.data.provenance} />
-            </div>
-          ) : null}
-        </StatusMessage>
-      </section>
-      <div className="export-notice">
-        <Download size={18} aria-hidden="true" />
-        <div>
-          <h2>Dataset export</h2>
-          <p className="chart-caption">
-            Exporting the filtered dataset (CSV and Parquet with a manifest)
-            will be available in a later release.
-          </p>
+          {[
+            {
+              label: "Profiles",
+              value: formatNumber(coverage.data?.coverage.estimated_profiles),
+              note: null,
+              icon: Database,
+            },
+            {
+              label: "Measurement levels",
+              value: formatNumber(coverage.data?.coverage.estimated_levels),
+              note: null,
+              icon: Layers,
+            },
+            {
+              label: "Floats on the map",
+              value: profiles.data
+                ? formatNumber(
+                    new Set(points.map((point) => point.platform)).size,
+                  )
+                : "—",
+              note: profiles.data?.truncated
+                ? "Counted over the first 5,000 profiles"
+                : null,
+              icon: Radio,
+            },
+            {
+              label: "Months",
+              value: coverage.data
+                ? formatNumber(coverage.data.coverage.months.length)
+                : "—",
+              note: null,
+              icon: CalendarDays,
+            },
+          ].map(({ label, value, note, icon: Icon }) => (
+            <Card key={label} className="summary-card">
+              <div className="summary-label">
+                {label}
+                <Icon size={17} aria-hidden="true" />
+              </div>
+              <strong>{value}</strong>
+              {note ? <p>{note}</p> : null}
+            </Card>
+          ))}
         </div>
-        <Button type="button" variant="outline" disabled>
-          Export filtered dataset
-        </Button>
+        <p className="summary-note">
+          Totals count source records before pressure and quality filtering.
+        </p>
+        <div className="overview-grid">
+          <div className="coverage-column">
+            <StatusMessage
+              loading={coverage.isPending && coverage.fetchStatus !== "idle"}
+              error={coverage.error}
+            >
+              {coverage.data ? (
+                <CoveragePanel coverage={coverage.data} />
+              ) : null}
+            </StatusMessage>
+          </div>
+          <Panel
+            title="Profile locations"
+            className="locations-panel"
+            actions={
+              <Button asChild variant="ghost" size="sm">
+                <Link to={`/explore/map?${exploreQuery}`}>
+                  Open the map
+                  <ArrowUpRight aria-hidden="true" />
+                </Link>
+              </Button>
+            }
+          >
+            <StatusMessage
+              loading={profiles.isPending && profiles.fetchStatus !== "idle"}
+              error={profiles.error}
+            >
+              <MapView
+                points={points}
+                trajectory={trajectory}
+                selectedProfile={filters.profile}
+                regionBox={data.regionBox}
+                truncated={profiles.data?.truncated}
+                compact
+                onSelect={data.select}
+              />
+              <p className="chart-caption">
+                {points.length.toLocaleString("en-GB")} profiles from{" "}
+                {new Set(points.map((point) => point.platform)).size} floats;
+                click a point or use{" "}
+                <Link to={`/explore/profiles?${exploreQuery}`}>
+                  the profile list
+                </Link>
+                .
+              </p>
+              {profiles.data?.pages[0] ? (
+                <ProvenancePanel
+                  provenance={profiles.data.pages[0].provenance}
+                />
+              ) : null}
+            </StatusMessage>
+          </Panel>
+        </div>
+        <section className="analysis-section" aria-labelledby="trends-title">
+          <div className="section-heading">
+            <div>
+              <h2 id="trends-title">Temperature and salinity over time</h2>
+              <p className="page-description">
+                Profile-balanced monthly averages and the number of profiles
+                behind each one.
+              </p>
+            </div>
+            <span className="section-note">
+              UTC ·{" "}
+              {filters.depthMin === null && filters.depthMax === null
+                ? "All pressures"
+                : `${filters.depthMin ?? 0}–${filters.depthMax ?? 12000} dbar`}
+            </span>
+          </div>
+          <StatusMessage
+            loading={series.isPending && series.fetchStatus !== "idle"}
+            error={series.error}
+          >
+            <div className="trend-grid">
+              {seriesFigures.map((figure) => (
+                <ChartPanel
+                  key={figure.key}
+                  compact
+                  figure={figure}
+                  caption={series.data?.interpretation.transformation as string}
+                />
+              ))}
+            </div>
+            {series.data ? (
+              <div className="query-details">
+                <p className="chart-caption">
+                  Averages of{" "}
+                  {series.data.plan.variables
+                    ? (series.data.plan.variables as string[]).join(" and ")
+                    : ""}{" "}
+                  by{" "}
+                  {(
+                    series.data.plan.operation as { group_by?: string[] }
+                  ).group_by?.join(", ")}
+                  · {series.data.execution.source} ·{" "}
+                  {series.data.execution.elapsed_ms == null
+                    ? "timing unavailable"
+                    : `${(series.data.execution.elapsed_ms / 1000).toFixed(2)} seconds`}
+                  {series.data.partial
+                    ? "; coverage partial (see the coverage panel)"
+                    : ""}
+                  .
+                </p>
+                <ProvenancePanel provenance={series.data.provenance} />
+              </div>
+            ) : null}
+          </StatusMessage>
+        </section>
+        <section
+          className="distribution-section"
+          aria-labelledby="distribution-title"
+        >
+          <div className="section-heading">
+            <div>
+              <h2 id="distribution-title">Profile distribution</h2>
+              <p className="page-description">
+                How the individual profile averages spread across the selection.
+              </p>
+            </div>
+          </div>
+          {coverage.data && !histogramAllowed ? (
+            <p className="status" role="status" data-testid="histogram-bound">
+              <Info size={18} aria-hidden="true" />
+              <span>
+                The per-profile distribution is available for at most{" "}
+                {bound?.toLocaleString("en-GB") ?? "?"} profiles; this selection
+                holds {estimated?.toLocaleString("en-GB") ?? "?"} in its
+                coverage manifests. Narrow the region or the dates to see it.
+              </span>
+            </p>
+          ) : null}
+          <StatusMessage
+            loading={
+              distribution.isPending && distribution.fetchStatus !== "idle"
+            }
+            error={distribution.error}
+          >
+            <div className="trend-grid">
+              {histogramFigures.map((figure) => (
+                <ChartPanel
+                  key={figure.key}
+                  compact
+                  figure={figure}
+                  caption={
+                    distribution.data?.interpretation.transformation as string
+                  }
+                />
+              ))}
+            </div>
+            {distribution.data ? (
+              <div className="panel" style={{ marginTop: 14 }}>
+                <ProvenancePanel provenance={distribution.data.provenance} />
+              </div>
+            ) : null}
+          </StatusMessage>
+        </section>
+        <div className="export-notice">
+          <Download size={18} aria-hidden="true" />
+          <div>
+            <h2>Dataset export</h2>
+            <p className="chart-caption">
+              CSV and Parquet export of the filtered dataset, with a manifest,
+              arrives in a later release.
+            </p>
+          </div>
+          <Button type="button" variant="outline" disabled>
+            Export filtered dataset
+          </Button>
+        </div>
       </div>
     </div>
   );

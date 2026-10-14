@@ -14,15 +14,13 @@ export function MapPage() {
   const first = profiles.data?.pages[0];
   return (
     <>
-      <div className="page-heading explorer-heading">
+      <div className="page-heading">
         <div>
-          <p className="eyebrow">THE OBSERVATORY / SPATIAL EXPLORATION</p>
-          <h1>Explore: map</h1>
+          <h1>Map</h1>
           <p className="page-description">
-            Follow an instrument. Trace its journey through the ocean.
+            Profile locations for the selection. Select one to trace its float.
           </p>
         </div>
-        <span className="explorer-coordinate">20°E — 120°E / 60°S — 30°N</span>
       </div>
       <FilterBar
         filters={filters}

@@ -11,12 +11,12 @@ export function ProfilesView() {
   const { filters, update, profiles, points, profile } = data;
   return (
     <>
-      <div className="page-heading explorer-heading">
+      <div className="page-heading">
         <div>
-          <p className="eyebrow">THE OBSERVATORY / VERTICAL EXPLORATION</p>
-          <h1>Explore: profiles</h1>
+          <h1>Profiles</h1>
           <p className="page-description">
-            Read the water column through temperature, salinity, and pressure.
+            Temperature and salinity through the water column, one profile at a
+            time.
           </p>
         </div>
       </div>
@@ -70,11 +70,9 @@ export function ProfilesView() {
       </div>
       <div className="section-heading profile-analysis-heading">
         <div>
-          <p className="eyebrow">ONE OBSERVATION / THE WATER COLUMN</p>
           <h2>Selected profile</h2>
           <p className="page-description">
-            Temperature and salinity at each measured pressure. Hover for
-            values; drag to zoom.
+            Temperature and salinity at each measured pressure.
           </p>
         </div>
       </div>

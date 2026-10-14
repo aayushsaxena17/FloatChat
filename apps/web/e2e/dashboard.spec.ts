@@ -70,7 +70,7 @@ test("dashboard: Arabian Sea, January 2025, 0-100 dbar shows map points and a pr
   await page.goto("/");
   await expect(page).toHaveURL(/\/dashboard/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    "An ocean of data.A deeper understanding.",
+    "The Indian Ocean, measured by drifting floats.",
   );
   await expect(page.getByText("Local services ready")).toBeVisible();
 
