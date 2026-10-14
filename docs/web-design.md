@@ -40,6 +40,11 @@ scene in its own async chunk: one displaced plane (150 × 110 segments) whose ve
 four directional sine waves, with a fragment shader for crest colouring, a Fresnel mix to the
 sky, a tight sun glint plus a broad sheen, and distance fog into the horizon. The float is six
 primitives; each frame it samples the same wave function on the CPU for its height and tilt.
+On load the float surfaces from below over the first seconds while the headline rises word by
+word out of a clipped line (CSS only, so the copy appears even without WebGL). A faint
+satellite built from primitives sits in the sky band; once the float is up, a dashed uplink
+joins its antenna to the satellite and small pulses travel up it in short bursts, with quiet
+gaps, the way a float reports after surfacing.
 The pixel ratio is capped at 1.5, the loop pauses when the hero scrolls out of view or the tab
 is hidden, `prefers-reduced-motion` draws one frame, and the sky-to-water CSS gradient under
 the canvas is the poster before the chunk loads and the whole hero wherever WebGL is off

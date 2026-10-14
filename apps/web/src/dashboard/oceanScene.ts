@@ -5,7 +5,12 @@
 // tab is in the foreground; under reduced motion a single frame is drawn.
 import {
   AmbientLight,
+  BoxGeometry,
+  BufferAttribute,
+  BufferGeometry,
   CylinderGeometry,
+  Line,
+  LineDashedMaterial,
   DirectionalLight,
   Group,
   HemisphereLight,
@@ -173,6 +178,51 @@ function makeFloat(): Group {
   return group;
 }
 
+/** A stylised satellite from primitives: a body, two panels and a dish facing the sea. */
+function makeSatellite(): Group {
+  const group = new Group();
+  const shell = new MeshStandardMaterial({
+    color: "#c9d6e3",
+    roughness: 0.4,
+    metalness: 0.3,
+    transparent: true,
+    opacity: 0.55,
+    depthWrite: false,
+  });
+  const panel = new MeshStandardMaterial({
+    color: "#7fa7c9",
+    roughness: 0.35,
+    metalness: 0.2,
+    transparent: true,
+    opacity: 0.45,
+    depthWrite: false,
+  });
+  const body = new Mesh(new BoxGeometry(0.5, 0.5, 0.7), shell);
+  const left = new Mesh(new BoxGeometry(1.5, 0.02, 0.55), panel);
+  left.position.x = -1.15;
+  const right = new Mesh(new BoxGeometry(1.5, 0.02, 0.55), panel);
+  right.position.x = 1.15;
+  const boom = new Mesh(new BoxGeometry(2.4, 0.03, 0.03), shell);
+  const dish = new Mesh(
+    new CylinderGeometry(0.02, 0.26, 0.18, 20, 1, true),
+    shell,
+  );
+  dish.position.y = -0.42;
+  const mast = new Mesh(new CylinderGeometry(0.015, 0.015, 0.2, 8), shell);
+  mast.position.y = -0.33;
+  group.add(body, left, right, boom, dish, mast);
+  return group;
+}
+
+/** The surfacing intro: seconds of scene time before the float breaks the surface. */
+const INTRO_DELAY = 0.3;
+const INTRO_SECONDS = 2.4;
+const INTRO_DEPTH = 2.2;
+/** Uplink timing: pulses travel for a while, then the link is quiet, like a report being sent. */
+const UPLINK_PERIOD = 6.5;
+const UPLINK_ACTIVE = 3.2;
+const PULSES = 3;
+
 export type OceanSceneOptions = {
   /** Draw one frame and stop. */
   still: boolean;
@@ -240,6 +290,75 @@ export function mountOceanScene(
   floatModel.rotation.y = 0.4;
   scene.add(floatModel);
 
+  // The satellite the float reports to: faint, high in the sky band, above the float.
+  const satellite = makeSatellite();
+  let satelliteY = 10;
+  satellite.position.set(7, satelliteY, -34);
+  satellite.rotation.set(0.35, 0.3, 0.08);
+  scene.add(satellite);
+  const tipWorld = new Vector3();
+  const satWorld = new Vector3();
+  const uplinkGeometry = new BufferGeometry();
+  uplinkGeometry.setAttribute(
+    "position",
+    new BufferAttribute(new Float32Array(6), 3),
+  );
+  const uplinkMaterial = new LineDashedMaterial({
+    color: "#0096c7",
+    dashSize: 0.3,
+    gapSize: 0.25,
+    transparent: true,
+    opacity: 0.3,
+    depthWrite: false,
+  });
+  const uplink = new Line(uplinkGeometry, uplinkMaterial);
+  uplink.frustumCulled = false;
+  scene.add(uplink);
+  const pulseMaterial = new MeshStandardMaterial({
+    color: "#ffffff",
+    emissive: "#9ad8ec",
+    emissiveIntensity: 2,
+    transparent: true,
+    opacity: 1,
+    depthWrite: false,
+  });
+  const pulses = Array.from({ length: PULSES }, () => {
+    const pulse = new Mesh(new SphereGeometry(0.11, 10, 8), pulseMaterial);
+    pulse.visible = false;
+    scene.add(pulse);
+    return pulse;
+  });
+  const updateUplink = (elapsed: number) => {
+    floatModel.children[5].getWorldPosition(tipWorld);
+    satellite.getWorldPosition(satWorld);
+    const positions = uplinkGeometry.attributes.position as BufferAttribute;
+    positions.setXYZ(0, tipWorld.x, tipWorld.y, tipWorld.z);
+    positions.setXYZ(1, satWorld.x, satWorld.y, satWorld.z);
+    positions.needsUpdate = true;
+    uplinkGeometry.computeBoundingSphere();
+    uplink.computeLineDistances();
+    // The link appears once the float has surfaced, then pulses leave the antenna in short
+    // bursts.
+    const since = elapsed - (INTRO_DELAY + INTRO_SECONDS);
+    uplink.visible = options.still || since >= 0;
+    uplinkMaterial.opacity = options.still
+      ? 0.3
+      : Math.min(Math.max(since / 1.2, 0), 1) * 0.3;
+    const phase = since >= 0 ? since % UPLINK_PERIOD : -1;
+    pulses.forEach((pulse, index) => {
+      const local = phase - index * 0.55;
+      const active = options.still
+        ? false
+        : local >= 0 && local < UPLINK_ACTIVE;
+      pulse.visible = active;
+      if (!active) return;
+      const k = local / UPLINK_ACTIVE;
+      pulse.position.lerpVectors(tipWorld, satWorld, k);
+      const scale = 1 - k * 0.6;
+      pulse.scale.setScalar(scale);
+    });
+  };
+
   const sun = new DirectionalLight("#ffffff", 2.6);
   sun.position.copy(sunDir).multiplyScalar(20);
   scene.add(sun);
@@ -259,6 +378,10 @@ export function mountOceanScene(
     camera.lookAt(target);
     floatX = camera.aspect < 0.9 ? 0.7 : camera.aspect < 1.4 ? 1.9 : 2.9;
     floatModel.position.x = floatX;
+    // Above the float on wide frames; in the top-right corner, clear of the headline, on
+    // phones.
+    satellite.position.x = camera.aspect < 0.9 ? 5.6 : floatX * 1.9 + 1.4;
+    satelliteY = camera.aspect < 0.9 ? 11.5 : 10;
   };
   resize();
 
@@ -284,11 +407,26 @@ export function mountOceanScene(
     const slopeZ = -surface.dz;
     const ease = 1 - Math.exp(-dt * 6);
     const settle = 1 - Math.exp(-dt * 3.5);
-    floatModel.position.y +=
-      (surface.height - 0.08 - floatModel.position.y) * ease;
+    const restY = surface.height - 0.08;
+    // The float surfaces over the first seconds (scene time, so a paused loop never
+    // replays it); the still frame shows it settled.
+    const intro = options.still
+      ? 1
+      : Math.min(Math.max((elapsed - INTRO_DELAY) / INTRO_SECONDS, 0), 1);
+    const risen = 1 - Math.pow(1 - intro, 3);
+    if (intro < 1) {
+      floatModel.position.y = restY - (1 - risen) * INTRO_DEPTH;
+    } else {
+      floatModel.position.y += (restY - floatModel.position.y) * ease;
+    }
     floatModel.rotation.z += (slopeX * 0.9 - floatModel.rotation.z) * settle;
     floatModel.rotation.x += (-slopeZ * 0.9 - floatModel.rotation.x) * settle;
     floatModel.rotation.y = 0.4 + Math.sin(t * 0.11) * 0.08;
+    satellite.rotation.y = 0.3 + Math.sin(t * 0.05) * 0.25;
+    satellite.position.y = satelliteY + Math.sin(t * 0.07) * 0.3;
+    floatModel.updateMatrixWorld();
+    satellite.updateMatrixWorld();
+    updateUplink(elapsed);
     renderer.render(scene, camera);
     if (!ready) {
       ready = true;
@@ -357,12 +495,18 @@ export function mountOceanScene(
     document.removeEventListener("visibilitychange", onVisibility);
     waterGeometry.dispose();
     waterMaterial.dispose();
-    floatModel.traverse((object) => {
-      if (object instanceof Mesh) {
-        object.geometry.dispose();
-        (object.material as MeshStandardMaterial).dispose();
-      }
-    });
+    [floatModel, satellite].forEach((group) =>
+      group.traverse((object) => {
+        if (object instanceof Mesh) {
+          object.geometry.dispose();
+          (object.material as MeshStandardMaterial).dispose();
+        }
+      }),
+    );
+    pulses.forEach((pulse) => pulse.geometry.dispose());
+    pulseMaterial.dispose();
+    uplinkGeometry.dispose();
+    uplinkMaterial.dispose();
     renderer.dispose();
     renderer.forceContextLoss();
     renderer.domElement.remove();

@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  Fragment,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { Link } from "react-router";
 import {
   ArrowDown,
@@ -67,12 +73,27 @@ function OceanScene() {
   );
 }
 
+/** The headline rises word by word out of the water; real spaces keep the accessible name. */
+const TITLE = "The Indian Ocean, measured by drifting floats.";
+
 export function OceanHero({ query }: { query: string }) {
   return (
     <section className="ocean-hero" aria-labelledby="hero-title">
       <OceanScene />
       <div className="hero-copy">
-        <h1 id="hero-title">The Indian Ocean, measured by drifting floats.</h1>
+        <h1 id="hero-title">
+          {TITLE.split(" ").map((word, index) => (
+            <Fragment key={index}>
+              {index > 0 ? " " : null}
+              <span
+                className="hero-word"
+                style={{ "--word": index } as CSSProperties}
+              >
+                <span>{word}</span>
+              </span>
+            </Fragment>
+          ))}
+        </h1>
         <p className="hero-description">
           FloatChat brings together temperature, salinity and pressure profiles
           from Argo floats, shows how complete the coverage is, and keeps the

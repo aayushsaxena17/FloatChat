@@ -833,5 +833,9 @@ palette, a real three.js float on the ocean, components sourced from 21st.dev, n
       and without reduced motion, no horizontal overflow.
 - [x] Advisor reviewed the approach before the build and the result before this note; the
       remaining advice (opaque top bar instead of a blurred one, headline measure) is applied.
+- [x] Entrance (owner's request, 2026-10-14): headline rises out of the water word by word,
+      the float surfaces from below, a faint satellite with a pulsed uplink from the antenna;
+      none of it under reduced motion. Verified with deterministic frames (fake clock and
+      seeked CSS animations) at four instants on desktop and phone.
 - [ ] Owner: review the branch in the browser; decide on pushing and the pull request; decide
       whether Apache-2.0 packages count as licence-equivalent for future 21st.dev picks.
