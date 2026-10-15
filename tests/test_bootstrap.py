@@ -2,9 +2,9 @@ import re
 from pathlib import Path
 
 from scripts.bootstrap_db import (
+    APPLICATION_TABLES,
     STAGE1_TABLES,
     STAGE2_READ_ONLY_TABLES,
-    STAGE4_APPLICATION_TABLES,
     WITHHELD_TABLES,
 )
 from scripts.dev import append_missing_keys, bootstrap_env, published_port
@@ -49,9 +49,10 @@ def test_stage1_v4_tables_are_withheld_from_the_application_role() -> None:
     }
     assert {"float_metadata_cache", "measurement_staging"} <= created
     # Stage 4 tables are application state (ADR-0071, ADR-0072), not withheld.
-    assert created <= WITHHELD_TABLES | STAGE4_APPLICATION_TABLES
-    assert STAGE4_APPLICATION_TABLES <= created
-    assert not (STAGE4_APPLICATION_TABLES & WITHHELD_TABLES)
+    # Stage 5 job tables are application state too (ADR-0079).
+    assert created <= WITHHELD_TABLES | APPLICATION_TABLES
+    assert APPLICATION_TABLES <= created
+    assert not (APPLICATION_TABLES & WITHHELD_TABLES)
     assert {"processing_ticket", "float_metadata_cache", "measurement_staging"} <= STAGE1_TABLES
     # Stage 2 reference tables are read by the query login through the migration's grants.
     assert {"named_region"} == STAGE2_READ_ONLY_TABLES

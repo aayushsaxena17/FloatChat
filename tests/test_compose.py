@@ -17,16 +17,45 @@ def test_local_network_and_initialization_contract() -> None:
         services["api"]["depends_on"]["storage-init"]["condition"]
         == "service_completed_successfully"
     )
-    for name in ["api"]:
+    for name in ["api", "acquire", "process", "supervisor", "jobs"]:
         assert "DATABASE_ADMIN_URL" not in services[name]["environment"]
         assert "MINIO_ROOT_PASSWORD" not in services[name]["environment"]
+    for name in ["acquire", "process", "supervisor", "jobs"]:
+        assert not services[name].get("ports")
 
 
-def test_local_stack_has_no_celery_worker() -> None:
-    # The Celery worker is gone; the ingestion queue is PostgreSQL and its workers
-    # (acquire, process) run only where an ingestion login and environment exist.
+def test_local_stack_runs_the_postgresql_queue_without_celery() -> None:
+    # Stage 5 (ADR-0077, ADR-0078): the ingestion pool (acquire, process, supervisor) and the
+    # jobs worker join the stack; the queues are PostgreSQL, there is no Celery and no broker.
     text = (ROOT / "infra/docker-compose.dev.yml").read_text()
     services = yaml.safe_load(text)["services"]
     assert "worker" not in services
-    assert "celery" not in text.lower() and "floatchat_workers" not in text
-    assert set(services) == {"db", "redis", "minio", "db-init", "storage-init", "api", "web"}
+    assert "celery" not in text.lower()
+    assert set(services) == {
+        "db",
+        "redis",
+        "minio",
+        "db-init",
+        "storage-init",
+        "api",
+        "web",
+        "acquire",
+        "process",
+        "supervisor",
+        "jobs",
+    }
+    # Only the acquire service may hold the upstream credential, and live ingestion is opt-in.
+    for name in ["process", "supervisor", "jobs", "api", "web"]:
+        assert "ARGOVIS_API_KEY" not in services[name].get("environment", {})
+    assert services["acquire"]["environment"]["ARGOVIS_API_KEY"] == "${ARGOVIS_API_KEY:-}"
+    assert services["acquire"]["environment"]["FLOATCHAT_LIVE_INGESTION_ENABLED"] == (
+        "${FLOATCHAT_LIVE_INGESTION_ENABLED:-false}"
+    )
+    for name in ["process", "supervisor", "jobs"]:
+        assert services[name]["environment"]["FLOATCHAT_LIVE_INGESTION_ENABLED"] == "false"
+    for name in ["acquire", "process", "supervisor", "jobs"]:
+        assert services[name]["command"][:2] == ["python", "scripts/dev_worker.py"]
+        assert services[name]["mem_limit"]
+        assert services[name]["depends_on"]["db-init"]["condition"] == (
+            "service_completed_successfully"
+        )

@@ -8,7 +8,8 @@ class QueryLimits(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="QUERY_", env_file=None, extra="ignore")
 
     request_bytes: int = Field(default=64 * 1024, ge=1024, le=1024 * 1024)
-    time_span_days: int = Field(default=366, ge=1, le=3660)
+    # Up to twenty years: the Stage 5 jobs validate their plans with a larger span (ADR-0081).
+    time_span_days: int = Field(default=366, ge=1, le=7320)
     page_size: int = Field(default=1000, ge=1, le=10000)
     default_page_size: int = Field(default=100, ge=1, le=10000)
     max_rows: int = Field(default=50_000, ge=1, le=1_000_000)

@@ -11,7 +11,7 @@ from typing import Any, cast
 from floatchat_core.ingestion import gdac
 from floatchat_core.ingestion.controller import ControlStore, Supervisor
 from floatchat_core.ingestion.numeric import Rejection
-from floatchat_core.ingestion.planning import month_interval
+from floatchat_core.ingestion.planning import grid_tiles, month_interval
 from floatchat_core.ingestion.reporting import markdown_report, persisted_report
 from floatchat_core.ingestion.repository import Authority, Repository
 from floatchat_core.ingestion.states import exit_code
@@ -131,6 +131,20 @@ def compact_slots(repository: Any, configuration: Configuration, seconds: int) -
     return totals
 
 
+def parse_tiles(value: str | None) -> list[tuple[int, int]]:
+    """``"50:0,60:10"`` to tile pairs; the grid itself is checked by grid_tiles."""
+    if not value:
+        raise Rejection("invalid_historical_tiles")
+    pairs = []
+    for item in value.split(","):
+        west, _, south = item.strip().partition(":")
+        try:
+            pairs.append((int(west), int(south)))
+        except ValueError:
+            raise Rejection("invalid_historical_tiles") from None
+    return pairs
+
+
 def fixture_descriptor(value: str) -> dict[str, Any]:
     # Only the fresh tree's recorded/synthetic fixture directory is approved.
     root = Path("/home/floatchat/FloatChat-stage1/tests/fixtures/argovis").resolve(strict=True)
@@ -148,7 +162,9 @@ def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description="Internal Stage 1 ingestion control")
     sub = result.add_subparsers(dest="command", required=True)
     ingest = sub.add_parser("ingest")
-    ingest.add_argument("--mode", choices=("normal", "acceptance"), required=True)
+    ingest.add_argument("--mode", choices=("normal", "acceptance", "historical"), required=True)
+    # Stage 5 (ADR-0078): a historical run names its ten-degree tiles ("50:0,60:10").
+    ingest.add_argument("--tiles", default=None)
     ingest.add_argument("--region", choices=("indian-ocean",), default="indian-ocean")
     ingest.add_argument("--from", dest="first", required=True)
     ingest.add_argument("--to", dest="last", required=True)
@@ -174,6 +190,9 @@ def parser() -> argparse.ArgumentParser:
     acquire.add_argument("--slots", type=int)
     process = sub.add_parser("process")
     process.add_argument("--workers", type=int)
+    # Stage 5 (ADR-0077): the jobs worker and the queues it serves.
+    jobs = sub.add_parser("jobs")
+    jobs.add_argument("--queues", default="export")
     return result
 
 
@@ -191,6 +210,10 @@ def main(arguments: list[str] | None = None) -> int:
             from .acquire import main as acquire_main
 
             return acquire_main(configuration.acquire_slots if args.slots is None else args.slots)
+        if args.command == "jobs":
+            from .jobs import main as jobs_main
+
+            return jobs_main(tuple(q.strip() for q in args.queues.split(",") if q.strip()))
         if args.command == "process":
             from .process import main as process_main
 
@@ -235,6 +258,10 @@ def main(arguments: list[str] | None = None) -> int:
                 if not live_enabled():
                     raise Rejection("live_ingestion_disabled")
                 kind, descriptor = "live", {"live_opt_in": True}
+                if args.mode == "historical":
+                    descriptor["tiles"] = [
+                        [tile.west, tile.south] for tile in grid_tiles(parse_tiles(args.tiles))
+                    ]
             elif args.fixture_index:
                 kind, descriptor = "captured", fixture_descriptor(args.fixture_index)
             else:

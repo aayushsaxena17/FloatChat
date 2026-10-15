@@ -48,6 +48,12 @@ STAGE2_READ_ONLY_TABLES = frozenset({"named_region"})
 STAGE4_APPLICATION_TABLES = frozenset(
     {"semantic_document", "chat_conversation", "chat_message", "llm_call"}
 )
+# Stage 5 (ADR-0079): jobs, their chunks, progress events and export artefacts are written by
+# the API and the jobs worker on the application login.
+STAGE5_APPLICATION_TABLES = frozenset(
+    {"analysis_job", "analysis_job_chunk", "analysis_job_event", "analysis_artefact"}
+)
+APPLICATION_TABLES = STAGE4_APPLICATION_TABLES | STAGE5_APPLICATION_TABLES
 WITHHELD_TABLES = STAGE1_TABLES | STAGE2_READ_ONLY_TABLES
 
 
@@ -77,6 +83,50 @@ def ensure_query_role(
     cursor.execute("GRANT CONNECT ON DATABASE floatchat TO floatchat_query")
 
 
+def ensure_ingest_role(
+    cursor: psycopg.Cursor[tuple[object, ...]], password: str | None = None
+) -> None:
+    """Stage 5 (ADR-0078): the ingestion pool's login, a member of floatchat_ingestor (the
+    migrations' NOLOGIN worker role). Without DB_INGEST_PASSWORD no login exists."""
+    if password is None:
+        return
+    cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s", ("floatchat_ingest",))
+    if cursor.fetchone() is None:
+        cursor.execute(
+            "CREATE ROLE floatchat_ingest LOGIN INHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE "
+            "NOBYPASSRLS"
+        )
+    cursor.execute(
+        sql.SQL("ALTER ROLE floatchat_ingest LOGIN PASSWORD {}").format(sql.Literal(password))
+    )
+    cursor.execute("GRANT floatchat_ingestor TO floatchat_ingest")
+    cursor.execute("GRANT CONNECT ON DATABASE floatchat TO floatchat_ingest")
+    cursor.execute("GRANT SELECT ON public.alembic_version TO floatchat_ingestor")
+
+
+def adopt_environment(
+    cursor: psycopg.Cursor[tuple[object, ...]], bucket: str | None, project: str | None
+) -> bool:
+    """Stage 5 (ADR-0078): the one ingestion environment of this database belongs to the
+    stack that runs it. The imported acceptance row still named its session's bucket and
+    project while its parts live in this stack's bucket; the workers refuse a marker that
+    does not match their configuration, so the row is pointed at this stack. Nothing happens
+    without both values or with more than one environment."""
+    if not bucket or not project:
+        return False
+    cursor.execute("SELECT count(*) FROM app.ingestion_environment")
+    row = cursor.fetchone()
+    if row is None or int(row[0]) != 1:  # type: ignore[arg-type]
+        return False
+    cursor.execute(
+        "UPDATE app.ingestion_environment SET bucket = %s, queue_namespace = %s, "
+        "compose_project = %s WHERE bucket <> %s OR queue_namespace <> %s "
+        "OR compose_project <> %s",
+        (bucket, project + ".ingestion", project, bucket, project + ".ingestion", project),
+    )
+    return cursor.rowcount > 0
+
+
 def main() -> None:
     # Stage 1 migrations revoke privileges from floatchat_app, so a fresh database
     # needs the role before migrating, not only afterwards.
@@ -93,6 +143,12 @@ def main() -> None:
         with connection.cursor() as cursor:
             ensure_application_role(cursor)
             ensure_query_role(cursor, os.environ.get("DB_QUERY_PASSWORD"))
+            ensure_ingest_role(cursor, os.environ.get("DB_INGEST_PASSWORD"))
+            adopt_environment(
+                cursor,
+                os.environ.get("OBJECT_STORAGE_BUCKET"),
+                os.environ.get("COMPOSE_PROJECT_NAME"),
+            )
             cursor.execute(
                 sql.SQL("ALTER ROLE floatchat_app PASSWORD {}").format(
                     sql.Literal(os.environ["DB_APP_PASSWORD"])
