@@ -851,3 +851,19 @@ palette, a real three.js float on the ocean, components sourced from 21st.dev, n
       the live waterline, navy above the water and white below, so it may cross the line.
 - [ ] Owner: review the branch in the browser; decide on pushing and the pull request; decide
       whether Apache-2.0 packages count as licence-equivalent for future 21st.dev picks.
+
+## Stage 5 - historical jobs and exports (branch `codex/stage-5`)
+
+Owner instruction (2026-10-15): complete Stages 5 and 6 on separate branches and decide every
+open question without asking. Plan [docs/stage5-plan.md](docs/stage5-plan.md), ADR-0077 to
+ADR-0081.
+
+- [x] Plan and ADRs written before code; advisor review of the approach recorded below.
+- [ ] Migration 0019: historical run mode, job, chunk, event and artefact tables.
+- [ ] Historical runs: policy, tile-restricted plans, admission, CLI.
+- [ ] Jobs core: model, store, planner, export, artefacts; the jobs worker and reconciler.
+- [ ] API: exports, jobs, events (SSE), cancel, download; openapi and the web types.
+- [ ] Web: jobs list and detail, dashboard export, chat job offer.
+- [ ] Dev stack: ingestion pool and jobs services, bootstrap login and environment adoption.
+- [ ] Tests, CI, the ten-year Arabian Sea run twice, `reports/historical_jobs_<date>.md`.
+- [ ] Gate report `docs/stage5-gate.md`; README; pull request.
