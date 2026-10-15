@@ -81,6 +81,7 @@
       ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, monospace;
     --content-width: 1280px;
     --gutter: 32px;
+    --topbar-height: 64px;
     font-family: var(--font-sans);
     color: var(--text-primary);
     background: var(--surface-0);
@@ -94,6 +95,7 @@
   }
   html {
     scroll-padding-top: 24px;
+    scroll-behavior: smooth;
   }
   body {
     margin: 0;
@@ -1268,7 +1270,8 @@ details.provenance .facts {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  min-height: min(820px, 90vh);
+  /* Fills the screen under the top bar; on very short screens it grows instead and scrolls. */
+  min-height: max(calc(100svh - var(--topbar-height)), 640px);
   padding: 0 var(--gutter);
   display: flex;
   align-items: flex-end;
@@ -1305,7 +1308,7 @@ details.provenance .facts {
   width: 100%;
   max-width: var(--content-width);
   margin: 0 auto;
-  padding: 0 0 52px;
+  padding: 0 0 clamp(36px, 7vh, 64px);
 }
 /* The copy sits in the underwater half, on the right, like a caption on the cross-section. */
 .hero-block {
@@ -2303,6 +2306,7 @@ details.provenance .facts {
 @media (max-width: 1100px) {
   :root {
     --gutter: 24px;
+    --topbar-height: 106px;
   }
   .topbar {
     flex-wrap: wrap;
@@ -2413,7 +2417,7 @@ details.provenance .facts {
     --gutter: 16px;
   }
   .ocean-hero {
-    min-height: 820px;
+    min-height: max(calc(100svh - var(--topbar-height)), 700px);
     background: linear-gradient(
       180deg,
       #f9fdfe 0%,
@@ -2426,7 +2430,7 @@ details.provenance .facts {
     );
   }
   .hero-copy {
-    padding-bottom: 36px;
+    padding-bottom: 32px;
   }
   .hero-copy h1 {
     font-size: clamp(30px, 8.4vw, 36px);
@@ -2577,6 +2581,9 @@ details.provenance .facts {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
   *,
   *::before,
   *::after {

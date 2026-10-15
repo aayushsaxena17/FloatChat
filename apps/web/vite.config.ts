@@ -22,6 +22,9 @@ export default defineConfig({
       "plotly.js-cartesian-dist-min",
       "react-router",
       "@tanstack/react-query",
+      // The loader and three itself go through the same pre-bundle, or dev serves two copies.
+      "three",
+      "three/examples/jsm/loaders/GLTFLoader.js",
     ],
   },
   test: {

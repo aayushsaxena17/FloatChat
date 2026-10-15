@@ -2225,7 +2225,12 @@ the sea, sky above and the underwater half below a wave-topped translucent water
 the copy in white over the underwater half, low-poly clouds, bubbles, a white collar on the
 float and a yellow hull (the one colour outside the palette, after the instrument itself).
 The budget in point 5 is unchanged; the copy's top edge is kept below the waterline by the
-camera pitch, checked numerically in the capture script. `docs/web-design.md` has the detail.
+camera pitch, checked numerically in the capture script. Later the same day: the float became
+a GLB model authored in the repository (`apps/web/scripts/build-float-model.mjs`, served from
+`public/models`), lit by a prefiltered environment and a shadow-casting sun; the clouds became
+a procedural sky shader; the satellite was made small and distant; the hero fills the viewport
+and the pitch follows the measured position of the copy block. `docs/web-design.md` has the
+detail.
 
 Alternatives: react-three-fiber with drei's water (rejected, 2 to 3 MB of dependencies and a
 reconciler for one scene); a video of the sea (rejected, no offline guarantee and no

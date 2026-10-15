@@ -841,5 +841,10 @@ palette, a real three.js float on the ocean, components sourced from 21st.dev, n
       wave-topped water wall, yellow hull with a collar, low-poly clouds, bubbles, copy in white
       over the deep half; the camera pitch keeps the copy below the waterline on desktop and
       phone (checked numerically). ADR-0076 carries a dated amendment.
+- [x] Realism pass (owner, 2026-10-15): the float is a GLB authored in the repo
+      (`scripts/build-float-model.mjs`) with PBR materials, environment lighting and shadows;
+      procedural sky and clouds in a shader; a small distant satellite; the hero fills the
+      viewport and the camera pitch follows the copy block; smooth scrolling for the
+      "View observations" link.
 - [ ] Owner: review the branch in the browser; decide on pushing and the pull request; decide
       whether Apache-2.0 packages count as licence-equivalent for future 21st.dev picks.

@@ -4,6 +4,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type RefObject,
 } from "react";
 import { Link } from "react-router";
 import {
@@ -39,7 +40,7 @@ function prefersStill(): boolean {
  * its own chunk (ADR-0076). Until then the hero shows its sky-to-water poster, which is also
  * the whole hero where the scene cannot run.
  */
-function OceanScene() {
+function OceanScene({ copy }: { copy: RefObject<HTMLDivElement | null> }) {
   const host = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -52,6 +53,7 @@ function OceanScene() {
       try {
         dispose = mountOceanScene(container, {
           still: prefersStill(),
+          copy: copy.current,
           onReady: () => setReady(true),
         });
       } catch {
@@ -62,7 +64,7 @@ function OceanScene() {
       cancelled = true;
       dispose?.();
     };
-  }, []);
+  }, [copy]);
   return (
     <div
       className="ocean-hero-scene"
@@ -77,11 +79,12 @@ function OceanScene() {
 const TITLE = "The Indian Ocean, measured by drifting floats.";
 
 export function OceanHero({ query }: { query: string }) {
+  const copy = useRef<HTMLDivElement>(null);
   return (
     <section className="ocean-hero" aria-labelledby="hero-title">
-      <OceanScene />
+      <OceanScene copy={copy} />
       <div className="hero-copy">
-        <div className="hero-block">
+        <div className="hero-block" ref={copy}>
           <h1 id="hero-title">
             {TITLE.split(" ").map((word, index) => (
               <Fragment key={index}>

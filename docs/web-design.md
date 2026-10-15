@@ -43,14 +43,22 @@ with rising bubbles and soft light shafts; the surface plane (160 × 110 segment
 directional sines, analytic normals, Fresnel, foam on the crests, a clamped sun glint and fog
 into the CSS sky) starts at the wall and runs to the horizon. One wave function, in GLSL and
 on the CPU, drives the surface, the wall's top edge and the float, so they always agree, and
-it is damped near the wall so the waterline stays steady under the copy. The float is a long
-yellow hull from primitives, mostly submerged and leaning, with a white collar riding the
-surface; on load it surfaces from below while the headline rises word by word out of a
-clipped line (CSS only, so the copy appears without WebGL). Low-poly clouds drift across the
-sky, and a faint satellite built from primitives receives a dashed uplink from the antenna
-with pulses in short bursts, the way a float reports after surfacing. The copy sits in the
-underwater half, in white, and the camera pitch is chosen so that half begins above it on
-both desktop and phone (checked numerically in the capture script).
+it is damped near the wall so the waterline stays steady under the copy. The float is the
+GLB model `apps/web/public/models/argo-float.glb`, authored by
+`apps/web/scripts/build-float-model.mjs` (a lathe hull with chamfered ends, the damper plate,
+the sensor head and antenna, painted aluminium with a clearcoat, a printed label; the script
+needs the host dev server on port 5174 and exports through three.js's GLTFExporter in headless
+Chromium). It is lit by a prefiltered sky-over-sea environment, a sun with a shadow map and a
+hemisphere light; a primitive stand-in is used only if the model fails to load. It floats
+mostly submerged and leaning with a white collar riding the surface, and on load it surfaces
+from below while the headline rises word by word out of a clipped line (CSS only, so the copy
+appears without WebGL). The sky is a full-screen shader: a gradient, the sun and two layers of
+procedural clouds traced per pixel. A small, distant satellite receives a faint dashed uplink
+from the antenna with pulses in short bursts, the way a float reports after surfacing. The
+copy sits in the underwater half, in white; the hero fills the viewport under the top bar, and
+the scene reads where the copy block starts and pitches the camera so the waterline stays a
+margin above it at any window size, zoom or font size (the capture script checks the number
+on desktop and phone).
 
 The pixel ratio is capped at 1.5, the loop pauses when the hero scrolls out of view or the tab
 is hidden, `prefers-reduced-motion` draws one settled frame with no entrance, and the
