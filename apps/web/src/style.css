@@ -1272,19 +1272,18 @@ details.provenance .facts {
   overflow: hidden;
   /* Fills the screen under the top bar; on very short screens it grows instead and scrolls. */
   min-height: max(calc(100svh - var(--topbar-height)), 640px);
-  padding: 0 var(--gutter);
-  display: flex;
-  align-items: flex-end;
+  /* Where the waterline crosses the frame; the scene updates it, this is the poster's value. */
+  --waterline: 45%;
   /* The poster, a cross-section like the scene: sky, the waterline, deep water. It shows
      before the scene loads and is the whole hero wherever WebGL is off. */
   background: linear-gradient(
     180deg,
     #f9fdfe 0%,
-    #dff4fa 28%,
-    #bfe7f2 38%,
-    #0096c7 41%,
-    #0077b6 50%,
-    #023e8a 74%,
+    #dff4fa 32%,
+    #bfe7f2 42%,
+    #0096c7 45%,
+    #0077b6 54%,
+    #023e8a 76%,
     #03045e 100%
   );
 }
@@ -1303,17 +1302,34 @@ details.provenance .facts {
   width: 100%;
   height: 100%;
 }
+/* Two identical copies of the text, each clipped to its side of the waterline. */
 .hero-copy {
-  position: relative;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 var(--gutter) clamp(36px, 7vh, 64px);
+}
+.hero-copy-above {
+  color: var(--navy-900);
+  pointer-events: none;
+  clip-path: inset(0 0 calc(100% - var(--waterline)) 0);
+}
+.hero-copy-below {
+  color: #ffffff;
+  clip-path: inset(var(--waterline) 0 0 0);
+}
+/* The copy sits on the right, like a caption on the cross-section. */
+.hero-block {
   width: 100%;
   max-width: var(--content-width);
   margin: 0 auto;
-  padding: 0 0 clamp(36px, 7vh, 64px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) min(100%, 580px);
 }
-/* The copy sits in the underwater half, on the right, like a caption on the cross-section. */
-.hero-block {
-  width: min(100%, 580px);
-  margin-left: auto;
+.hero-block > * {
+  grid-column: 2;
+  min-width: 0;
 }
 .hero-copy h1 {
   max-width: 15ch;
@@ -1322,7 +1338,7 @@ details.provenance .facts {
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.08;
-  color: #ffffff;
+  color: inherit;
 }
 /* Entrance: each word rises out of a clipped line, then the copy below fades up. The
    padding and negative margin keep descenders inside the clip. */
@@ -1374,7 +1390,8 @@ details.provenance .facts {
   margin: 18px 0 26px;
   font-size: 16px;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.86);
+  color: inherit;
+  opacity: 0.86;
 }
 .hero-actions {
   display: flex;
@@ -1416,6 +1433,15 @@ details.provenance .facts {
   background: rgba(255, 255, 255, 0.24);
   border-color: rgba(255, 255, 255, 0.8);
 }
+.hero-copy-above .hero-primary {
+  background: var(--navy-900);
+  color: #ffffff;
+}
+.hero-copy-above .hero-secondary {
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--navy-900);
+  border-color: rgba(3, 4, 94, 0.25);
+}
 .hero-facts {
   display: flex;
   flex-wrap: wrap;
@@ -1424,7 +1450,7 @@ details.provenance .facts {
   padding: 0;
   list-style: none;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.92);
+  color: inherit;
 }
 .hero-facts li {
   display: inline-flex;
@@ -1433,6 +1459,9 @@ details.provenance .facts {
 }
 .hero-facts svg {
   color: var(--cyan-300);
+}
+.hero-copy-above .hero-facts svg {
+  color: var(--primary);
 }
 
 /* ----- Explorer: map and profiles ----- */
@@ -2418,14 +2447,15 @@ details.provenance .facts {
   }
   .ocean-hero {
     min-height: max(calc(100svh - var(--topbar-height)), 700px);
+    --waterline: 44%;
     background: linear-gradient(
       180deg,
       #f9fdfe 0%,
-      #dff4fa 20%,
-      #bfe7f2 30%,
-      #0096c7 33%,
-      #0077b6 42%,
-      #023e8a 68%,
+      #dff4fa 30%,
+      #bfe7f2 41%,
+      #0096c7 44%,
+      #0077b6 53%,
+      #023e8a 74%,
       #03045e 100%
     );
   }

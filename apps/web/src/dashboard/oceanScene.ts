@@ -424,8 +424,10 @@ const FLOAT_SCALE = 0.85;
 export type OceanSceneOptions = {
   /** Draw one frame and stop. */
   still: boolean;
-  /** The copy block over the underwater half; the camera keeps the waterline above it. */
+  /** The copy block; the waterline is measured under its centre for the two-tone text. */
   copy?: HTMLElement | null;
+  /** Where the waterline crosses the frame under the copy, as a fraction from the top. */
+  onWaterline?: (fraction: number) => void;
   /** Called once the first frame has been drawn. */
   onReady?: () => void;
 };
@@ -734,37 +736,24 @@ export function mountOceanScene(
   scene.add(new HemisphereLight("#eaf8fc", "#0077b6", 0.7));
   scene.add(new AmbientLight("#ffffff", 0.25));
 
-  const waterlineAngle = (Math.atan(CAMERA_HEIGHT / -WALL_Z) * 180) / Math.PI;
   let width = 0;
   let height = 0;
-  let copyTop = -1;
+  let copyCentre = 0.75;
   const resize = () => {
     const next = container.getBoundingClientRect();
     const block = options.copy?.getBoundingClientRect();
-    const nextCopyTop =
-      block && next.height > 0 ? (block.top - next.top) / next.height : -1;
-    if (
-      next.width === width &&
-      next.height === height &&
-      nextCopyTop === copyTop
-    )
-      return;
+    if (block && next.width > 0)
+      copyCentre = (block.left + block.width / 2 - next.left) / next.width;
+    if (next.width === width && next.height === height) return;
     width = Math.max(1, next.width);
     height = Math.max(1, next.height);
-    copyTop = nextCopyTop;
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
     const narrow = camera.aspect < 0.9;
-    // The waterline sits a margin above the copy block: the pitch follows the layout, within
-    // limits that keep some sky and some surface in view.
-    if (copyTop > 0) {
-      const waterline = Math.max(copyTop - 0.06, 0.16);
-      pitch = FOV * (0.5 - waterline) + waterlineAngle;
-    } else {
-      pitch = narrow ? 12 : 10;
-    }
-    pitch = Math.min(Math.max(pitch, 6), 17);
+    // A low pitch keeps the whole float and plenty of sky in view; the copy is coloured by
+    // which side of the waterline it falls on, so it may cross it.
+    pitch = narrow ? 7 : 6;
     aim();
     // The float sits left of centre; nearer the middle on phones where the view is narrow.
     floatX = narrow ? -0.5 : camera.aspect < 1.4 ? -1.3 : -1.7;
@@ -778,6 +767,26 @@ export function mountOceanScene(
     satelliteY = CAMERA_HEIGHT + 60 * Math.tan(elevation);
   };
   resize();
+
+  // The screen position of the foam line under the copy, for the two-tone text.
+  const probe = new Vector3();
+  let lastWaterline = -1;
+  const reportWaterline = (t: number) => {
+    if (!options.onWaterline) return;
+    probe
+      .set(copyCentre * 2 - 1, 0, 0.5)
+      .unproject(camera)
+      .sub(camera.position);
+    if (probe.z >= 0) return;
+    const along = (WALL_Z - camera.position.z) / probe.z;
+    const x = camera.position.x + probe.x * along;
+    const surfaceLine = surfaceAt(x, WALL_Z, t).height + 0.07;
+    probe.set(x, surfaceLine, WALL_Z).project(camera);
+    const fraction = Math.min(Math.max((1 - probe.y) / 2, 0), 1);
+    if (Math.abs(fraction - lastWaterline) < 0.0005) return;
+    lastWaterline = fraction;
+    options.onWaterline(fraction);
+  };
 
   let frame = 0;
   let visible = true;
@@ -850,6 +859,7 @@ export function mountOceanScene(
           : elapsed - floatReadyAt - INTRO_DELAY - INTRO_SECONDS;
     updateUplink(sinceSurfaced);
     renderer.render(scene, camera);
+    reportWaterline(t);
     if (!ready) {
       ready = true;
       options.onReady?.();

@@ -846,5 +846,8 @@ palette, a real three.js float on the ocean, components sourced from 21st.dev, n
       procedural sky and clouds in a shader; a small distant satellite; the hero fills the
       viewport and the camera pitch follows the copy block; smooth scrolling for the
       "View observations" link.
+- [x] Owner's check at 100% and 67% zoom (2026-10-15): the camera now keeps the low pitch that
+      shows the whole float on every screen, and the copy is drawn in two layers clipped at
+      the live waterline, navy above the water and white below, so it may cross the line.
 - [ ] Owner: review the branch in the browser; decide on pushing and the pull request; decide
       whether Apache-2.0 packages count as licence-equivalent for future 21st.dev picks.

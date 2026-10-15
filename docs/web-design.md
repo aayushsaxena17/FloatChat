@@ -55,10 +55,12 @@ from below while the headline rises word by word out of a clipped line (CSS only
 appears without WebGL). The sky is a full-screen shader: a gradient, the sun and two layers of
 procedural clouds traced per pixel. A small, distant satellite receives a faint dashed uplink
 from the antenna with pulses in short bursts, the way a float reports after surfacing. The
-copy sits in the underwater half, in white; the hero fills the viewport under the top bar, and
-the scene reads where the copy block starts and pitches the camera so the waterline stays a
-margin above it at any window size, zoom or font size (the capture script checks the number
-on desktop and phone).
+hero fills the viewport under the top bar and the camera keeps a low, fixed pitch so the whole
+float and plenty of sky are in view at any window size or zoom. The copy may therefore cross
+the waterline: it is rendered twice, clipped at the waterline the scene reports every frame
+through a CSS variable, navy ink over the sky and the surface and white in the water. The
+upper layer is decorative and inert; the lower one is the real, focusable copy. Without
+WebGL the poster gradient's own waterline sets the split.
 
 The pixel ratio is capped at 1.5, the loop pauses when the hero scrolls out of view or the tab
 is hidden, `prefers-reduced-motion` draws one settled frame with no entrance, and the
