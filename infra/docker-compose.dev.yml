@@ -9,6 +9,25 @@ x-app-environment: &app-environment
   OBJECT_STORAGE_BUCKET: ${OBJECT_STORAGE_BUCKET:-floatchat-dev}
   OBJECT_STORAGE_REGION: ${OBJECT_STORAGE_REGION:-us-east-1}
 
+# Stage 5 (ADR-0077, ADR-0078): the ingestion pool and the jobs worker share the ingestion
+# login; scripts/dev_worker.py resolves the environment id once the bootstrap has adopted the
+# stack's one environment row, so a fresh stack starts without a dataset.
+x-worker-environment: &worker-environment
+  INGESTION_DATABASE_URL: ${INGESTION_DATABASE_URL:?Local ingestion login URL required}
+  INGESTION_BUCKET: ${OBJECT_STORAGE_BUCKET:-floatchat-dev}
+  INGESTION_QUEUE_NAMESPACE: ${COMPOSE_PROJECT_NAME:-floatchat-dev}.ingestion
+  COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-floatchat-dev}
+  OBJECT_STORAGE_ENDPOINT: ${OBJECT_STORAGE_ENDPOINT:?Local storage URL required}
+  OBJECT_STORAGE_ACCESS_KEY: ${OBJECT_STORAGE_ACCESS_KEY:?Local application key required}
+  OBJECT_STORAGE_SECRET_KEY: ${OBJECT_STORAGE_SECRET_KEY:?Local application credential required}
+  INGESTION_APPLICATION_COMMIT: ${APPLICATION_COMMIT:-unknown}
+  FLOATCHAT_LIVE_INGESTION_ENABLED: "false"
+  PYTHONUNBUFFERED: "1"
+
+x-worker-depends: &worker-depends
+  db-init: { condition: service_completed_successfully }
+  storage-init: { condition: service_completed_successfully }
+
 services:
   db:
     build: { context: .., dockerfile: infra/docker/postgres.Dockerfile, target: runtime }
@@ -50,6 +69,10 @@ services:
       DATABASE_ADMIN_URL: ${DATABASE_ADMIN_URL:?Local migration role required}
       DB_APP_PASSWORD: ${DB_APP_PASSWORD:?Local application credential required}
       DB_QUERY_PASSWORD: ${DB_QUERY_PASSWORD:?Local query credential required}
+      # Stage 5 (ADR-0078): the ingestion login and the environment adoption values.
+      DB_INGEST_PASSWORD: ${DB_INGEST_PASSWORD:?Local ingestion credential required}
+      OBJECT_STORAGE_BUCKET: ${OBJECT_STORAGE_BUCKET:-floatchat-dev}
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-floatchat-dev}
     command: [python, scripts/bootstrap_db.py]
     depends_on:
       db: { condition: service_healthy }
@@ -89,6 +112,8 @@ services:
       LLM_NARRATE_WITH_MODEL: ${LLM_NARRATE_WITH_MODEL:-true}
       LLM_DAILY_USD_CAP: ${LLM_DAILY_USD_CAP:-1.0}
       LLM_DAILY_TOKEN_CAP: ${LLM_DAILY_TOKEN_CAP:-2000000}
+      # Stage 5 (ADR-0079): export download tokens are signed with this local secret.
+      ARTEFACT_SIGNING_KEY: ${ARTEFACT_SIGNING_KEY:?Local signing key required}
     volumes: [query_cache:/var/lib/floatchat/query-cache]
     ports: ["127.0.0.1:${API_PORT:-8000}:8000"]
     depends_on:
@@ -100,9 +125,59 @@ services:
       interval: 2s
       timeout: 6s
       retries: 30
-  # No ingestion workers in this Stage 0 stack: `floatchat acquire`/`floatchat process` need an
-  # ingestion login, an app.ingestion_environment row and the work queue, which only the
-  # acceptance project (docker-compose.acceptance.yml) and a production deployment create.
+  # Stage 5: the Stage 1 ingestion pool (ADR-0047 topology) serving historical jobs. Only
+  # `acquire` ever sees the Argovis key; live ingestion stays opt-in through the restricted
+  # configuration file. Sizes are for the 3.7 GB development host.
+  acquire:
+    build: { context: .., dockerfile: infra/docker/api.Dockerfile, target: runtime }
+    mem_limit: 1g
+    environment:
+      <<: *worker-environment
+      INGESTION_ACQUIRE_SLOTS: ${INGESTION_ACQUIRE_SLOTS:-4}
+      FLOATCHAT_LIVE_INGESTION_ENABLED: ${FLOATCHAT_LIVE_INGESTION_ENABLED:-false}
+      ARGOVIS_API_KEY: ${ARGOVIS_API_KEY:-}
+    command: [python, scripts/dev_worker.py, acquire]
+    volumes: [worker_private:/home/floatchat/private]
+    depends_on: *worker-depends
+    restart: unless-stopped
+  process:
+    build: { context: .., dockerfile: infra/docker/api.Dockerfile, target: runtime }
+    mem_limit: ${INGESTION_PROCESS_MEMORY:-1500m}
+    environment:
+      <<: *worker-environment
+      INGESTION_PROCESS_WORKERS: ${INGESTION_PROCESS_WORKERS:-1}
+      INGESTION_WORKER_MEMORY_BYTES: "1073741824"
+    command: [python, scripts/dev_worker.py, process]
+    volumes: [worker_private:/home/floatchat/private]
+    depends_on: *worker-depends
+    restart: unless-stopped
+  supervisor:
+    build: { context: .., dockerfile: infra/docker/api.Dockerfile, target: runtime }
+    mem_limit: 256m
+    environment: *worker-environment
+    command: [python, scripts/dev_worker.py, supervise]
+    volumes: [worker_private:/home/floatchat/private]
+    depends_on: *worker-depends
+    restart: unless-stopped
+  # Stage 5 (ADR-0077, ADR-0080): the jobs worker claims export jobs, admits historical runs
+  # and writes the artefacts with DuckDB over its own part cache.
+  jobs:
+    build: { context: .., dockerfile: infra/docker/api.Dockerfile, target: runtime }
+    mem_limit: ${JOBS_MEMORY:-768m}
+    environment:
+      <<: [*app-environment, *worker-environment]
+      QUERY_DATABASE_URL: ${QUERY_DATABASE_URL:?Local query role URL required}
+      APPLICATION_COMMIT: ${APPLICATION_COMMIT:-unknown}
+      JOBS_QUEUES: ${JOBS_QUEUES:-export,forecast}
+      JOBS_CACHE_DIR: /var/lib/floatchat/jobs-cache
+      JOBS_EXPORT_DIR: /var/lib/floatchat/jobs-export
+    command: [python, scripts/dev_worker.py, jobs]
+    volumes:
+      - worker_private:/home/floatchat/private
+      - jobs_cache:/var/lib/floatchat/jobs-cache
+      - jobs_export:/var/lib/floatchat/jobs-export
+    depends_on: *worker-depends
+    restart: unless-stopped
   web:
     build: { context: .., dockerfile: infra/docker/web.Dockerfile, target: development }
     environment:
@@ -121,3 +196,6 @@ volumes:
   redis_data:
   minio_data:
   query_cache:
+  worker_private:
+  jobs_cache:
+  jobs_export:

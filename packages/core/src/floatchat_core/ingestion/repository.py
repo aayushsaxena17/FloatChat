@@ -39,6 +39,7 @@ from .planning import (
     Interval,
     RunPolicy,
     Tile,
+    grid_tiles,
     month_start,
     plan,
     timestamp,
@@ -79,6 +80,9 @@ SAFE_DATABASE_CATEGORIES = frozenset(
         "commit_reserve_exhausted",
         "unsafe_environment",
         "outside_rolling_window",
+        "invalid_historical_tiles",
+        "invalid_historical_interval",
+        "historical_end_in_future",
         "unsafe_run_configuration",
         "controller_busy",
         "canonical_output_limit",
@@ -360,7 +364,15 @@ class Repository:
                 cursor.execute("SELECT app.persist_baseline(%s,%s)", (run, epoch))
                 cursor.execute("SELECT app.persist_replay_plan(%s,%s)", (run, epoch))
             return
-        chunks = plan(interval)
+        tiles = None
+        if row["mode"] == "historical":
+            # ADR-0078: the input descriptor names the tiles; the SQL rechecks the same set.
+            if inputs is None or not isinstance(inputs["descriptor"].get("tiles"), list):
+                raise Rejection("invalid_historical_tiles")
+            tiles = grid_tiles(
+                (int(pair[0]), int(pair[1])) for pair in inputs["descriptor"]["tiles"]
+            )
+        chunks = plan(interval, tiles=tiles)
         values = [
             {
                 "id": str(uuid.uuid4()),

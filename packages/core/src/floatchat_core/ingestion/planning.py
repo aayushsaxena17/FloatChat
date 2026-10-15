@@ -4,6 +4,7 @@ import calendar
 import hashlib
 import json
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -85,25 +86,39 @@ def month_interval(first: str, last: str) -> Interval:
         raise Rejection("invalid_month_interval") from None
 
 
+RunMode = Literal["normal", "acceptance", "historical"]
+
+
 @dataclass(frozen=True)
 class RunPolicy:
     reference: datetime
-    mode: Literal["normal", "acceptance"]
+    mode: RunMode
     environment_id: str
 
     @classmethod
     def capture(
         cls,
-        mode: Literal["normal", "acceptance"],
+        mode: RunMode,
         environment_id: str,
         *,
         acceptance_marker: bool = False,
         actual_now: datetime | None = None,
+        requested_end: datetime | None = None,
     ) -> "RunPolicy":
         if mode == "acceptance":
             if not acceptance_marker:
                 raise Rejection("acceptance_environment_required")
             return cls(ACCEPTANCE_REFERENCE, mode, environment_id)
+        if mode == "historical":
+            # Stage 5 (ADR-0078): the reference time is the requested end, so the twelve-month
+            # window below is exactly the span a historical run may cover; the end is never
+            # in the future.
+            if requested_end is None:
+                raise Rejection("historical_end_required")
+            end = utc(requested_end)
+            if end > utc(actual_now or datetime.now(UTC)):
+                raise Rejection("historical_end_in_future")
+            return cls(end, mode, environment_id)
         if mode != "normal":
             raise Rejection("invalid_mode")
         return cls(utc(actual_now or datetime.now(UTC)), mode, environment_id)
@@ -190,20 +205,40 @@ class PlannedChunk:
     tile: Tile
 
 
-def plan(interval: Interval, *, max_chunks: int = 16384) -> tuple[PlannedChunk, ...]:
+ENVELOPE_TILES: tuple[Tile, ...] = tuple(
+    Tile(west, south) for west in range(20, 120, 10) for south in range(-60, 30, 10)
+)
+
+
+def grid_tiles(pairs: Iterable[tuple[int, int]]) -> tuple[Tile, ...]:
+    """Validated, de-duplicated and sorted ten-degree tiles of the envelope (ADR-0078)."""
+    tiles: set[Tile] = set()
+    for west, south in pairs:
+        if west % 10 or south % 10 or not (20 <= west <= 110) or not (-60 <= south <= 20):
+            raise Rejection("invalid_historical_tiles")
+        tiles.add(Tile(int(west), int(south)))
+    if not tiles:
+        raise Rejection("invalid_historical_tiles")
+    return tuple(sorted(tiles))
+
+
+def plan(
+    interval: Interval, *, max_chunks: int = 16384, tiles: tuple[Tile, ...] | None = None
+) -> tuple[PlannedChunk, ...]:
     if not 0 < max_chunks <= 16384:
         raise Rejection("invalid_chunk_limit")
     result: list[PlannedChunk] = []
     cursor = interval.start
+    # The full envelope for normal and acceptance runs; a historical run names its tiles.
+    cells = ENVELOPE_TILES if tiles is None else grid_tiles((t.west, t.south) for t in tiles)
     while cursor < interval.end:
         # Plan v2 (ADR-0041): one initial slice per UTC calendar month, so each
         # month/tile slot publishes once per run unless adaptive splitting is needed.
         end = min(shift_months(month_start(cursor), 1), interval.end)
-        for west in range(20, 120, 10):
-            for south in range(-60, 30, 10):
-                if len(result) >= max_chunks:
-                    raise Rejection("chunk_count_limit")
-                result.append(PlannedChunk(Interval(cursor, end), Tile(west, south)))
+        for tile in cells:
+            if len(result) >= max_chunks:
+                raise Rejection("chunk_count_limit")
+            result.append(PlannedChunk(Interval(cursor, end), tile))
         cursor = end
     return tuple(result)
 

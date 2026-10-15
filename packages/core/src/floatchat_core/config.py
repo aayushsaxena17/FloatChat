@@ -18,3 +18,5 @@ class Settings(BaseSettings):
     query_database_url: SecretStr | None = None
     query_object_cache_dir: str | None = None
     application_commit: str = "unknown"
+    # Stage 5 (ADR-0079): signs export download tokens; generated locally by scripts/dev.py.
+    artefact_signing_key: SecretStr | None = None

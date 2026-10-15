@@ -594,3 +594,22 @@ def profile_slot_statement(
 def render(statement: Select[Any]) -> str:
     """The parameterised statement text (placeholders only), for documentation and tests."""
     return str(statement.compile(dialect=PGDialect()))  # type: ignore[no-untyped-call]
+
+
+def export_members_statement(plan: QueryPlan, geography: ResolvedGeography) -> Select[Any]:
+    """Profiles of an export with the header columns the long table carries (ADR-0080)."""
+    predicates = _base_predicates(plan, geography, levels=False)
+    return (
+        select(
+            cast(profile.c.id, Text).label("profile_id"),
+            profile.c.content_hash.label("profile_hash"),
+            profile.c.platform_number,
+            profile.c.cycle_number,
+            profile.c.direction,
+            profile.c.observed_at,
+            func.ST_X(profile.c.position).label("longitude"),
+            func.ST_Y(profile.c.position).label("latitude"),
+        )
+        .where(*predicates)
+        .order_by(profile.c.observed_at, profile.c.id)
+    )
