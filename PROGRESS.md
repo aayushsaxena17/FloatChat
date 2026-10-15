@@ -837,5 +837,9 @@ palette, a real three.js float on the ocean, components sourced from 21st.dev, n
       the float surfaces from below, a faint satellite with a pulsed uplink from the antenna;
       none of it under reduced motion. Verified with deterministic frames (fake clock and
       seeked CSS animations) at four instants on desktop and phone.
+- [x] Cross-section hero after the owner's reference (2026-10-15): underwater half through a
+      wave-topped water wall, yellow hull with a collar, low-poly clouds, bubbles, copy in white
+      over the deep half; the camera pitch keeps the copy below the waterline on desktop and
+      phone (checked numerically). ADR-0076 carries a dated amendment.
 - [ ] Owner: review the branch in the browser; decide on pushing and the pull request; decide
       whether Apache-2.0 packages count as licence-equivalent for future 21st.dev picks.

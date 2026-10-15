@@ -2220,6 +2220,13 @@ routes and API contracts are unchanged):
    Playwright suite against the dev stack, and screenshots at 1440 px and 390 px, with and
    without reduced motion, checked for horizontal overflow.
 
+Amendment (2026-10-15, owner's reference image): the hero is composed as a cross-section of
+the sea, sky above and the underwater half below a wave-topped translucent water wall, with
+the copy in white over the underwater half, low-poly clouds, bubbles, a white collar on the
+float and a yellow hull (the one colour outside the palette, after the instrument itself).
+The budget in point 5 is unchanged; the copy's top edge is kept below the waterline by the
+camera pitch, checked numerically in the capture script. `docs/web-design.md` has the detail.
+
 Alternatives: react-three-fiber with drei's water (rejected, 2 to 3 MB of dependencies and a
 reconciler for one scene); a video of the sea (rejected, no offline guarantee and no
 interaction with the page's width); a 21st.dev globe hero (rejected, 13 of 60 heroes in the

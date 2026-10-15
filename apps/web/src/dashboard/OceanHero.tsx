@@ -81,46 +81,48 @@ export function OceanHero({ query }: { query: string }) {
     <section className="ocean-hero" aria-labelledby="hero-title">
       <OceanScene />
       <div className="hero-copy">
-        <h1 id="hero-title">
-          {TITLE.split(" ").map((word, index) => (
-            <Fragment key={index}>
-              {index > 0 ? " " : null}
-              <span
-                className="hero-word"
-                style={{ "--word": index } as CSSProperties}
-              >
-                <span>{word}</span>
-              </span>
-            </Fragment>
-          ))}
-        </h1>
-        <p className="hero-description">
-          FloatChat brings together temperature, salinity and pressure profiles
-          from Argo floats, shows how complete the coverage is, and keeps the
-          source of every number.
-        </p>
-        <div className="hero-actions">
-          <Link className="hero-primary" to={`/explore/map?${query}`}>
-            Explore the map <ArrowUpRight size={17} aria-hidden="true" />
-          </Link>
-          <a className="hero-secondary" href="#observations">
-            View observations <ArrowDown size={15} aria-hidden="true" />
-          </a>
+        <div className="hero-block">
+          <h1 id="hero-title">
+            {TITLE.split(" ").map((word, index) => (
+              <Fragment key={index}>
+                {index > 0 ? " " : null}
+                <span
+                  className="hero-word"
+                  style={{ "--word": index } as CSSProperties}
+                >
+                  <span>{word}</span>
+                </span>
+              </Fragment>
+            ))}
+          </h1>
+          <p className="hero-description">
+            FloatChat brings together temperature, salinity and pressure
+            profiles from Argo floats, shows how complete the coverage is, and
+            keeps the source of every number.
+          </p>
+          <div className="hero-actions">
+            <Link className="hero-primary" to={`/explore/map?${query}`}>
+              Explore the map <ArrowUpRight size={17} aria-hidden="true" />
+            </Link>
+            <a className="hero-secondary" href="#observations">
+              View observations <ArrowDown size={15} aria-hidden="true" />
+            </a>
+          </div>
+          <ul className="hero-facts">
+            <li>
+              <Thermometer size={16} aria-hidden="true" />
+              Core Argo: temperature, salinity, pressure
+            </li>
+            <li>
+              <CalendarCheck size={16} aria-hidden="true" />
+              Coverage checked month by month
+            </li>
+            <li>
+              <FileCheck size={16} aria-hidden="true" />
+              Every number traceable to its source
+            </li>
+          </ul>
         </div>
-        <ul className="hero-facts">
-          <li>
-            <Thermometer size={16} aria-hidden="true" />
-            Core Argo: temperature, salinity, pressure
-          </li>
-          <li>
-            <CalendarCheck size={16} aria-hidden="true" />
-            Coverage checked month by month
-          </li>
-          <li>
-            <FileCheck size={16} aria-hidden="true" />
-            Every number traceable to its source
-          </li>
-        </ul>
       </div>
     </section>
   );

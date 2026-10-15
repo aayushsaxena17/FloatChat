@@ -1268,18 +1268,21 @@ details.provenance .facts {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  min-height: min(680px, 80vh);
+  min-height: min(820px, 90vh);
   padding: 0 var(--gutter);
   display: flex;
-  align-items: center;
-  /* The poster: sky into water, shown before the scene loads and wherever WebGL is off. */
+  align-items: flex-end;
+  /* The poster, a cross-section like the scene: sky, the waterline, deep water. It shows
+     before the scene loads and is the whole hero wherever WebGL is off. */
   background: linear-gradient(
     180deg,
-    #f7fcfe 0%,
-    #dff4fa 42%,
-    #8fd6ec 58%,
-    #1d8fc9 80%,
-    #0a5f9e 100%
+    #f9fdfe 0%,
+    #dff4fa 28%,
+    #bfe7f2 38%,
+    #0096c7 41%,
+    #0077b6 50%,
+    #023e8a 74%,
+    #03045e 100%
   );
 }
 .ocean-hero-scene {
@@ -1302,30 +1305,21 @@ details.provenance .facts {
   width: 100%;
   max-width: var(--content-width);
   margin: 0 auto;
-  padding: 72px 0 96px;
+  padding: 0 0 52px;
 }
-/* Sea mist behind the copy keeps navy ink readable over the water. */
-.hero-copy::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  inset: -40px -10% -40px -30%;
-  background: radial-gradient(
-    ellipse 62% 70% at 30% 50%,
-    rgba(244, 250, 252, 0.94) 0%,
-    rgba(244, 250, 252, 0.8) 35%,
-    rgba(244, 250, 252, 0) 72%
-  );
-  pointer-events: none;
+/* The copy sits in the underwater half, on the right, like a caption on the cross-section. */
+.hero-block {
+  width: min(100%, 580px);
+  margin-left: auto;
 }
 .hero-copy h1 {
   max-width: 15ch;
   font-family: var(--font-serif);
-  font-size: clamp(40px, 5.2vw, 66px);
+  font-size: clamp(36px, 4.2vw, 54px);
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.08;
-  color: var(--navy-900);
+  color: #ffffff;
 }
 /* Entrance: each word rises out of a clipped line, then the copy below fades up. The
    padding and negative margin keep descenders inside the clip. */
@@ -1373,11 +1367,11 @@ details.provenance .facts {
   }
 }
 .hero-description {
-  max-width: 46ch;
-  margin: 22px 0 30px;
-  font-size: 17px;
+  max-width: 56ch;
+  margin: 18px 0 26px;
+  font-size: 16px;
   line-height: 1.6;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.86);
 }
 .hero-actions {
   display: flex;
@@ -1400,31 +1394,34 @@ details.provenance .facts {
     color 140ms ease,
     border-color 140ms ease;
 }
+.hero-actions a:focus-visible {
+  outline-color: #ffffff;
+}
 .hero-primary {
-  background: var(--navy-900);
-  color: #ffffff;
+  background: #ffffff;
+  color: var(--navy-900);
 }
 .hero-primary:hover {
-  background: var(--navy-800);
+  background: var(--cyan-100);
 }
 .hero-secondary {
-  background: rgba(255, 255, 255, 0.72);
-  color: var(--navy-900);
-  border: 1px solid rgba(3, 4, 94, 0.14);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 .hero-secondary:hover {
-  background: #ffffff;
-  border-color: rgba(3, 4, 94, 0.3);
+  background: rgba(255, 255, 255, 0.24);
+  border-color: rgba(255, 255, 255, 0.8);
 }
 .hero-facts {
   display: flex;
   flex-wrap: wrap;
   gap: 10px 28px;
-  margin: 40px 0 0;
+  margin: 30px 0 0;
   padding: 0;
   list-style: none;
   font-size: 14px;
-  color: var(--navy-900);
+  color: rgba(255, 255, 255, 0.92);
 }
 .hero-facts li {
   display: inline-flex;
@@ -1432,7 +1429,7 @@ details.provenance .facts {
   gap: 8px;
 }
 .hero-facts svg {
-  color: var(--primary);
+  color: var(--cyan-300);
 }
 
 /* ----- Explorer: map and profiles ----- */
@@ -2324,9 +2321,6 @@ details.provenance .facts {
   .label-hint {
     position: static;
   }
-  .hero-copy {
-    padding: 56px 0 80px;
-  }
 }
 @media (max-width: 900px) {
   .overview-grid,
@@ -2366,12 +2360,6 @@ details.provenance .facts {
   }
   .chart-panel [data-slot="tabs-list"] {
     margin-left: auto;
-  }
-  .ocean-hero {
-    min-height: 0;
-  }
-  .hero-copy {
-    padding: 48px 0 72px;
   }
   /* Narrow screens: the conversation rail opens as a drawer over the thread. */
   .chat-shell,
@@ -2423,6 +2411,39 @@ details.provenance .facts {
 @media (max-width: 640px) {
   :root {
     --gutter: 16px;
+  }
+  .ocean-hero {
+    min-height: 820px;
+    background: linear-gradient(
+      180deg,
+      #f9fdfe 0%,
+      #dff4fa 20%,
+      #bfe7f2 30%,
+      #0096c7 33%,
+      #0077b6 42%,
+      #023e8a 68%,
+      #03045e 100%
+    );
+  }
+  .hero-copy {
+    padding-bottom: 36px;
+  }
+  .hero-copy h1 {
+    font-size: clamp(30px, 8.4vw, 36px);
+  }
+  .hero-description {
+    font-size: 15px;
+    margin: 14px 0 20px;
+  }
+  .hero-actions a {
+    min-height: 42px;
+    padding: 0 16px;
+    font-size: 14px;
+  }
+  .hero-facts {
+    margin-top: 24px;
+    gap: 8px 18px;
+    font-size: 13px;
   }
   main {
     padding-top: 20px;
@@ -2519,35 +2540,6 @@ details.provenance .facts {
   .export-notice button {
     flex: 1 1 100%;
     margin-left: 0;
-  }
-  .hero-copy {
-    padding: 40px 0 210px;
-  }
-  .hero-copy::before {
-    inset: -24px -20% 150px -20%;
-    background: radial-gradient(
-      ellipse 80% 70% at 40% 50%,
-      rgba(244, 250, 252, 0.94) 0%,
-      rgba(244, 250, 252, 0.82) 45%,
-      rgba(244, 250, 252, 0) 78%
-    );
-  }
-  .hero-copy h1 {
-    font-size: clamp(34px, 9vw, 44px);
-  }
-  .hero-description {
-    font-size: 15px;
-    margin: 16px 0 22px;
-  }
-  .hero-actions a {
-    min-height: 42px;
-    padding: 0 16px;
-    font-size: 14px;
-  }
-  .hero-facts {
-    margin-top: 28px;
-    gap: 8px 18px;
-    font-size: 13px;
   }
   .dialog-content {
     max-height: calc(100dvh - 24px);

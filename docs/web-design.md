@@ -36,19 +36,28 @@ disclaimer, the histogram bound notice, provenance and the footer attributions.
 
 `apps/web/src/dashboard/OceanHero.tsx` renders the copy and mounts the scene after the first
 paint where WebGL is available. `apps/web/src/dashboard/oceanScene.ts` is a vanilla three.js
-scene in its own async chunk: one displaced plane (150 × 110 segments) whose vertex shader sums
-four directional sine waves, with a fragment shader for crest colouring, a Fresnel mix to the
-sky, a tight sun glint plus a broad sheen, and distance fog into the horizon. The float is six
-primitives; each frame it samples the same wave function on the CPU for its height and tilt.
-On load the float surfaces from below over the first seconds while the headline rises word by
-word out of a clipped line (CSS only, so the copy appears even without WebGL). A faint
-satellite built from primitives sits in the sky band; once the float is up, a dashed uplink
-joins its antenna to the satellite and small pulses travel up it in short bursts, with quiet
-gaps, the way a float reports after surfacing.
+scene in its own async chunk, composed as a cross-section of the sea after the owner's
+reference (2026-10-15): the camera sits just above the surface; a translucent, wave-topped
+"wall" of water a few units ahead shows the underwater half over an opaque depth gradient,
+with rising bubbles and soft light shafts; the surface plane (160 × 110 segments, four
+directional sines, analytic normals, Fresnel, foam on the crests, a clamped sun glint and fog
+into the CSS sky) starts at the wall and runs to the horizon. One wave function, in GLSL and
+on the CPU, drives the surface, the wall's top edge and the float, so they always agree, and
+it is damped near the wall so the waterline stays steady under the copy. The float is a long
+yellow hull from primitives, mostly submerged and leaning, with a white collar riding the
+surface; on load it surfaces from below while the headline rises word by word out of a
+clipped line (CSS only, so the copy appears without WebGL). Low-poly clouds drift across the
+sky, and a faint satellite built from primitives receives a dashed uplink from the antenna
+with pulses in short bursts, the way a float reports after surfacing. The copy sits in the
+underwater half, in white, and the camera pitch is chosen so that half begins above it on
+both desktop and phone (checked numerically in the capture script).
+
 The pixel ratio is capped at 1.5, the loop pauses when the hero scrolls out of view or the tab
-is hidden, `prefers-reduced-motion` draws one frame, and the sky-to-water CSS gradient under
-the canvas is the poster before the chunk loads and the whole hero wherever WebGL is off
-(including jsdom in the unit tests). Everything is disposed on unmount.
+is hidden, `prefers-reduced-motion` draws one settled frame with no entrance, and the
+split sky-to-deep CSS gradient under the canvas is the poster before the chunk loads and the
+whole hero wherever WebGL is off. Everything is disposed on unmount. The hull's yellow is the
+one colour outside the palette: it is what Argo floats look like and the reference's focal
+point.
 
 ## Preview and validation
 
