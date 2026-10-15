@@ -96,6 +96,19 @@ Per-item outcomes are in `reports/eval_nl_2026-10-12.json`.
   probes the chat endpoint and runs the chat scenario with the offline provider):
   https://github.com/aayushsaxena17/FloatChat/actions/runs/38294847877.
 
+## Live verification (2026-10-13, after the owner's key arrived)
+
+- The key was first put in the repository's `.env`, which nothing reads; the stack takes
+  `~/.local/state/FloatChat/development/.env`. With the key there and the API recreated, the
+  corpus embedded through `gemini-embedding-001` (72 documents) and the query embedding worked.
+- The planning call to `gemini-3.8-flash` returned 503 "high demand" repeatedly (so did
+  `3.6-flash` and `3.5-flash`); `gemini-3.7-flash` answered the real planner prompt with the
+  expected plan (monthly mean, Arabian Sea, 0-100 dbar, line chart) in 14 s using 2,621 prompt
+  tokens; `gemini-2.5-flash` is closed to new users (404). The adapter's request shape,
+  `responseJsonSchema` and `thinkingConfig` were accepted as written.
+- Follow-up: a configured fallback model with its own breaker, a 45 s timeout and three retries
+  (ADR-0070 amendment, pull request after #13).
+
 ## Known issues and limitations
 
 - **No live model verification.** The Gemini adapter follows the REST reference as read on

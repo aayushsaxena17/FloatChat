@@ -34,8 +34,16 @@ _string = {"type": "string"}
 PLANNER_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
-        "kind": {"type": "string", "enum": ["plan", "clarify", "unsupported"]},
+        "kind": {"type": "string", "enum": ["plan", "clarify", "reply", "unsupported"]},
         "reason": {"type": "string", "description": "One sentence; required for unsupported."},
+        "reply": {
+            "type": "string",
+            "description": "One to four plain sentences; required for reply.",
+        },
+        "title": {
+            "type": "string",
+            "description": "Only when asked: a two to six word title for the conversation.",
+        },
         "clarification": {
             "type": "object",
             "properties": {
@@ -161,6 +169,10 @@ def to_plan_document(flat: Any) -> dict[str, Any]:
         if kept.get("kind") == "aggregate":
             kept.setdefault("group_by", [])
             kept.setdefault("metrics", [])
+            # A bin size without the depth_bin key is a stray default, not an intent (seen
+            # live: a count question answered with depth_bin_size and no depth_bin).
+            if "depth_bin" not in (kept.get("group_by") or []):
+                kept.pop("depth_bin_size", None)
         plan["operation"] = kept
     presentation = plan.get("presentation")
     if isinstance(presentation, dict):

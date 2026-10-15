@@ -123,7 +123,7 @@ def test_small_offline_run_writes_a_labelled_report(tmp_path: Path):
     )
     document = run(config, LlmSettings(provider="offline"))
     assert document["items"] == 6 and len(document["runs"]) == 2
-    assert document["prompt_versions"] == {"planner": "planner-v1", "narrator": "narrator-v1"}
+    assert document["prompt_versions"] == {"planner": "planner-v2", "narrator": "narrator-v1"}
     assert len(document["commit"]) in (7, 40) or document["commit"] == "unknown"
     report = (tmp_path / "eval_nl_2026-01-01.md").read_text()
     assert "Not an LLM result" in report and "offline-rules-v1" in report

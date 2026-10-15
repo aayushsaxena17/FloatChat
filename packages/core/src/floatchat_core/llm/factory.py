@@ -54,6 +54,13 @@ def build_provider(
     prices = (
         PriceTable.from_file(Path(settings.pricing_file)) if settings.pricing_file else PriceTable()
     )
-    return ResilientProvider(
-        raw_provider(settings, provider=provider, model=model), settings, ledger, prices
-    )
+    name = provider or settings.provider
+    primary = raw_provider(settings, provider=provider, model=model)
+    fallbacks: list[Provider] = []
+    if name != "offline":
+        fallbacks = [
+            raw_provider(settings, provider=provider, model=candidate)
+            for candidate in settings.fallback_list
+            if candidate != primary.model
+        ]
+    return ResilientProvider(primary, settings, ledger, prices, fallbacks=fallbacks)

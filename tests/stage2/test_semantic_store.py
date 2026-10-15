@@ -98,6 +98,8 @@ def test_seed_retrieve_store_and_ledger(database):
     listed = store.list_for("client-a")
     assert listed[0].id == conversation.id and listed[0].message_count == 2
     assert store.list_for("client-b") == []
+    store.rename(conversation.id, "Ocean greeting")
+    assert store.get("client-a", conversation.id).title == "Ocean greeting"
     with pytest.raises(QueryError):
         store.append("00000000-0000-4000-8000-000000000999", "user", "user", "x", {}, None)
     # The ledger sums the UTC day.

@@ -48,12 +48,12 @@ REGISTRY = MappingProxyType(
         # unaffected by any of them (PRD section 22).
         "llm_unavailable": (
             503,
-            "The assistant is temporarily unavailable; the dashboard and direct queries "
-            "continue to work.",
+            "The assistant can't answer right now. The dashboard, map and profiles still "
+            "work, and you can try again in a moment.",
         ),
         "llm_budget_exhausted": (
             429,
-            "The assistant's daily budget is spent; it resumes at 00:00 UTC.",
+            "The assistant has used today's budget. It resumes at 00:00 UTC.",
         ),
         "chat_limit": (422, "The conversation or message exceeds a chat limit."),
         "client_required": (400, "The X-FloatChat-Client header is required."),

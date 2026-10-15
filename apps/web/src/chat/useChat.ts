@@ -66,6 +66,7 @@ export function useChat(initialConversation: string | null) {
   const [local, setLocal] = useState<ChatMessage[]>([]);
   const [pending, setPending] = useState<Pending | null>(null);
   const [failure, setFailure] = useState<ChatFailure | null>(null);
+  const [lastText, setLastText] = useState<string | null>(null);
   const abort = useRef<AbortController | null>(null);
 
   const detail = useQuery({
@@ -75,8 +76,6 @@ export function useChat(initialConversation: string | null) {
     staleTime: 60_000,
   });
 
-  // Messages streamed in this session are appended to what the server returned; a refetch
-  // of the detail replaces them with the stored rows.
   useEffect(() => {
     setLocal([]);
   }, [detail.data]);
@@ -99,6 +98,7 @@ export function useChat(initialConversation: string | null) {
       const controller = new AbortController();
       abort.current = controller;
       setFailure(null);
+      setLastText(trimmed);
       setPending({
         text: trimmed,
         step: "sending",
@@ -107,6 +107,9 @@ export function useChat(initialConversation: string | null) {
         result: null,
       });
       let streamedConversation = conversationId;
+      // An error message stored by the server already explains the failure; the banner is
+      // only for failures that produced no message at all.
+      let explained = false;
       try {
         await streamMessage(
           trimmed,
@@ -132,8 +135,9 @@ export function useChat(initialConversation: string | null) {
             } else if (event.type === "result") {
               setPending((state) => state && { ...state, result: event.data });
             } else if (event.type === "message") {
+              if (event.data.kind === "error") explained = true;
               setLocal((rows) => [...rows, event.data]);
-            } else if (event.type === "error") {
+            } else if (event.type === "error" && !explained) {
               setFailure({
                 code: event.data.code,
                 message: event.data.message,
@@ -144,6 +148,7 @@ export function useChat(initialConversation: string | null) {
           },
           controller.signal,
         );
+        if (explained) setFailure(null);
       } catch (error) {
         if (!controller.signal.aborted) setFailure(describeFailure(error));
       } finally {
@@ -162,12 +167,25 @@ export function useChat(initialConversation: string | null) {
     [client, conversationId, pending],
   );
 
-  // Server rows first; rows streamed in this session are kept only until the server has them.
+  const retry = useCallback(() => {
+    if (lastText) void send(lastText);
+  }, [lastText, send]);
+
   const served = detail.data?.messages ?? [];
   const known = new Set(served.map((message) => message.id));
   const messages = [
     ...served,
     ...local.filter((message) => !known.has(message.id)),
   ];
-  return { conversationId, messages, detail, pending, failure, send, select };
+  return {
+    conversationId,
+    messages,
+    detail,
+    pending,
+    failure,
+    lastText,
+    send,
+    retry,
+    select,
+  };
 }

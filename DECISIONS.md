@@ -1979,6 +1979,19 @@ smaller than the SDK's dependency tree); in-process daily counters (rejected, a 
 reset the cap); a token-only cap (rejected, the build prompt asks for a spend cap) or a USD-only
 cap (rejected, prices are not verifiable here).
 
+Amendment 2026-10-13 (first live runs with the owner's key): the embedding call and the
+planning call worked as written, but `gemini-3.8-flash`, `3.6-flash` and `3.5-flash` answered
+503 "high demand" for minutes while `gemini-3.7-flash` answered the planner prompt correctly in
+14 s. The policy wrapper therefore takes a configured fallback model (`LLM_FALLBACK_MODEL`,
+default `gemini-3.7-flash`) with its own circuit breaker: after the primary's retries fail, or
+while the primary's breaker is open, the fallback answers and the ledger records the model that
+did. The timeout is 30 s, one retry per route, and a whole-call budget of 45 s: an overloaded
+provider answers within seconds, so the user hears "busy, try again" within the budget, never
+after minutes (the first live message waited 85 s across two models before this amendment).
+The user-visible text names the failure class (busy, too slow, declined) with fixed strings. Embeddings keep one model. The operator log carries the provider's HTTP status and the
+route; user-visible errors are unchanged. `gemini-2.5-flash` is closed to new API users (404) and
+is no longer a fallback candidate.
+
 ## ADR-0071 - Semantic corpus, `semantic_document`, embeddings and retrieval
 
 Status: accepted under the owner's authority (ADR-0039).
@@ -2118,3 +2131,38 @@ Decision (PRD §20.4, §30.2, §30.3, §30.5):
 Alternatives: YAML items (rejected, PyYAML is a dev-only dependency); generating items from
 templates (rejected, each item is drafted and must be individually reviewable); reporting the
 offline numbers as the Stage 4 result (rejected, they answer a different question).
+
+## ADR-0075 - The model decides what a message is; conversational replies; chat as an app
+
+Status: accepted under the owner's authority (ADR-0039), 2026-10-13, after the owner's review
+of the live chat ("ola" was answered with a request for a period and an area).
+
+Decision (amends ADR-0072 and ADR-0073):
+
+1. With a model provider every message goes to the planner, which chooses one of `plan`,
+   `clarify`, `reply` or `unsupported` (prompt `planner-v2`). `reply` covers greetings and small
+   talk in any language, what FloatChat is and can do, what the dataset covers, and short
+   explanations of Argo and ocean concepts. Retrieval runs as before, so a reply can draw on the
+   catalogue, region and help documents. Off-topic requests stay `unsupported`.
+2. The keyword rules of ADR-0072 now answer greetings and help only with the offline provider
+   or when the model call fails with an `llm_*` error, so "hello" still gets an answer while
+   the provider is overloaded.
+3. ADR-0073 extends to replies: every number in a reply must appear in the prompt the model was
+   given (dates, regions, limits); otherwise the fixed greeting or help text is shown and the
+   interpretation records the rejection. A reply never states a measured value.
+4. Replies are stored under the existing `help` message kind with
+   `interpretation.kind = "reply"`; no migration. The interface shows no interpretation panel
+   for greetings and replies, since no query ran.
+5. The chat route fills the viewport: the thread scrolls in its own pane, the composer stays at
+   the bottom (centred with the greeting before the first message) and the page footer is not
+   shown. A question retried after an error shows once, with its latest outcome. Errors are one
+   card with a retry button; the code and correlation id stay in a tooltip.
+6. On a conversation's first message the same planning call also returns a two to six word
+   title (no extra request on a rate-limited key); the store renames the conversation when the
+   title is present and repeats only numbers from the prompt. Without a model the first message
+   stays the title. Long titles fade out at the rail's edge instead of scrolling.
+
+Alternatives: a separate classification call before planning (rejected, one more call per
+message on a rate-limited key); widening the keyword lists only (rejected, every unlisted
+greeting or language fails the same way); a new `reply` message kind (rejected, a constraint
+migration for no behavioural gain).

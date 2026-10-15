@@ -5,6 +5,7 @@ from collections.abc import Iterator
 import pytest
 from doubles import EngineDouble, offline_provider
 from floatchat_core.chat import narrate
+from floatchat_core.chat.classify import classify
 from floatchat_core.chat.pipeline import ChatService
 from floatchat_core.chat.prompts import PLANNER_POLICY, planner_system, planner_user
 from floatchat_core.chat.schema import PLANNER_SCHEMA, to_plan_document
@@ -46,7 +47,7 @@ def test_answer_streams_the_documented_event_order(service, engine, store):
     interpretation = message["payload"]["interpretation"]
     assert interpretation["provider"] == "offline"
     assert interpretation["model"] == "offline-rules-v1"
-    assert interpretation["prompt_version"] == "planner-v1"
+    assert interpretation["prompt_version"] == "planner-v2"
     assert interpretation["retrieval_mode"] == "rag_examples"
     assert interpretation["plan"]["geography"] == {"kind": "named_region", "value": "Arabian Sea"}
     assert interpretation["plan"]["plan_schema"] == "stage2-plan-v1"
@@ -185,6 +186,73 @@ def test_unknown_region_from_the_model_is_a_clarification(engine, retriever):
     assert message["payload"]["interpretation"]["validation"][0]["code"] == "unknown_region"
 
 
+def test_the_model_decides_and_replies_without_a_query(engine, retriever):
+    reply = "Hola! I can look up Argo temperature, salinity and pressure for you."
+    service, provider = scripted_service(engine, retriever, {"kind": "reply", "reply": reply})
+    for text in ("ola", "Hello!"):
+        message = events_of(service, text)[-1].data
+        assert message["kind"] == "help" and message["text"] == reply
+        assert message["payload"]["interpretation"]["kind"] == "reply"
+    # Greetings reach the model too: it, not a keyword list, decides what a message is.
+    assert len([r for r in provider.requests if r.purpose == "plan"]) == 2
+    assert engine.calls == []
+
+
+def test_a_reply_never_states_a_number_the_model_was_not_shown(engine, retriever):
+    answer = {"kind": "reply", "reply": "The Arabian Sea averaged 27.9 degrees last winter."}
+    service, _ = scripted_service(engine, retriever, answer)
+    message = events_of(service, "how warm is the Arabian Sea usually?")[-1].data
+    assert message["kind"] == "help" and "27.9" not in message["text"]
+    assert message["payload"]["interpretation"]["validation"][0]["field"] == "reply"
+    # A date from the dataset window in the prompt may be repeated.
+    window = {"kind": "reply", "reply": "The loaded window starts in April 2024."}
+    service, _ = scripted_service(engine, retriever, window)
+    assert events_of(service, "which period?")[-1].data["text"] == window["reply"]
+    assert narrate.numbers_within("1 dbar is about 1 metre", "")
+    assert not narrate.numbers_within("about 3900 floats", "limit 500")
+
+
+def test_the_first_answer_names_the_conversation(engine, retriever):
+    answer = {"kind": "reply", "reply": "Hello! Ask me about Argo data.", "title": '"Greeting."'}
+    service, provider = scripted_service(engine, retriever, answer)
+    events = events_of(service, "ola, que tal?")
+    conversation_id = events[0].data["conversation_id"]
+    assert service.store.get("client-1", conversation_id).title == "Greeting"
+    assert "first message: yes" in provider.requests[0].user
+    # Follow-ups keep the title and do not ask for one.
+    provider.answer = {**answer, "title": "Something else"}
+    list(service.respond(client_id="client-1", conversation_id=conversation_id, text="thanks"))
+    assert service.store.get("client-1", conversation_id).title == "Greeting"
+    assert "first message" not in provider.requests[-1].user
+    # A missing or ungrounded title keeps the first message as the title.
+    for title in (None, "", "Mean of 27.9 degrees"):
+        service, _ = scripted_service(engine, retriever, {**answer, "title": title})
+        events = events_of(service, "hey there")
+        conversation = service.store.get("client-1", events[0].data["conversation_id"])
+        assert conversation.title == "hey there"
+
+
+def test_greetings_fall_back_to_rules_when_the_model_is_unavailable(engine, retriever):
+    from floatchat_core.llm.provider import ProviderError
+
+    class Down(ScriptedProvider):
+        def structured(self, request):
+            raise ProviderError("server", "503")
+
+    provider = Down({})
+    wrapped = ResilientProvider(provider, LlmSettings(provider="gemini"), MemoryLedger())
+    service = ChatService(engine, wrapped, retriever, MemoryStore())
+    for text in ("ola!", "Hi what's happening?", "Hey, how are you?", "hello there"):
+        message = events_of(service, text)[-1].data
+        assert message["kind"] == "greeting" and "FloatChat" in message["text"], text
+    assert classify("Hi, mean temperature in the Arabian Sea in January 2025") == "query"
+    assert classify("there") == "greeting" and classify("hi floatchat bot") == "greeting"
+    events = events_of(service, QUESTION)
+    assert events[-1].data["kind"] == "error"
+    assert events[-1].data["payload"]["code"] == "llm_unavailable"
+    assert ";" not in events[-1].data["text"]
+
+
 def test_null_fields_from_the_model_are_stripped_before_validation():
     flat = {
         "time_range": {"start": "2025-01-01T00:00:00Z", "end": "2025-02-01T00:00:00Z"},
@@ -204,6 +272,25 @@ def test_null_fields_from_the_model_are_stripped_before_validation():
     assert document["geography"] == {"kind": "named_region", "value": "Arabian Sea"}
     assert document["operation"] == {"kind": "profiles", "limit": 10}
     assert document["qc_policy"] == "science_ready" and "depth_dbar" not in document
+    stray = to_plan_document(
+        {
+            **flat,
+            "operation": {"kind": "aggregate", "metrics": ["count"], "depth_bin_size": 10},
+        }
+    )
+    assert stray["operation"] == {"kind": "aggregate", "group_by": [], "metrics": ["count"]}
+    binned = to_plan_document(
+        {
+            **flat,
+            "operation": {
+                "kind": "aggregate",
+                "metrics": ["mean"],
+                "group_by": ["depth_bin"],
+                "depth_bin_size": 50,
+            },
+        }
+    )
+    assert binned["operation"]["depth_bin_size"] == 50
 
 
 def test_model_narrative_is_kept_only_when_grounded(engine, retriever):
@@ -233,6 +320,73 @@ def test_model_narrative_is_kept_only_when_grounded(engine, retriever):
     assert interpretation["narrative_source"] == "template"
     assert interpretation["narrative_rejected"] is True
     assert "31.7" not in message["text"] and "27.123" in message["text"]
+
+
+def test_summary_rows_are_rounded_for_the_narrator():
+    summary = narrate.summarize(
+        {
+            "result": {
+                "columns": [{"name": "t", "type": "number", "unit": "degree_C"}],
+                "rows": [[25.822716011711186], [None]],
+                "row_count": 2,
+            }
+        }
+    )
+    assert summary["rows"] == [[25.823], [None]]
+    assert summary["stats"]["t"]["mean"] == 25.823
+    assert narrate.grounded("The mean was 25.823 degree_C.", summary)
+
+
+def test_template_reads_in_plain_words():
+    summary = {
+        "operation": {
+            "kind": "aggregate",
+            "metrics": ["mean"],
+            "group_by": ["month"],
+            "unit": "profile",
+        },
+        "variables": ["temperature"],
+        "time_range": {"start": "2025-01-01T00:00:00Z", "end": "2025-04-01T00:00:00Z"},
+        "geography": {"kind": "named_region", "name": "Arabian Sea"},
+        "depth_dbar": {"min": 0.0, "max": 100.0},
+        "qc_policy": "science_ready",
+        "row_count": 3,
+        "columns": [{"name": "temperature_mean", "unit": "degree_C"}],
+        "stats": {"temperature_mean": {"min": 25.823, "max": 26.765, "mean": 26.2, "count": 3}},
+    }
+    text = narrate.template(summary)
+    assert text.startswith(
+        "Mean temperature by month in the Arabian Sea, January 2025 to March 2025, 0 to 100 "
+        "dbar, one value per profile with science-ready QC: 3 rows."
+    )
+    assert "Mean temperature ranges from 25.823 °C to 26.765 °C." in text
+    assert narrate.grounded(text, summary)
+    day = narrate._period_text({"start": "2025-02-10T00:00:00Z", "end": "2025-02-11T00:00:00Z"})
+    assert day == "2025-02-10 to 2025-02-11 (end exclusive)"
+    assert (
+        narrate._period_text({"start": "2025-02-01T00:00:00Z", "end": "2025-03-01T00:00:00Z"})
+        == "February 2025"
+    )
+
+
+def test_template_states_counts_for_a_single_row():
+    summary = {
+        "operation": {"kind": "aggregate", "metrics": ["count"], "group_by": [], "unit": "profile"},
+        "variables": ["temperature", "salinity"],
+        "time_range": {"start": "2025-02-01T00:00:00Z", "end": "2025-03-01T00:00:00Z"},
+        "geography": {"kind": "named_region", "name": "Bay of Bengal"},
+        "qc_policy": "science_ready",
+        "row_count": 1,
+        "columns": [{"name": "temperature_count"}, {"name": "salinity_count"}],
+        "stats": {
+            "temperature_count": {"min": 83, "max": 83, "mean": 83, "count": 1},
+            "salinity_count": {"min": 81, "max": 81, "mean": 81, "count": 1},
+        },
+    }
+    text = narrate.template(summary)
+    assert ": 1 row." in text
+    assert "83 profiles have temperature values; 81 profiles have salinity values." in text
+    assert narrate.grounded(text, summary)
 
 
 def test_grounding_helpers():

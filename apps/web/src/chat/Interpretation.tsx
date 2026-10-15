@@ -87,6 +87,10 @@ export function Interpretation({
   const id = useId();
   const rows = planRows(data.plan);
   const Icon = expanded ? ChevronDown : ChevronRight;
+  const modelLabel =
+    data.provider === "offline"
+      ? `${data.model} (rule-based, not an LLM)`
+      : `${data.provider}/${data.model}`;
   return (
     <section
       className="interpretation"
@@ -102,8 +106,9 @@ export function Interpretation({
         <Icon size={14} aria-hidden="true" />
         <span id={id}>How FloatChat interpreted your request</span>
         <span className="interpretation-model">
-          {data.provider}/{data.model}
-          {data.provider === "offline" ? " (rule-based, not an LLM)" : ""}
+          {data.provider === "offline"
+            ? `${data.provider}/${modelLabel}`
+            : modelLabel}
         </span>
       </button>
       {expanded ? (

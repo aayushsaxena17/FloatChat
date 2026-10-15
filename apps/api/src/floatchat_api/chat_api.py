@@ -10,7 +10,8 @@ needs the configured provider, so history stays readable while the model is unav
 import json
 import logging
 from collections.abc import Callable, Iterator
-from threading import Lock
+from queue import Queue
+from threading import Lock, Thread
 from typing import Any
 
 from fastapi import APIRouter, FastAPI, Header, Request
@@ -141,6 +142,7 @@ class ChatRuntime:
             retriever,
             self._store,
             limits=self.query_runtime.limits,
+            narrate_with_model=llm.narrate_with_model,
             retrieval_top_k=llm.retrieval_top_k,
             planner_max_output_tokens=llm.planner_max_output_tokens,
             narrator_max_output_tokens=llm.narrator_max_output_tokens,
@@ -149,6 +151,35 @@ class ChatRuntime:
 
 def sse(event: Event) -> str:
     return f"event: {event.type}\ndata: {json.dumps(event.data, default=str)}\n\n"
+
+
+def detached_stream(events: Iterator[Event], identifier: str) -> Iterator[str]:
+    """Run the pipeline to completion on a worker thread; yield its events as they arrive.
+
+    Closing the returned generator (a client disconnect) never stops the worker, so the
+    assistant message is stored whether or not anyone is still listening.
+    """
+    pending: Queue[Event | None] = Queue()
+
+    def work() -> None:
+        try:
+            for event in events:
+                pending.put(event)
+        except QueryError as error:
+            pending.put(Event("error", {"code": error.code, "message": error.text}))
+        except Exception:
+            log.exception("chat pipeline failed %s", identifier)
+            failure = QueryError("internal_error")
+            pending.put(Event("error", {"code": failure.code, "message": failure.text}))
+        finally:
+            pending.put(None)
+
+    Thread(target=work, name="floatchat-chat", daemon=True).start()
+    while True:
+        event = pending.get()
+        if event is None:
+            return
+        yield sse(event)
 
 
 def install_chat(app: FastAPI, runtime: ChatRuntime) -> None:
@@ -178,20 +209,11 @@ def install_chat(app: FastAPI, runtime: ChatRuntime) -> None:
             correlation_id=identifier,
         )
         if "text/event-stream" in request.headers.get("accept", ""):
-
-            def generate() -> Iterator[str]:
-                try:
-                    for event in events:
-                        yield sse(event)
-                except QueryError as error:
-                    yield sse(Event("error", {"code": error.code, "message": error.text}))
-                except Exception:
-                    log.exception("chat stream failed %s", identifier)
-                    failure = QueryError("internal_error")
-                    yield sse(Event("error", {"code": failure.code, "message": failure.text}))
-
+            # The pipeline runs in its own thread and stores every message it produces; the
+            # stream only observes it. A browser that reloads mid-answer closes the stream,
+            # and the answer is still there when the conversation is fetched again.
             return StreamingResponse(
-                iterate_in_threadpool(generate()),
+                iterate_in_threadpool(detached_stream(events, identifier)),
                 media_type="text/event-stream",
                 headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
             )
@@ -204,7 +226,7 @@ def install_chat(app: FastAPI, runtime: ChatRuntime) -> None:
                 if event.type == "conversation":
                     conversation_id = event.data["conversation_id"]
                 elif event.type == "error":
-                    failure = QueryError(event.data["code"])
+                    failure = QueryError(event.data["code"], message=event.data.get("message"))
                 elif event.type == "message":
                     message = event.data
             if failure is not None:
