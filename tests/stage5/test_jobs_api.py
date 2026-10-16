@@ -104,7 +104,9 @@ def test_identical_request_attaches_and_the_idempotency_key_is_honoured(client: 
     again = client.post("/v1/exports", json=REQUEST, headers={**HEADERS, "Idempotency-Key": "a1"})
     assert again.status_code == 202 and again.json()["created"] is False
     assert again.json()["job"]["id"] == first.json()["job"]["id"]
-    attached = client.post("/v1/exports", json={**REQUEST, "idempotency_key": "b2"}, headers=HEADERS)
+    attached = client.post(
+        "/v1/exports", json={**REQUEST, "idempotency_key": "b2"}, headers=HEADERS
+    )
     assert attached.json()["attached"] is True
     assert attached.json()["job"]["id"] == first.json()["job"]["id"]
     different = client.post("/v1/exports", json={**REQUEST, "format": "csv"}, headers=HEADERS)
@@ -121,7 +123,10 @@ def test_invalid_requests_are_rejected_with_details(client: TestClient) -> None:
     assert unknown.status_code == 422 and unknown.json()["error"]["code"] == "unknown_region"
     too_long = client.post(
         "/v1/exports",
-        json={**REQUEST, "time_range": {"start": "1990-01-01T00:00:00Z", "end": "2025-04-01T00:00:00Z"}},
+        json={
+            **REQUEST,
+            "time_range": {"start": "1990-01-01T00:00:00Z", "end": "2025-04-01T00:00:00Z"},
+        },
         headers=HEADERS,
     )
     assert too_long.status_code == 422, too_long.text
@@ -159,7 +164,12 @@ def test_events_stream_replays_resumes_and_ends_with_the_terminal_event(
         text = "".join(response.iter_text())
     blocks = [block for block in text.split("\n\n") if block.strip()]
     ids = [line for block in blocks for line in block.splitlines() if line.startswith("id: ")]
-    kinds = [line.split(": ", 1)[1] for block in blocks for line in block.splitlines() if line.startswith("event: ")]
+    kinds = [
+        line.split(": ", 1)[1]
+        for block in blocks
+        for line in block.splitlines()
+        if line.startswith("event: ")
+    ]
     assert ids == ["id: 1", "id: 2", "id: 3"] and kinds == ["planned", "chunk", "finished"]
     assert '"job_state": "completed"' in blocks[-1]
     with client.stream(
@@ -168,7 +178,9 @@ def test_events_stream_replays_resumes_and_ends_with_the_terminal_event(
         resumed = "".join(response.iter_text())
     assert resumed.count("event: ") == 1 and "event: finished" in resumed
     # A stream over a quiet job sends keep-alive comments and closes once the job finishes.
-    quiet = client.post("/v1/exports", json={**REQUEST, "format": "csv"}, headers=HEADERS).json()["job"]
+    quiet = client.post("/v1/exports", json={**REQUEST, "format": "csv"}, headers=HEADERS).json()[
+        "job"
+    ]
     ticks = {"n": 0}
 
     def sleep(seconds: float) -> None:
@@ -177,7 +189,9 @@ def test_events_stream_replays_resumes_and_ends_with_the_terminal_event(
             store.update(quiet["id"], state="failed", finished=True)
 
     out = list(event_stream(store, quiet["id"], 0, poll=0, heartbeat=0, sleep=sleep))
-    assert out[0].startswith(": keep-alive") and out[-1].startswith("id: ") and "finished" in out[-1]
+    assert (
+        out[0].startswith(": keep-alive") and out[-1].startswith("id: ") and "finished" in out[-1]
+    )
 
 
 def test_download_needs_a_valid_token_and_streams_the_object(
@@ -211,10 +225,15 @@ def test_download_needs_a_valid_token_and_streams_the_object(
     expired = sign(KEY, artefact.id, NOW - timedelta(seconds=1))
     assert client.get(f"/v1/artefacts/{artefact.id}/download?token={expired}").status_code == 403
     assert verify(KEY, artefact.id, sign(KEY, artefact.id, NOW + timedelta(minutes=1)), NOW)
-    assert not verify(KEY, str(uuid.uuid4()), sign(KEY, artefact.id, NOW + timedelta(minutes=1)), NOW)
+    assert not verify(
+        KEY, str(uuid.uuid4()), sign(KEY, artefact.id, NOW + timedelta(minutes=1)), NOW
+    )
     # An expired artefact is gone even with a good token (state before object, ADR-0079).
     store.expire_artefacts(NOW + timedelta(days=8))
     good = sign(KEY, artefact.id, NOW + timedelta(minutes=1))
     gone = client.get(f"/v1/artefacts/{artefact.id}/download?token={good}")
     assert gone.status_code == 410 and gone.json()["error"]["code"] == "artefact_unavailable"
-    assert client.get(f"/v1/jobs/{job['id']}", headers=HEADERS).json()["artefacts"][0]["download_url"] is None
+    assert (
+        client.get(f"/v1/jobs/{job['id']}", headers=HEADERS).json()["artefacts"][0]["download_url"]
+        is None
+    )

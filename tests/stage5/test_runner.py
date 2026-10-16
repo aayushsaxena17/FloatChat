@@ -44,7 +44,14 @@ def create(store, req, client="c1"):
 
 def runner(store, catalogue, runs, exporter, **kwargs):
     return JobRunner(
-        store, catalogue, runs, exporter, limits=LIMITS, sleep=lambda s: None, clock=lambda: NOW, **kwargs
+        store,
+        catalogue,
+        runs,
+        exporter,
+        limits=LIMITS,
+        sleep=lambda s: None,
+        clock=lambda: NOW,
+        **kwargs,
     )
 
 
@@ -96,14 +103,22 @@ def test_worker_killed_mid_chunk_resumes_without_repeating_complete_chunks():
             if chunk.label.startswith("2016"):
                 raise KeyboardInterrupt  # the process dies right after the first chunk
 
-    first = Dying(store, catalogue, runs, exporter, limits=LIMITS, sleep=lambda s: None, clock=lambda: NOW)
+    first = Dying(
+        store, catalogue, runs, exporter, limits=LIMITS, sleep=lambda s: None, clock=lambda: NOW
+    )
     with pytest.raises(KeyboardInterrupt):
         first.run_once(("export",))
     states = {c.label: c.state for c in store.chunks(job.id)}
-    assert states == {"2016-01..2016-12": "complete", "2017-01..2017-06": "pending", "export": "pending"}
+    assert states == {
+        "2016-01..2016-12": "complete",
+        "2017-01..2017-06": "pending",
+        "export": "pending",
+    }
     # The lease has not lapsed: nobody else can claim it yet.
     assert runner(store, catalogue, runs, exporter, worker="other").run_once(("export",)) is None
-    store._jobs[job.id] = store._jobs[job.id].__class__(**{**store._jobs[job.id].__dict__, "lease_until": None})
+    store._jobs[job.id] = store._jobs[job.id].__class__(
+        **{**store._jobs[job.id].__dict__, "lease_until": None}
+    )
     runner(store, catalogue, runs, exporter, worker="other").run_once(("export",))
     assert store.get(job.id).state == "completed"
     assert len(runs.admitted) == 2  # the 2016 run was never admitted twice
@@ -120,13 +135,20 @@ def test_resume_reattaches_to_a_running_ingestion_run():
             raise KeyboardInterrupt  # dies while waiting for the run
 
     with pytest.raises(KeyboardInterrupt):
-        Dying(store, catalogue, runs, exporter, limits=LIMITS, sleep=lambda s: None, clock=lambda: NOW).run_once(("export",))
+        Dying(
+            store, catalogue, runs, exporter, limits=LIMITS, sleep=lambda s: None, clock=lambda: NOW
+        ).run_once(("export",))
     chunk = store.chunks(job.id)[0]
     assert chunk.state == "running" and chunk.ingestion_run_id is not None
-    store._jobs[job.id] = store._jobs[job.id].__class__(**{**store._jobs[job.id].__dict__, "lease_until": None})
+    store._jobs[job.id] = store._jobs[job.id].__class__(
+        **{**store._jobs[job.id].__dict__, "lease_until": None}
+    )
     runner(store, catalogue, runs, exporter, worker="other").run_once(("export",))
     assert store.get(job.id).state == "completed"
-    assert len(runs.admitted) == 1 and store.chunks(job.id)[0].ingestion_run_id == chunk.ingestion_run_id
+    assert (
+        len(runs.admitted) == 1
+        and store.chunks(job.id)[0].ingestion_run_id == chunk.ingestion_run_id
+    )
 
 
 def test_upstream_down_ends_partial_with_missing_chunks_listed():
@@ -164,7 +186,9 @@ def test_cancel_during_fetch_cancels_the_run_and_the_job():
         if polls["n"] == 3:
             store.cancel(job.id, "c1", None)
 
-    JobRunner(store, catalogue, runs, exporter, limits=LIMITS, sleep=sleep, clock=lambda: NOW).run_once(("export",))
+    JobRunner(
+        store, catalogue, runs, exporter, limits=LIMITS, sleep=sleep, clock=lambda: NOW
+    ).run_once(("export",))
     finished = store.get(job.id)
     assert finished.state == "cancelled" and runs.cancelled
     assert {c.state for c in store.chunks(job.id)} == {"cancelled"}

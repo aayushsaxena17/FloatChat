@@ -330,6 +330,10 @@ export interface components {
             format: string;
             /** Id */
             id: string;
+            /** Manifest */
+            manifest: {
+                [key: string]: unknown;
+            };
             /** Profile Count */
             profile_count: number;
             /** Role */
@@ -717,16 +721,30 @@ export interface components {
             evidence: {
                 [key: string]: unknown;
             };
+            /** Finished At */
+            finished_at?: string | null;
             /** Id */
             id: string;
+            /** Ingestion Run Id */
+            ingestion_run_id?: string | null;
+            /** Interval */
+            interval?: {
+                [key: string]: unknown;
+            } | null;
             /** Kind */
             kind: string;
             /** Label */
             label: string;
             /** Seq */
             seq: number;
+            /** Started At */
+            started_at?: string | null;
             /** State */
             state: string;
+            /** Tiles */
+            tiles: {
+                [key: string]: unknown;
+            }[];
         } & {
             [key: string]: unknown;
         };
@@ -765,14 +783,22 @@ export interface components {
         };
         /** JobRecord */
         JobRecord: {
+            /** Attempts */
+            attempts: number;
+            /** Cancel Requested At */
+            cancel_requested_at?: string | null;
             /** Created At */
             created_at: string;
             /** Error */
             error?: {
                 [key: string]: unknown;
             } | null;
+            /** Finished At */
+            finished_at?: string | null;
             /** Id */
             id: string;
+            /** Idempotency Key */
+            idempotency_key?: string | null;
             /** Kind */
             kind: string;
             /** Plan */
@@ -789,10 +815,14 @@ export interface components {
             request: {
                 [key: string]: unknown;
             };
+            /** Request Sha256 */
+            request_sha256: string;
             /** Result */
             result: {
                 [key: string]: unknown;
             };
+            /** Started At */
+            started_at?: string | null;
             /** State */
             state: string;
             /** Updated At */

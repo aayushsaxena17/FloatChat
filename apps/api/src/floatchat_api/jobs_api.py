@@ -82,14 +82,20 @@ class JobRecord(_Loose):
     kind: str
     queue: str
     state: str
+    idempotency_key: str | None = None
     request: dict[str, Any]
+    request_sha256: str
     plan: dict[str, Any]
     progress: dict[str, Any]
     result: dict[str, Any]
     error: dict[str, Any] | None = None
     version: int
+    attempts: int
+    cancel_requested_at: str | None = None
     created_at: str
     updated_at: str
+    started_at: str | None = None
+    finished_at: str | None = None
 
 
 class JobChunkRecord(_Loose):
@@ -97,10 +103,15 @@ class JobChunkRecord(_Loose):
     seq: int
     kind: str
     label: str
+    interval: dict[str, Any] | None = None
+    tiles: list[dict[str, Any]]
     state: str
     attempts: int
+    ingestion_run_id: str | None = None
     evidence: dict[str, Any]
     error: dict[str, Any] | None = None
+    started_at: str | None = None
+    finished_at: str | None = None
 
 
 class ArtefactRecord(_Loose):
@@ -112,6 +123,7 @@ class ArtefactRecord(_Loose):
     sha256: str
     row_count: int
     profile_count: int
+    manifest: dict[str, Any]
     state: str
     created_at: str
     expires_at: str

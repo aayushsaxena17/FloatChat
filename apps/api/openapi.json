@@ -39,6 +39,11 @@
             "title": "Id",
             "type": "string"
           },
+          "manifest": {
+            "additionalProperties": true,
+            "title": "Manifest",
+            "type": "object"
+          },
           "profile_count": {
             "title": "Profile Count",
             "type": "integer"
@@ -69,6 +74,7 @@
           "sha256",
           "row_count",
           "profile_count",
+          "manifest",
           "state",
           "created_at",
           "expires_at"
@@ -1240,9 +1246,43 @@
             "title": "Evidence",
             "type": "object"
           },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "ingestion_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ingestion Run Id"
+          },
+          "interval": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interval"
           },
           "kind": {
             "title": "Kind",
@@ -1256,9 +1296,28 @@
             "title": "Seq",
             "type": "integer"
           },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
           "state": {
             "title": "State",
             "type": "string"
+          },
+          "tiles": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Tiles",
+            "type": "array"
           }
         },
         "required": [
@@ -1266,6 +1325,7 @@
           "seq",
           "kind",
           "label",
+          "tiles",
           "state",
           "attempts",
           "evidence"
@@ -1358,6 +1418,21 @@
       "JobRecord": {
         "additionalProperties": true,
         "properties": {
+          "attempts": {
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "cancel_requested_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancel Requested At"
+          },
           "created_at": {
             "title": "Created At",
             "type": "string"
@@ -1374,9 +1449,31 @@
             ],
             "title": "Error"
           },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
           },
           "kind": {
             "title": "Kind",
@@ -1401,10 +1498,25 @@
             "title": "Request",
             "type": "object"
           },
+          "request_sha256": {
+            "title": "Request Sha256",
+            "type": "string"
+          },
           "result": {
             "additionalProperties": true,
             "title": "Result",
             "type": "object"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
           },
           "state": {
             "title": "State",
@@ -1425,10 +1537,12 @@
           "queue",
           "state",
           "request",
+          "request_sha256",
           "plan",
           "progress",
           "result",
           "version",
+          "attempts",
           "created_at",
           "updated_at"
         ],

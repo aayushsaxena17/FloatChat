@@ -32,7 +32,9 @@ def members_table(*identifiers: str) -> pa.Table:
             "platform_number": ["5900001"] * len(rows),
             "cycle_number": list(range(1, len(rows) + 1)),
             "direction": ["A"] * len(rows),
-            "observed_at": [datetime(2025, 1, 10 + n, tzinfo=UTC).replace(tzinfo=None) for n in range(len(rows))],
+            "observed_at": [
+                datetime(2025, 1, 10 + n, tzinfo=UTC).replace(tzinfo=None) for n in range(len(rows))
+            ],
             "longitude": [65.0] * len(rows),
             "latitude": [15.0] * len(rows),
         },
@@ -81,16 +83,23 @@ def test_parquet_export_has_one_row_per_level_with_policy_values_and_audit_colum
     rows = table.to_pylist()
     first = [row for row in rows if row["profile_id"] == P1]
     # Delayed-mode profile: the adjusted value is the selected one; original is null.
-    assert first[0]["temperature"] == first[0]["temperature_adjusted"] and first[0]["temperature_original"] is None
+    assert (
+        first[0]["temperature"] == first[0]["temperature_adjusted"]
+        and first[0]["temperature_original"] is None
+    )
     assert first[0]["temperature_data_mode"] == "D" and first[0]["temperature_adjusted_qc"] == "1"
     real = [row for row in rows if row["profile_id"] == P2]
-    assert real[0]["salinity"] == real[0]["salinity_original"] and real[0]["salinity_adjusted"] is None
+    assert (
+        real[0]["salinity"] == real[0]["salinity_original"] and real[0]["salinity_adjusted"] is None
+    )
     assert [row["level_index"] for row in first] == list(range(len(LEVELS)))
 
 
 def test_csv_export_and_depth_filter_and_variable_selection(writer) -> None:
     export_writer, paths = writer
-    plan = plan_for(request(format="csv", depth_dbar={"min": 0, "max": 50}, variables=["temperature"]))
+    plan = plan_for(
+        request(format="csv", depth_dbar={"min": 0, "max": 50}, variables=["temperature"])
+    )
     written = export_writer.write(plan, members_table(P1, P2), paths, "csv", "x.csv")
     with written.path.open() as handle:
         rows = list(csv.DictReader(handle))
@@ -102,7 +111,9 @@ def test_csv_export_and_depth_filter_and_variable_selection(writer) -> None:
     assert {row["temperature"] for row in rows} == {"28.0", "25.0"}
 
 
-def test_members_outside_the_manifest_or_parts_are_dropped_and_empty_exports_keep_the_header(writer) -> None:
+def test_members_outside_the_manifest_or_parts_are_dropped_and_empty_exports_keep_the_header(
+    writer,
+) -> None:
     export_writer, paths = writer
     plan = plan_for(request(format="csv"))
     stranger = str(uuid.uuid4())
@@ -120,7 +131,9 @@ def test_the_select_is_a_fixed_template_with_named_parameters() -> None:
     sql, parameters = export_select(plan)
     assert parameters == {"depth_min": 10.0, "depth_max": 100.0}
     assert "$parts_files" in sql and "ORDER BY m.observed_at, m.profile_id, p.level_index" in sql
-    assert "'" not in sql.replace("'R'", "").replace("'A'", "").replace("'D'", "").replace("'1'", "").replace("'2'", "")
+    assert "'" not in sql.replace("'R'", "").replace("'A'", "").replace("'D'", "").replace(
+        "'1'", ""
+    ).replace("'2'", "")
 
 
 def test_paths_outside_the_cache_are_refused(writer, tmp_path: Path) -> None:

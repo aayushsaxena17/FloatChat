@@ -5,7 +5,6 @@ export const STUBS: Record<string, { title: string; stage: string }> = {
     title: "Sign in",
     stage: "Stage 7 (authentication, roles and quotas)",
   },
-  "/jobs": { title: "Jobs", stage: "Stage 5 (historical jobs and exports)" },
   "/forecasts": { title: "Forecasts", stage: "Stage 6 (forecasting)" },
   "/settings": { title: "Settings", stage: "Stage 7" },
   "/admin/usage": { title: "Usage", stage: "Stage 7" },
