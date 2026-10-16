@@ -199,7 +199,10 @@ class SeriesBuilder:
             },
         )
         cache = str(self.cache.directory.resolve()).replace("'", "''") + "/"
+        spill = self.cache.directory.resolve() / ".duckdb-tmp"
+        spill.mkdir(parents=True, exist_ok=True)
         connection.execute(f"SET allowed_directories = ['{cache}']")
+        connection.execute(f"SET temp_directory = '{str(spill).replace(chr(39), chr(39) * 2)}'")
         connection.execute("SET enable_external_access = false")
         connection.execute("SET lock_configuration = true")
         return connection
