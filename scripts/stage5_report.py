@@ -283,11 +283,13 @@ def report(arguments: argparse.Namespace) -> int:
                 f"| {index} | {artefact['role']} | `{artefact['filename']}` | {artefact['bytes']} | "
                 f"{artefact['row_count']} | {artefact['profile_count']} | `{artefact['sha256'][:16]}…` |"
             )
-    if sidecars and sidecars[0].get("sizes_before") and sidecars[0].get("sizes_after"):
-        before, after = sidecars[0]["sizes_before"], sidecars[0]["sizes_after"]
+    for index, sidecar in enumerate(sidecars, start=1):
+        if not (sidecar.get("sizes_before") and sidecar.get("sizes_after")):
+            continue
+        before, after = sidecar["sizes_before"], sidecar["sizes_after"]
         lines += [
             "",
-            "## What the first run added to the stores",
+            f"## What run {index} added to the stores",
             "",
             "| Measure | Before | After | Added |",
             "|---|---|---|---|",
@@ -307,15 +309,30 @@ def report(arguments: argparse.Namespace) -> int:
             lines.append(
                 f"| {label} | {_fmt_bytes(before[key])} | {_fmt_bytes(after[key])} | {_fmt_bytes(after[key] - before[key])} |"
             )
-    missing = jobs[0]["job"].get("result", {}).get("missing_slots", [])
+    missing = (jobs[-1]["job"].get("result") or {}).get("missing_slots", [])
+    data_hashes = {
+        artefact["sha256"]
+        for detail in jobs
+        for artefact in detail["artefacts"]
+        if artefact["role"] == "data"
+    }
     lines += [
         "",
         "## Notes",
         "",
         f"- Cache reuse ratio of run {len(jobs)}: {jobs[-1]['job']['progress'].get('reuse_ratio')} "
-        "(slots reused over slots required; a second identical request plans no fetch chunk).",
-        f"- Missing slots after run 1: {len(missing)}"
+        "(slots reused over slots required; slots not reused are fetched, or listed as "
+        "quarantined without a run).",
+        f"- Missing slots after run {len(jobs)}: {len(missing)}"
         + (f" (months {sorted({m['month'] for m in missing})[:12]})" if missing else ""),
+        (
+            f"- The data artefacts of the runs that exported are byte-identical "
+            f"(one SHA-256, `{next(iter(data_hashes))[:16]}…`): the export is deterministic "
+            "over the same catalogue."
+            if len(data_hashes) == 1
+            and sum(1 for d in jobs for a in d["artefacts"] if a["role"] == "data") > 1
+            else f"- Data artefact SHA-256 values across runs: {len(data_hashes)}."
+        ),
         "- Historical months are stored in PostgreSQL and as Parquet parts alike (ADR-0078 point 4); "
         "the table above records the cost of that decision for this region.",
     ]
@@ -342,7 +359,7 @@ def report(arguments: argparse.Namespace) -> int:
         months = sorted({m for c in refetched for m in c["evidence"].get("months", [])})
         lines.append(
             f"- Run {len(jobs)} planned {len(refetched)} fetch chunk(s) from the catalogue for the slots "
-            f"run 1 left missing"
+            f"the previous run left missing"
             + (f" (months {months})" if months else "")
             + "; everything else was reused."
         )

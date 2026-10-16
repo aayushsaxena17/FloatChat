@@ -887,8 +887,10 @@ ADR-0081.
       job rows, split the spill fix per branch, rebuild the forecast snapshots once after the
       last fetch and evaluate on an idle host, retry the push in the background, wake on
       state transitions only; all applied.
-- [ ] The ten-year Arabian Sea run twice through the job system; `reports/historical_jobs_<date>.md`.
-- [ ] Gate report `docs/stage5-gate.md`; pull request.
+- [x] The ten-year Arabian Sea request three times through the job system (the third for the
+      pure-reuse measurement); `reports/historical_jobs_2026-10-16.md`.
+- [x] Gate report `docs/stage5-gate.md`.
+- [ ] Pull request (draft #18 open; final push pending the credential channel).
 
 ## Stage 6 - forecasting (branch `codex/stage-6`, from `codex/stage-5`)
 
