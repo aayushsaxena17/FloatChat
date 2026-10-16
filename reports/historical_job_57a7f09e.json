@@ -1,0 +1,38 @@
+{
+  "job": "57a7f09e-3632-4a8b-9dde-7efab01e1ae7",
+  "request": {
+    "depth_dbar": {
+      "max": 2000,
+      "min": 0
+    },
+    "format": "parquet",
+    "geography": {
+      "kind": "named_region",
+      "value": "Bay of Bengal"
+    },
+    "qc_policy": "science_ready",
+    "time_range": {
+      "end": "2025-04-01T00:00:00Z",
+      "start": "2019-04-01T00:00:00Z"
+    }
+  },
+  "sizes_after": {
+    "argo_profile": 621355008,
+    "core_measurement": 0,
+    "database": 4693658771,
+    "levels": 13126128,
+    "object_bytes": 966457550,
+    "parts": 909,
+    "profiles": 33322
+  },
+  "sizes_before": {
+    "argo_profile": 594018304,
+    "core_measurement": 0,
+    "database": 4473506963,
+    "levels": 12559000,
+    "object_bytes": 925059904,
+    "parts": 870,
+    "profiles": 31833
+  },
+  "state": "completed"
+}

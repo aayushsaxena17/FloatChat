@@ -71,8 +71,21 @@ the job page at `/jobs/<id>` follows the chunks and offers the downloads.
 
 ## Measured results
 
-See `reports/historical_jobs_<date>.md` (written by `scripts/stage5_report.py report` from the
-job rows; the JSON sidecar holds every row). Numbers are not repeated here by hand.
+See [reports/historical_jobs_2026-10-16.md](../reports/historical_jobs_2026-10-16.md) (written
+by `scripts/stage5_report.py report` from the job rows; the JSON sidecar holds every row).
+Numbers are not repeated here by hand. What the three runs of the same ten-year Arabian Sea
+request show, in words:
+
+- Run 1 fetched nine of ten years through the job system across the clock jump, three worker
+  rollouts and the defects found above; its 2015 chunk failed under the pre-retry runner and
+  its export failed when the lease lapsed (both fixed, recorded above). The runs it created
+  are in the catalogue.
+- Run 2, the identical request, planned nine small fetch chunks for the 76 slots still
+  missing, reused 94% of the slots, fetched the rest in one pass, skipped the slots the source
+  policy had quarantined, and exported the ten years; it ended `partial` with the twelve
+  quarantined month-tiles declared in the result and the manifest.
+- Run 3 reused 99% of the slots, admitted no ingestion run, and produced a data artefact
+  byte-identical to run 2's.
 
 ## Deviations from the PRD
 

@@ -1,0 +1,38 @@
+{
+  "job": "385a0867-9eea-456b-99be-81b9296bd56f",
+  "request": {
+    "depth_dbar": {
+      "max": 2000,
+      "min": 0
+    },
+    "format": "parquet",
+    "geography": {
+      "kind": "named_region",
+      "value": "Arabian Sea"
+    },
+    "qc_policy": "science_ready",
+    "time_range": {
+      "end": "2025-04-01T00:00:00Z",
+      "start": "2015-04-01T00:00:00Z"
+    }
+  },
+  "sizes_after": {
+    "argo_profile": 1216552960,
+    "core_measurement": 0,
+    "database": 9168301203,
+    "levels": 25749095,
+    "object_bytes": 1896640221,
+    "parts": 1475,
+    "profiles": 58836
+  },
+  "sizes_before": {
+    "argo_profile": 1216552960,
+    "core_measurement": 0,
+    "database": 9168120979,
+    "levels": 25749095,
+    "object_bytes": 1896640221,
+    "parts": 1475,
+    "profiles": 58836
+  },
+  "state": "partial"
+}
