@@ -57,6 +57,13 @@ page follows it and the run page shows the result.
 
 ## Measured results
 
+- `reports/stage6-smoke-forecast-2026-10-16.json`: a live run on the development stack while
+  the Stage 5 fetches were in progress. The series builder read every committed Arabian Sea
+  part for 2015-04 to 2025-04 (20 months with at least five profiles) and the run was refused:
+  `missingness_exceeds_policy: 100 of 120 months (83%) are missing and the longest gap is 67
+  months`. This is evidence for the job, snapshot and refusal paths on real data, not an
+  evaluation result.
+
 `reports/eval_forecast_<date>.md` from `make eval-forecast` over the committed snapshots
 (data snapshot ids, dataset versions, seed, library versions and the grid are in its header).
 Nothing is repeated here by hand. Per series it reports the baseline and selected MASE per
