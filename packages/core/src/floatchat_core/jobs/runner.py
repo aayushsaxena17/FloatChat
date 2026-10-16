@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any, Protocol
 
-from ..ingestion.planning import Interval, Tile
+from ..ingestion.planning import Interval, Tile, shift_months
 from ..query.catalogue import Coverage, EnvironmentInfo
 from ..query.errors import QueryError
 from ..query.geography import ResolvedGeography, resolve_geography
@@ -158,7 +158,7 @@ class JobRunner:
                 if chunk.state in ("complete", "reused", "failed", "cancelled"):
                     continue
                 self._check_cancel(job)
-                self._fetch(job, chunk)
+                self._fetch(job, chunk, environment)
                 chunks = self.store.chunks(job.id)
                 self.store.update(job.id, progress=self._progress(chunks))
             self._check_cancel(job)
@@ -250,28 +250,117 @@ class JobRunner:
 
     # -- fetch chunk -----------------------------------------------------------------------
 
-    def _fetch(self, job: Job, chunk: JobChunk) -> None:
+    def _fetch(self, job: Job, chunk: JobChunk, environment: EnvironmentInfo) -> None:
+        """Fetch a chunk's missing months through historical runs, with bounded retries.
+
+        A run that ends short (deadline, quarantine, upstream failure) leaves the slots it did
+        commit in the catalogue; the chunk is re-planned against current coverage and a fresh
+        run is admitted for the still-missing month × tile slots, at most ``fetch_attempts``
+        runs in all. Every run is recorded in the chunk's evidence.
+        """
         assert chunk.interval_start is not None and chunk.interval_end is not None
         interval = Interval(chunk.interval_start, chunk.interval_end)
-        run_id = chunk.ingestion_run_id
-        if run_id is None or chunk.state != "running":
+        tiles = [list(pair) for pair in chunk.tiles]
+        evidence = dict(chunk.evidence)
+        runs: list[dict[str, Any]] = list(evidence.get("runs", []))
+        run_id = chunk.ingestion_run_id if chunk.state == "running" else None
+        if chunk.state != "running":
             self.store.update_chunk(chunk.id, state="running", attempt=True)
             self.store.emit(
                 job.id, "chunk", {"seq": chunk.seq, "state": "running", "label": chunk.label}
             )
-            waited = 0
-            while True:
-                self._check_cancel(job)
-                kind, run_id = self.ingestion.admit(uuid.uuid4(), interval, chunk.tiles, job.id)
-                if kind == "overlap_skip" or run_id is None:
-                    # Another run owns the scope (one open run per scope, ADR-0078): wait.
-                    waited += 1
-                    if waited == 1:
-                        self.store.emit(job.id, "chunk", {"seq": chunk.seq, "state": "waiting"})
-                    self._pause(job, self.limits.overlap_wait_seconds)
-                    continue
-                break
-            self.store.update_chunk(chunk.id, ingestion_run_id=run_id)
+        while True:
+            if run_id is None:
+                run_id = self._admit(job, chunk, interval, tiles)
+                self.store.update_chunk(chunk.id, ingestion_run_id=run_id)
+            status = self._await_run(job, run_id)
+            runs.append({"run_id": run_id, "state": status.state, **status.evidence})
+            evidence["runs"] = runs
+            evidence.update(status.evidence)
+            evidence["run_state"] = status.state
+            if status.state == "complete":
+                self.store.update_chunk(chunk.id, state="complete", evidence=evidence)
+                self.store.emit(
+                    job.id,
+                    "chunk",
+                    {"seq": chunk.seq, "state": "complete", "run_state": "complete"},
+                )
+                return
+            # What is still missing after this run, against the catalogue as it is now.
+            coverage = self.catalogue.coverage(
+                environment.id, interval, tuple(Tile(w, s) for w, s in tiles)
+            )
+            missing = coverage.missing
+            evidence["missing_slots_after"] = len(missing)
+            if not missing:
+                # Every slot of the chunk is committed (another run or an earlier attempt
+                # covered the rest): the chunk's purpose is met.
+                self.store.update_chunk(chunk.id, state="complete", evidence=evidence)
+                self.store.emit(
+                    job.id,
+                    "chunk",
+                    {"seq": chunk.seq, "state": "complete", "run_state": status.state},
+                )
+                return
+            if len(runs) >= self.limits.fetch_attempts:
+                self.store.update_chunk(
+                    chunk.id,
+                    state="failed",
+                    evidence=evidence,
+                    error={
+                        "code": "fetch_" + status.state,
+                        "message": (
+                            f"The ingestion run ended {status.state}"
+                            + (
+                                f" ({status.evidence.get('termination_reason')})"
+                                if status.evidence.get("termination_reason")
+                                else ""
+                            )
+                            + f"; {len(missing)} month-tile slots are still missing after "
+                            f"{len(runs)} runs."
+                        ),
+                    },
+                )
+                self.store.emit(
+                    job.id,
+                    "chunk",
+                    {"seq": chunk.seq, "state": "failed", "run_state": status.state},
+                )
+                return
+            months = sorted({slot.month for slot in missing})
+            first = datetime.strptime(months[0], "%Y-%m").replace(tzinfo=UTC)
+            last = datetime.strptime(months[-1], "%Y-%m").replace(tzinfo=UTC)
+            interval = Interval(first, shift_months(last, 1))
+            cells = sorted({(slot.tile.west, slot.tile.south) for slot in missing})
+            tiles = [[west, south] for west, south in cells]
+            self.store.emit(
+                job.id,
+                "chunk",
+                {
+                    "seq": chunk.seq,
+                    "state": "retrying",
+                    "run_state": status.state,
+                    "missing_slots": len(missing),
+                    "attempt": len(runs) + 1,
+                },
+            )
+            run_id = None
+
+    def _admit(self, job: Job, chunk: JobChunk, interval: Interval, tiles: list[list[int]]) -> str:
+        waited = 0
+        while True:
+            self._check_cancel(job)
+            kind, run_id = self.ingestion.admit(uuid.uuid4(), interval, tiles, job.id)
+            if kind == "overlap_skip" or run_id is None:
+                # Another run owns the scope (one open run per scope, ADR-0078): wait.
+                waited += 1
+                if waited == 1:
+                    self.store.emit(job.id, "chunk", {"seq": chunk.seq, "state": "waiting"})
+                self._pause(job, self.limits.overlap_wait_seconds)
+                continue
+            return run_id
+
+    def _await_run(self, job: Job, run_id: str) -> RunStatus:
         status = self.ingestion.status(run_id)
         while not status.closed:
             try:
@@ -281,33 +370,7 @@ class JobRunner:
                 raise
             self._pause(job, self.limits.run_poll_seconds)
             status = self.ingestion.status(run_id)
-        evidence = dict(chunk.evidence)
-        evidence.update(status.evidence)
-        evidence["run_state"] = status.state
-        if status.state == "complete":
-            self.store.update_chunk(chunk.id, state="complete", evidence=evidence)
-            self.store.emit(
-                job.id, "chunk", {"seq": chunk.seq, "state": "complete", "run_state": status.state}
-            )
-        else:
-            self.store.update_chunk(
-                chunk.id,
-                state="failed",
-                evidence=evidence,
-                error={
-                    "code": "fetch_" + status.state,
-                    "message": f"The ingestion run ended {status.state}"
-                    + (
-                        f" ({status.evidence.get('termination_reason')})"
-                        if status.evidence.get("termination_reason")
-                        else ""
-                    )
-                    + ".",
-                },
-            )
-            self.store.emit(
-                job.id, "chunk", {"seq": chunk.seq, "state": "failed", "run_state": status.state}
-            )
+        return status
 
     # -- bookkeeping -----------------------------------------------------------------------
 
