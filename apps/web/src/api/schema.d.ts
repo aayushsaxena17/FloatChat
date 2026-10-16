@@ -157,6 +157,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/forecasts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Forecasts */
+        get: operations["list_forecasts_v1_forecasts_get"];
+        put?: never;
+        /** Create Forecast */
+        post: operations["create_forecast_v1_forecasts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/forecasts/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Forecast Detail */
+        get: operations["forecast_detail_v1_forecasts__run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/health/live": {
         parameters: {
             query?: never;
@@ -683,6 +718,174 @@ export interface components {
             profile_count: number;
             /** Source */
             source: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ForecastCreated */
+        ForecastCreated: {
+            /** Attached */
+            attached: boolean;
+            /** Created */
+            created: boolean;
+            definition: components["schemas"]["ForecastDefinitionRecord"];
+            /** Job */
+            job: {
+                [key: string]: unknown;
+            };
+        } & {
+            [key: string]: unknown;
+        };
+        /** ForecastDefinitionRecord */
+        ForecastDefinitionRecord: {
+            /** Aggregation */
+            aggregation: string;
+            /** Definition Sha256 */
+            definition_sha256: string;
+            /** Depth Dbar */
+            depth_dbar: {
+                [key: string]: unknown;
+            };
+            /** Frequency */
+            frequency: string;
+            /** Id */
+            id: string;
+            /** Min Profiles */
+            min_profiles: number;
+            /** Qc Policy */
+            qc_policy: string;
+            /** Region */
+            region: string;
+            /** Series End */
+            series_end: string;
+            /** Series Start */
+            series_start: string;
+            /** Variable */
+            variable: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ForecastDetail */
+        ForecastDetail: {
+            /** Boundary */
+            boundary: string;
+            definition: components["schemas"]["ForecastDefinitionRecord"];
+            model?: components["schemas"]["ForecastModelRecord"] | null;
+            run: components["schemas"]["ForecastRunRecord"];
+        } & {
+            [key: string]: unknown;
+        };
+        /** ForecastList */
+        ForecastList: {
+            /** Forecasts */
+            forecasts: components["schemas"]["ForecastRunRecord"][];
+        } & {
+            [key: string]: unknown;
+        };
+        /** ForecastModelRecord */
+        ForecastModelRecord: {
+            /** Diagnostics */
+            diagnostics: {
+                [key: string]: unknown;
+            };
+            /** Family */
+            family: string;
+            /** Id */
+            id: string;
+            /** Metrics */
+            metrics: {
+                [key: string]: unknown;
+            };
+            /** Order */
+            order: {
+                [key: string]: unknown;
+            };
+            /** Status */
+            status: string;
+            /** Training Snapshot */
+            training_snapshot: {
+                [key: string]: unknown;
+            };
+            /** Version */
+            version: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * ForecastRequestBody
+         * @description ``forecast-request-v1`` (ADR-0085).
+         */
+        ForecastRequestBody: {
+            /** Depth Dbar */
+            depth_dbar?: {
+                [key: string]: unknown;
+            } | null;
+            /** Geography */
+            geography: {
+                [key: string]: unknown;
+            };
+            /**
+             * Horizon
+             * @default 3
+             */
+            horizon: number;
+            /** Idempotency Key */
+            idempotency_key?: string | null;
+            /**
+             * Min Profiles
+             * @default 5
+             */
+            min_profiles: number;
+            /** Time Range */
+            time_range?: {
+                [key: string]: unknown;
+            } | null;
+            /** Variable */
+            variable: string;
+        };
+        /** ForecastRunRecord */
+        ForecastRunRecord: {
+            /** Backtest */
+            backtest: {
+                [key: string]: unknown;
+            };
+            /** Created At */
+            created_at: string;
+            /** Definition Id */
+            definition_id: string;
+            /** Forecast */
+            forecast: {
+                [key: string]: unknown;
+            };
+            /** Generated At */
+            generated_at?: string | null;
+            /** History */
+            history: {
+                [key: string]: unknown;
+            };
+            /** Horizon */
+            horizon: number;
+            /** Id */
+            id: string;
+            /** Job Id */
+            job_id?: string | null;
+            /** Limitations */
+            limitations: string;
+            /** Model Id */
+            model_id?: string | null;
+            /** Reason */
+            reason?: string | null;
+            /** Seed */
+            seed: number;
+            /** Status */
+            status: string;
+            /** Updated At */
+            updated_at: string;
+            /** Versions */
+            versions: {
+                [key: string]: unknown;
+            };
+            /** Warnings */
+            warnings: string[];
         } & {
             [key: string]: unknown;
         };
@@ -1921,6 +2124,378 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Gateway Timeout */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_forecasts_v1_forecasts_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: {
+                "X-FloatChat-Client"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForecastList"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Gone */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Gateway Timeout */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    create_forecast_v1_forecasts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-FloatChat-Client"?: string | null;
+                "Idempotency-Key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForecastRequestBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForecastCreated"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Gone */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Gateway Timeout */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    forecast_detail_v1_forecasts__run_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-FloatChat-Client"?: string | null;
+            };
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForecastDetail"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Gone */
+            410: {
                 headers: {
                     [name: string]: unknown;
                 };

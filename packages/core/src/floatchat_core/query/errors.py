@@ -63,6 +63,8 @@ REGISTRY = MappingProxyType(
         "artefact_unavailable": (410, "The export has expired or is not available."),
         "token_invalid": (403, "The download link is invalid or has expired."),
         "jobs_unavailable": (503, "The job service is not configured."),
+        # Stage 6 (ADR-0085).
+        "forecast_not_found": (404, "The forecast does not exist or belongs to another client."),
     }
 )
 

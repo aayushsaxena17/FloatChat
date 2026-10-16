@@ -178,6 +178,25 @@ services:
       - jobs_export:/var/lib/floatchat/jobs-export
     depends_on: *worker-depends
     restart: unless-stopped
+  # Stage 6 (ADR-0082): forecast jobs get their own worker process so they never queue behind
+  # hours of exports; same image and configuration, the forecast queue only.
+  forecasts:
+    build: { context: .., dockerfile: infra/docker/api.Dockerfile, target: runtime }
+    mem_limit: ${FORECASTS_MEMORY:-640m}
+    environment:
+      <<: [*app-environment, *worker-environment]
+      QUERY_DATABASE_URL: ${QUERY_DATABASE_URL:?Local query role URL required}
+      APPLICATION_COMMIT: ${APPLICATION_COMMIT:-unknown}
+      JOBS_QUEUES: forecast
+      JOBS_CACHE_DIR: /var/lib/floatchat/jobs-cache
+      JOBS_EXPORT_DIR: /var/lib/floatchat/jobs-export
+    command: [python, scripts/dev_worker.py, jobs]
+    volumes:
+      - worker_private:/home/floatchat/private
+      - forecasts_cache:/var/lib/floatchat/jobs-cache
+      - forecasts_export:/var/lib/floatchat/jobs-export
+    depends_on: *worker-depends
+    restart: unless-stopped
   web:
     build: { context: .., dockerfile: infra/docker/web.Dockerfile, target: development }
     environment:
@@ -199,3 +218,5 @@ volumes:
   worker_private:
   jobs_cache:
   jobs_export:
+  forecasts_cache:
+  forecasts_export:

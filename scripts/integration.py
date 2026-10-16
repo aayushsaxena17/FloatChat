@@ -123,6 +123,35 @@ def export_scenario(api_port: int) -> dict[str, object]:
     }
 
 
+def forecast_scenario(api_port: int) -> dict[str, object]:
+    created = jobs_api(
+        api_port,
+        "/v1/forecasts",
+        {
+            "variable": "temperature",
+            "geography": {"kind": "named_region", "value": "Arabian Sea"},
+            "depth_dbar": {"min": 0, "max": 100},
+            "horizon": 3,
+            "time_range": {"start": "2025-01-01T00:00:00Z", "end": "2025-04-01T00:00:00Z"},
+        },
+    )
+    assert created["job"]["kind"] == "forecast" and created["job"]["queue"] == "forecast"
+    detail = wait_job(api_port, created["job"]["id"], 600)
+    assert detail["job"]["state"] == "completed", detail["job"]
+    assert detail["job"]["result"]["status"] == "refused", detail["job"]["result"]
+    run = jobs_api(api_port, f"/v1/forecasts/{detail['job']['result']['forecast_run']}")
+    assert run["run"]["status"] == "refused" and "history_too_short" in run["run"]["reason"]
+    assert run["run"]["history"]["months"] == ["2025-01", "2025-02", "2025-03"]
+    assert run["model"] is None and "not a physics-based" in run["boundary"]
+    listed = jobs_api(api_port, "/v1/forecasts")["forecasts"]
+    assert any(item["id"] == run["run"]["id"] for item in listed)
+    return {
+        "check": "stage6-forecast-job-refused-on-short-history",
+        "run": run["run"]["id"],
+        "reason": run["run"]["reason"],
+    }
+
+
 def main() -> None:
     docker = docker_command()
     project = "floatchat-stage0-test-" + uuid.uuid4().hex[:12]
@@ -252,6 +281,10 @@ def main() -> None:
             # over months the stack never fetched ends partial with the gaps listed, because
             # live ingestion is disabled here (PRD section 22, upstream unavailable).
             evidence.append(export_scenario(api_port))
+            # Stage 6 (ADR-0082 to ADR-0085): a forecast request is a job on the forecast
+            # queue; over the three seeded months the run is refused (history too short) with
+            # its reason, and no forecast is published (PRD section 22).
+            evidence.append(forecast_scenario(api_port))
             compose(
                 "run",
                 "--rm",

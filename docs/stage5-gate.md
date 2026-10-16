@@ -128,7 +128,7 @@ request show, in words:
 - **Found and fixed during run 1 (export spill).** The Bay of Bengal six-year export failed
   with a DuckDB I/O error: sorting the export under the 256 MiB memory limit spilled to
   DuckDB's default temp directory, which the non-root worker cannot create. The export and the
-  series builder of Stage 6 now set `temp_directory` under their own allowed directory
+  series builder now set `temp_directory` under their own allowed directory
   (`<export dir>/.duckdb-tmp`); the job was re-queued and exported over its already-fetched
   years (the report lists it).
 - **Found and fixed during run 1 (quarantined slot).** The Arabian Sea tile 50:20 was

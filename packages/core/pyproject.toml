@@ -13,6 +13,8 @@ dependencies = [
   "sqlalchemy==2.0.48",
   "duckdb==1.5.6",
   "httpx==0.28.1",
+  "statsmodels==0.14.6",
+  "scipy>=1.14",
 ]
 
 [build-system]

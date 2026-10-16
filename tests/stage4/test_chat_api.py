@@ -209,4 +209,4 @@ def test_openapi_documents_the_chat_routes(client):
     schema = client.get("/openapi.json").json()
     assert "/v1/chat/messages" in schema["paths"]
     assert "/v1/chat/conversations/{conversation_id}" in schema["paths"]
-    assert schema["info"]["version"] == "0.4.0"
+    assert schema["info"]["version"] == "0.5.0"

@@ -891,3 +891,21 @@ ADR-0081.
       pure-reuse measurement); `reports/historical_jobs_2026-10-16.md`.
 - [x] Gate report `docs/stage5-gate.md`.
 - [ ] Pull request (draft #18 open; final push pending the credential channel).
+
+## Stage 6 - forecasting (branch `codex/stage-6`, from `codex/stage-5`)
+
+Plan [docs/stage6-plan.md](docs/stage6-plan.md), ADR-0082 to ADR-0085.
+
+- [x] Plan and ADRs written before code; the advisor's points (measure fits before the full
+      grid, uncovered months, `--rebuild` through the API, interval traces, migration
+      companions) applied.
+- [x] Migration 0020: forecast definition, model and run tables.
+- [x] Series builder, snapshot and missing policy; seasonal naive, bounded SARIMA search,
+      rolling-origin backtests, selection, refusals; model artefacts.
+- [x] Forecast job in the jobs worker; API; workspace UI; tests; CI scenario; README.
+- [x] Eight snapshots rebuilt from the complete catalogue and committed; `make eval-forecast`
+      twice from a clean tree gives identical `reports/eval_forecast_2026-10-16.md` (three
+      published, two experimental, three refused); a diverged candidate found through the
+      report is now reported and never selected.
+- [x] Gate report `docs/stage6-gate.md`.
+- [ ] Pull request (draft #19 open; final push pending the credential channel).

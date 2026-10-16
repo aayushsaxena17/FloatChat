@@ -22,7 +22,7 @@ from psycopg import sql
 
 # Alembic head the isolated database must reach (tests/stage1/test_acceptance_preparation.py
 # keeps this equal to the newest file in infra/migrations/versions).
-MIGRATION_HEAD = "0019_jobs_exports"  # Stage 2-5 additions are additive
+MIGRATION_HEAD = "0020_forecasts"  # Stage 2-6 additions are additive
 
 
 def initialize():

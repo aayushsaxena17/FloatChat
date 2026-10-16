@@ -158,6 +158,45 @@ ADR-0077 to ADR-0081.
   `python scripts/stage5_report.py report --jobs <first>,<second>` writes
   `reports/historical_jobs_<date>.md`.
 
+### Stage 6 forecasting
+
+`/forecasts` runs transparent statistical forecasts of a derived series (PRD §12): the monthly,
+profile-balanced mean of temperature or salinity over a named region and depth band under
+science-ready QC, with at least five profiles per month. A request is a job on the `forecast`
+queue; the run shows the history, the forecast with 80% and 95% intervals, the rolling-origin
+backtest (12 folds, horizons 1 to 3 months; MAE, RMSE, MASE, interval coverage) of the
+seasonal-naive baseline and every SARIMA candidate carried, the selected model and its version,
+the data snapshot, warnings and the interpretation boundary text. Design:
+[docs/stage6-plan.md](docs/stage6-plan.md), ADR-0082 to ADR-0085.
+
+- Candidates come from a bounded SARIMA grid (144 orders, `s = 12`) ranked by AICc on the first
+  training window; the best three are backtested. A model is selected only when its mean MASE
+  beats the baseline by at least 5% and its residuals pass Ljung-Box at lag 12; otherwise the run
+  is `experimental` and shows the baseline as such. Too short, too sparse, constant or
+  over-horizon series are `refused` with the reason.
+- `make eval-forecast` evaluates the committed snapshots in `eval/forecast/series/` (data
+  snapshot ids, seed and library versions recorded) and writes `reports/eval_forecast_<date>.md`;
+  `python -m eval.forecast.harness --rebuild` recreates the snapshots through a running stack.
+
+#### Results
+
+The forecast research number (PRD §30.4) is reported per series from the latest committed
+report, [reports/eval_forecast_2026-10-16.md](reports/eval_forecast_2026-10-16.md) (full
+grid, 12 folds, horizons 1-3, seed 20261016); the table there is the source of these lines.
+
+| Series | Status | Baseline MASE h1/h2/h3 | Selected MASE h1/h2/h3 |
+|---|---|---|---|
+| Arabian Sea temperature | published, SARIMA(0,1,0)(0,1,1)[12] | 1.936/1.674/1.417 | 0.454/0.431/0.437 |
+| Arabian Sea salinity | published, SARIMA(1,0,0)(0,0,0)[12]+c | 2.253/2.254/2.340 | 0.941/1.556/2.258 |
+| Bay of Bengal salinity | published, SARIMA(1,0,0)(0,0,0)[12]+c | 1.456/1.418/1.280 | 0.491/0.616/0.662 |
+| Bay of Bengal temperature | experimental (baseline wins) | 0.836/0.893/0.918 | - |
+| Laccadive Sea temperature | experimental (diagnostics failed) | 1.347/1.493/1.470 | - |
+| Laccadive Sea salinity | refused (missingness) | - | - |
+| Andaman Sea temperature, salinity | refused (history too short) | - | - |
+
+There is no single "improvement over the baseline" number: three of eight series publish a
+model, two keep the baseline, three are refused, and every run shows its backtest table.
+
 ## Security gate
 
 Current-file scanning, staged-index scanning, and full reachable-history scanning are separate. The hook scans the actual Git index, not just working copies. Generated dependencies are excluded; prototype, legacy code, fixtures, and local configuration are not exempt from source scanning. All displayed finding values are fully redacted. Scanner reports and replacement mappings must remain outside Git, build contexts, shared logs, and CI artifacts.

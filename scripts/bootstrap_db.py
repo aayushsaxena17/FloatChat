@@ -53,7 +53,11 @@ STAGE4_APPLICATION_TABLES = frozenset(
 STAGE5_APPLICATION_TABLES = frozenset(
     {"analysis_job", "analysis_job_chunk", "analysis_job_event", "analysis_artefact"}
 )
-APPLICATION_TABLES = STAGE4_APPLICATION_TABLES | STAGE5_APPLICATION_TABLES
+# Stage 6 (ADR-0082): forecast definitions, model versions and runs.
+STAGE6_APPLICATION_TABLES = frozenset({"forecast_definition", "forecast_model", "forecast_run"})
+APPLICATION_TABLES = (
+    STAGE4_APPLICATION_TABLES | STAGE5_APPLICATION_TABLES | STAGE6_APPLICATION_TABLES
+)
 WITHHELD_TABLES = STAGE1_TABLES | STAGE2_READ_ONLY_TABLES
 
 

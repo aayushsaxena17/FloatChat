@@ -134,6 +134,8 @@ class JobRunner:
         self._last_heartbeat = 0.0
         # True after this process saw one of its runs close: the next admission yields first.
         self._yield_before_admit = False
+        # Stage 6 (ADR-0082): jobs of kind ``forecast`` are handed to the forecast runner.
+        self.forecaster: Any | None = None
 
     # -- loop ------------------------------------------------------------------------------
 
@@ -151,6 +153,8 @@ class JobRunner:
 
     def process(self, job: Job) -> Job:
         self._last_heartbeat = time.monotonic()
+        if job.kind == "forecast":
+            return self._process_forecast(job)
         try:
             plan = QueryPlan.model_validate(
                 {key: value for key, value in job.plan.items() if key != "plan_schema"}
@@ -277,6 +281,32 @@ class JobRunner:
             raise
         except QueryError as error:
             return self._finish(job, "failed", error={"code": error.code, "message": error.text})
+
+    def _process_forecast(self, job: Job) -> Job:
+        if self.forecaster is None:
+            return self._finish(
+                job, "failed", error={"code": "jobs_unavailable", "message": "No forecast runner."}
+            )
+        try:
+            self._check_cancel(job)
+            with self._keepalive(job):
+                return self.forecaster.process(job, self._finish)  # type: ignore[no-any-return]
+        except Cancelled:
+            return self._cancel(job)
+        except LeaseLost:
+            raise
+        except QueryError as error:
+            return self._finish(job, "failed", error={"code": error.code, "message": error.text})
+        except Exception as error:
+            log.exception("forecast failed for job %s", job.id)
+            return self._finish(
+                job,
+                "failed",
+                error={
+                    "code": "execution_failed",
+                    "message": f"The forecast step failed ({type(error).__name__}).",
+                },
+            )
 
     # -- fetch chunk -----------------------------------------------------------------------
 

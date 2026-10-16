@@ -28,6 +28,9 @@ PATHS = {
     "/v1/jobs/{job_id}/events",
     "/v1/jobs/{job_id}/cancel",
     "/v1/artefacts/{artefact_id}/download",
+    # Stage 6 (ADR-0085).
+    "/v1/forecasts",
+    "/v1/forecasts/{run_id}",
 }
 FORBIDDEN = {"sql", "query_sql"}
 METHODS = {"get", "put", "post", "delete", "options", "head", "patch", "trace"}
@@ -59,6 +62,7 @@ def test_methods_are_the_planned_ones() -> None:
     # Stage 5 (ADR-0081): job creation and cancellation are the only other POSTs.
     assert operations.pop("/v1/exports") == {"post"}
     assert operations.pop("/v1/jobs/{job_id}/cancel") == {"post"}
+    assert operations.pop("/v1/forecasts") == {"get", "post"}
     assert all(methods == {"get"} for methods in operations.values())
 
 
