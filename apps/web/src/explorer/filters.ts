@@ -109,7 +109,8 @@ export function validateFilters(filters: Filters): FilterErrors {
       errors.end =
         "The end day must be after the start day (end is exclusive).";
     else if (daysBetween(filters.start, filters.end) > 366)
-      errors.end = "The range is bounded to 366 days.";
+      errors.end =
+        "The range is bounded to 366 days here; export longer periods as a job below.";
   }
   const depth = (value: number | null) =>
     value === null ||

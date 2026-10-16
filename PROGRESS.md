@@ -851,3 +851,43 @@ palette, a real three.js float on the ocean, components sourced from 21st.dev, n
       the live waterline, navy above the water and white below, so it may cross the line.
 - [ ] Owner: review the branch in the browser; decide on pushing and the pull request; decide
       whether Apache-2.0 packages count as licence-equivalent for future 21st.dev picks.
+
+## Stage 5 - historical jobs and exports (branch `codex/stage-5`)
+
+Owner instruction (2026-10-15): complete Stages 5 and 6 on separate branches and decide every
+open question without asking. Plan [docs/stage5-plan.md](docs/stage5-plan.md), ADR-0077 to
+ADR-0081.
+
+- [x] Plan and ADRs written before code; the advisor reviewed the approach (2026-10-16:
+      host memory, worker start-up without an environment, the scope watermark, DuckDB
+      `COPY` under locked settings, the three logins, sequencing); all points applied.
+- [x] Migration 0019: historical run mode, job, chunk, event and artefact tables (probed on an
+      empty database with every migration and on a copy of the dev database).
+- [x] Historical runs: policy, tile-restricted plans, admission, CLI `--mode historical --tiles`.
+- [x] Jobs core: model, store (PostgreSQL and memory), planner, export writer, artefact tokens,
+      runner; the jobs worker and the reconciler.
+- [x] API: exports, jobs, events (SSE with ids and resume), cancel, signed download; OpenAPI
+      0.4.0 and the web types.
+- [x] Web: jobs list and detail, dashboard export action, chat job offer.
+- [x] Dev stack: ingestion pool and jobs services, bootstrap login and environment adoption,
+      worker volumes owned by the service user; a first export over the dev dataset verified
+      end to end (download checksum and profile count agree with the query engine).
+- [x] Tests: runner over doubles (resume without repeats, upstream down, cancel), export writer,
+      jobs API, reconciler (object without a row), pipeline offer; integration scenario and the
+      Playwright jobs spec; README section.
+- [x] Found and fixed during the live runs (recorded in the gate): the supervisor and the
+      ingestion adapter reconnect after a lost session, fetch chunks retry (at most three runs,
+      re-planned from the catalogue), admission accepts only the run its request created and
+      a chunk is complete only when the catalogue covers it, jobs yield the ingestion scope
+      between runs (three replicas), DuckDB spills under the worker's own directory,
+      quarantined month-tiles are reported instead of re-fetched and run finalisation has
+      its own budget (ADR-0086).
+- [x] Advisor review of the run phase (2026-10-16 11:20 UTC): keep the owner informed of the
+      remaining chain, let the second identical request re-plan the 2015 gap instead of editing
+      job rows, split the spill fix per branch, rebuild the forecast snapshots once after the
+      last fetch and evaluate on an idle host, retry the push in the background, wake on
+      state transitions only; all applied.
+- [x] The ten-year Arabian Sea request three times through the job system (the third for the
+      pure-reuse measurement); `reports/historical_jobs_2026-10-16.md`.
+- [x] Gate report `docs/stage5-gate.md`.
+- [ ] Pull request (draft #18 open; final push pending the credential channel).

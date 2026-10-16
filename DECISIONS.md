@@ -2237,3 +2237,200 @@ reconciler for one scene); a video of the sea (rejected, no offline guarantee an
 interaction with the page's width); a 21st.dev globe hero (rejected, 13 of 60 heroes in the
 crawl are globes, and the site is about one ocean); keeping the dark theme with lighter copy
 (rejected by the owner).
+
+## ADR-0077 - Stage 5 scope: branch, PostgreSQL job queues, worker topology, no Celery
+
+Status: accepted under the owner's authority (ADR-0039; owner instruction 2026-10-15 to
+complete Stages 5 and 6 on separate branches and decide every open question).
+
+Decision:
+
+1. `codex/stage-5` branches from `design/ocean-light` at `b688cd9`, the owner's current line
+   (Stage 4, the model fallback and the redesign are not merged into `main` yet); its pull
+   request targets `design/ocean-light` so the review diff is this stage only. Stage 6 branches
+   from `codex/stage-5`.
+2. The PRD §21.2 queues (`ingestion`, `interactive-analysis`, `bulk-analysis`, `export`,
+   `forecast`) are names, not brokers: `ingestion` is the Stage 1 ticket queue; the others are
+   the `queue` column of `app.analysis_job`, claimed with `FOR UPDATE SKIP LOCKED`, a two-minute
+   lease renewed by a thirty-second heartbeat, and at-least-once semantics through durable chunk
+   states (PRD §5.9). A worker process serves the queues named on its command line
+   (`floatchat jobs --queues export,forecast`), so queues can get their own processes, memory
+   limits and concurrency without a broker. Celery and Redis stay out of the workers
+   (ADR-0047 precedent; build prompt rule 8).
+3. Dev stack topology: `acquire` (the only service that sees the Argovis key), `process`,
+   `supervisor` and `jobs` from the API image beside the existing services;
+   `tests/test_compose.py` now asserts this set and still that no Celery exists.
+
+Alternatives: Celery with Redis (rejected: a second queue system beside the accepted
+PostgreSQL one, a broker dependency and a new framework the owner did not approve); jobs inside
+FastAPI background tasks (rejected by PRD §5.9); one job table without queue names (rejected:
+§21.2 asks for separable workload classes).
+
+## ADR-0078 - Historical ingestion runs for Stage 5 jobs
+
+Status: accepted under the owner's authority (ADR-0039), 2026-10-16.
+
+Context: Stage 1 enforces the twelve-month eligibility window in SQL (the `ingestion_run`
+trigger, `ensure_measurement_month`, `commit_publication`) and its planner covers the whole
+`indian-ocean-v1` envelope (`persist_plan` rejects a plan that omits a tile). Stage 5 must fetch
+ten years of one region.
+
+Decision:
+
+1. A third run mode `historical`: its reference time is the requested end (so the Stage 1
+   window `[T minus 12 months, T)` is exactly the requested interval), its span is at most
+   twelve months, its end is at or before actual UTC now, and it is admitted in a normal
+   environment or a disposable acceptance environment. No eligibility rule of Stage 1 changes;
+   the mode CHECKs, `admit_run`, the trigger and `persist_plan` learn the mode (migration
+   0019). `query_environment` takes its reference time from non-historical runs only, so the
+   dashboard's hot and window labels do not move; historical runs count in `completed_runs`,
+   which invalidates the ADR-0067 memo when they commit science.
+2. A historical run plans only the tiles its input descriptor names (`tiles`); coverage
+   receipts and slots are per tile, so a partial-envelope run is sound. Fetch polygons stay
+   the ten-degree tiles; the region filter applies at query and export time.
+3. A ten-year job is one historical run per calendar year of missing months, executed one at a
+   time (`admit_run` keeps one open run per scope; `overlap_skip` makes the job wait). The
+   scheduled daily run (`floatchat schedule`) is unaffected: it stays normal mode.
+4. Historical months are stored like any other: identity registry, levels in monthly
+   `core_measurement` partitions (created on demand by `ensure_measurement_month`) and the
+   Parquet part, in one commit. This deviates from PRD §8.4's Parquet-only tier for older
+   months because the Stage 1 commit is one transaction over both stores and a second commit
+   path is Stage 1 surgery this stage should not do. Measured consequence to record in the
+   gate: PostgreSQL bytes per ten-year region. Trigger for a Parquet-only path: the
+   PostgreSQL volume exceeding the host's capacity or the scale path of §21.3 step 6.
+5. The dev stack runs the ingestion pool: `scripts/bootstrap_db.py` creates the
+   `floatchat_ingest` login (member of `floatchat_ingestor`, `DB_INGEST_PASSWORD`) and, when the
+   database holds exactly one environment, adopts it into the stack (bucket, queue namespace
+   and compose project set to the stack's own values), because the imported acceptance row
+   still named its session's bucket while its parts live in `floatchat-dev`. `acquire` gets
+   `ARGOVIS_API_KEY` and `FLOATCHAT_LIVE_INGESTION_ENABLED` from the restricted configuration
+   file; the integration project leaves both empty, so a fetch there ends with
+   `live_ingestion_disabled` and the job is partial, which is the PRD §22 behaviour under test.
+
+Alternatives: a Parquet-only historical commit (rejected for this stage, point 4); fetching
+through a new direct Argovis client in the job worker (rejected: it would bypass landing,
+validation, quarantine and the catalogue); the GDAC bulk source (kept as an option; its rows are
+not visible to the query API, ADR-0056); lifting the window for normal runs (rejected: the
+contract's retention semantics depend on it).
+
+## ADR-0079 - Job model, idempotency and attachment, events, artefact lifecycle, signed downloads
+
+Status: accepted under the owner's authority (ADR-0039), 2026-10-16.
+
+Decision:
+
+1. Tables `app.analysis_job`, `app.analysis_job_chunk`, `app.analysis_job_event`,
+   `app.analysis_artefact` (docs/stage5-plan.md §3 W1). Job states: `queued`, `fetching`,
+   `exporting`, `completed`, `partial`, `cancelled`, `failed`; chunk states `pending`,
+   `running`, `complete`, `reused` (coverage already committed), `failed`, `cancelled`.
+   `version` is the optimistic concurrency field (PRD §13.2); cancel and claim compare it.
+2. Jobs belong to the Stage 4 client identifier (ADR-0072) until Stage 7. `Idempotency-Key`
+   (header or body) is unique per client: the same key returns the same job; a different key
+   with an identical request (`request_sha256`) while that job is active attaches to it
+   (`attached: true`, PRD §8.4). Another client's identical request is a new job that reuses
+   the coverage the first commits; cross-client attachment waits for users and quotas.
+3. Progress events are rows with a per-job sequence. `GET /v1/jobs/{id}/events` streams them
+   as SSE with `id:` set to the sequence, resumes from `Last-Event-ID`, writes a comment
+   heartbeat every fifteen seconds and closes after a terminal event. The chat's SSE writer
+   is reused for the wire format.
+4. Artefacts live under `exports/<job>/<artefact>.<ext>` in the application bucket with
+   `expires_at` seven days after creation. The download URL is
+   `/v1/artefacts/{id}/download?token=<expiry>.<hmac>` signed with `ARTEFACT_SIGNING_KEY`
+   (generated locally, never in the repository) and valid fifteen minutes; the API streams
+   the object. Expiry: the reconciler sets `expired` first, then deletes the object, then sets
+   `deleted` (catalogue before object, PRD §8.4). An object the worker wrote whose artefact row
+   was never committed is unreachable (no row, no URL) and is removed by the reconciler after
+   one hour.
+
+Alternatives: MinIO presigned URLs (rejected: the browser cannot reach MinIO, and the URL
+would carry the in-cluster host); global attachment (deferred, point 2); Redis pub/sub for
+events (rejected: PostgreSQL is the job authority, PRD §22 "Redis restart").
+
+## ADR-0080 - Export content, manifest and provenance sidecar; DuckDB in the worker
+
+Status: accepted under the owner's authority (ADR-0039), 2026-10-16.
+
+Decision:
+
+1. An export is one long table, one row per measurement level: `profile_id`,
+   `platform_number`, `cycle_number`, `direction`, `observed_at` (UTC ISO-8601), `longitude`,
+   `latitude`, `pressure`, `temperature`, `salinity` (the qc-policy-v1 selected values, null
+   when the policy rejects the level), then for each variable the original, adjusted, QC,
+   adjusted QC and data-mode columns, so a reader can audit the selection. Variables not
+   requested are omitted. CSV is UTF-8 with a header; Parquet is zstd-compressed.
+2. Beside the data object the job writes `manifest.json` (schema `export-manifest-v1`:
+   request, plan and its SHA-256, format, columns and units, row and profile counts, bytes,
+   SHA-256, created and expiry times, coverage with the slots missing, partition ids and
+   hashes, the Argo and Argovis citations, the application commit) and `provenance.json`
+   (PRD §17 fields through the Stage 2 provenance builder). Both are stored with the data
+   object and returned by the job detail; the manifest is also embedded in the artefact row.
+3. The worker produces the files with DuckDB over the verified parts (members selected in
+   PostgreSQL through `profile_slot_statement`, as the query route does) using `COPY ... TO`
+   into a private export directory, with `enable_external_access = false`,
+   `allowed_directories` limited to the part cache and that directory, a memory limit and two
+   threads. The API never runs an export. Row and profile counts come from the same statement.
+4. The jobs worker has its own part cache volume (4 GiB) so its fills and evictions never
+   touch the API's cache.
+
+Alternatives: pandas (rejected, PRD §5.8 memory); exporting through `POST /v1/query` pages
+(rejected: the 366-day and row limits exist to protect the API); wide per-profile tables
+(rejected: levels differ per profile).
+
+## ADR-0081 - Stage 5 API, web routes, chat job offer, failure tests, ten-year report
+
+Status: accepted under the owner's authority (ADR-0039), 2026-10-16.
+
+Decision:
+
+1. Routes: `POST /v1/exports` (202), `GET /v1/jobs`, `GET /v1/jobs/{id}`,
+   `GET /v1/jobs/{id}/events`, `POST /v1/jobs/{id}/cancel`, `GET /v1/artefacts/{id}/download`;
+   codes `job_not_found` (404), `job_conflict` (409), `artefact_unavailable` (410),
+   `token_invalid` (403), `jobs_unavailable` (503). The export request is `export-request-v1`:
+   the plan fields without an operation, `format`, an optional `idempotency_key`; the span
+   limit for jobs is twenty years (`JOBS_TIME_SPAN_DAYS`).
+2. Web: `/jobs` and `/jobs/:jobId` replace the stubs; the dashboard's export button creates a
+   job for the current filters; the chat shows an offer card when a plan fails only the span
+   rule (`job_offer`, stored as kind `help` with `interpretation.kind = "job_offer"`, no
+   migration, like ADR-0075's replies).
+3. Failure tests (PRD §22) run over doubles in the unit suite and once for real in the gate
+   checklist: worker killed mid-chunk (resume, no repeated chunk), upstream down (partial with
+   missing slots), object written without a catalogue commit (unreachable, reconciled).
+4. `reports/historical_jobs_<date>.md` is written by `scripts/stage5_report.py` from the job
+   rows of two runs of the same ten-year request: chunks, duration, HTTP attempts and retries
+   from the ingestion runs, the cache reuse ratio (slots reused over slots required), and the
+   PostgreSQL and object bytes the region added.
+
+## ADR-0086 - Quarantined slots are reported, not re-fetched; finalisation runs under its own budget
+
+Status: accepted under the owner's authority (ADR-0039), 2026-10-16 (found during the Stage 5
+historical runs).
+
+Context: Stage 1 quarantines a whole month-tile when any upstream profile carries a data
+warning it does not tolerate (ADR-0040/0046) and writes no coverage receipt for it, so the
+catalogue reports the slot missing forever; the job runner fetched it three times per request
+(the Arabian Sea tile 50:20 in 2017-02 was quarantined in four runs). Separately,
+`finalize_run` captures whole-store evidence (`scientific_snapshot`, the availability counts of
+`report_metrics_snapshot`) whose cost grows with the retained store; with the historical months
+it reached about 75 s against the 60 s transaction bound and no run could close.
+
+Decision:
+
+1. Before every admission and after every run the job runner splits the still-missing slots of
+   a fetch chunk into fetchable and quarantined, reading quarantined leaves of closed runs of
+   the environment (`IngestionRuns.quarantined`). Quarantined slots are never admitted again;
+   a chunk whose remaining slots are all quarantined completes with them listed
+   (`quarantined_slots` in its evidence), the job result carries the list, the export declares
+   the gap, and the job ends `partial`: the data is missing by policy, not by failure. The job
+   page and the historical jobs report say so.
+2. `Repository.finalize` runs under its own budget (`INGESTION_FINALIZE_BUDGET_SECONDS`,
+   default 600 s, never below 60 s) instead of the per-statement bound of 60 s; nothing else
+   changes its bound. The whole-store snapshots remain O(store) and are recorded as the next
+   scalability item: incremental manifests for `scientific_snapshot`, run-scoped availability
+   counts, or a cheaper evidence design (Stage 7 or a Stage 1 follow-up).
+
+Alternatives: writing a quarantine receipt into the catalogue (a Stage 1 change to the coverage
+contract; preferred long-term, out of scope tonight); treating quarantined slots as covered
+(rejected: the data is absent and the manifest must say so); scoping the availability counts
+to the run now (rejected tonight: it changes the Stage 1 gate's evidence semantics without a
+review).
+

@@ -26,6 +26,10 @@ from collections.abc import Iterable, Sequence
 from typing import Any
 
 ENV = "00000000-0000-4000-8000-000000000003"
+# Stage 5 (ADR-0078): the environment marker names the stack it runs in, so the ingestion pool
+# and the jobs worker of the integration project accept it; the pytest fixture keeps "stage2".
+BUCKET = os.environ.get("OBJECT_STORAGE_BUCKET", "stage2")
+PROJECT = os.environ.get("COMPOSE_PROJECT_NAME", "stage2")
 RUN = "00000000-0000-4000-8000-000000000001"
 CHUNK = "00000000-0000-4000-8000-000000000002"
 ATTEMPT = "00000000-0000-4000-8000-000000000004"
@@ -166,7 +170,7 @@ def seed_sql(*, partitions_if_absent: bool = False) -> str:
         for month in (1, 2, 3)
     )
     return f"""
-INSERT INTO app.ingestion_environment VALUES('{ENV}','stage2-test','acceptance',true,'stage2','stage2','stage2');
+INSERT INTO app.ingestion_environment VALUES('{ENV}','stage2-test','acceptance',true,'{BUCKET}','{PROJECT}.ingestion','{PROJECT}');
 INSERT INTO app.ingestion_run(id,environment_id,mode,run_reference_time_utc,requested_start,
   requested_end,geometry_version,geometry_sha256,policy_versions,limits,controller_lease_until,
   work_deadline,deadline,state,closed)
@@ -371,6 +375,51 @@ def catalogue_rows(profiles: Sequence[Profile], parts: dict[str, bytes]) -> str:
 
 DOCKER_PROFILES: list[Profile] = PROFILES + STAGE3_PROFILES
 
+# Stage 5 (ADR-0080): the tiles the planner derives for the Arabian Sea and the months of the
+# acceptance run. A real run stores a fetched month-tile without profiles as an empty slot with
+# a receipt; without those the seeded months are not covered and an export over them is partial.
+ARABIAN_SEA_TILES = (
+    "50:0", "50:10", "50:20", "60:0", "60:10", "60:20", "70:-10", "70:0", "70:10", "70:20",
+)  # fmt: skip
+SEEDED_MONTHS = ("2025-01", "2025-02", "2025-03")
+
+
+def empty_slot_rows(profiles: Sequence[Profile]) -> str:
+    """A complete chunk, committed intent, empty slot and receipt per profile-free month-tile."""
+    occupied = {
+        f"{observed[:7]}/{int(lon // 10 * 10)}:{int(lat // 10 * 10)}"
+        for _i, _f, _p, _c, observed, lon, lat, _m in profiles
+    }
+    statements = []
+    for month in SEEDED_MONTHS:
+        for tile in ARABIAN_SEA_TILES:
+            if f"{month}/{tile}" in occupied:
+                continue
+            key = f"argovis/core/{month}/{tile}/indian-ocean-v1/argovis-core-v1/scientific-json-v2"
+            west, south = (int(v) for v in tile.split(":"))
+            chunk = uuid.uuid5(uuid.NAMESPACE_URL, key + "/chunk")
+            intent = uuid.uuid5(uuid.NAMESPACE_URL, key + "/intent")
+            statements += [
+                f"INSERT INTO app.ingestion_chunk(id,run_id,logical_chunk_key,requested_start,"
+                f"requested_end,tile,plan_version,state,completed_at) VALUES('{chunk}','{RUN}',"
+                f"'{key}','{month}-01T00:00:00Z',('{month}-01'::date+interval '1 month'),"
+                f'\'{{"west":{west},"south":{south},"width":10,"height":10}}\',\'v2\','
+                f"'complete',now());",
+                f"INSERT INTO app.publication_intent(id,chunk_id,fence,control_epoch,status,"
+                f"object_references,expected_bases,expected_revisions) VALUES('{intent}',"
+                f"'{chunk}',1,1,'committed','[]','{{}}','{{}}');",
+                f"INSERT INTO app.logical_partition_slot(environment_id,logical_key,"
+                f"observation_month,tile_key,slot_version,membership_manifest) VALUES('{ENV}',"
+                f"'{key}','{month}-01','{tile}',1,'[]');",
+                f"INSERT INTO app.coverage_receipt(id,chunk_id,intent_id,environment_id,"
+                f"logical_key,requested_start,requested_end,slot_version,fetch_disposition,"
+                f"stored_disposition,evidence,committed_at) VALUES("
+                f"'{uuid.uuid5(uuid.NAMESPACE_URL, key)}','{chunk}','{intent}','{ENV}','{key}',"
+                f"'{month}-01T00:00:00Z',('{month}-01'::date+interval '1 month'),1,"
+                f"'verified_empty_fetch','empty_stored_selection','{{}}',now());",
+            ]
+    return "\n".join(statements)
+
 
 def docker_sql(parts: dict[str, bytes]) -> list[str]:
     """The statements the Docker project's database step runs, in order."""
@@ -380,6 +429,7 @@ def docker_sql(parts: dict[str, bytes]) -> list[str]:
         profile_rows(DOCKER_PROFILES),
         GDAC_SEED,
         catalogue_rows(DOCKER_PROFILES, parts),
+        empty_slot_rows(DOCKER_PROFILES),
     ]
 
 

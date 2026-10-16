@@ -7,7 +7,6 @@ import {
   Layers,
   Radio,
   Info,
-  Download,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
@@ -27,6 +26,7 @@ import {
 } from "../explorer/filters";
 import { LazyMapView as MapView } from "../explorer/LazyMapView";
 import { useExplorerData } from "../explorer/useExplorerData";
+import { ExportAction } from "../jobs/ExportAction";
 import { ProvenancePanel } from "../provenance/ProvenancePanel";
 import { OceanHero } from "./OceanHero";
 
@@ -318,19 +318,7 @@ export function Dashboard() {
             ) : null}
           </StatusMessage>
         </section>
-        <div className="export-notice">
-          <Download size={18} aria-hidden="true" />
-          <div>
-            <h2>Dataset export</h2>
-            <p className="chart-caption">
-              CSV and Parquet export of the filtered dataset, with a manifest,
-              arrives in a later release.
-            </p>
-          </div>
-          <Button type="button" variant="outline" disabled>
-            Export filtered dataset
-          </Button>
-        </div>
+        <ExportAction filters={filters} />
       </div>
     </div>
   );

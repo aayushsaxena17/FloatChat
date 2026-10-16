@@ -1265,6 +1265,141 @@ details.provenance .facts {
   margin-left: auto;
 }
 
+/* ----- Chat: the export offer (Stage 5) ----- */
+.chat-offer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-1);
+  font-size: 14px;
+}
+.chat-offer svg {
+  color: var(--primary);
+}
+.chat-offer-error {
+  flex-basis: 100%;
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--status-serious);
+}
+
+/* ----- Jobs (Stage 5) ----- */
+.job-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-1);
+  overflow: hidden;
+}
+.job-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--border);
+}
+.job-row:first-child {
+  border-top: 0;
+}
+.job-row-main {
+  min-width: 0;
+}
+.job-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+.job-title:hover {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.job-meta {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.job-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.job-detail {
+  display: grid;
+  gap: 16px;
+}
+.badge[data-kind="neutral"] {
+  color: var(--primary);
+  background: var(--accent-soft);
+  border-color: transparent;
+}
+table.data td.chunk-outcome {
+  white-space: normal;
+  max-width: 520px;
+  color: var(--text-secondary);
+}
+.artefact-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.artefact {
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-0);
+}
+.artefact-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.artefact-head svg {
+  color: var(--primary);
+}
+.artefact-head h3 {
+  margin: 0;
+  font-size: 15px;
+}
+.artefact-head p {
+  margin: 0;
+}
+.artefact-head > :last-child {
+  margin-left: auto;
+}
+.artefact code {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+pre.json {
+  margin: 0;
+  padding: 14px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  font-size: 12.5px;
+  overflow: auto;
+}
+.export-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+.export-notice[data-kind="ready"] {
+  border-style: solid;
+}
+
 /* ----- Hero: the Argo float on the ocean ----- */
 .ocean-hero {
   position: relative;

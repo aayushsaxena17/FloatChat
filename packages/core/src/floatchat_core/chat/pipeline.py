@@ -13,6 +13,8 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol
 
+from pydantic import ValidationError
+
 from ..llm.policy import CallContext, ResilientProvider
 from ..llm.provider import StructuredRequest, TextRequest, Usage
 from ..query.errors import QueryError
@@ -64,6 +66,33 @@ class QueryEngine(Protocol):
 class Event:
     type: str
     data: dict[str, Any]
+
+
+def _span_only(details: list[dict[str, str]]) -> bool:
+    """True when the only violation is the time-span bound (``unbounded_request`` on time_range)."""
+    return bool(details) and all(
+        detail.get("field") == "time_range" and detail.get("code") == "unbounded_request"
+        for detail in details
+    )
+
+
+def _geography_resolves(document: dict[str, Any]) -> bool:
+    """The span rule fires before region resolution; an offer needs a region that exists."""
+    try:
+        resolve_geography(QueryPlan.model_validate(document).geography)
+    except (QueryError, ValidationError):
+        return False
+    return True
+
+
+def _job_offer(document: dict[str, Any]) -> dict[str, Any]:
+    """The ``export-request-v1`` fields of a plan document (no operation, no presentation)."""
+    offer: dict[str, Any] = {
+        key: document[key]
+        for key in ("time_range", "geography", "depth_dbar", "variables", "qc_policy")
+        if document.get(key) is not None
+    }
+    return offer
 
 
 @dataclass
@@ -314,6 +343,22 @@ class ChatService:
             resolve_geography(plan.geography)
         except QueryError as error:
             details = [detail.as_dict() for detail in error.details]
+            if _span_only(details) and _geography_resolves(document):
+                # Stage 5 (ADR-0081): a plan that fails only the synchronous span bound is
+                # answered with an offer to run it as an export job instead of a refusal.
+                return PlanOutcome(
+                    classification,
+                    "job_offer",
+                    document=document,
+                    validation=details,
+                    reason=(
+                        "That period is longer than the "
+                        f"{self.limits.time_span_days} days I can answer directly. It can run "
+                        "as a background export instead: the missing months are fetched from "
+                        "the source once, and you get a CSV or Parquet file of every "
+                        "measurement level with its QC columns, a manifest and provenance."
+                    ),
+                )
             if error.code == "unknown_region":
                 details = [{"field": "geography", "code": "unknown_region", "message": error.text}]
             fields = sorted({detail["field"].split(".")[0] for detail in details}) or ["plan"]
@@ -490,6 +535,18 @@ class ChatService:
         if outcome.kind == "unsupported":
             message = finish(
                 "unsupported", outcome.reason or "", {"interpretation": interpretation}
+            )
+            yield Event("interpretation", interpretation)
+            yield Event("message", message.as_dict())
+            return
+        if outcome.kind == "job_offer":
+            # Stored under the existing "help" kind (no migration, like ADR-0075's replies);
+            # the payload carries the export request the browser can create (ADR-0081).
+            assert outcome.document is not None
+            message = finish(
+                "help",
+                outcome.reason or "",
+                {"interpretation": interpretation, "job_offer": _job_offer(outcome.document)},
             )
             yield Event("interpretation", interpretation)
             yield Event("message", message.as_dict())

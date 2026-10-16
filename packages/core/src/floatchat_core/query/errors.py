@@ -57,6 +57,12 @@ REGISTRY = MappingProxyType(
         ),
         "chat_limit": (422, "The conversation or message exceeds a chat limit."),
         "client_required": (400, "The X-FloatChat-Client header is required."),
+        # Stage 5 (ADR-0079, ADR-0081): jobs and export artefacts.
+        "job_not_found": (404, "The job does not exist or belongs to another client."),
+        "job_conflict": (409, "The job cannot be changed in its current state."),
+        "artefact_unavailable": (410, "The export has expired or is not available."),
+        "token_invalid": (403, "The download link is invalid or has expired."),
+        "jobs_unavailable": (503, "The job service is not configured."),
     }
 )
 

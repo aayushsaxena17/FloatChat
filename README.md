@@ -128,6 +128,36 @@ query; a model narrative is kept only when every number it states is in the resu
 The Stage 4 research number (RQ1, PRD §30.1) is the held-out plan accuracy of a model run; it is
 reported here only when a committed report from `make eval-nl` with a model key exists.
 
+### Stage 5 historical jobs and exports
+
+Requests longer than the dashboard's 366 days run as durable background jobs (PRD §2.3, §9.3):
+`POST /v1/exports` answers `202` with a job; `GET /v1/jobs`, `GET /v1/jobs/{id}`,
+`GET /v1/jobs/{id}/events` (SSE with `id:` lines and `Last-Event-ID` resume) and
+`POST /v1/jobs/{id}/cancel` follow it; `GET /v1/artefacts/{id}/download?token=` streams the
+file through a fifteen-minute signed link. The `/jobs` route lists this browser's jobs; the
+dashboard's "Export filtered dataset" creates one for the current filters, and the chat offers
+one when a question spans more than a year. Design: [docs/stage5-plan.md](docs/stage5-plan.md),
+ADR-0077 to ADR-0081.
+
+- A job plans its months × tiles against the coverage catalogue: months already committed are
+  reused; missing months become `historical` ingestion runs (one per calendar year, reference
+  time = requested end, tiles of the region only) through the Stage 1 pipeline; the export is
+  one DuckDB `COPY` over the verified Parquet parts in the jobs worker, one row per measurement
+  level with the policy-selected value and its QC, adjusted and data-mode columns, plus
+  `manifest.json` (`export-manifest-v1`: counts, SHA-256, coverage and gaps, partitions, the
+  Argo and Argovis citations) and `provenance.json` (PRD §17). Artefacts expire after seven days.
+- Queues are PostgreSQL (`app.analysis_job.queue`, claimed with `SKIP LOCKED` and a lease); the
+  dev stack runs the ingestion pool (`acquire`, `process`, `supervisor`) and the `jobs` worker.
+  Only `acquire` sees the Argovis key: put `ARGOVIS_API_KEY` and
+  `FLOATCHAT_LIVE_INGESTION_ENABLED=true` in the restricted configuration file, or start the stack
+  with `scripts/with_argovis_key.sh python3 -m scripts.dev dev`; without them a job that needs
+  missing months ends `partial` with the gaps listed (PRD §22).
+- A worker that dies mid-job is replaced after its lease lapses: complete chunks are never
+  repeated and a running fetch chunk re-attaches to its ingestion run.
+- The ten-year report: `python scripts/stage5_report.py run` twice, then
+  `python scripts/stage5_report.py report --jobs <first>,<second>` writes
+  `reports/historical_jobs_<date>.md`.
+
 ## Security gate
 
 Current-file scanning, staged-index scanning, and full reachable-history scanning are separate. The hook scans the actual Git index, not just working copies. Generated dependencies are excluded; prototype, legacy code, fixtures, and local configuration are not exempt from source scanning. All displayed finding values are fully redacted. Scanner reports and replacement mappings must remain outside Git, build contexts, shared logs, and CI artifacts.

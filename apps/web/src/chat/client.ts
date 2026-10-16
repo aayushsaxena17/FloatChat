@@ -53,6 +53,8 @@ export interface Interpretation {
 
 export interface MessagePayload {
   interpretation?: Interpretation;
+  /** Stage 5 (ADR-0081): the export request the assistant offers to run as a job. */
+  job_offer?: Record<string, unknown>;
   plan?: Record<string, unknown>;
   result?: QueryResponse;
   result_omitted?: boolean;

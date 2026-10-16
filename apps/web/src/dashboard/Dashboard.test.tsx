@@ -73,9 +73,10 @@ describe("Dashboard", () => {
     expect(screen.getAllByTestId("provenance").length).toBeGreaterThanOrEqual(
       2,
     );
+    // Stage 5: the export button is live; it creates a job for these filters.
     expect(
       screen.getByRole("button", { name: /Export filtered dataset/ }),
-    ).toBeDisabled();
+    ).toBeEnabled();
     const profilesCall = api.calls.find((call) =>
       call.includes("/v1/profiles"),
     );

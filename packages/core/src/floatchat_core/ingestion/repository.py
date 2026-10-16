@@ -3,6 +3,7 @@
 import hashlib
 import io
 import json
+import os
 import tempfile
 import time
 import uuid
@@ -39,6 +40,7 @@ from .planning import (
     Interval,
     RunPolicy,
     Tile,
+    grid_tiles,
     month_start,
     plan,
     timestamp,
@@ -51,6 +53,10 @@ from .workflow import (
     StoredState,
     evidence_json,
     snapshot_certificate,
+)
+
+FINALIZE_BUDGET_SECONDS = max(
+    60.0, float(os.environ.get("INGESTION_FINALIZE_BUDGET_SECONDS", "600"))
 )
 
 # SQL owner-slot function of each source population (never interpolated from input).
@@ -79,6 +85,9 @@ SAFE_DATABASE_CATEGORIES = frozenset(
         "commit_reserve_exhausted",
         "unsafe_environment",
         "outside_rolling_window",
+        "invalid_historical_tiles",
+        "invalid_historical_interval",
+        "historical_end_in_future",
         "unsafe_run_configuration",
         "controller_busy",
         "canonical_output_limit",
@@ -163,9 +172,10 @@ class Repository:
         remaining: float = 60,
         publication: bool = False,
         readonly_snapshot: bool = False,
+        cap: float = 60,
     ) -> Iterator[Any]:
         reserve = 1 if publication else 0
-        milliseconds = int(min(60, remaining - reserve) * 1000)
+        milliseconds = int(min(cap, remaining - reserve) * 1000)
         if milliseconds < 1:
             raise Rejection("database_deadline")
         started = time.monotonic()
@@ -360,7 +370,15 @@ class Repository:
                 cursor.execute("SELECT app.persist_baseline(%s,%s)", (run, epoch))
                 cursor.execute("SELECT app.persist_replay_plan(%s,%s)", (run, epoch))
             return
-        chunks = plan(interval)
+        tiles = None
+        if row["mode"] == "historical":
+            # ADR-0078: the input descriptor names the tiles; the SQL rechecks the same set.
+            if inputs is None or not isinstance(inputs["descriptor"].get("tiles"), list):
+                raise Rejection("invalid_historical_tiles")
+            tiles = grid_tiles(
+                (int(pair[0]), int(pair[1])) for pair in inputs["descriptor"]["tiles"]
+            )
+        chunks = plan(interval, tiles=tiles)
         values = [
             {
                 "id": str(uuid.uuid4()),
@@ -987,7 +1005,13 @@ class Repository:
             return dict(cursor.fetchone()["evidence"])
 
     def finalize(self, run: uuid.UUID, reason: str | None = None) -> str:
-        with self.transaction() as cursor:
+        # Stage 5: ``finalize_run`` captures whole-store evidence (``scientific_snapshot``,
+        # the availability counts of ``report_metrics_snapshot``) whose cost grows with the
+        # retained store; with ten years of historical months it exceeds the 60 s statement
+        # bound and a run could never close. Finalisation runs once per run under its own
+        # budget (``INGESTION_FINALIZE_BUDGET_SECONDS``, default 600).
+        budget = FINALIZE_BUDGET_SECONDS
+        with self.transaction(remaining=budget, cap=budget) as cursor:
             cursor.execute("SELECT app.finalize_run(%s,%s) AS state", (run, reason))
             return str(cursor.fetchone()["state"])
 
