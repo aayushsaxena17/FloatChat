@@ -2399,3 +2399,38 @@ Decision:
    rows of two runs of the same ten-year request: chunks, duration, HTTP attempts and retries
    from the ingestion runs, the cache reuse ratio (slots reused over slots required), and the
    PostgreSQL and object bytes the region added.
+
+## ADR-0086 - Quarantined slots are reported, not re-fetched; finalisation runs under its own budget
+
+Status: accepted under the owner's authority (ADR-0039), 2026-10-16 (found during the Stage 5
+historical runs).
+
+Context: Stage 1 quarantines a whole month-tile when any upstream profile carries a data
+warning it does not tolerate (ADR-0040/0046) and writes no coverage receipt for it, so the
+catalogue reports the slot missing forever; the job runner fetched it three times per request
+(the Arabian Sea tile 50:20 in 2017-02 was quarantined in four runs). Separately,
+`finalize_run` captures whole-store evidence (`scientific_snapshot`, the availability counts of
+`report_metrics_snapshot`) whose cost grows with the retained store; with the historical months
+it reached about 75 s against the 60 s transaction bound and no run could close.
+
+Decision:
+
+1. Before every admission and after every run the job runner splits the still-missing slots of
+   a fetch chunk into fetchable and quarantined, reading quarantined leaves of closed runs of
+   the environment (`IngestionRuns.quarantined`). Quarantined slots are never admitted again;
+   a chunk whose remaining slots are all quarantined completes with them listed
+   (`quarantined_slots` in its evidence), the job result carries the list, the export declares
+   the gap, and the job ends `partial`: the data is missing by policy, not by failure. The job
+   page and the historical jobs report say so.
+2. `Repository.finalize` runs under its own budget (`INGESTION_FINALIZE_BUDGET_SECONDS`,
+   default 600 s, never below 60 s) instead of the per-statement bound of 60 s; nothing else
+   changes its bound. The whole-store snapshots remain O(store) and are recorded as the next
+   scalability item: incremental manifests for `scientific_snapshot`, run-scoped availability
+   counts, or a cheaper evidence design (Stage 7 or a Stage 1 follow-up).
+
+Alternatives: writing a quarantine receipt into the catalogue (a Stage 1 change to the coverage
+contract; preferred long-term, out of scope tonight); treating quarantined slots as covered
+(rejected: the data is absent and the manifest must say so); scoping the availability counts
+to the run now (rejected tonight: it changes the Stage 1 gate's evidence semantics without a
+review).
+
