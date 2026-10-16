@@ -11,7 +11,7 @@ from floatchat_core.jobs.store import MemoryJobStore
 from floatchat_core.query.errors import QueryError
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from doubles import FakeCatalogue, FakeExporter, FakeRuns  # noqa: E402
+from stage5_doubles import FakeCatalogue, FakeExporter, FakeRuns  # noqa: E402
 
 NOW = datetime(2026, 10, 16, tzinfo=UTC)
 LIMITS = JobLimits(run_poll_seconds=0.01, overlap_wait_seconds=0.01, heartbeat_seconds=5)

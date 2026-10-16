@@ -858,12 +858,22 @@ Owner instruction (2026-10-15): complete Stages 5 and 6 on separate branches and
 open question without asking. Plan [docs/stage5-plan.md](docs/stage5-plan.md), ADR-0077 to
 ADR-0081.
 
-- [x] Plan and ADRs written before code; advisor review of the approach recorded below.
-- [ ] Migration 0019: historical run mode, job, chunk, event and artefact tables.
-- [ ] Historical runs: policy, tile-restricted plans, admission, CLI.
-- [ ] Jobs core: model, store, planner, export, artefacts; the jobs worker and reconciler.
-- [ ] API: exports, jobs, events (SSE), cancel, download; openapi and the web types.
-- [ ] Web: jobs list and detail, dashboard export, chat job offer.
-- [ ] Dev stack: ingestion pool and jobs services, bootstrap login and environment adoption.
-- [ ] Tests, CI, the ten-year Arabian Sea run twice, `reports/historical_jobs_<date>.md`.
-- [ ] Gate report `docs/stage5-gate.md`; README; pull request.
+- [x] Plan and ADRs written before code; the advisor reviewed the approach (2026-10-16:
+      host memory, worker start-up without an environment, the scope watermark, DuckDB
+      `COPY` under locked settings, the three logins, sequencing); all points applied.
+- [x] Migration 0019: historical run mode, job, chunk, event and artefact tables (probed on an
+      empty database with every migration and on a copy of the dev database).
+- [x] Historical runs: policy, tile-restricted plans, admission, CLI `--mode historical --tiles`.
+- [x] Jobs core: model, store (PostgreSQL and memory), planner, export writer, artefact tokens,
+      runner; the jobs worker and the reconciler.
+- [x] API: exports, jobs, events (SSE with ids and resume), cancel, signed download; OpenAPI
+      0.4.0 and the web types.
+- [x] Web: jobs list and detail, dashboard export action, chat job offer.
+- [x] Dev stack: ingestion pool and jobs services, bootstrap login and environment adoption,
+      worker volumes owned by the service user; a first export over the dev dataset verified
+      end to end (download checksum and profile count agree with the query engine).
+- [x] Tests: runner over doubles (resume without repeats, upstream down, cancel), export writer,
+      jobs API, reconciler (object without a row), pipeline offer; integration scenario and the
+      Playwright jobs spec; README section.
+- [ ] The ten-year Arabian Sea run twice through the job system; `reports/historical_jobs_<date>.md`.
+- [ ] Gate report `docs/stage5-gate.md`; pull request.
