@@ -54,6 +54,9 @@ class JobLimits(BaseSettings):
     orphan_age_seconds: int = Field(default=3600, ge=60, le=86400 * 7)
     listed: int = Field(default=200, ge=1, le=1000)
     max_fetch_chunks: int = Field(default=40, ge=1, le=400)
+    # A fetch chunk whose run ends short is re-planned against current coverage and admitted
+    # again for the still-missing slots, up to this many runs (PRD section 22, partial retrieval).
+    fetch_attempts: int = Field(default=3, ge=1, le=5)
 
 
 class _Model(BaseModel):

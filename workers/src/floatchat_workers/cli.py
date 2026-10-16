@@ -227,8 +227,21 @@ def main(arguments: list[str] | None = None) -> int:
                 try:
                     supervisor.tick(repository.open_runs())
                 except Rejection:
-                    # Database loss neither succeeds nor creates new budgets.
+                    # Database loss neither succeeds nor creates new budgets. The connection
+                    # is rebuilt so a lost session (Stage 5: a host clock jump broke it) does
+                    # not leave every later tick failing; the controllers adopt their runs.
                     print("supervisor_recovery_required", flush=True)
+                    try:
+                        repository.close()
+                    except Exception:
+                        pass
+                    try:
+                        repository = configuration.repository()
+                        supervisor.store = cast(ControlStore, ControlConnection(repository))
+                        for controller in supervisor.controllers.values():
+                            controller.store = supervisor.store
+                    except Rejection:
+                        print("supervisor_reconnect_failed", flush=True)
                 time.sleep(10)
         if args.command == "compact":
             if not 1 <= args.seconds <= 43200:

@@ -98,8 +98,8 @@ def test_worker_killed_mid_chunk_resumes_without_repeating_complete_chunks():
     job, _, _ = create(store, request())
 
     class Dying(JobRunner):
-        def _fetch(self, job, chunk):
-            super()._fetch(job, chunk)
+        def _fetch(self, job, chunk, environment):
+            super()._fetch(job, chunk, environment)
             if chunk.label.startswith("2016"):
                 raise KeyboardInterrupt  # the process dies right after the first chunk
 
@@ -159,7 +159,15 @@ def test_upstream_down_ends_partial_with_missing_chunks_listed():
     finished = store.get(job.id)
     assert finished.state == "partial"
     chunk = store.chunks(job.id)[0]
-    assert chunk.state == "failed" and chunk.error["code"] == "fetch_partial"
+    # The first run was partial; the chunk was re-planned twice for the two missing months
+    # only (bounded retries), and the last of the three runs failed outright.
+    assert chunk.state == "failed" and chunk.error["code"] == "fetch_failed"
+    assert [run["state"] for run in chunk.evidence["runs"]] == ["partial", "failed", "failed"]
+    assert len(runs.admitted) == 3
+    assert [i.start.month for i, _ in runs.admitted] == [1, 3, 3]
+    assert runs.admitted[1][0].end.month == 5
+    assert chunk.evidence["missing_slots_after"] == 2
+    assert "3 runs" in chunk.error["message"]
     assert chunk.evidence["missing_chunks"] == ["2016-03", "2016-04"]
     assert finished.result["failed_chunks"] == ["2016-01..2016-06"]
     assert {slot["month"] for slot in finished.result["missing_slots"]} == {"2016-03", "2016-04"}
