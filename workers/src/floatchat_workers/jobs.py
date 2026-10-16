@@ -111,7 +111,14 @@ def build(queues: tuple[str, ...]) -> tuple[JobRunner, Reconciler, Configuration
     store = PostgresJobStore(app_engine_from_url(settings.database_url.get_secret_value()))
     if settings.query_database_url is None:
         raise Rejection("invalid_ingestion_configuration")
-    query_limits = QueryLimits(time_span_days=limits.time_span_days)
+    # The worker's reads (members, coverage) run beside ingestion commits and over years of
+    # profiles; they get the long statement budget, never the API's interactive one.
+    query_limits = QueryLimits(
+        time_span_days=limits.time_span_days,
+        query_timeout_seconds=600,
+        object_fetch_seconds=limits.object_fetch_seconds,
+        object_fetch_bytes=limits.cache_bytes,
+    )
     query_engine = engine_from_url(settings.query_database_url.get_secret_value(), query_limits)
     catalogue = QueryCatalogue(query_engine, query_limits)
     client = storage(settings)
