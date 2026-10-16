@@ -120,6 +120,10 @@ export function chunkOutcome(chunk: JobChunkRecord): string {
       ? evidence.missing_chunks.length
       : 0;
     if (missing) bits.push(`${missing} source chunks missing`);
+    const quarantined = Array.isArray(evidence.quarantined_slots)
+      ? evidence.quarantined_slots.length
+      : 0;
+    if (quarantined) bits.push(`${quarantined} quarantined by the source policy`);
   } else if (typeof evidence.rows === "number") {
     bits.push(`${formatNumber(evidence.rows, 0)} rows`);
     if (typeof evidence.profiles === "number")

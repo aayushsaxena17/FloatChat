@@ -321,6 +321,22 @@ def report(arguments: argparse.Namespace) -> int:
     ]
     for failure in failures:
         lines.append(f"- Failed chunk: {failure}.")
+    for index, detail in enumerate(jobs, start=1):
+        quarantined = (detail["job"].get("result") or {}).get("quarantined_slots") or []
+        if quarantined:
+            slots = sorted(
+                {
+                    f"{q['month']} {q['tile']['west']}:{q['tile']['south']}"
+                    if isinstance(q.get("tile"), dict)
+                    else f"{q['month']} {q.get('tile')}"
+                    for q in quarantined
+                }
+            )
+            lines.append(
+                f"- Run {index}: {len(quarantined)} month-tile slot(s) quarantined by the Stage 1 "
+                f"source policy (an upstream data warning quarantines the whole month-tile, "
+                f"ADR-0040/0046) and not fetched again: {slots[:12]}."
+            )
     if len(jobs) > 1:
         refetched = [c for c in jobs[-1]["chunks"] if c["kind"] == "fetch"]
         months = sorted({m for c in refetched for m in c["evidence"].get("months", [])})
