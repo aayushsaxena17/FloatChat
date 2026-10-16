@@ -131,6 +131,13 @@ job rows; the JSON sidecar holds every row). Numbers are not repeated here by ha
   against the 60 s transaction bound; the supervisor failed every tick and no run could close.
   Finalisation now runs under `INGESTION_FINALIZE_BUDGET_SECONDS` (default 600). The
   snapshots stay O(store); ADR-0086 records the follow-up.
+- **Found and fixed during run 1 (lease during the export).** The ten-year export's DuckDB
+  sort ran for minutes without returning to the runner, so no heartbeat was sent, the 120 s
+  lease lapsed, a second and then a third replica claimed the job and all three wrote the
+  same spill file; the export failed with an I/O error on every replica. The runner now
+  renews the lease from a thread while the export (and the forecast fits) run, and every
+  worker process spills into its own directory. The job was then requested again; the
+  report shows that run.
 - A supervisor restart leaves an open run to its controller lease (ten minutes) before
   another controller recovers it; a job waiting on that run waits the same time.
 - `tests/test_refetch.py` HTTPS deadline cases are intermittent on this host (known since
