@@ -1,10 +1,11 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
-// Reading face for the chat (SIL Open Font License), served with the app.
+// Interface face (SIL Open Font License) and reading face for the chat and headings, both
+// served with the app: nothing is fetched from a third party.
+import "@fontsource-variable/figtree";
 import "@fontsource-variable/source-serif-4/opsz.css";
 import "./style.css";
-import "./ocean.css";
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

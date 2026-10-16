@@ -21,7 +21,7 @@ describe("App shell", () => {
     expect(
       await screen.findByRole("heading", {
         level: 1,
-        name: /An ocean of data/,
+        name: /measured by drifting floats/,
       }),
     ).toBeInTheDocument();
     expect(await screen.findByText("Local services ready")).toBeInTheDocument();

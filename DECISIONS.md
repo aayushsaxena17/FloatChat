@@ -2166,3 +2166,74 @@ Alternatives: a separate classification call before planning (rejected, one more
 message on a rate-limited key); widening the keyword lists only (rejected, every unlisted
 greeting or language fails the same way); a new `reply` message kind (rejected, a constraint
 migration for no behavioural gain).
+
+## ADR-0076 - Light ocean theme, decorative copy removed, three.js float hero
+
+Status: accepted under the owner's authority (ADR-0039), 2026-10-14, after the owner rejected
+the dark "observatory" design as generic ("AI slop": numbered mono eyebrows, micro-captions,
+an illustration hero, a dark navy field) and asked for a light palette, a real float on the
+ocean built with three.js, components sourced from 21st.dev, and no lag.
+
+Decision (supersedes the design notes behind ADR-0059 and later restyles; data semantics,
+routes and API contracts are unchanged):
+
+1. One light palette, `#03045e` through `#caf0f8`, as tokens on `:root` in `style.css`:
+   pale surfaces, navy ink, `#0077b6` for every action and `#023e8a` for hover. Status colours
+   are separate and never carry meaning alone. `ocean.css` is deleted; no component holds a
+   colour.
+2. Charts use the validated light categorical palette (slot 1 is the action blue; the
+   data-viz checks for lightness, chroma, colour-vision-deficiency separation and the
+   normal-vision floor pass; the three sub-3:1 slots are covered by the table view every
+   chart already has). The offline map style uses a pale sea and light land from the same
+   file.
+3. Typography: Figtree for the interface, Source Serif 4 for titles, the hero and the chat
+   reading face, both self-hosted through `@fontsource-variable` (SIL OFL).
+4. Removed: numbered eyebrows, kickers, edition and footnote captions, taglines under every
+   heading, the "Soon" navigation badges (the `/jobs` and `/forecasts` stubs keep their
+   routes), the brand subtitle and the labelled SVG current study. Kept, as quiet secondary
+   text: the float-count truncation note, the coverage disclaimer, the histogram bound notice,
+   provenance, the chat footnote and the footer attributions.
+5. The hero is a vanilla `three` scene (`oceanScene.ts`) in its own async chunk: a 150 × 110
+   displaced plane with four directional sine waves, an analytic normal, crest colouring,
+   a Fresnel mix to the sky, a clamped sun glint and distance fog into the CSS sky; an Argo
+   float of six primitives that samples the same wave function on the CPU for its height and
+   tilt. Budget: pixel ratio at most 1.5, `low-power` context, the loop pauses when the hero
+   is out of view or the tab is hidden, one frame under `prefers-reduced-motion`, full
+   disposal on unmount, and the CSS gradient under the canvas is the poster and the
+   no-WebGL fallback. No react-three-fiber, drei, framer-motion or GSAP.
+6. Component sourcing from 21st.dev: four crawls (heroes, backgrounds, the shader gallery,
+   navigation/footer/stat/card blocks; 236 component pages) and a reviewer pass. The
+   registry needs a paid key and the gallery pages hold no source, so components were
+   rebuilt from their documented demos and previews, 21st.dev's own "copy the prompt and
+   rebuild" path. Licence rule: only a bare MIT value on the component page counts; the
+   catalogue's "MIT" text hits were the Tailwind banner. Taken: the bordered KPI grid with
+   hairline dividers (shadcnui-blocks Stats 04, MIT), the `dl`-based stat semantics and
+   tabular numbers (kuratlielia Stats Band, MIT, without its `motion` dependency), the
+   two-column footer with a hairline credit row (arihantcodes Footer Section, MIT). Studied
+   for structure only, no code copied, because their licence field is empty: GLSL Hills
+   (designali-in) and Particle Wave (jahed). The shader gallery is skipped: its presets have
+   no published source or licence, the dashboard already runs two WebGL contexts, and the
+   `@paper-design/shaders` package behind the `paper-*` presets is Apache-2.0, which the
+   owner has not accepted as equivalent to MIT.
+7. Validation for this and every later restyle: Vitest, TypeScript, ESLint, Prettier, the
+   production build (the `oceanScene` chunk must stay separate from the entry), the
+   Playwright suite against the dev stack, and screenshots at 1440 px and 390 px, with and
+   without reduced motion, checked for horizontal overflow.
+
+Amendment (2026-10-15, owner's reference image): the hero is composed as a cross-section of
+the sea, sky above and the underwater half below a wave-topped translucent water wall, with
+the copy in white over the underwater half, low-poly clouds, bubbles, a white collar on the
+float and a yellow hull (the one colour outside the palette, after the instrument itself).
+The budget in point 5 is unchanged; the copy's top edge is kept below the waterline by the
+camera pitch, checked numerically in the capture script. Later the same day: the float became
+a GLB model authored in the repository (`apps/web/scripts/build-float-model.mjs`, served from
+`public/models`), lit by a prefiltered environment and a shadow-casting sun; the clouds became
+a procedural sky shader; the satellite was made small and distant; the hero fills the viewport
+and the pitch follows the measured position of the copy block. `docs/web-design.md` has the
+detail.
+
+Alternatives: react-three-fiber with drei's water (rejected, 2 to 3 MB of dependencies and a
+reconciler for one scene); a video of the sea (rejected, no offline guarantee and no
+interaction with the page's width); a 21st.dev globe hero (rejected, 13 of 60 heroes in the
+crawl are globes, and the site is about one ocean); keeping the dark theme with lighter copy
+(rejected by the owner).
