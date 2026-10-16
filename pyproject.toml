@@ -31,6 +31,8 @@ select = ["E", "F", "I", "UP", "B", "ASYNC"]
 "tests/stage5/*" = ["E501"]
 # Markdown table rows of the Stage 5 report; wrapping them would obscure the columns.
 "scripts/stage5_report.py" = ["E501"]
+"eval/forecast/harness.py" = ["E501"]
+"tests/stage6/*" = ["E501"]
 "scripts/science_seed.py" = ["E501"]
 "tests/stage3/test_build_basemap.py" = ["E501"]
 "scripts/build_named_regions.py" = ["E501"]

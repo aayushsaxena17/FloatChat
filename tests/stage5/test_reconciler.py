@@ -57,7 +57,9 @@ def test_expired_artefacts_change_state_before_their_object_is_deleted() -> None
     assert store.artefact(fresh.id).state == "available" and fresh.object_key in s3.objects
 
 
-def test_an_object_written_without_a_catalogue_row_is_unreachable_and_removed_after_an_hour() -> None:
+def test_an_object_written_without_a_catalogue_row_is_unreachable_and_removed_after_an_hour() -> (
+    None
+):
     # The worker crashed between the upload and the artefact row (PRD section 22): nothing
     # references the object, no download URL can name it, and the sweep removes it once old.
     store = MemoryJobStore(clock=lambda: NOW)

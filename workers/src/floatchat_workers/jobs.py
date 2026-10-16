@@ -20,6 +20,10 @@ import boto3
 from botocore.config import Config
 from floatchat_core.chat.store import app_engine_from_url
 from floatchat_core.config import Settings
+from floatchat_core.forecast.model import ForecastLimits
+from floatchat_core.forecast.runner import ForecastRunner
+from floatchat_core.forecast.series import SeriesBuilder
+from floatchat_core.forecast.store import PostgresForecastStore
 from floatchat_core.ingestion.numeric import Rejection
 from floatchat_core.jobs.artefacts import OBJECT_KEY
 from floatchat_core.jobs.export import ExportWriter
@@ -152,6 +156,28 @@ def build(queues: tuple[str, ...]) -> tuple[JobRunner, Reconciler, Configuration
     )
     worker = f"jobs:{socket.gethostname()[:64]}:{os.getpid()}"
     runner = JobRunner(store, catalogue, runs, writer, limits=limits, worker=worker)
+    if "forecast" in queues:
+        # Stage 6 (ADR-0082): the forecast runner shares the stores, cache and credentials.
+        forecast_limits = ForecastLimits()
+
+        def upload_bytes(key: str, payload: bytes) -> None:
+            client.put_object(Bucket=bucket, Key=key, Body=payload)
+
+        runner.forecaster = ForecastRunner(
+            jobs=store,
+            forecasts=PostgresForecastStore(
+                app_engine_from_url(settings.database_url.get_secret_value())
+            ),
+            catalogue=catalogue,
+            builder=SeriesBuilder(
+                query_engine=query_engine,
+                cache=cache,
+                limits=forecast_limits,
+                application_commit=configuration.application_commit,
+            ),
+            upload=upload_bytes,
+            limits=forecast_limits,
+        )
     return runner, Reconciler(store, client, bucket, limits), configuration
 
 
