@@ -877,3 +877,14 @@ ADR-0081.
       Playwright jobs spec; README section.
 - [ ] The ten-year Arabian Sea run twice through the job system; `reports/historical_jobs_<date>.md`.
 - [ ] Gate report `docs/stage5-gate.md`; pull request.
+
+## Stage 6 - forecasting (branch `codex/stage-6`, from `codex/stage-5`)
+
+Plan [docs/stage6-plan.md](docs/stage6-plan.md), ADR-0082 to ADR-0085.
+
+- [x] Plan and ADRs written before code.
+- [ ] Migration 0020: forecast definition, model and run tables.
+- [ ] Series builder, snapshot and missing policy; models, backtest, selection, refusals.
+- [ ] Forecast job in the jobs worker; API; workspace UI.
+- [ ] `make eval-forecast` over the committed series; `reports/eval_forecast_<date>.md`.
+- [ ] Gate report `docs/stage6-gate.md`; README; pull request.

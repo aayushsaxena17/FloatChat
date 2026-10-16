@@ -2399,3 +2399,122 @@ Decision:
    rows of two runs of the same ten-year request: chunks, duration, HTTP attempts and retries
    from the ingestion runs, the cache reuse ratio (slots reused over slots required), and the
    PostgreSQL and object bytes the region added.
+
+## ADR-0082 - Stage 6 scope: branch, forecasts as jobs, the forecast tables
+
+Status: accepted under the owner's authority (ADR-0039), 2026-10-16.
+
+Decision:
+
+1. `codex/stage-6` branches from `codex/stage-5`; its pull request targets `codex/stage-5`
+   (stacked: the jobs worker, the `forecast` queue and the historical runs are inputs).
+2. A forecast request is a job of kind `forecast` on the `forecast` queue, served by the Stage 5
+   jobs worker with the Stage 5 lifecycle (claims, leases, events, cancellation, client
+   scoping). Chunks: `series` (build and snapshot the regular series) and `model` (backtest,
+   select, forecast, publish). The job's result names the definition, the model version and
+   the run.
+3. PRD §6.9 tables (migration 0020): `app.forecast_definition` (the series definition, unique
+   per client and definition hash), `app.forecast_model` (one row per trained version with its
+   training snapshot, parameters, metrics, diagnostics and artefact key), `app.forecast_run`
+   (one row per published, experimental or refused forecast with history, forecast, backtest,
+   warnings, reason, seed). The application login writes them.
+4. `statsmodels` (0.14.6, PRD §5.12) and `scipy` join `packages/core`; `uv.lock` is regenerated.
+
+Alternatives: forecasting inside the API request (rejected: minutes of CPU, PRD §5.9); a separate
+forecast worker process now (not needed: the queue name already separates the workload, and
+`floatchat jobs --queues forecast` gives it its own process when wanted).
+
+## ADR-0083 - The forecastable unit, the series builder, the snapshot and the missing-data policy
+
+Status: accepted under the owner's authority (ADR-0039), 2026-10-16.
+
+Decision:
+
+1. Unit (PRD §12.1): variable `temperature` or `salinity`; one named region; one depth band
+   (default 0-100 dbar); monthly frequency; profile-balanced mean (the per-profile mean of the
+   policy-selected values in the band, then the mean over profiles of the month);
+   qc-policy-v1 `science_ready`; `min_profiles` per month (default 5, range 1-100). The
+   definition hash is the SHA-256 of these fields.
+2. Builder: DuckDB in the jobs worker over the verified parts of the definition's months and
+   tiles, members from PostgreSQL (`profile_slot_statement`), the query engine's aggregate
+   template (`group_by month`, `unit profile`, metrics `mean` and `count`), one execution per
+   calendar year to keep the member table and the part list bounded. The number trained on is
+   the dashboard's number for the same month.
+3. Snapshot `series-snapshot-v1`: dataset version (environment id, latest completed run,
+   completed runs), the partition ids and SHA-256 of every part read, the region version and
+   hash, the policy versions, the months with mean and profile count, the missing-data
+   treatment, and the builder's commit. Stored at `forecasts/<definition>/<snapshot>.json`
+   and embedded in the model's `training_snapshot`; the six evaluation snapshots are committed
+   under `eval/forecast/series/`.
+4. Missing policy, recorded in the snapshot: a month with fewer than `min_profiles` profiles is
+   missing; leading and trailing missing months are trimmed; interior gaps are filled by linear
+   interpolation only when the missing fraction is at most 20% and no gap exceeds two months,
+   otherwise the series is refused (`missingness_exceeds_policy`). Filled months are flagged in
+   the history the UI shows.
+
+Alternatives: measurement-weighted means (rejected by PRD §12.1); seasonal interpolation
+(rejected: it would feed the model's own assumption back into its training data).
+
+## ADR-0084 - Models, backtest protocol, metrics, selection, refusals, artefacts, seeds
+
+Status: accepted under the owner's authority (ADR-0039), 2026-10-16.
+
+Decision:
+
+1. Baseline: seasonal naive with period 12 (the value twelve months earlier); its intervals come
+   from the empirical quantiles of its in-sample errors per horizon.
+2. Candidates: `statsmodels` SARIMAX with trend `c` when `d = D = 0` else none, orders on the
+   grid `p,q ∈ {0,1,2}`, `d ∈ {0,1}`, `P,Q ∈ {0,1}`, `D ∈ {0,1}`, `s = 12` (144 orders),
+   `enforce_stationarity` and `enforce_invertibility` on, fits that fail to converge or raise
+   dropped. All orders are fitted once on the first training window and ranked by AICc; the
+   best three enter the backtest. This is the bounded search of PRD §12.2 step 9.
+3. Backtest (PRD §30.4): rolling origin, expanding window, at least 12 folds, horizons 1, 2 and
+   3 months, refit per fold; folds that fail to fit count as misses for that candidate.
+   Metrics per horizon: MAE, RMSE, MASE (scale: the in-sample mean absolute error of the
+   seasonal naive on the fold's training window), coverage of the 80% and 95% intervals.
+4. Selection (PRD §12.2 step 12): among candidates whose mean MASE over the horizons is at least
+   5% below the baseline's, the one with the fewest parameters (ties: the lower MASE); the
+   selected model's full-history residuals must pass Ljung-Box at lag 12 (p > 0.05) and have a
+   finite, near-zero mean, else the next candidate is tried. With no candidate left the run is
+   `experimental`: the baseline forecast is shown, labelled as such, with every candidate's
+   metrics in the table and no authoritative claim (PRD §22).
+5. Refusals (PRD §12.3): fewer than 36 regular months (`history_too_short`), the missing policy
+   (`missingness_exceeds_policy`), standard deviation below 1e-6 of the mean's magnitude or
+   zero (`series_constant`), horizon above a quarter of the history (`horizon_disproportionate`).
+   A refused run stores the history (when built) and the reason; no model row is written.
+6. Artefacts: the selected model's parameters, order, training window, metrics and the snapshot
+   id as JSON at `forecasts/<definition>/model-v<version>.json` (no pickles). Seeds: numpy
+   seed 20261016 for any randomised step; SARIMAX fits are deterministic given the data.
+7. Interpretation boundary (PRD §12.4): the run carries the fixed text "This is a statistical
+   extrapolation of a derived observational series (ARIMA/SARIMA on monthly profile-balanced
+   means). It is not a physics-based ocean forecast and must not replace an operational ocean
+   model." The UI prints it on every run.
+
+Alternatives: auto-ARIMA style stepwise search (rejected: less reproducible; the grid is small
+enough); in-sample AIC as the selection criterion (rejected by PRD §9.5 step 5); exponential
+smoothing candidates (deferred; recorded as future work).
+
+## ADR-0085 - Forecast API, workspace UI, evaluation harness and report integrity
+
+Status: accepted under the owner's authority (ADR-0039), 2026-10-16.
+
+Decision:
+
+1. `POST /v1/forecasts` (202; `forecast-request-v1`: variable, region, depth_dbar, horizon 1-12
+   default 3, min_profiles, idempotency key) creates the job and the definition;
+   `GET /v1/forecasts` lists the client's runs; `GET /v1/forecasts/{run_id}` returns history,
+   forecast with 80% and 95% intervals, the backtest table (baseline and candidates per
+   horizon), the model, the snapshot summary, warnings, the reason when refused, and the
+   boundary text. Code `forecast_not_found` (404). The job itself is read through `/v1/jobs`.
+2. Web: `/forecasts` (form and the list of this browser's runs) and `/forecasts/:forecastId`
+   (history and forecast chart with interval bands and the fill flags, metrics table, facts,
+   limitations). The chart is never rendered without the metrics table on the same page.
+3. `make eval-forecast` runs `python -m eval.forecast.harness` over the committed snapshots in
+   `eval/forecast/series/` (at least six: three regions × temperature and salinity, plus any
+   refusal case), with the fixed seed, and writes `reports/eval_forecast_<date>.md` and a JSON
+   sidecar: commit, snapshot ids and dataset versions, per-series backtest metrics for the
+   baseline and every candidate carried, the selected model, baseline wins and losses,
+   refusals with reasons. `--rebuild` regenerates the snapshots from a running stack.
+   `make eval` runs both harnesses.
+4. The README results table quotes the committed report only; the "improvement over the
+   baseline" is reported per series, never as one number.
