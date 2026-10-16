@@ -15,7 +15,10 @@ COPY scripts/science_seed.py scripts/science_seed.py
 COPY scripts/semantic_seed.py scripts/semantic_seed.py
 COPY scripts/dev_worker.py scripts/dev_worker.py
 RUN useradd --uid 10001 --create-home floatchat \
-    && mkdir -p /var/lib/floatchat/query-cache && chown 10001 /var/lib/floatchat/query-cache
+    && mkdir -p /var/lib/floatchat/query-cache /var/lib/floatchat/jobs-cache \
+       /var/lib/floatchat/jobs-export /home/floatchat/private \
+    && chown 10001 /var/lib/floatchat/query-cache /var/lib/floatchat/jobs-cache \
+       /var/lib/floatchat/jobs-export /home/floatchat/private
 USER 10001
 EXPOSE 8000
 CMD ["uvicorn", "floatchat_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
