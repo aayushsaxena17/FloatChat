@@ -26,6 +26,10 @@ from collections.abc import Iterable, Sequence
 from typing import Any
 
 ENV = "00000000-0000-4000-8000-000000000003"
+# Stage 5 (ADR-0078): the environment marker names the stack it runs in, so the ingestion pool
+# and the jobs worker of the integration project accept it; the pytest fixture keeps "stage2".
+BUCKET = os.environ.get("OBJECT_STORAGE_BUCKET", "stage2")
+PROJECT = os.environ.get("COMPOSE_PROJECT_NAME", "stage2")
 RUN = "00000000-0000-4000-8000-000000000001"
 CHUNK = "00000000-0000-4000-8000-000000000002"
 ATTEMPT = "00000000-0000-4000-8000-000000000004"
@@ -166,7 +170,7 @@ def seed_sql(*, partitions_if_absent: bool = False) -> str:
         for month in (1, 2, 3)
     )
     return f"""
-INSERT INTO app.ingestion_environment VALUES('{ENV}','stage2-test','acceptance',true,'stage2','stage2','stage2');
+INSERT INTO app.ingestion_environment VALUES('{ENV}','stage2-test','acceptance',true,'{BUCKET}','{PROJECT}.ingestion','{PROJECT}');
 INSERT INTO app.ingestion_run(id,environment_id,mode,run_reference_time_utc,requested_start,
   requested_end,geometry_version,geometry_sha256,policy_versions,limits,controller_lease_until,
   work_deadline,deadline,state,closed)
