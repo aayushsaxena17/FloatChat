@@ -155,6 +155,17 @@ def _seconds(start: str | None, end: str | None) -> float | None:
     ).total_seconds()
 
 
+CLOCK_JUMP = datetime(2026, 10, 16, 0, 48, tzinfo=UTC)
+
+
+def _spans_jump(start: str | None, end: str | None) -> bool:
+    if not start or not end:
+        return False
+    started = datetime.fromisoformat(start.replace("Z", "+00:00"))
+    finished = datetime.fromisoformat(end.replace("Z", "+00:00"))
+    return started < CLOCK_JUMP <= finished
+
+
 def _fmt_bytes(value: int) -> str:
     if value < 1024**2:
         return f"{value / 1024:.1f} KB"
@@ -192,9 +203,10 @@ def report(arguments: argparse.Namespace) -> int:
         "",
         "## Runs",
         "",
-        "| Run | Job | State | Months × tiles | Reused | Fetch chunks | Duration | HTTP requests | Retries | Profiles accepted |",
-        "|---|---|---|---|---|---|---|---|---|---|",
+        "| Run | Job | State | Months × tiles | Reused | Fetch chunks | Duration (job) | Chunk time | HTTP requests | Retries | Profiles accepted |",
+        "|---|---|---|---|---|---|---|---|---|---|---|",
     ]
+    spanning: list[str] = []
     for index, detail in enumerate(jobs, start=1):
         job = detail["job"]
         chunks = detail["chunks"]
@@ -203,31 +215,61 @@ def report(arguments: argparse.Namespace) -> int:
         retries = sum(int(c["evidence"].get("http_retries", 0) or 0) for c in fetch)
         profiles = sum(int(c["evidence"].get("accepted_profiles", 0) or 0) for c in fetch)
         duration = _seconds(job.get("started_at"), job.get("finished_at"))
+        chunk_time = 0.0
+        for c in chunks:
+            seconds = _seconds(c.get("started_at"), c.get("finished_at"))
+            if seconds is None:
+                continue
+            if _spans_jump(c.get("started_at"), c.get("finished_at")):
+                spanning.append(f"run {index} chunk {c['seq']} ({c['label']})")
+                continue
+            chunk_time += seconds
         progress = job["progress"]
         lines.append(
             f"| {index} | `{job['id'][:8]}` | {job['state']} | {progress.get('slots_total')} | "
             f"{progress.get('slots_reused')} ({round(100 * float(progress.get('reuse_ratio', 0)))}%) | "
             f"{len(fetch)} ({sum(1 for c in fetch if c['state'] == 'complete')} complete, {sum(1 for c in fetch if c['state'] == 'failed')} failed) | "
-            f"{'-' if duration is None else f'{duration / 60:.1f} min'} | {attempts} | {retries} | {profiles} |"
+            f"{'-' if duration is None else f'{duration / 60:.1f} min'} | {chunk_time / 60:.1f} min | {attempts} | {retries} | {profiles} |"
         )
-    lines += [
-        "",
-        "## Chunks of the first run",
-        "",
-        "| Chunk | Months | State | Run state | Termination | Leaf states | HTTP requests | Retries | Profiles | Levels | Received | Duration |",
-        "|---|---|---|---|---|---|---|---|---|---|---|---|",
-    ]
-    for chunk in jobs[0]["chunks"]:
-        evidence = chunk["evidence"]
-        duration = _seconds(chunk.get("started_at"), chunk.get("finished_at"))
-        lines.append(
-            f"| {chunk['seq']} | {chunk['label']} | {chunk['state']} | {evidence.get('run_state', '-')} | "
-            f"{evidence.get('termination_reason') or '-'} | {json.dumps(evidence.get('leaf_states', {}))} | "
-            f"{evidence.get('request_attempts', '-')} | {evidence.get('http_retries', '-')} | "
-            f"{evidence.get('accepted_profiles', '-')} | {evidence.get('accepted_levels', '-')} | "
-            f"{_fmt_bytes(int(evidence.get('received_bytes', 0) or 0)) if evidence.get('received_bytes') else '-'} | "
-            f"{'-' if duration is None else f'{duration / 60:.1f} min'} |"
-        )
+    failures: list[str] = []
+    for index, detail in enumerate(jobs, start=1):
+        lines += [
+            "",
+            f"## Chunks of run {index}",
+            "",
+            "| Chunk | Months | State | Ingestion runs | Last run state | Termination | Leaf states | HTTP requests | Retries | Profiles | Levels | Received | Duration |",
+            "|---|---|---|---|---|---|---|---|---|---|---|---|---|",
+        ]
+        for chunk in detail["chunks"]:
+            evidence = chunk["evidence"]
+            duration = _seconds(chunk.get("started_at"), chunk.get("finished_at"))
+            runs = evidence.get("runs") or ([evidence] if evidence.get("run_id") else [])
+            jump = (
+                " (spans the clock jump)"
+                if _spans_jump(chunk.get("started_at"), chunk.get("finished_at"))
+                else ""
+            )
+            lines.append(
+                f"| {chunk['seq']} | {chunk['label']} | {chunk['state']} | {len(runs) if chunk['kind'] == 'fetch' else '-'} | "
+                f"{evidence.get('run_state', '-')} | "
+                f"{evidence.get('termination_reason') or '-'} | {json.dumps(evidence.get('leaf_states', {}))} | "
+                f"{evidence.get('request_attempts', '-')} | {evidence.get('http_retries', '-')} | "
+                f"{evidence.get('accepted_profiles', '-')} | {evidence.get('accepted_levels', '-')} | "
+                f"{_fmt_bytes(int(evidence.get('received_bytes', 0) or 0)) if evidence.get('received_bytes') else '-'} | "
+                f"{'-' if duration is None else f'{duration / 60:.1f} min'}{jump} |"
+            )
+            if chunk["state"] == "failed":
+                error = chunk.get("error") or {}
+                failures.append(
+                    f"run {index} chunk {chunk['seq']} ({chunk['label']}): {error.get('code', '-')} - "
+                    f"{error.get('message', '')}"
+                    + (f" after {len(runs)} ingestion run(s)" if chunk["kind"] == "fetch" else "")
+                    + (
+                        "; it failed before the runner retried fetch chunks (one run only)"
+                        if len(runs) == 1 and chunk["kind"] == "fetch"
+                        else ""
+                    )
+                )
     lines += [
         "",
         "## Artefacts",
@@ -277,6 +319,23 @@ def report(arguments: argparse.Namespace) -> int:
         "- Historical months are stored in PostgreSQL and as Parquet parts alike (ADR-0078 point 4); "
         "the table above records the cost of that decision for this region.",
     ]
+    for failure in failures:
+        lines.append(f"- Failed chunk: {failure}.")
+    if len(jobs) > 1:
+        refetched = [c for c in jobs[-1]["chunks"] if c["kind"] == "fetch"]
+        months = sorted({m for c in refetched for m in c["evidence"].get("months", [])})
+        lines.append(
+            f"- Run {len(jobs)} planned {len(refetched)} fetch chunk(s) from the catalogue for the slots "
+            f"run 1 left missing"
+            + (f" (months {months})" if months else "")
+            + "; everything else was reused."
+        )
+    if spanning:
+        lines.append(
+            f"- The host clock jumped about seven hours at {CLOCK_JUMP.strftime('%H:%M')} UTC on "
+            f"{CLOCK_JUMP.date()}; job durations that include it are not wall time. The 'Chunk time' "
+            f"column sums chunk durations and leaves out {', '.join(spanning)}."
+        )
     out = ROOT / "reports" / f"historical_jobs_{date}.md"
     out.write_text("\n".join(lines) + "\n")
     (ROOT / "reports" / f"historical_jobs_{date}.json").write_text(
