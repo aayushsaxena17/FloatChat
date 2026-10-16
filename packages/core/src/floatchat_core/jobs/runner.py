@@ -9,9 +9,11 @@ failure tests run over doubles.
 """
 
 import logging
+import threading
 import time
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any, Protocol
@@ -189,7 +191,10 @@ class JobRunner:
             )
             coverage = self.catalogue.coverage(environment.id, interval, tiles)
             try:
-                artefacts = self.exporter.export(job, plan, geography, coverage, environment)
+                with self._keepalive(job):
+                    artefacts = self.exporter.export(job, plan, geography, coverage, environment)
+            except LeaseLost:
+                raise
             except Exception as error:  # the export failed; the job says so and keeps its chunks
                 # The stored message names the failure class only; the traceback goes to the
                 # worker's log (never to the API) so no path or credential reaches a client.
@@ -417,6 +422,38 @@ class JobRunner:
         return status
 
     # -- bookkeeping -----------------------------------------------------------------------
+
+    @contextmanager
+    def _keepalive(self, job: Job) -> Iterator[None]:
+        """Heartbeat from a thread while a long synchronous step runs.
+
+        The export's DuckDB sort and the forecast fits do not return to the runner for
+        minutes; without this the lease (120 s) lapsed, another replica claimed the job and
+        both ran the step at once (seen on the ten-year Arabian Sea export). A lost lease is
+        raised after the step returns; the step's result is discarded by the caller.
+        """
+        stop = threading.Event()
+        lost = threading.Event()
+
+        def beat() -> None:
+            while not stop.wait(self.limits.heartbeat_seconds):
+                try:
+                    if not self.store.heartbeat(job.id, self.worker, self.limits.lease_seconds):
+                        lost.set()
+                        return
+                except Exception:  # transient store failure: the next beat tries again
+                    log.exception("heartbeat failed for job %s", job.id)
+
+        thread = threading.Thread(target=beat, name=f"keepalive-{job.id[:8]}", daemon=True)
+        thread.start()
+        try:
+            yield
+        finally:
+            stop.set()
+            thread.join(timeout=max(5.0, self.limits.heartbeat_seconds * 2))
+            self._last_heartbeat = time.monotonic()
+        if lost.is_set():
+            raise LeaseLost(job.id)
 
     def _pause(self, job: Job, seconds: float) -> None:
         self.sleep(seconds)

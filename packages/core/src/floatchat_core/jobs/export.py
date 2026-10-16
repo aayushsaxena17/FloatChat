@@ -10,6 +10,8 @@ the audit columns stay beside it.
 import hashlib
 import json
 import logging
+import os
+import socket
 import uuid
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
@@ -232,7 +234,9 @@ class ExportWriter:
         # Sorting a multi-year export under the memory limit spills to disk; the spill
         # directory must be one of the allowed directories (DuckDB would otherwise try
         # ".tmp" in the working directory and fail with an I/O error).
-        spill = self.directory / ".duckdb-tmp"
+        # One spill directory per worker process: replicas share the volume, and DuckDB
+        # names its temp files the same in every instance.
+        spill = self.directory / ".duckdb-tmp" / f"{socket.gethostname()}-{os.getpid()}"
         spill.mkdir(parents=True, exist_ok=True)
         connection.execute(f"SET temp_directory = '{str(spill).replace(chr(39), chr(39) * 2)}'")
         connection.execute("SET enable_external_access = false")

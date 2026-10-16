@@ -281,3 +281,46 @@ def test_a_quarantined_slot_is_reported_not_fetched_again():
     chunk2 = [c for c in store.chunks(job2.id) if c.kind == "fetch"][0]
     assert chunk2.state == "complete" and chunk2.evidence["run_state"] == "quarantined"
     assert store.get(job2.id).state == "partial"
+
+
+def test_a_long_export_keeps_the_lease_alive_and_a_lost_lease_stops_the_worker():
+    # The export's DuckDB sort returns to the runner only when done; the lease must be
+    # renewed from a thread meanwhile (the ten-year export was claimed by three replicas).
+    import time as _time
+
+    class Counting(MemoryJobStore):
+        beats = 0
+
+        def heartbeat(self, job_id, worker, lease_seconds):
+            self.beats += 1
+            return super().heartbeat(job_id, worker, lease_seconds)
+
+    class Slow(FakeExporter):
+        def export(self, *args):
+            _time.sleep(0.3)
+            return super().export(*args)
+
+    store, catalogue = Counting(), FakeCatalogue()
+    job, _, _ = create(store, request(end="2016-04-01"))
+    limits = LIMITS.model_copy(update={"heartbeat_seconds": 0.05})  # below the 5 s floor, test only
+    before = store.beats
+    JobRunner(
+        store, catalogue, FakeRuns(catalogue), Slow(), limits=limits, sleep=lambda s: None
+    ).run_once(("export",))
+    assert store.get(job.id).state == "completed"
+    assert store.beats - before >= 3  # renewed every 50 ms during the 0.3 s export
+
+    class Losing(Counting):
+        def heartbeat(self, job_id, worker, lease_seconds):
+            self.beats += 1
+            return False  # another worker holds the lease now
+
+    store2, exporter2 = Losing(), Slow()
+    job2, _, _ = create(store2, request(end="2016-04-01"))
+    JobRunner(
+        store2, catalogue, FakeRuns(catalogue), exporter2, limits=limits, sleep=lambda s: None
+    ).run_once(("export",))
+    # The export ran once, but the result was discarded: the job is not finished by this
+    # worker (the one that holds the lease will finish it).
+    assert exporter2.calls and store2.get(job2.id).state == "exporting"
+    assert not store2.get(job2.id).result and store2.get(job2.id).finished_at is None
