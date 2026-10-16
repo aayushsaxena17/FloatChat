@@ -39,12 +39,12 @@ describe("App shell", () => {
 
   it("names the stage that delivers a stubbed route", async () => {
     stubApi({ "/v1/health/ready": { status: "ok" } });
-    window.history.replaceState(null, "", "/forecasts/123");
+    window.history.replaceState(null, "", "/settings");
     render(<App />);
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Forecasts" }),
+      await screen.findByRole("heading", { level: 1, name: "Settings" }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/arrives with Stage 6/)).toBeInTheDocument();
+    expect(screen.getByText(/arrives with Stage 7/)).toBeInTheDocument();
   });
 
   it("reports unavailable services", async () => {

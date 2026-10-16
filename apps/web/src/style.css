@@ -1288,6 +1288,44 @@ details.provenance .facts {
   color: var(--status-serious);
 }
 
+/* ----- Forecasts (Stage 6) ----- */
+.forecast-form {
+  padding: 18px 20px;
+  margin-bottom: 20px;
+}
+.forecast-form h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+.forecast-form h2 svg {
+  color: var(--primary);
+}
+.forecast-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 10px;
+}
+.forecast-fields label {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.forecast-reasons {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+table.data tr[data-selected="true"] td {
+  font-weight: 600;
+}
+
 /* ----- Jobs (Stage 5) ----- */
 .job-list {
   list-style: none;

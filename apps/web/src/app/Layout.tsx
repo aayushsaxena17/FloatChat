@@ -5,6 +5,7 @@ import {
   Layers,
   MessageSquare,
   ListChecks,
+  TrendingUp,
   ArrowUpRight,
 } from "lucide-react";
 import { WaveMark } from "../components/WaveMark";
@@ -16,6 +17,7 @@ const LINKS = [
   ["/explore/profiles", "Profiles", Layers],
   ["/chat", "Chat", MessageSquare],
   ["/jobs", "Jobs", ListChecks],
+  ["/forecasts", "Forecasts", TrendingUp],
 ] as const;
 
 /** Routes that fill the viewport like an app: their own scrolling, no page footer. */
