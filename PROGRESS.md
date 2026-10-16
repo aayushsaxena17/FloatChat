@@ -879,7 +879,9 @@ ADR-0081.
       ingestion adapter reconnect after a lost session, fetch chunks retry (at most three runs,
       re-planned from the catalogue), admission accepts only the run its request created and
       a chunk is complete only when the catalogue covers it, jobs yield the ingestion scope
-      between runs (three replicas), DuckDB spills under the worker's own directory.
+      between runs (three replicas), DuckDB spills under the worker's own directory,
+      quarantined month-tiles are reported instead of re-fetched and run finalisation has
+      its own budget (ADR-0086).
 - [ ] The ten-year Arabian Sea run twice through the job system; `reports/historical_jobs_<date>.md`.
 - [ ] Gate report `docs/stage5-gate.md`; pull request.
 
