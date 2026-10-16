@@ -63,15 +63,18 @@ snapshot ids, dataset version `8562e75d/27`, seed 20261016, library versions and
 grid are in its header); the JSON sidecar holds every candidate's metrics. Nothing is repeated
 here by hand. In words:
 
-- Three series published a SARIMA that beats the seasonal-naive baseline by more than 5% at
-  every horizon and passes the residual diagnostics (Arabian Sea temperature and salinity,
-  Bay of Bengal salinity).
+- Three series published a SARIMA that beats the seasonal-naive baseline by more than 5% on
+  the mean MASE over the three horizons (the selection rule; per-horizon gains are in the
+  table, and the Arabian Sea salinity gain at horizon 3 is under 5%) and passes the residual
+  diagnostics (Arabian Sea temperature and salinity, Bay of Bengal salinity).
 - Two series are `experimental`: Bay of Bengal temperature (no candidate beats the baseline
   by 5%) and Laccadive Sea temperature (the candidates that beat it fail the Ljung-Box
   test). The baseline wins are reported as such.
 - Three series are refused: both Andaman Sea series (`history_too_short`, no month with five
-  profiles) and Laccadive Sea salinity (`missingness_exceeds_policy`, 12% missing with a
-  four-month gap).
+  profiles) and Laccadive Sea salinity (`missingness_exceeds_policy`: 14 scattered months
+  between 2020-01 and 2024-08 have fewer than five profiles with science-ready salinity,
+  while the temperature series of the same region misses five; the longest gap, 2024-01 to
+  2024-04, exceeds the two-month policy).
 - A non-stationary candidate over the Arabian Sea temperature series diverged numerically in
   the backtest (mean MASE of order 10^14 in the first report); the backtest now reports such
   a candidate as diverged and never selects it (found through the report, fixed before the
@@ -96,6 +99,9 @@ here by hand. In words:
   Sea tiles); the committed snapshots state exactly which months each series has. A series
   shorter than 36 regular months is refused by design.
 - `--grid small` is for checks only and says so in the report.
+- The development stack's workers were rebuilt with the diverged-fit guard after the report
+  run; forecast runs created before that keep the candidate row with the absurd MASE in
+  their stored backtest table (the run page shows it as the report did).
 - Interval coverage of the seasonal-naive baseline uses one empirical error distribution for
   every horizon (ADR-0084 point 1); the SARIMA intervals come from statsmodels.
 - Interval coverage is reported but not part of the selection rule (PRD §9.5 selects on
@@ -109,9 +115,10 @@ here by hand. In words:
 
 - Review the stacked pull requests (design, Stage 5, Stage 6) in order.
 - Decide whether interval coverage should join the selection rule (see known issues).
-- The Laccadive Sea salinity series is refused for a four-month gap in 2015-2016 where the
-  Arabian Sea tiles were quarantined by the source policy; a fetch policy decision (Stage 1)
-  rather than a forecasting one.
+- The Laccadive Sea salinity series is refused because 14 months have fewer than five
+  profiles with science-ready salinity (a four-month gap in early 2024). Lowering
+  `min_profiles` for salinity or widening the gap policy is a modelling decision for you; the
+  refusal is the designed behaviour.
 
 ## Proposed plan for the next stage
 

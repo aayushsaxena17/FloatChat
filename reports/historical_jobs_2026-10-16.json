@@ -1,5 +1,5 @@
 {
-  "commit": "2e8956a97a28b41b579a3203619eb5d7e02b9dff",
+  "commit": "b124896cac25d2fb66868074e1bec39cda7950d4",
   "jobs": [
     {
       "artefacts": [],
@@ -1641,7 +1641,7 @@
         {
           "bytes": 212381074,
           "created_at": "2026-10-16T14:11:56.350407Z",
-          "download_url": "/v1/artefacts/35517d39-7c4f-4a5e-9bb6-9afe2921d9b8/download?token=1792161348.9a5d20bbc899c9ac55c21bfd7da5f81336e57b12b7fb58c5bfffb60f41a587d4",
+          "download_url": "/v1/artefacts/35517d39-7c4f-4a5e-9bb6-9afe2921d9b8/download?<signed>",
           "expires_at": "2026-10-23T14:11:56.309901Z",
           "filename": "floatchat-export-4c5e8664.parquet",
           "format": "parquet",
@@ -6375,7 +6375,7 @@
         {
           "bytes": 165485,
           "created_at": "2026-10-16T14:11:56.426612Z",
-          "download_url": "/v1/artefacts/8f6292f1-4855-4c88-b832-01c0b1c475b5/download?token=1792161348.4df2be6d34d3eef029f2449aa8fc1147f42695582995c01d7a004296875e20cc",
+          "download_url": "/v1/artefacts/8f6292f1-4855-4c88-b832-01c0b1c475b5/download?<signed>",
           "expires_at": "2026-10-23T14:11:56.309901Z",
           "filename": "floatchat-export-4c5e8664.manifest.json",
           "format": "json",
@@ -6393,7 +6393,7 @@
         {
           "bytes": 171585,
           "created_at": "2026-10-16T14:11:56.433782Z",
-          "download_url": "/v1/artefacts/935b97fc-f95d-48c3-94aa-8c121d75573c/download?token=1792161348.99a288c9f2eb3b690f31a71f59c096a438b98d26e960f45ef4759c3f96dc7a8c",
+          "download_url": "/v1/artefacts/935b97fc-f95d-48c3-94aa-8c121d75573c/download?<signed>",
           "expires_at": "2026-10-23T14:11:56.309901Z",
           "filename": "floatchat-export-4c5e8664.provenance.json",
           "format": "json",
@@ -7579,7 +7579,7 @@
         {
           "bytes": 212381074,
           "created_at": "2026-10-16T14:19:39.320790Z",
-          "download_url": "/v1/artefacts/bd12664b-53f0-4877-8163-7e7c80462631/download?token=1792161348.e380465879f5a617a162de26b824eb6ac51e86e0accd52ce3f5dc26be5dd7bea",
+          "download_url": "/v1/artefacts/bd12664b-53f0-4877-8163-7e7c80462631/download?<signed>",
           "expires_at": "2026-10-23T14:19:39.284942Z",
           "filename": "floatchat-export-385a0867.parquet",
           "format": "parquet",
@@ -12313,7 +12313,7 @@
         {
           "bytes": 165485,
           "created_at": "2026-10-16T14:19:39.371114Z",
-          "download_url": "/v1/artefacts/325a9a81-6953-42a9-bc53-e6dc34b6f781/download?token=1792161348.21d0e1e6239a2cc91b07db6233e13a314242b646995d339cae06bbf0547d0edb",
+          "download_url": "/v1/artefacts/325a9a81-6953-42a9-bc53-e6dc34b6f781/download?<signed>",
           "expires_at": "2026-10-23T14:19:39.284942Z",
           "filename": "floatchat-export-385a0867.manifest.json",
           "format": "json",
@@ -12331,7 +12331,7 @@
         {
           "bytes": 171584,
           "created_at": "2026-10-16T14:19:39.378403Z",
-          "download_url": "/v1/artefacts/bc616b08-bec6-4a46-8569-7ac5c9acde02/download?token=1792161348.6e90081d4d7645cf75e447b235e6484ff1beb13ad2b6350cf27fd0862b3b4795",
+          "download_url": "/v1/artefacts/bc616b08-bec6-4a46-8569-7ac5c9acde02/download?<signed>",
           "expires_at": "2026-10-23T14:19:39.284942Z",
           "filename": "floatchat-export-385a0867.provenance.json",
           "format": "json",
