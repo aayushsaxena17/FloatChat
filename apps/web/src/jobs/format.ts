@@ -101,7 +101,7 @@ export function progressLine(job: JobRecord): string {
     );
   if (typeof reuse === "number")
     parts.push(
-      `${Math.round(reuse * 100)}% of the months were already available`,
+      `${Math.round(reuse * 100)}% of the month-tile slots were already in the catalogue`,
     );
   return parts.join(" · ");
 }

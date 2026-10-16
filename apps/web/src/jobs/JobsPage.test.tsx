@@ -106,7 +106,7 @@ describe("Jobs", () => {
       screen.getByText(/3 of 10 source chunks fetched/),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/3% of the months were already/),
+      screen.getByText(/3% of the month-tile slots were already/),
     ).toBeInTheDocument();
   });
 
