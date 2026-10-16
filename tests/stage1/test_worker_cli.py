@@ -173,7 +173,9 @@ def test_supervise_dispatches_through_the_ticket_queue(monkeypatch):
     assert cli.main(["supervise"]) == 5  # stopping the supervisor is process loss
     ((store, dispatch),) = built
     assert dispatch is cli.dispatch and store.repository is repository and sleeps == [10]
-    assert repository.closed == 1
+    # Stage 5: a failed tick closes the lost session and rebuilds it before the next tick
+    # (the configuration hands back the same double here), then waits the tick interval.
+    assert repository.closed == 2
 
 
 def test_control_connection_delegates_and_extends_unstarted_leases_itself(monkeypatch):

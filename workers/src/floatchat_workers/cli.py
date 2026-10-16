@@ -239,7 +239,7 @@ def main(arguments: list[str] | None = None) -> int:
                     try:
                         repository = configuration.repository()
                         supervisor.store = cast(ControlStore, ControlConnection(repository))
-                        for controller in supervisor.controllers.values():
+                        for controller in getattr(supervisor, "controllers", {}).values():
                             controller.store = supervisor.store
                     except Rejection:
                         print("supervisor_reconnect_failed", flush=True)
