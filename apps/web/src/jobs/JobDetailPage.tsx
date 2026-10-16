@@ -128,6 +128,12 @@ export function JobDetailPage() {
       }>)
     : [];
   const missingMonths = [...new Set(missing.map((slot) => slot.month))].sort();
+  const quarantined = Array.isArray(
+    (job?.result as Record<string, unknown> | undefined)?.quarantined_slots,
+  )
+    ? ((job?.result as Record<string, unknown>).quarantined_slots as unknown[])
+        .length
+    : 0;
   return (
     <>
       <div className="page-heading">
@@ -194,7 +200,10 @@ export function JobDetailPage() {
                   ? `: ${missingMonths.slice(0, 12).join(", ")}${missingMonths.length > 12 ? ` and ${missingMonths.length - 12} more` : ""}`
                   : ""}
                 . The export covers what is available; the manifest lists the
-                gaps. Re-run the request later to fill them.
+                gaps.
+                {quarantined
+                  ? ` ${quarantined} month-tile ${quarantined === 1 ? "slot was" : "slots were"} quarantined by the source policy (an upstream data warning); re-running does not fetch ${quarantined === 1 ? "it" : "them"} again.`
+                  : " Re-run the request later to fill them."}
               </p>
             ) : null}
             <Panel title="Progress">

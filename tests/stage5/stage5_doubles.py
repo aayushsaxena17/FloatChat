@@ -88,6 +88,7 @@ class FakeRuns:
     fail_months: set[str] = field(default_factory=set)
     overlap_first: int = 0
     recover_first: int = 0
+    quarantine: set[tuple[str, int, int]] = field(default_factory=set)
     runs: dict[str, dict[str, Any]] = field(default_factory=dict)
     admitted: list[tuple[Interval, list[list[int]]]] = field(default_factory=list)
     cancelled: list[str] = field(default_factory=list)
@@ -117,6 +118,8 @@ class FakeRuns:
             if f"{month:%Y-%m}" in self.fail_months:
                 continue
             for west, south in run["tiles"]:
+                if (f"{month:%Y-%m}", west, south) in self.quarantine:
+                    continue  # the source policy quarantined it: no receipt, no coverage
                 self.catalogue.covered.add(slot_key(month, Tile(west, south)))
         state = "complete" if not failed else ("partial" if len(failed) < len(months) else "failed")
         return RunStatus(
@@ -131,6 +134,15 @@ class FakeRuns:
 
     def cancel(self, run_id):
         self.cancelled.append(run_id)
+
+    def quarantined(self, interval, tiles):
+        months = {f"{m:%Y-%m}" for m in months_of(interval)}
+        cells = {(west, south) for west, south in tiles}
+        return {
+            (month, west, south)
+            for month, west, south in self.quarantine
+            if month in months and (west, south) in cells
+        }
 
 
 class FakeExporter:
