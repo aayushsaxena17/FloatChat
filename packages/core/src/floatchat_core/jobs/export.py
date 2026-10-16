@@ -9,6 +9,7 @@ the audit columns stay beside it.
 
 import hashlib
 import json
+import logging
 import uuid
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
@@ -33,6 +34,8 @@ from ..query.policy import duck_value
 from .artefacts import object_key
 from .model import MANIFEST_SCHEMA, Job, JobLimits
 from .runner import ArtefactSpec
+
+log = logging.getLogger("floatchat.jobs.export")
 
 HEADER_COLUMNS = (
     "profile_id",
@@ -226,6 +229,12 @@ class ExportWriter:
         cache = str(self.cache.directory.resolve()).replace("'", "''") + "/"
         out = str(self.directory).replace("'", "''") + "/"
         connection.execute(f"SET allowed_directories = ['{cache}', '{out}']")
+        # Sorting a multi-year export under the memory limit spills to disk; the spill
+        # directory must be one of the allowed directories (DuckDB would otherwise try
+        # ".tmp" in the working directory and fail with an I/O error).
+        spill = self.directory / ".duckdb-tmp"
+        spill.mkdir(parents=True, exist_ok=True)
+        connection.execute(f"SET temp_directory = '{str(spill).replace(chr(39), chr(39) * 2)}'")
         connection.execute("SET enable_external_access = false")
         connection.execute("SET lock_configuration = true")
         return connection
@@ -267,6 +276,9 @@ class ExportWriter:
                 "cost_over_budget", message="The export exceeded the worker's memory."
             ) from None
         except duckdb.Error as error:
+            # The worker log keeps DuckDB's own text (paths, never credentials); the job
+            # record carries the class only.
+            log.warning("export COPY failed: %s: %s", type(error).__name__, str(error)[:500])
             raise QueryError(
                 "execution_failed", message=f"DuckDB: {type(error).__name__}"
             ) from None
