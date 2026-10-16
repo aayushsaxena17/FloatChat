@@ -220,11 +220,21 @@ def rolling_backtest(
     metrics: dict[str, dict[int, HorizonMetrics]] = {
         candidate.label: {h: HorizonMetrics() for h in limits.horizons} for candidate in candidates
     }
+    diverged: dict[str, int] = {candidate.label: 0 for candidate in candidates}
+    # A fit whose point forecast leaves the data's scale by three orders of magnitude has
+    # diverged numerically (seen on a non-stationary order over the Arabian Sea series); it
+    # is a miss for the fold and the candidate is reported, never selected.
+    bound = 1000.0 * (float(np.max(np.abs(series))) + 1.0)
     for origin in range(first_origin, first_origin + limits.folds):
         train, future = series[:origin], series[origin : origin + horizon]
         scale = mase_scale(train, limits.season)
         for candidate in candidates:
             prediction = predict_candidate(candidate, train, horizon, limits)
+            if prediction is not None and (
+                not np.all(np.isfinite(prediction.mean)) or np.max(np.abs(prediction.mean)) > bound
+            ):
+                diverged[candidate.label] += 1
+                prediction = None
             for h in limits.horizons:
                 bucket = metrics[candidate.label][h]
                 if prediction is None or h > future.size:
@@ -250,6 +260,7 @@ def rolling_backtest(
             "horizons": per_horizon,
             "mean_mase": float(np.mean(values)) if values else None,
             "folds": limits.folds,
+            "diverged_folds": diverged[candidate.label],
         }
     return report
 
@@ -303,6 +314,12 @@ def select(
         mase = backtest[candidate.label]["mean_mase"]
         if mase is None:
             reasons.append(f"{candidate.label}: no backtest score")
+            continue
+        if backtest[candidate.label].get("diverged_folds"):
+            reasons.append(
+                f"{candidate.label}: the forecast diverged in "
+                f"{backtest[candidate.label]['diverged_folds']} fold(s)"
+            )
             continue
         if mase > baseline * (1 - limits.improvement):
             reasons.append(
