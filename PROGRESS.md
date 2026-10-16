@@ -875,5 +875,10 @@ ADR-0081.
 - [x] Tests: runner over doubles (resume without repeats, upstream down, cancel), export writer,
       jobs API, reconciler (object without a row), pipeline offer; integration scenario and the
       Playwright jobs spec; README section.
+- [x] Found and fixed during the live runs (recorded in the gate): the supervisor and the
+      ingestion adapter reconnect after a lost session, fetch chunks retry (at most three runs,
+      re-planned from the catalogue), admission accepts only the run its request created and
+      a chunk is complete only when the catalogue covers it, jobs yield the ingestion scope
+      between runs (three replicas), DuckDB spills under the worker's own directory.
 - [ ] The ten-year Arabian Sea run twice through the job system; `reports/historical_jobs_<date>.md`.
 - [ ] Gate report `docs/stage5-gate.md`; pull request.
