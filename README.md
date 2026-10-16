@@ -158,6 +158,31 @@ ADR-0077 to ADR-0081.
   `python scripts/stage5_report.py report --jobs <first>,<second>` writes
   `reports/historical_jobs_<date>.md`.
 
+### Stage 6 forecasting
+
+`/forecasts` runs transparent statistical forecasts of a derived series (PRD §12): the monthly,
+profile-balanced mean of temperature or salinity over a named region and depth band under
+science-ready QC, with at least five profiles per month. A request is a job on the `forecast`
+queue; the run shows the history, the forecast with 80% and 95% intervals, the rolling-origin
+backtest (12 folds, horizons 1 to 3 months; MAE, RMSE, MASE, interval coverage) of the
+seasonal-naive baseline and every SARIMA candidate carried, the selected model and its version,
+the data snapshot, warnings and the interpretation boundary text. Design:
+[docs/stage6-plan.md](docs/stage6-plan.md), ADR-0082 to ADR-0085.
+
+- Candidates come from a bounded SARIMA grid (144 orders, `s = 12`) ranked by AICc on the first
+  training window; the best three are backtested. A model is selected only when its mean MASE
+  beats the baseline by at least 5% and its residuals pass Ljung-Box at lag 12; otherwise the run
+  is `experimental` and shows the baseline as such. Too short, too sparse, constant or
+  over-horizon series are `refused` with the reason.
+- `make eval-forecast` evaluates the committed snapshots in `eval/forecast/series/` (data
+  snapshot ids, seed and library versions recorded) and writes `reports/eval_forecast_<date>.md`;
+  `python -m eval.forecast.harness --rebuild` recreates the snapshots through a running stack.
+
+#### Results
+
+The forecast research number (PRD §30.4) is reported per series from the latest committed
+`reports/eval_forecast_<date>.md`; see the Stage 6 gate report for the table.
+
 ## Security gate
 
 Current-file scanning, staged-index scanning, and full reachable-history scanning are separate. The hook scans the actual Git index, not just working copies. Generated dependencies are excluded; prototype, legacy code, fixtures, and local configuration are not exempt from source scanning. All displayed finding values are fully redacted. Scanner reports and replacement mappings must remain outside Git, build contexts, shared logs, and CI artifacts.
