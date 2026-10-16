@@ -17,7 +17,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any, Protocol
 
 from ..ingestion.planning import Interval, Tile, shift_months
-from ..query.catalogue import Coverage, EnvironmentInfo
+from ..query.catalogue import Coverage, EnvironmentInfo, SlotCoverage
 from ..query.errors import QueryError
 from ..query.geography import ResolvedGeography, resolve_geography
 from ..query.plan import QueryPlan
@@ -56,6 +56,14 @@ class IngestionRuns(Protocol):
 
     def cancel(self, run_id: str) -> None: ...
 
+    def quarantined(self, interval: Interval, tiles: list[list[int]]) -> set[tuple[str, int, int]]:
+        """``(month, west, south)`` of slots a closed run quarantined (Stage 1 source policy).
+
+        A quarantined month-tile leaves no coverage receipt, so the catalogue reports it
+        missing forever; fetching it again only quarantines it again.
+        """
+        ...
+
 
 @dataclass(frozen=True)
 class ArtefactSpec:
@@ -81,6 +89,15 @@ class Exporter(Protocol):
 
 
 log = logging.getLogger("floatchat.jobs")
+
+
+def _narrow(slots: list[SlotCoverage]) -> tuple[Interval, list[list[int]]]:
+    """The smallest month interval and tile list that hold ``slots``."""
+    months = sorted({slot.month for slot in slots})
+    first = datetime.strptime(months[0], "%Y-%m").replace(tzinfo=UTC)
+    last = datetime.strptime(months[-1], "%Y-%m").replace(tzinfo=UTC)
+    cells = sorted({(slot.tile.west, slot.tile.south) for slot in slots})
+    return Interval(first, shift_months(last, 1)), [[west, south] for west, south in cells]
 
 
 class LeaseLost(RuntimeError):
@@ -243,6 +260,12 @@ class JobRunner:
                 result={
                     "artefacts": [artefact.id for artefact in stored],
                     "missing_slots": [slot.describe() for slot in coverage.missing][:200],
+                    "quarantined_slots": [
+                        slot
+                        for chunk in chunks
+                        if chunk.kind == "fetch"
+                        for slot in chunk.evidence.get("quarantined_slots", [])
+                    ][:200],
                     "failed_chunks": [chunk.label for chunk in failed],
                 },
                 progress=self._progress(chunks),
@@ -300,8 +323,26 @@ class JobRunner:
             self.store.emit(
                 job.id, "chunk", {"seq": chunk.seq, "state": "running", "label": chunk.label}
             )
+
+        def complete(run_state: str) -> None:
+            self.store.update_chunk(chunk.id, state="complete", evidence=evidence)
+            self.store.emit(
+                job.id, "chunk", {"seq": chunk.seq, "state": "complete", "run_state": run_state}
+            )
+
         while True:
             if run_id is None:
+                # What is still missing is read from the catalogue as it is now (a resumed
+                # chunk, a retry); slots a previous run quarantined are never fetched again.
+                fetchable, quarantined = self._remaining(environment, interval, tiles)
+                if quarantined:
+                    evidence["quarantined_slots"] = [slot.describe() for slot in quarantined][:200]
+                if not fetchable:
+                    evidence["run_state"] = "quarantined" if quarantined else "reused"
+                    evidence["missing_slots_after"] = len(quarantined)
+                    complete(str(evidence["run_state"]))
+                    return
+                interval, tiles = _narrow(fetchable)
                 run_id = self._admit(job, chunk, interval, tiles)
                 self.store.update_chunk(chunk.id, ingestion_run_id=run_id)
             status = self._await_run(job, run_id)
@@ -311,18 +352,12 @@ class JobRunner:
             evidence["run_state"] = status.state
             # The chunk is complete when the catalogue covers it, never because a run said
             # so: what is still missing is read from the catalogue as it is now.
-            coverage = self.catalogue.coverage(
-                environment.id, interval, tuple(Tile(w, s) for w, s in tiles)
-            )
-            missing = coverage.missing
-            evidence["missing_slots_after"] = len(missing)
-            if not missing:
-                self.store.update_chunk(chunk.id, state="complete", evidence=evidence)
-                self.store.emit(
-                    job.id,
-                    "chunk",
-                    {"seq": chunk.seq, "state": "complete", "run_state": status.state},
-                )
+            fetchable, quarantined = self._remaining(environment, interval, tiles)
+            evidence["missing_slots_after"] = len(fetchable) + len(quarantined)
+            if quarantined:
+                evidence["quarantined_slots"] = [slot.describe() for slot in quarantined][:200]
+            if not fetchable:
+                complete(status.state)
                 return
             if len(runs) >= self.limits.fetch_attempts:
                 self.store.update_chunk(
@@ -338,7 +373,7 @@ class JobRunner:
                                 if status.evidence.get("termination_reason")
                                 else ""
                             )
-                            + f"; {len(missing)} month-tile slots are still missing after "
+                            + f"; {len(fetchable)} month-tile slots are still missing after "
                             f"{len(runs)} runs."
                         ),
                     },
@@ -349,12 +384,6 @@ class JobRunner:
                     {"seq": chunk.seq, "state": "failed", "run_state": status.state},
                 )
                 return
-            months = sorted({slot.month for slot in missing})
-            first = datetime.strptime(months[0], "%Y-%m").replace(tzinfo=UTC)
-            last = datetime.strptime(months[-1], "%Y-%m").replace(tzinfo=UTC)
-            interval = Interval(first, shift_months(last, 1))
-            cells = sorted({(slot.tile.west, slot.tile.south) for slot in missing})
-            tiles = [[west, south] for west, south in cells]
             self.store.emit(
                 job.id,
                 "chunk",
@@ -362,11 +391,28 @@ class JobRunner:
                     "seq": chunk.seq,
                     "state": "retrying",
                     "run_state": status.state,
-                    "missing_slots": len(missing),
+                    "missing_slots": len(fetchable),
                     "attempt": len(runs) + 1,
                 },
             )
             run_id = None
+
+    def _remaining(
+        self, environment: EnvironmentInfo, interval: Interval, tiles: list[list[int]]
+    ) -> tuple[list[SlotCoverage], list[SlotCoverage]]:
+        """The missing slots of ``interval`` × ``tiles`` split into fetchable and quarantined."""
+        coverage = self.catalogue.coverage(
+            environment.id, interval, tuple(Tile(w, s) for w, s in tiles)
+        )
+        missing = list(coverage.missing)
+        if not missing:
+            return [], []
+        quarantined = self.ingestion.quarantined(interval, tiles)
+        skipped = [
+            slot for slot in missing if (slot.month, slot.tile.west, slot.tile.south) in quarantined
+        ]
+        fetchable = [slot for slot in missing if slot not in skipped]
+        return fetchable, skipped
 
     def _admit(self, job: Job, chunk: JobChunk, interval: Interval, tiles: list[list[int]]) -> str:
         waited = 0

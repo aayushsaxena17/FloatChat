@@ -127,6 +127,41 @@ class RepositoryRuns:
         }
         return RunStatus(True, str(run["state"]), evidence)
 
+    def quarantined(self, interval: Interval, tiles: list[list[int]]) -> set[tuple[str, int, int]]:
+        """Month-tile slots a closed run of this environment quarantined.
+
+        Stage 1 quarantines a whole month-tile when any upstream profile carries a data
+        warning it does not tolerate (ADR-0040/0046) and writes no coverage receipt for it;
+        the job runner reports such slots instead of fetching them again.
+        """
+        cells = sorted({(int(west), int(south)) for west, south in tiles})
+        if not cells:
+            return set()
+
+        def read(repository: Repository) -> list[tuple[str, int, int]]:
+            with repository.transaction(readonly_snapshot=True) as cursor:
+                cursor.execute(
+                    "SELECT DISTINCT to_char(c.requested_start AT TIME ZONE 'UTC','YYYY-MM')"
+                    " AS month, (c.tile->>'west')::int AS west, (c.tile->>'south')::int AS south"
+                    " FROM app.ingestion_chunk c JOIN app.ingestion_run r ON r.id = c.run_id"
+                    " WHERE r.environment_id = %s AND r.closed AND c.leaf"
+                    " AND c.state = 'quarantined'"
+                    " AND c.requested_start >= %s AND c.requested_start < %s"
+                    " AND (c.tile->>'west')::int = ANY(%s) AND (c.tile->>'south')::int = ANY(%s)",
+                    (
+                        self.environment,
+                        interval.start,
+                        interval.end,
+                        [west for west, _ in cells],
+                        [south for _, south in cells],
+                    ),
+                )
+                return [(row["month"], int(row["west"]), int(row["south"])) for row in cursor]
+
+        rows = self._call(read)
+        wanted = set(cells)
+        return {(month, west, south) for month, west, south in rows if (west, south) in wanted}
+
     def cancel(self, run_id: str) -> None:
         try:
             self._call(

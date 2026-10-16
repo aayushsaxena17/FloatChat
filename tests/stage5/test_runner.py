@@ -254,3 +254,30 @@ def test_a_complete_run_that_leaves_slots_missing_is_retried_not_trusted():
     assert chunk.state == "failed" and len(lying.admitted) == 3
     assert chunk.evidence["missing_slots_after"] == 1
     assert store.get(job.id).state == "partial"
+
+
+def test_a_quarantined_slot_is_reported_not_fetched_again():
+    # Stage 1 quarantines a whole month-tile on an upstream data warning and writes no
+    # receipt for it; the runner leaves it out of the run, completes the chunk with the slot
+    # listed, and the job ends partial with the quarantined slots in its result.
+    store, catalogue = MemoryJobStore(), FakeCatalogue()
+    exporter = FakeExporter()
+    job, _, _ = create(store, request(end="2016-04-01"))
+    runs = FakeRuns(catalogue, quarantine={("2016-02", 60, 10)})  # the request's one tile
+    runner(store, catalogue, runs, exporter).run_once(("export",))
+    chunk = store.chunks(job.id)[0]
+    assert chunk.state == "complete" and len(runs.admitted) == 1
+    assert [s["month"] for s in chunk.evidence["quarantined_slots"]] == ["2016-02"]
+    assert chunk.evidence["missing_slots_after"] == 1
+    finished = store.get(job.id)
+    assert finished.state == "partial"
+    assert len(finished.result["quarantined_slots"]) == 1
+    assert finished.result["failed_chunks"] == []
+    # The second identical request plans the quarantined slot, admits no run for it, and
+    # ends the same way: no fetch is repeated for a slot the source policy rejected.
+    job2, _, _ = create(store, request(end="2016-04-01"))
+    runner(store, catalogue, runs, exporter).run_once(("export",))
+    assert len(runs.admitted) == 1
+    chunk2 = [c for c in store.chunks(job2.id) if c.kind == "fetch"][0]
+    assert chunk2.state == "complete" and chunk2.evidence["run_state"] == "quarantined"
+    assert store.get(job2.id).state == "partial"
