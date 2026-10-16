@@ -12,6 +12,7 @@ import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Any
 
 from scripts.dev import (
     ROOT,
@@ -37,6 +38,89 @@ def integration_directory(project: str) -> Iterator[Path]:
     restrict(private)
     # Retain configuration alongside retained volumes so failure diagnosis/recovery is possible.
     yield private
+
+
+def jobs_api(api_port: int, path: str, body: dict[str, object] | None = None) -> dict[str, Any]:
+    request = urllib.request.Request(
+        f"http://127.0.0.1:{api_port}{path}",
+        data=None if body is None else json.dumps(body).encode(),
+        headers={"Content-Type": "application/json", "X-FloatChat-Client": "ci"},
+        method="GET" if body is None else "POST",
+    )
+    with urllib.request.urlopen(request, timeout=60) as response:
+        return json.loads(response.read())  # type: ignore[no-any-return]
+
+
+def wait_job(api_port: int, job_id: str, budget: float) -> dict[str, Any]:
+    deadline = time.monotonic() + budget
+    while True:
+        detail = jobs_api(api_port, f"/v1/jobs/{job_id}")
+        if detail["job"]["state"] in ("completed", "partial", "cancelled", "failed"):
+            return detail
+        if time.monotonic() > deadline:
+            raise AssertionError(f"job {job_id} still {detail['job']['state']} after {budget}s")
+        time.sleep(3)
+
+
+def export_scenario(api_port: int) -> dict[str, object]:
+    request = {
+        "time_range": {"start": "2025-01-01T00:00:00Z", "end": "2025-03-01T00:00:00Z"},
+        "geography": {"kind": "named_region", "value": "Arabian Sea"},
+        "depth_dbar": {"min": 0, "max": 100},
+        "format": "csv",
+        "idempotency_key": "ci-export-1",
+    }
+    created = jobs_api(api_port, "/v1/exports", request)
+    assert created["created"] is True and created["job"]["state"] == "queued"
+    again = jobs_api(api_port, "/v1/exports", request)
+    assert again["created"] is False and again["job"]["id"] == created["job"]["id"]
+    detail = wait_job(api_port, created["job"]["id"], 240)
+    job = detail["job"]
+    assert job["state"] == "completed", job
+    assert job["progress"]["reuse_ratio"] == 1.0 and job["progress"]["fetch_total"] == 0
+    data = next(a for a in detail["artefacts"] if a["role"] == "data")
+    assert data["row_count"] > 0 and data["profile_count"] > 0 and data["download_url"]
+    with urllib.request.urlopen(
+        f"http://127.0.0.1:{api_port}{data['download_url']}", timeout=60
+    ) as response:
+        payload = response.read()
+        assert response.headers["X-Content-SHA256"] == data["sha256"]
+    assert len(payload) == data["bytes"] and payload.startswith(b"profile_id,")
+    forged = urllib.request.Request(
+        f"http://127.0.0.1:{api_port}/v1/artefacts/{data['id']}/download?token=1.{'0' * 64}"
+    )
+    try:
+        urllib.request.urlopen(forged, timeout=10)
+        raise AssertionError("a forged token was accepted")
+    except urllib.error.HTTPError as error:
+        assert error.code == 403
+    # Months before the seeded ones need a historical run; the acquire service has no key
+    # and live ingestion is off, so every chunk fails and the job is partial with the gaps.
+    gap = jobs_api(
+        api_port,
+        "/v1/exports",
+        {
+            **request,
+            "time_range": {"start": "2024-11-01T00:00:00Z", "end": "2025-02-01T00:00:00Z"},
+            "idempotency_key": "ci-export-2",
+        },
+    )
+    partial = wait_job(api_port, gap["job"]["id"], 600)
+    assert partial["job"]["state"] == "partial", partial["job"]
+    fetch = [c for c in partial["chunks"] if c["kind"] == "fetch"]
+    assert fetch and all(c["state"] == "failed" for c in fetch), fetch
+    assert {m["month"] for m in partial["job"]["result"]["missing_slots"]} >= {"2024-11", "2024-12"}
+    assert any(a["role"] == "data" for a in partial["artefacts"])
+    events = jobs_api(api_port, f"/v1/jobs/{gap['job']['id']}")
+    assert events["job"]["progress"]["fetch_failed"] == len(fetch)
+    return {
+        "check": "stage5-export-job",
+        "completed_job": created["job"]["id"],
+        "rows": data["row_count"],
+        "profiles": data["profile_count"],
+        "partial_job": gap["job"]["id"],
+        "failed_fetch_chunks": len(fetch),
+    }
 
 
 def main() -> None:
@@ -163,6 +247,11 @@ def main() -> None:
                 assert any(hit["id"].startswith("region_alias:") for hit in audit["retrieved"])
                 assert answer["payload"]["result"]["result"]["row_count"] >= 1
             evidence.append({"check": "stage4-chat-offline-plan-and-execute", "passed": True})
+            # Stage 5 (ADR-0079, ADR-0080): an export job over the seeded months runs through
+            # the jobs worker (every slot reused, DuckDB export, signed download), and a job
+            # over months the stack never fetched ends partial with the gaps listed, because
+            # live ingestion is disabled here (PRD section 22, upstream unavailable).
+            evidence.append(export_scenario(api_port))
             compose(
                 "run",
                 "--rm",
