@@ -178,6 +178,11 @@ def report(arguments: argparse.Namespace) -> int:
     jobs = [
         api(arguments.api_url, f"/v1/jobs/{job_id.strip()}") for job_id in arguments.jobs.split(",")
     ]
+    for detail in jobs:  # the sidecar is committed: no signed download token in it
+        for artefact in detail.get("artefacts", []):
+            url = artefact.get("download_url")
+            if isinstance(url, str) and "?" in url:
+                artefact["download_url"] = url.split("?", 1)[0] + "?<signed>"
     sidecars = []
     for detail in jobs:
         path = ROOT / "reports" / f"historical_job_{detail['job']['id'][:8]}.json"
