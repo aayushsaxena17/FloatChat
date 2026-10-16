@@ -226,11 +226,12 @@ def main(arguments: list[str] | None = None) -> int:
             while True:
                 try:
                     supervisor.tick(repository.open_runs())
-                except Rejection:
+                except Rejection as error:
                     # Database loss neither succeeds nor creates new budgets. The connection
                     # is rebuilt so a lost session (Stage 5: a host clock jump broke it) does
                     # not leave every later tick failing; the controllers adopt their runs.
-                    print("supervisor_recovery_required", flush=True)
+                    # The category is a fixed string (never a message or argument).
+                    print(f"supervisor_recovery_required {error.category}", flush=True)
                     try:
                         repository.close()
                     except Exception:
