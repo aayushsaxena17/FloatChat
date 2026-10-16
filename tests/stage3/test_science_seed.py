@@ -52,3 +52,14 @@ def test_main_refuses_without_configuration(monkeypatch, capsys) -> None:
     assert seed.main(["database"]) == 3
     assert "refused" in capsys.readouterr().err
     assert seed.main([]) == 2
+
+
+def test_empty_slot_rows_cover_every_profile_free_arabian_sea_month_tile() -> None:
+    rows = seed.empty_slot_rows(seed.DOCKER_PROFILES)
+    receipts = [line for line in rows.splitlines() if "INSERT INTO app.coverage_receipt" in line]
+    # Ten tiles over three months, less the month-tiles the seeded profiles occupy.
+    assert len(receipts) == 30 - 3
+    assert "argovis/core/2025-01/60:10/" not in rows and "argovis/core/2025-02/60:10/" not in rows
+    assert "argovis/core/2025-01/70:20/" in rows
+    assert all("'verified_empty_fetch','empty_stored_selection'" in line for line in receipts)
+    assert seed.docker_sql(seed.parts_for(seed.DOCKER_PROFILES))[-1] == rows

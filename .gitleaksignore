@@ -1,3 +1,19 @@
 # False positives of the generic-api-key rule on prose in a package report (no secret).
 1ef47b18d804df865848e35c542aa12d89189e42:docs/v4-packages/D.md:generic-api-key:277
 d00954da90ab391c4e570d27da4d388d07b39e46:docs/v4-packages/D.md:generic-api-key:237
+# Signed artefact download tokens (<expiry>.<hmac>, ADR-0079) recorded in the Stage 5 jobs report
+# sidecar. They are real tokens, not false positives: each was bound to one export of public Argo
+# data on the local development API (127.0.0.1) and expires on 2026-10-23; the development
+# signing key that issued them was rotated on 2026-10-16. Removed from the file in 100a5d4.
+93d975358904d5d68bbc08475fac9bd8fd75b948:reports/historical_jobs_2026-10-16.json:generic-api-key:1644
+93d975358904d5d68bbc08475fac9bd8fd75b948:reports/historical_jobs_2026-10-16.json:generic-api-key:6378
+93d975358904d5d68bbc08475fac9bd8fd75b948:reports/historical_jobs_2026-10-16.json:generic-api-key:6396
+93d975358904d5d68bbc08475fac9bd8fd75b948:reports/historical_jobs_2026-10-16.json:generic-api-key:7582
+93d975358904d5d68bbc08475fac9bd8fd75b948:reports/historical_jobs_2026-10-16.json:generic-api-key:12316
+93d975358904d5d68bbc08475fac9bd8fd75b948:reports/historical_jobs_2026-10-16.json:generic-api-key:12334
+18889e2e4d7b396e99df8cb80e6b7b5a2810fd70:reports/historical_jobs_2026-10-16.json:generic-api-key:1644
+18889e2e4d7b396e99df8cb80e6b7b5a2810fd70:reports/historical_jobs_2026-10-16.json:generic-api-key:6378
+18889e2e4d7b396e99df8cb80e6b7b5a2810fd70:reports/historical_jobs_2026-10-16.json:generic-api-key:6396
+18889e2e4d7b396e99df8cb80e6b7b5a2810fd70:reports/historical_jobs_2026-10-16.json:generic-api-key:7582
+18889e2e4d7b396e99df8cb80e6b7b5a2810fd70:reports/historical_jobs_2026-10-16.json:generic-api-key:12316
+18889e2e4d7b396e99df8cb80e6b7b5a2810fd70:reports/historical_jobs_2026-10-16.json:generic-api-key:12334
