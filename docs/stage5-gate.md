@@ -118,6 +118,19 @@ job rows; the JSON sidecar holds every row). Numbers are not repeated here by ha
   series builder of Stage 6 now set `temp_directory` under their own allowed directory
   (`<export dir>/.duckdb-tmp`); the job was re-queued and exported over its already-fetched
   years (the report lists it).
+- **Found and fixed during run 1 (quarantined slot).** The Arabian Sea tile 50:20 was
+  quarantined in 2017-02 by every run that fetched it (`upstream_data_warning`: Stage 1
+  quarantines the whole month-tile, ADR-0040/0046) and a quarantine writes no coverage receipt,
+  so the runner fetched it three times per request and failed the 2017 chunk. The runner now
+  reads quarantined leaves of closed runs and never admits them again; the chunk completes
+  with the slot listed, the result and the export declare it, and the job ends `partial`
+  (ADR-0086). A regression test covers the first and the second request.
+- **Found and fixed during run 1 (finalisation budget).** With the historical months in the
+  store, `finalize_run`'s whole-store evidence capture took about 75 s (`scientific_snapshot`
+  29 s, the availability counts of `report_metrics_snapshot` 46 s, measured on this host)
+  against the 60 s transaction bound; the supervisor failed every tick and no run could close.
+  Finalisation now runs under `INGESTION_FINALIZE_BUDGET_SECONDS` (default 600). The
+  snapshots stay O(store); ADR-0086 records the follow-up.
 - A supervisor restart leaves an open run to its controller lease (ten minutes) before
   another controller recovers it; a job waiting on that run waits the same time.
 - `tests/test_refetch.py` HTTPS deadline cases are intermittent on this host (known since
