@@ -6,6 +6,8 @@ returns the run with history, forecast, intervals, backtest, model, warnings and
 interpretation boundary text. The job itself is followed through ``/v1/jobs``.
 """
 
+from collections.abc import Callable
+from datetime import UTC, datetime
 from threading import RLock
 from typing import Any
 
@@ -112,11 +114,29 @@ class ForecastRuntime:
         jobs: JobsRuntime,
         store: ForecastStore | None = None,
         limits: ForecastLimits | None = None,
+        reference_time: Callable[[], datetime | None] | None = None,
     ) -> None:
         self.jobs = jobs
         self._store = store
         self.limits = limits or ForecastLimits()
+        self._reference_time = reference_time
         self._lock = RLock()
+
+    def reference_time(self) -> datetime:
+        """The environment's reference time (the data ends there), else this month's start.
+
+        The worker derives the definition from the same reference, so both sides store the
+        same definition hash (ADR-0083).
+        """
+        if self._reference_time is not None:
+            try:
+                value = self._reference_time()
+            except Exception:
+                value = None
+            if value is not None:
+                return value.astimezone(UTC)
+        now = datetime.now(UTC)
+        return now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
     def store(self) -> ForecastStore:
         with self._lock:
@@ -151,11 +171,7 @@ def install_forecasts(app: FastAPI, runtime: ForecastRuntime) -> None:
         resolve_geography(request.geography)
         jobs_store = await run_in_threadpool(runtime.jobs.store)
         store = await run_in_threadpool(runtime.store)
-        # The reference time is the environment's when the worker builds the series; the
-        # definition stored here uses the explicit range or the ten-year default from now.
-        from datetime import UTC, datetime
-
-        reference = datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        reference = await run_in_threadpool(runtime.reference_time)
         document = request.definition(reference, runtime.limits.history_years)
         canonical = request.canonical(reference, runtime.limits.history_years)
         definition = await run_in_threadpool(

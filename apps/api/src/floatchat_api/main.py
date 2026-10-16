@@ -1,6 +1,7 @@
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from datetime import datetime
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
@@ -33,7 +34,9 @@ def create_app(
     runtime = QueryRuntime(service=query_service)
     chat_runtime = ChatRuntime(runtime, service=chat_service, store=chat_store)
     jobs = jobs_runtime or JobsRuntime(store=jobs_store)
-    forecasts = ForecastRuntime(jobs, store=forecast_store)
+    forecasts = ForecastRuntime(
+        jobs, store=forecast_store, reference_time=lambda: _reference_time(runtime)
+    )
 
     @asynccontextmanager
     async def lifespan(_application: FastAPI) -> AsyncIterator[None]:
@@ -79,6 +82,16 @@ def create_app(
         )
 
     return app
+
+
+def _reference_time(runtime: QueryRuntime) -> datetime | None:
+    """The environment's reference time through the query service (None without one)."""
+    service = runtime.service()
+    catalogue = getattr(service, "catalogue", None)
+    if catalogue is None:
+        return None
+    environment = catalogue.environment()
+    return environment.reference_time  # type: ignore[no-any-return]
 
 
 def _configure_logging() -> None:

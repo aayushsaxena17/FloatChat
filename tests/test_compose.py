@@ -17,10 +17,10 @@ def test_local_network_and_initialization_contract() -> None:
         services["api"]["depends_on"]["storage-init"]["condition"]
         == "service_completed_successfully"
     )
-    for name in ["api", "acquire", "process", "supervisor", "jobs"]:
+    for name in ["api", "acquire", "process", "supervisor", "jobs", "forecasts"]:
         assert "DATABASE_ADMIN_URL" not in services[name]["environment"]
         assert "MINIO_ROOT_PASSWORD" not in services[name]["environment"]
-    for name in ["acquire", "process", "supervisor", "jobs"]:
+    for name in ["acquire", "process", "supervisor", "jobs", "forecasts"]:
         assert not services[name].get("ports")
 
 
@@ -43,17 +43,19 @@ def test_local_stack_runs_the_postgresql_queue_without_celery() -> None:
         "process",
         "supervisor",
         "jobs",
+        "forecasts",
     }
     # Only the acquire service may hold the upstream credential, and live ingestion is opt-in.
-    for name in ["process", "supervisor", "jobs", "api", "web"]:
+    for name in ["process", "supervisor", "jobs", "forecasts", "api", "web"]:
         assert "ARGOVIS_API_KEY" not in services[name].get("environment", {})
     assert services["acquire"]["environment"]["ARGOVIS_API_KEY"] == "${ARGOVIS_API_KEY:-}"
     assert services["acquire"]["environment"]["FLOATCHAT_LIVE_INGESTION_ENABLED"] == (
         "${FLOATCHAT_LIVE_INGESTION_ENABLED:-false}"
     )
-    for name in ["process", "supervisor", "jobs"]:
+    for name in ["process", "supervisor", "jobs", "forecasts"]:
         assert services[name]["environment"]["FLOATCHAT_LIVE_INGESTION_ENABLED"] == "false"
-    for name in ["acquire", "process", "supervisor", "jobs"]:
+    assert services["forecasts"]["environment"]["JOBS_QUEUES"] == "forecast"
+    for name in ["acquire", "process", "supervisor", "jobs", "forecasts"]:
         assert services[name]["command"][:2] == ["python", "scripts/dev_worker.py"]
         assert services[name]["mem_limit"]
         assert services[name]["depends_on"]["db-init"]["condition"] == (
