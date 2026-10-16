@@ -903,7 +903,9 @@ Plan [docs/stage6-plan.md](docs/stage6-plan.md), ADR-0082 to ADR-0085.
 - [x] Series builder, snapshot and missing policy; seasonal naive, bounded SARIMA search,
       rolling-origin backtests, selection, refusals; model artefacts.
 - [x] Forecast job in the jobs worker; API; workspace UI; tests; CI scenario; README.
-- [ ] `make eval-forecast` over the committed series; `reports/eval_forecast_<date>.md`
-      (waits for the Stage 5 historical fetches).
-- [x] Gate report draft `docs/stage6-gate.md`.
-- [ ] Pull request.
+- [x] Eight snapshots rebuilt from the complete catalogue and committed; `make eval-forecast`
+      twice from a clean tree gives identical `reports/eval_forecast_2026-10-16.md` (three
+      published, two experimental, three refused); a diverged candidate found through the
+      report is now reported and never selected.
+- [x] Gate report `docs/stage6-gate.md`.
+- [ ] Pull request (draft #19 open; final push pending the credential channel).

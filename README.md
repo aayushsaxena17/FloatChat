@@ -181,7 +181,21 @@ the data snapshot, warnings and the interpretation boundary text. Design:
 #### Results
 
 The forecast research number (PRD §30.4) is reported per series from the latest committed
-`reports/eval_forecast_<date>.md`; see the Stage 6 gate report for the table.
+report, [reports/eval_forecast_2026-10-16.md](reports/eval_forecast_2026-10-16.md) (full
+grid, 12 folds, horizons 1-3, seed 20261016); the table there is the source of these lines.
+
+| Series | Status | Baseline MASE h1/h2/h3 | Selected MASE h1/h2/h3 |
+|---|---|---|---|
+| Arabian Sea temperature | published, SARIMA(0,1,0)(0,1,1)[12] | 1.936/1.674/1.417 | 0.454/0.431/0.437 |
+| Arabian Sea salinity | published, SARIMA(1,0,0)(0,0,0)[12]+c | 2.253/2.254/2.340 | 0.941/1.556/2.258 |
+| Bay of Bengal salinity | published, SARIMA(1,0,0)(0,0,0)[12]+c | 1.456/1.418/1.280 | 0.491/0.616/0.662 |
+| Bay of Bengal temperature | experimental (baseline wins) | 0.836/0.893/0.918 | - |
+| Laccadive Sea temperature | experimental (diagnostics failed) | 1.347/1.493/1.470 | - |
+| Laccadive Sea salinity | refused (missingness) | - | - |
+| Andaman Sea temperature, salinity | refused (history too short) | - | - |
+
+There is no single "improvement over the baseline" number: three of eight series publish a
+model, two keep the baseline, three are refused, and every run shows its backtest table.
 
 ## Security gate
 

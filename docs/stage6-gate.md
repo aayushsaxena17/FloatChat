@@ -1,7 +1,7 @@
 # Stage 6 gate report - forecasting
 
-- Stage 6 - **complete in software and tests; the evaluation report depends on the Stage 5
-  historical fetches, whose status is recorded below**.
+- Stage 6 - **complete**: software, tests, the eight committed series snapshots and the
+  evaluation report over them.
 - Branch `codex/stage-6` from `codex/stage-5`; pull request against `codex/stage-5` (stacked,
   ADR-0082). Plan: [docs/stage6-plan.md](stage6-plan.md); decisions ADR-0082 to ADR-0085.
 
@@ -57,18 +57,31 @@ page follows it and the run page shows the result.
 
 ## Measured results
 
-- `reports/stage6-smoke-forecast-2026-10-16.json`: a live run on the development stack while
-  the Stage 5 fetches were in progress. The series builder read every committed Arabian Sea
-  part for 2015-04 to 2025-04 (20 months with at least five profiles) and the run was refused:
-  `missingness_exceeds_policy: 100 of 120 months (83%) are missing and the longest gap is 67
-  months`. This is evidence for the job, snapshot and refusal paths on real data, not an
-  evaluation result.
+[reports/eval_forecast_2026-10-16.md](../reports/eval_forecast_2026-10-16.md), from
+`make eval-forecast` over the eight committed snapshots in `eval/forecast/series/` (data
+snapshot ids, dataset version `8562e75d/27`, seed 20261016, library versions and the full
+grid are in its header); the JSON sidecar holds every candidate's metrics. Nothing is repeated
+here by hand. In words:
 
-`reports/eval_forecast_<date>.md` from `make eval-forecast` over the committed snapshots
-(data snapshot ids, dataset versions, seed, library versions and the grid are in its header).
-Nothing is repeated here by hand. Per series it reports the baseline and selected MASE per
-horizon, coverage, and whether the baseline was beaten, including the series where it was not
-and the refused series.
+- Three series published a SARIMA that beats the seasonal-naive baseline by more than 5% at
+  every horizon and passes the residual diagnostics (Arabian Sea temperature and salinity,
+  Bay of Bengal salinity).
+- Two series are `experimental`: Bay of Bengal temperature (no candidate beats the baseline
+  by 5%) and Laccadive Sea temperature (the candidates that beat it fail the Ljung-Box
+  test). The baseline wins are reported as such.
+- Three series are refused: both Andaman Sea series (`history_too_short`, no month with five
+  profiles) and Laccadive Sea salinity (`missingness_exceeds_policy`, 12% missing with a
+  four-month gap).
+- A non-stationary candidate over the Arabian Sea temperature series diverged numerically in
+  the backtest (mean MASE of order 10^14 in the first report); the backtest now reports such
+  a candidate as diverged and never selects it (found through the report, fixed before the
+  committed run).
+- The report is reproducible: two consecutive `make eval-forecast` runs from the committed
+  snapshots produced identical Markdown reports (checked by diff) and JSON sidecars that
+  differ only in the wall-clock seconds per series; the date header is the only input that
+  changes between days.
+- `reports/stage6-smoke-forecast-2026-10-16.json` is the earlier live refusal during the Stage
+  5 fetches, kept as evidence for the job, snapshot and refusal paths.
 
 ## Deviations from the PRD
 
@@ -78,22 +91,27 @@ and the refused series.
 
 ## Known issues and risks
 
-- The ten-year history behind the six evaluation series comes from the Stage 5 historical
-  fetches, which were still running on this host when the stage was written; the committed
-  snapshots and the report state exactly which months each series has. A series shorter than
-  36 regular months is refused by design.
-- `make eval-forecast` over the full grid fits 144 orders per series; on this host under
-  ingestion load that is minutes per series. `--grid small` is for checks only and says so in
-  the report.
+- The history behind the series comes from the Stage 5 historical fetches (ten years for the
+  Arabian Sea, six for the Bay of Bengal, the Laccadive Sea through the overlapping Arabian
+  Sea tiles); the committed snapshots state exactly which months each series has. A series
+  shorter than 36 regular months is refused by design.
+- `--grid small` is for checks only and says so in the report.
 - Interval coverage of the seasonal-naive baseline uses one empirical error distribution for
   every horizon (ADR-0084 point 1); the SARIMA intervals come from statsmodels.
+- Interval coverage is reported but not part of the selection rule (PRD §9.5 selects on
+  MASE and diagnostics): the published Arabian Sea salinity model covers 39% / 58% of the
+  backtest actuals at nominal 80% / 95%, which the report and the run page show. A coverage
+  floor in the selection rule is a candidate change for the owner's review.
+- `make eval-forecast` over the full grid takes about 12 minutes on this host when the
+  ingestion pool is idle (70 to 210 s per eligible series).
 
 ## Needs from Aayush
 
 - Review the stacked pull requests (design, Stage 5, Stage 6) in order.
-- Let the Stage 5 fetches finish (or run `scripts/stage5_report.py run` for the regions you
-  want), then `python -m eval.forecast.harness --rebuild` and commit the refreshed snapshots
-  and report.
+- Decide whether interval coverage should join the selection rule (see known issues).
+- The Laccadive Sea salinity series is refused for a four-month gap in 2015-2016 where the
+  Arabian Sea tiles were quarantined by the source policy; a fetch policy decision (Stage 1)
+  rather than a forecasting one.
 
 ## Proposed plan for the next stage
 
