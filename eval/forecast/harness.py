@@ -81,7 +81,7 @@ def rebuild(url: str) -> list[Path]:
         path.write_text(json.dumps(snapshot, indent=2, sort_keys=True) + "\n")
         saved.append(path)
         print(
-            f"  saved {path.relative_to(ROOT)} ({sum(1 for v in snapshot['values'] if v is not None)} months with values)",
+            f"  saved {_relative(path)} ({sum(1 for v in snapshot['values'] if v is not None)} months with values)",
             flush=True,
         )
     return saved
@@ -95,7 +95,7 @@ def evaluate(paths: list[Path], limits: ForecastLimits, horizon: int) -> list[di
         outcome = run_forecast(snapshot, horizon, limits)
         results.append(
             {
-                "file": str(path.relative_to(ROOT)),
+                "file": _relative(path),
                 "snapshot_id": snapshot.id,
                 "definition": snapshot.definition,
                 "dataset_version": snapshot.dataset_version,
@@ -106,6 +106,13 @@ def evaluate(paths: list[Path], limits: ForecastLimits, horizon: int) -> list[di
         )
         print(f"{path.name}: {outcome['status']} in {results[-1]['seconds']} s", flush=True)
     return results
+
+
+def _relative(path: Path) -> str:
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return str(path)
 
 
 def _fmt(value: Any, digits: int = 3) -> str:
@@ -232,7 +239,7 @@ def report(results: list[dict[str, Any]], limits: ForecastLimits, horizon: int, 
         )
         + "\n"
     )
-    print(str(out.relative_to(ROOT)))
+    print(_relative(out))
 
 
 def main(argv: list[str]) -> int:

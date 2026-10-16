@@ -80,7 +80,7 @@ def test_a_candidate_short_of_the_margin_leaves_the_run_experimental() -> None:
     rng = np.random.default_rng(7)
     series = 35 + rng.normal(0, 0.1, 84)
     outcome = run_forecast(
-        snapshot(series), 3, ForecastLimits(grid="small", folds=6, candidates=2, improvement=0.9)
+        snapshot(series), 3, ForecastLimits(grid="small", folds=6, candidates=2, improvement=0.5)
     )
     assert outcome["status"] == "experimental"
     assert outcome["forecast"]["model"]["family"] == "seasonal_naive"

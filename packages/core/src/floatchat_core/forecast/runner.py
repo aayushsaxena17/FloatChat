@@ -317,6 +317,17 @@ class ForecastRunner:
             self.jobs.update_chunk(
                 chunk.id, state="failed", error={"code": error.code, "message": error.text}
             )
+            run = self.forecasts.run_for_job(job.id)
+            if run is not None:
+                # The run never stays "pending" behind a failed job: it is refused with the
+                # engine's reason, and the job itself records the failure.
+                self.forecasts.update_run(
+                    run.id,
+                    status="refused",
+                    reason=f"{error.code}: {error.text}",
+                    limitations=BOUNDARY_TEXT,
+                    generated_at=self.clock(),
+                )
             raise
         key = f"forecasts/{definition.id}/snapshot-{snapshot.id}.json"
         self.upload(
