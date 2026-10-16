@@ -98,6 +98,13 @@ job rows; the JSON sidecar holds every row). Numbers are not repeated here by ha
   jobs and supervisor containers were rebuilt and restarted while run 1 was in flight; the run
   recovered under Stage 1's lease recovery and the job resumed after its lease lapsed. This is
   the gate checklist's "stop the worker, start it again" check, done unplanned.
+- **Found and fixed during run 1:** when another job's run had a lapsed controller lease
+  (after a supervisor restart), `admit_run` answered `recover` with that run's id and the
+  job runner treated it as its own: the Arabian Sea 2016 chunk recorded the Laccadive Sea
+  2019 run as its retry and was marked complete with two slots still missing. The adapter now
+  accepts only runs its request created, and a chunk is complete only when the catalogue
+  covers it (never because a run said so); a regression test covers both. The second run of
+  the request re-fetches those two slots, which the report shows.
 - `tests/test_refetch.py` HTTPS deadline cases are intermittent on this host (known since
   Stage 4).
 - Exports of very large selections are bounded by the worker's 256 MiB DuckDB memory and its
