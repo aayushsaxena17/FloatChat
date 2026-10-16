@@ -882,5 +882,10 @@ ADR-0081.
       between runs (three replicas), DuckDB spills under the worker's own directory,
       quarantined month-tiles are reported instead of re-fetched and run finalisation has
       its own budget (ADR-0086).
+- [x] Advisor review of the run phase (2026-10-16 11:20 UTC): keep the owner informed of the
+      remaining chain, let the second identical request re-plan the 2015 gap instead of editing
+      job rows, split the spill fix per branch, rebuild the forecast snapshots once after the
+      last fetch and evaluate on an idle host, retry the push in the background, wake on
+      state transitions only; all applied.
 - [ ] The ten-year Arabian Sea run twice through the job system; `reports/historical_jobs_<date>.md`.
 - [ ] Gate report `docs/stage5-gate.md`; pull request.
