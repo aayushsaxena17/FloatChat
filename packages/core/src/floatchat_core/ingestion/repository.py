@@ -3,6 +3,7 @@
 import hashlib
 import io
 import json
+import os
 import tempfile
 import time
 import uuid
@@ -52,6 +53,10 @@ from .workflow import (
     StoredState,
     evidence_json,
     snapshot_certificate,
+)
+
+FINALIZE_BUDGET_SECONDS = max(
+    60.0, float(os.environ.get("INGESTION_FINALIZE_BUDGET_SECONDS", "600"))
 )
 
 # SQL owner-slot function of each source population (never interpolated from input).
@@ -167,9 +172,10 @@ class Repository:
         remaining: float = 60,
         publication: bool = False,
         readonly_snapshot: bool = False,
+        cap: float = 60,
     ) -> Iterator[Any]:
         reserve = 1 if publication else 0
-        milliseconds = int(min(60, remaining - reserve) * 1000)
+        milliseconds = int(min(cap, remaining - reserve) * 1000)
         if milliseconds < 1:
             raise Rejection("database_deadline")
         started = time.monotonic()
@@ -999,7 +1005,13 @@ class Repository:
             return dict(cursor.fetchone()["evidence"])
 
     def finalize(self, run: uuid.UUID, reason: str | None = None) -> str:
-        with self.transaction() as cursor:
+        # Stage 5: ``finalize_run`` captures whole-store evidence (``scientific_snapshot``,
+        # the availability counts of ``report_metrics_snapshot``) whose cost grows with the
+        # retained store; with ten years of historical months it exceeds the 60 s statement
+        # bound and a run could never close. Finalisation runs once per run under its own
+        # budget (``INGESTION_FINALIZE_BUDGET_SECONDS``, default 600).
+        budget = FINALIZE_BUDGET_SECONDS
+        with self.transaction(remaining=budget, cap=budget) as cursor:
             cursor.execute("SELECT app.finalize_run(%s,%s) AS state", (run, reason))
             return str(cursor.fetchone()["state"])
 
