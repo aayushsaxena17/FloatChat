@@ -8,6 +8,8 @@ dataset version, every part read, the month values and counts and the missing-da
 
 import hashlib
 import json
+import os
+import socket
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -199,7 +201,10 @@ class SeriesBuilder:
             },
         )
         cache = str(self.cache.directory.resolve()).replace("'", "''") + "/"
-        spill = self.cache.directory.resolve() / ".duckdb-tmp"
+        # One spill directory per worker process (replicas share the cache volume).
+        spill = (
+            self.cache.directory.resolve() / ".duckdb-tmp" / f"{socket.gethostname()}-{os.getpid()}"
+        )
         spill.mkdir(parents=True, exist_ok=True)
         connection.execute(f"SET allowed_directories = ['{cache}']")
         connection.execute(f"SET temp_directory = '{str(spill).replace(chr(39), chr(39) * 2)}'")
