@@ -94,7 +94,7 @@ job rows; the JSON sidecar holds every row). Numbers are not repeated here by ha
   again (at most three runs). The second run of the same request then fetched the 2015 gaps
   and reused everything else, which is what the report measures. Recorded timings that span
   the jump are not wall time; the report derives durations from chunk timestamps after it.
-- The process pool was raised from one to two workers (`INGESTION_PROCESS_WORKERS=2`) and the
+- The process pool was raised from one to three workers (`INGESTION_PROCESS_WORKERS=3`) and the
   jobs and supervisor containers were rebuilt and restarted while run 1 was in flight; the run
   recovered under Stage 1's lease recovery and the job resumed after its lease lapsed. This is
   the gate checklist's "stop the worker, start it again" check, done unplanned.
@@ -105,6 +105,21 @@ job rows; the JSON sidecar holds every row). Numbers are not repeated here by ha
   accepts only runs its request created, and a chunk is complete only when the catalogue
   covers it (never because a run said so); a regression test covers both. The second run of
   the request re-fetches those two slots, which the report shows.
+- **Found and fixed during run 1 (fairness).** With three jobs queued and two single-threaded
+  job workers, the Arabian Sea job sat unowned for over an hour because each worker was busy
+  with another job and Stage 1 admits one historical run at a time anyway. A job now yields
+  the ingestion scope after each run (`JOBS_YIELD_SECONDS`, default 20 s) so a waiting job
+  can admit its own run, waiting jobs poll admission every 10 s, and the development stack
+  runs three job replicas (`--scale jobs=3`). One worker process serves one job at a time; a
+  queue longer than the replica count waits, which the job list shows as `queued`.
+- **Found and fixed during run 1 (export spill).** The Bay of Bengal six-year export failed
+  with a DuckDB I/O error: sorting the export under the 256 MiB memory limit spilled to
+  DuckDB's default temp directory, which the non-root worker cannot create. The export and the
+  series builder now set `temp_directory` under their own allowed directory
+  (`<export dir>/.duckdb-tmp`); the job was re-queued and exported over its already-fetched
+  years (the report lists it).
+- A supervisor restart leaves an open run to its controller lease (ten minutes) before
+  another controller recovers it; a job waiting on that run waits the same time.
 - `tests/test_refetch.py` HTTPS deadline cases are intermittent on this host (known since
   Stage 4).
 - Exports of very large selections are bounded by the worker's 256 MiB DuckDB memory and its
