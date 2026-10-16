@@ -30,17 +30,30 @@ TERMINAL = {"completed", "partial", "cancelled", "failed"}
 
 
 def api(url: str, path: str, body: dict[str, Any] | None = None) -> dict[str, Any]:
-    request = urllib.request.Request(
-        url.rstrip("/") + path,
-        data=None if body is None else json.dumps(body).encode(),
-        headers={"X-FloatChat-Client": CLIENT, "Content-Type": "application/json"},
-        method="GET" if body is None else "POST",
-    )
-    try:
-        with urllib.request.urlopen(request, timeout=60) as response:
-            return json.loads(response.read())  # type: ignore[no-any-return]
-    except urllib.error.HTTPError as error:
-        raise SystemExit(f"{path}: HTTP {error.code} {error.read().decode()[:400]}") from None
+    """One API call; a 5xx or a connection failure on a read is retried (the database is
+    busy committing chunks while a run is in flight), a 4xx stops the script."""
+    attempts = 1 if body is not None else 6
+    for attempt in range(1, attempts + 1):
+        request = urllib.request.Request(
+            url.rstrip("/") + path,
+            data=None if body is None else json.dumps(body).encode(),
+            headers={"X-FloatChat-Client": CLIENT, "Content-Type": "application/json"},
+            method="GET" if body is None else "POST",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                return json.loads(response.read())  # type: ignore[no-any-return]
+        except urllib.error.HTTPError as error:
+            detail = error.read().decode()[:400]
+            if error.code < 500 or attempt == attempts:
+                raise SystemExit(f"{path}: HTTP {error.code} {detail}") from None
+            print(f"{path}: HTTP {error.code}, retrying ({attempt}/{attempts})", flush=True)
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as error:
+            if attempt == attempts:
+                raise SystemExit(f"{path}: {type(error).__name__}") from None
+            print(f"{path}: {type(error).__name__}, retrying ({attempt}/{attempts})", flush=True)
+        time.sleep(10 * attempt)
+    raise SystemExit(f"{path}: unreachable")
 
 
 def database_sizes(container: str) -> dict[str, int]:
@@ -87,12 +100,25 @@ def run(arguments: argparse.Namespace) -> int:
         "qc_policy": "science_ready",
         "format": arguments.format,
     }
-    before = database_sizes(arguments.db_container) if arguments.db_container else {}
-    created = api(arguments.api_url, "/v1/exports", body)
-    job_id = created["job"]["id"]
-    print(
-        json.dumps({"job": job_id, "created": created["created"], "attached": created["attached"]})
-    )
+    if arguments.job:
+        # Resume following a job created earlier; the sizes before it were saved then.
+        job_id = arguments.job
+        sidecar_path = ROOT / "reports" / f"historical_job_{job_id[:8]}.json"
+        previous = json.loads(sidecar_path.read_text()) if sidecar_path.exists() else {}
+        before = previous.get("sizes_before", {})
+        created = {"job": api(arguments.api_url, f"/v1/jobs/{job_id}")["job"]}
+    else:
+        before = database_sizes(arguments.db_container) if arguments.db_container else {}
+        created = api(arguments.api_url, "/v1/exports", body)
+        job_id = created["job"]["id"]
+        print(
+            json.dumps(
+                {"job": job_id, "created": created["created"], "attached": created["attached"]}
+            )
+        )
+        (ROOT / "reports" / f"historical_job_{job_id[:8]}.json").write_text(
+            json.dumps({"job": job_id, "sizes_before": before, "request": body}, indent=2) + "\n"
+        )
     started = time.monotonic()
     state = created["job"]["state"]
     while state not in TERMINAL:
@@ -280,6 +306,7 @@ def main(argv: list[str]) -> int:
     runner.add_argument("--format", default="parquet", choices=("csv", "parquet"))
     runner.add_argument("--poll", type=float, default=30.0)
     runner.add_argument("--db-container", default="floatchat-stage0-wsl-dev-db-1")
+    runner.add_argument("--job", default=None, help="follow an existing job instead")
     reporter = sub.add_parser("report")
     reporter.add_argument("--jobs", required=True, help="comma-separated job ids, first run first")
     reporter.add_argument("--date", default=None)
