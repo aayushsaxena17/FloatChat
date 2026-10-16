@@ -9,6 +9,7 @@ import { figuresFromChart } from "../charts/spec";
 import { DataTable } from "../components/DataTable";
 import { StatusMessage } from "../components/StatusMessage";
 import { WaveMark } from "../components/WaveMark";
+import { JobOffer, type JobOfferPayload } from "./JobOffer";
 import { ProvenancePanel } from "../provenance/ProvenancePanel";
 import {
   payloadOf,
@@ -191,6 +192,9 @@ export function AssistantMessage({
               </button>
             ))}
           </div>
+        ) : null}
+        {payload.job_offer ? (
+          <JobOffer offer={payload.job_offer as JobOfferPayload} />
         ) : null}
         {payload.result ? <ResultView response={payload.result} /> : null}
         {!payload.result && payload.result_omitted && payload.plan ? (

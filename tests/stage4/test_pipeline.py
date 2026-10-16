@@ -487,3 +487,42 @@ def test_schema_only_mode_sends_no_context(engine, retriever):
 def test_engine_double_is_a_query_engine(engine):
     assert isinstance(engine, EngineDouble)
     assert isinstance(iter([]), Iterator)
+
+
+def test_a_plan_over_the_span_bound_becomes_an_export_offer(engine, retriever):
+    # Stage 5 (ADR-0081): the model produced a sound plan over ten years; the synchronous
+    # engine cannot run it, so the answer offers the export job with the request to create.
+    answer = {
+        "kind": "plan",
+        "plan": {
+            "time_range": {"start": "2015-04-01T00:00:00Z", "end": "2025-04-01T00:00:00Z"},
+            "geography": {"kind": "named_region", "value": "Arabian Sea"},
+            "depth_dbar": {"min": 0, "max": 2000},
+            "variables": ["temperature", "salinity"],
+            "operation": {"kind": "aggregate", "group_by": ["month"], "metrics": ["mean"]},
+            "presentation": {"kind": "line_chart"},
+        },
+    }
+    service, _ = scripted_service(engine, retriever, answer)
+    events = events_of(
+        service, "monthly mean temperature in the Arabian Sea over the last ten years"
+    )
+    message = events[-1].data
+    assert message["kind"] == "help"
+    assert "background export" in message["text"]
+    offer = message["payload"]["job_offer"]
+    assert offer["time_range"]["start"] == "2015-04-01T00:00:00Z"
+    assert offer["geography"] == {"kind": "named_region", "value": "Arabian Sea"}
+    assert offer["depth_dbar"] == {"min": 0, "max": 2000}
+    assert "operation" not in offer and "presentation" not in offer
+    interpretation = message["payload"]["interpretation"]
+    assert interpretation["kind"] == "job_offer"
+    assert interpretation["validation"][0]["code"] == "unbounded_request"
+    assert not engine.calls, "no query ran"
+    # A plan that is wrong in another way as well stays a clarification.
+    broken = {
+        **answer,
+        "plan": {**answer["plan"], "geography": {"kind": "named_region", "value": "Atlantis"}},
+    }
+    service, _ = scripted_service(engine, retriever, broken)
+    assert events_of(service, "ten years in Atlantis")[-1].data["kind"] == "clarification"
