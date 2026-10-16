@@ -7,9 +7,15 @@ from typing import Any
 
 from floatchat_core.ingestion.objects import CatalogueRecord
 from floatchat_core.ingestion.planning import Interval, Tile
-from floatchat_core.query.catalogue import Coverage, EnvironmentInfo, SlotCoverage, months_of, slot_key
-from floatchat_core.query.geography import ResolvedGeography, envelope_tiles
 from floatchat_core.jobs.runner import ArtefactSpec, RunStatus
+from floatchat_core.query.catalogue import (
+    Coverage,
+    EnvironmentInfo,
+    SlotCoverage,
+    months_of,
+    slot_key,
+)
+from floatchat_core.query.geography import ResolvedGeography, envelope_tiles
 
 ENV = EnvironmentInfo(uuid.UUID(int=1), "test", "acceptance", datetime(2025, 4, 1, tzinfo=UTC), 2)
 
@@ -17,8 +23,21 @@ ENV = EnvironmentInfo(uuid.UUID(int=1), "test", "acceptance", datetime(2025, 4, 
 def record(key: str, ordinal: int = 1) -> CatalogueRecord:
     digest = uuid.uuid5(uuid.NAMESPACE_URL, key + str(ordinal)).hex * 2
     return CatalogueRecord(
-        uuid.uuid4(), ENV.id, key, 1, 1, "active", True, True, "indian-ocean-v1",
-        "core-parquet-v1", f"normalised/sha256/{digest}.parquet", digest, 1000, "part", ordinal,
+        uuid.uuid4(),
+        ENV.id,
+        key,
+        1,
+        1,
+        "active",
+        True,
+        True,
+        "indian-ocean-v1",
+        "core-parquet-v1",
+        f"normalised/sha256/{digest}.parquet",
+        digest,
+        1000,
+        "part",
+        ordinal,
     )
 
 
@@ -35,7 +54,9 @@ class FakeCatalogue:
     def tiles_for(self, geography: ResolvedGeography) -> tuple[Tile, ...]:
         return envelope_tiles(geography.boxes)
 
-    def coverage(self, environment_id: uuid.UUID, interval: Interval, tiles: tuple[Tile, ...]) -> Coverage:
+    def coverage(
+        self, environment_id: uuid.UUID, interval: Interval, tiles: tuple[Tile, ...]
+    ) -> Coverage:
         self.calls += 1
         slots = []
         manifests: dict[str, list[Any]] = {}
@@ -43,10 +64,18 @@ class FakeCatalogue:
             for tile in tiles:
                 key = slot_key(month, tile)
                 if key in self.covered:
-                    slots.append(SlotCoverage(key, f"{month:%Y-%m}", tile, "covered", (), 3, 300, (record(key),)))
+                    slots.append(
+                        SlotCoverage(
+                            key, f"{month:%Y-%m}", tile, "covered", (), 3, 300, (record(key),)
+                        )
+                    )
                     manifests[key] = [{"profile_id": f"p-{key}", "hash": "h"}]
                 else:
-                    slots.append(SlotCoverage(key, f"{month:%Y-%m}", tile, "missing", ("no receipt",), 0, 0, ()))
+                    slots.append(
+                        SlotCoverage(
+                            key, f"{month:%Y-%m}", tile, "missing", ("no receipt",), 0, 0, ()
+                        )
+                    )
         return Coverage(interval, tiles, tuple(slots), manifests)
 
 
@@ -84,7 +113,15 @@ class FakeRuns:
             for west, south in run["tiles"]:
                 self.catalogue.covered.add(slot_key(month, Tile(west, south)))
         state = "complete" if not failed else ("partial" if len(failed) < len(months) else "failed")
-        return RunStatus(True, state, {"http_attempts": 3 * len(months), "missing_chunks": failed, "termination_reason": None})
+        return RunStatus(
+            True,
+            state,
+            {
+                "http_attempts": 3 * len(months),
+                "missing_chunks": failed,
+                "termination_reason": None,
+            },
+        )
 
     def cancel(self, run_id):
         self.cancelled.append(run_id)
@@ -101,6 +138,15 @@ class FakeExporter:
             raise RuntimeError("disk full")
         key = f"exports/{job.id}/floatchat-export-{job.id[:8]}.{job.request['format']}"
         return [
-            ArtefactSpec(job.request["format"], "data", key, 1234, "a" * 64, 10, 2, {"schema": "export-manifest-v1"}),
+            ArtefactSpec(
+                job.request["format"],
+                "data",
+                key,
+                1234,
+                "a" * 64,
+                10,
+                2,
+                {"schema": "export-manifest-v1"},
+            ),
             ArtefactSpec("json", "manifest", key + ".manifest.json", 10, "b" * 64, 0, 0, {}),
         ]
