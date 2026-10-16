@@ -6,6 +6,7 @@ the application's object-storage credentials. A reconciler tick expires artefact
 before object), deletes their objects and removes export objects no artefact row names.
 """
 
+import logging
 import os
 import signal
 import socket
@@ -150,6 +151,7 @@ def main(queues: tuple[str, ...]) -> int:
     if unknown or not queues:
         print("invalid_job_queues", flush=True)
         return 2
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
     runner, reconciler, _configuration = build(queues)
     stop = False
 

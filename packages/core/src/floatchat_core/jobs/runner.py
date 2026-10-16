@@ -8,6 +8,7 @@ to the catalogue, the ingestion runs and the exporter through small protocols so
 failure tests run over doubles.
 """
 
+import logging
 import time
 import uuid
 from collections.abc import Callable
@@ -77,6 +78,9 @@ class Exporter(Protocol):
         coverage: Coverage,
         environment: EnvironmentInfo,
     ) -> list[ArtefactSpec]: ...
+
+
+log = logging.getLogger("floatchat.jobs")
 
 
 class LeaseLost(RuntimeError):
@@ -168,7 +172,14 @@ class JobRunner:
             try:
                 artefacts = self.exporter.export(job, plan, geography, coverage, environment)
             except Exception as error:  # the export failed; the job says so and keeps its chunks
-                message = error.text if isinstance(error, QueryError) else "export_failed"
+                # The stored message names the failure class only; the traceback goes to the
+                # worker's log (never to the API) so no path or credential reaches a client.
+                log.exception("export failed for job %s", job.id)
+                message = (
+                    error.text
+                    if isinstance(error, QueryError)
+                    else f"The export step failed ({type(error).__name__})."
+                )
                 self.store.update_chunk(
                     export_chunk.id,
                     state="failed",
