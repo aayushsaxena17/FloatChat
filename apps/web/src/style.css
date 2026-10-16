@@ -1265,6 +1265,29 @@ details.provenance .facts {
   margin-left: auto;
 }
 
+/* ----- Chat: the export offer (Stage 5) ----- */
+.chat-offer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-1);
+  font-size: 14px;
+}
+.chat-offer svg {
+  color: var(--primary);
+}
+.chat-offer-error {
+  flex-basis: 100%;
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--status-serious);
+}
+
 /* ----- Jobs (Stage 5) ----- */
 .job-list {
   list-style: none;
