@@ -13,6 +13,7 @@ COPY scripts/bootstrap_db.py scripts/bootstrap_db.py
 COPY scripts/integration_probe.py scripts/integration_probe.py
 COPY scripts/science_seed.py scripts/science_seed.py
 COPY scripts/semantic_seed.py scripts/semantic_seed.py
+COPY scripts/dev_worker.py scripts/dev_worker.py
 RUN useradd --uid 10001 --create-home floatchat \
     && mkdir -p /var/lib/floatchat/query-cache && chown 10001 /var/lib/floatchat/query-cache
 USER 10001

@@ -11,7 +11,7 @@ import logging
 import time
 from collections.abc import Callable, Iterator
 from datetime import UTC, datetime, timedelta
-from threading import Lock
+from threading import RLock
 from typing import Any
 
 import boto3
@@ -30,6 +30,7 @@ from floatchat_core.jobs.model import (
 )
 from floatchat_core.jobs.store import JobStore, PostgresJobStore, validate_job_id
 from floatchat_core.query.errors import QueryError
+from floatchat_core.query.geography import resolve_geography
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.concurrency import iterate_in_threadpool, run_in_threadpool
 
@@ -157,7 +158,7 @@ class JobsRuntime:
         self._storage: Any = None
         self._settings: Settings | None = None
         self.clock = clock
-        self._lock = Lock()
+        self._lock = RLock()
 
     def settings(self) -> Settings:
         with self._lock:
@@ -292,6 +293,7 @@ def install_jobs(app: FastAPI, runtime: JobsRuntime) -> None:
             payload["idempotency_key"] = key
         export = parse_export_request(payload)
         plan = plan_for(export, runtime.limits)
+        resolve_geography(plan.geography)  # unknown_region before any row is written
         store = await run_in_threadpool(runtime.store)
         job, created, attached = await run_in_threadpool(
             lambda: store.create(
