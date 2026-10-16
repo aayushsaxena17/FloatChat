@@ -140,7 +140,9 @@ def build(queues: tuple[str, ...]) -> tuple[JobRunner, Reconciler, Configuration
         limits=limits,
         application_commit=configuration.application_commit,
     )
-    runs = RepositoryRuns(repository, configuration.environment, limits)
+    runs = RepositoryRuns(
+        repository, configuration.environment, limits, reconnect=configuration.repository
+    )
     worker = f"jobs:{socket.gethostname()[:64]}:{os.getpid()}"
     runner = JobRunner(store, catalogue, runs, writer, limits=limits, worker=worker)
     return runner, Reconciler(store, client, bucket, limits), configuration
