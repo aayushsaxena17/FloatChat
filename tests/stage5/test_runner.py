@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 from floatchat_core.jobs.model import JobLimits, parse_export_request, plan_for
-from floatchat_core.jobs.runner import JobRunner
+from floatchat_core.jobs.runner import JobRunner, RunStatus
 from floatchat_core.jobs.store import MemoryJobStore
 from floatchat_core.query.errors import QueryError
 
@@ -232,4 +232,25 @@ def test_months_not_yet_ended_are_left_missing_not_fetched():
     job, _, _ = create(store, request(start="2026-09-01", end="2026-11-01"))
     runner(store, catalogue, runs, exporter).run_once(("export",))
     assert [i.start.month for i, _ in runs.admitted] == [9]
+    assert store.get(job.id).state == "partial"
+
+
+def test_a_complete_run_that_leaves_slots_missing_is_retried_not_trusted():
+    # A run can end "complete" for an interval and tile set that is not the chunk's (the
+    # adapter now refuses foreign runs, and the runner never trusts a run's state alone):
+    # completion is read from the catalogue, and the still-missing slots are re-planned.
+    store, catalogue = MemoryJobStore(), FakeCatalogue()
+    exporter = FakeExporter()
+    job, _, _ = create(store, request(end="2016-04-01"))
+
+    class Lying(FakeRuns):
+        def status(self, run_id):
+            status = super().status(run_id)
+            return RunStatus(True, "complete", status.evidence)  # claims success
+
+    lying = Lying(catalogue, fail_months={"2016-02"})
+    runner(store, catalogue, lying, exporter).run_once(("export",))
+    chunk = store.chunks(job.id)[0]
+    assert chunk.state == "failed" and len(lying.admitted) == 3
+    assert chunk.evidence["missing_slots_after"] == 1
     assert store.get(job.id).state == "partial"

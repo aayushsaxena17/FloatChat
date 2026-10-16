@@ -70,7 +70,12 @@ class RepositoryRuns:
                 raise
             return "overlap_skip", None
         kind = str(result["kind"])
-        return kind, (str(result["run_id"]) if "run_id" in result else None)
+        # Only a run this request created is ours. ``recover`` names another job's run whose
+        # controller lease lapsed (the supervisor adopts it); ``existing`` cannot match a fresh
+        # request id; ``overlap_skip`` means the scope is busy. All of them mean: wait.
+        if kind != "created" or "run_id" not in result:
+            return "overlap_skip", None
+        return kind, str(result["run_id"])
 
     def status(self, run_id: str) -> RunStatus:
         run = self._call(lambda repository: repository.run(uuid.UUID(run_id)))

@@ -278,23 +278,14 @@ class JobRunner:
             evidence["runs"] = runs
             evidence.update(status.evidence)
             evidence["run_state"] = status.state
-            if status.state == "complete":
-                self.store.update_chunk(chunk.id, state="complete", evidence=evidence)
-                self.store.emit(
-                    job.id,
-                    "chunk",
-                    {"seq": chunk.seq, "state": "complete", "run_state": "complete"},
-                )
-                return
-            # What is still missing after this run, against the catalogue as it is now.
+            # The chunk is complete when the catalogue covers it, never because a run said
+            # so: what is still missing is read from the catalogue as it is now.
             coverage = self.catalogue.coverage(
                 environment.id, interval, tuple(Tile(w, s) for w, s in tiles)
             )
             missing = coverage.missing
             evidence["missing_slots_after"] = len(missing)
             if not missing:
-                # Every slot of the chunk is committed (another run or an earlier attempt
-                # covered the rest): the chunk's purpose is met.
                 self.store.update_chunk(chunk.id, state="complete", evidence=evidence)
                 self.store.emit(
                     job.id,

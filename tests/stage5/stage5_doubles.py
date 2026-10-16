@@ -87,6 +87,7 @@ class FakeRuns:
     polls: int = 1
     fail_months: set[str] = field(default_factory=set)
     overlap_first: int = 0
+    recover_first: int = 0
     runs: dict[str, dict[str, Any]] = field(default_factory=dict)
     admitted: list[tuple[Interval, list[list[int]]]] = field(default_factory=list)
     cancelled: list[str] = field(default_factory=list)
@@ -94,6 +95,11 @@ class FakeRuns:
     def admit(self, request_id, interval, tiles, job_id):
         if self.overlap_first > 0:
             self.overlap_first -= 1
+            return "overlap_skip", None
+        if self.recover_first > 0:
+            # Another job's run whose controller lease lapsed: the adapter reports it as
+            # "overlap_skip" (not ours); a raw "recover" must never be treated as created.
+            self.recover_first -= 1
             return "overlap_skip", None
         run_id = str(uuid.uuid4())
         self.admitted.append((interval, tiles))
