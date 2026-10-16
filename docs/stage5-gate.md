@@ -151,6 +151,18 @@ request show, in words:
   renews the lease from a thread while the export (and the forecast fits) run, and every
   worker process spills into its own directory. The job was then requested again; the
   report shows that run.
+- **Found and fixed in CI review (seed coverage).** The CI export over the seeded months had
+  ended `partial` since the first Stage 5 run: the Docker seed wrote receipts only for the
+  three Arabian Sea month-tiles holding profiles, so 17 of the 20 slots in January-February
+  2025 were uncovered. `scripts/science_seed.py` now stores the profile-free month-tiles of
+  its acceptance run as empty slots with verified-empty receipts, as a real run does; the
+  export completes with every slot reused. The Playwright jobs spec, which had never reached
+  its download assertion, also passed a regex where the attribute name belongs; corrected.
+- **Signed download tokens in history.** Commits `93d9753` and `18889e2` carried the signed
+  download URLs of the report runs in `reports/historical_jobs_2026-10-16.json` (removed in
+  `100a5d4`). They are local-only, bound to one export each, and expire on 2026-10-23; the
+  development signing key was rotated and the twelve findings are allowlisted in
+  `.gitleaksignore` on the design branch, because the history scan covers every branch.
 - A supervisor restart leaves an open run to its controller lease (ten minutes) before
   another controller recovers it; a job waiting on that run waits the same time.
 - `tests/test_refetch.py` HTTPS deadline cases are intermittent on this host (known since

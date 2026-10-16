@@ -21,7 +21,7 @@ test("an export job runs from the dashboard filters to a download", async ({
     timeout: 180000,
   });
   const download = page.getByRole("link", { name: /Download/ }).first();
-  await expect(download).toHaveAttribute(/href/, /\/v1\/artefacts\/.*token=/);
+  await expect(download).toHaveAttribute("href", /\/v1\/artefacts\/.*token=/);
   await expect(page.getByText(/measurement levels/)).toBeVisible();
   await expect(page.getByText(/doi.org\/10.17882\/42182/)).toBeVisible();
   await page.screenshot({ path: "test-results/job.png", fullPage: true });
