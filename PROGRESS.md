@@ -882,9 +882,14 @@ ADR-0081.
 
 Plan [docs/stage6-plan.md](docs/stage6-plan.md), ADR-0082 to ADR-0085.
 
-- [x] Plan and ADRs written before code.
-- [ ] Migration 0020: forecast definition, model and run tables.
-- [ ] Series builder, snapshot and missing policy; models, backtest, selection, refusals.
-- [ ] Forecast job in the jobs worker; API; workspace UI.
-- [ ] `make eval-forecast` over the committed series; `reports/eval_forecast_<date>.md`.
-- [ ] Gate report `docs/stage6-gate.md`; README; pull request.
+- [x] Plan and ADRs written before code; the advisor's points (measure fits before the full
+      grid, uncovered months, `--rebuild` through the API, interval traces, migration
+      companions) applied.
+- [x] Migration 0020: forecast definition, model and run tables.
+- [x] Series builder, snapshot and missing policy; seasonal naive, bounded SARIMA search,
+      rolling-origin backtests, selection, refusals; model artefacts.
+- [x] Forecast job in the jobs worker; API; workspace UI; tests; CI scenario; README.
+- [ ] `make eval-forecast` over the committed series; `reports/eval_forecast_<date>.md`
+      (waits for the Stage 5 historical fetches).
+- [x] Gate report draft `docs/stage6-gate.md`.
+- [ ] Pull request.
