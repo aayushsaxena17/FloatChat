@@ -79,8 +79,23 @@ def export_columns(plan: QueryPlan) -> list[str]:
     return columns
 
 
-def export_select(plan: QueryPlan) -> tuple[str, dict[str, Any]]:
-    """The SELECT behind every export (fixed template, named parameters)."""
+def _part_type(column: str) -> str:
+    if column == "level_index":
+        return "INTEGER"
+    if column.endswith(("_qc", "_adjusted_qc", "_data_mode")) or column in (
+        "profile_id",
+        "profile_hash",
+    ):
+        return "VARCHAR"
+    return "DOUBLE"
+
+
+def export_select(plan: QueryPlan, *, empty: bool = False) -> tuple[str, dict[str, Any]]:
+    """The SELECT behind every export (fixed template, named parameters).
+
+    With ``empty`` the parts CTE is a typed empty relation: an export over no committed part
+    still produces a file with the right header and schema.
+    """
     policy = plan.qc_policy
     parameters: dict[str, Any] = {}
     selects = [
@@ -94,7 +109,10 @@ def export_select(plan: QueryPlan) -> tuple[str, dict[str, Any]]:
         "p.level_index",
     ]
     for variable in plan.ordered_variables:
-        selects.append(f"({duck_value(variable, policy)}) AS {variable}")
+        # raw exports the original value regardless of QC (qc-policy-v1); the other two
+        # policies select through the same CASE the query engine uses.
+        selected = f"p.{variable}" if policy == "raw" else duck_value(variable, policy)
+        selects.append(f"({selected}) AS {variable}")
         selects.append(f"p.{variable} AS {variable}_original")
         selects.append(f"p.{variable}_adjusted AS {variable}_adjusted")
         selects.append(f"p.{variable}_qc AS {variable}_qc")
@@ -106,9 +124,16 @@ def export_select(plan: QueryPlan) -> tuple[str, dict[str, Any]]:
         where.append(f"({duck_value('pressure', depth_policy)}) BETWEEN $depth_min AND $depth_max")
         parameters["depth_min"] = plan.depth_dbar.min
         parameters["depth_max"] = plan.depth_dbar.max
+    if empty:
+        typed = ", ".join(f"CAST(NULL AS {_part_type(c)}) AS {c}" for c in PART_READ_COLUMNS)
+        parts_cte = f"WITH parts AS (SELECT {typed} WHERE false) "
+    else:
+        parts_cte = (
+            f"WITH parts AS (SELECT {', '.join(PART_READ_COLUMNS)} "
+            "FROM read_parquet($parts_files)) "
+        )
     sql = (
-        f"WITH parts AS (SELECT {', '.join(PART_READ_COLUMNS)} FROM read_parquet($parts_files)) "
-        f"SELECT {', '.join(selects)} FROM parts p JOIN members m"
+        parts_cte + f"SELECT {', '.join(selects)} FROM parts p JOIN members m"
         " ON p.profile_id = m.profile_id AND p.profile_hash = m.profile_hash"
         f" WHERE {' AND '.join(where)} ORDER BY m.observed_at, m.profile_id, p.level_index"
     )
@@ -219,8 +244,9 @@ class ExportWriter:
     def write(
         self, plan: QueryPlan, members: pa.Table, paths: Sequence[Path], fmt: str, name: str
     ) -> WrittenFile:
-        sql, parameters = export_select(plan)
-        parameters["parts_files"] = self._verified(paths)
+        sql, parameters = export_select(plan, empty=not paths)
+        if paths:
+            parameters["parts_files"] = self._verified(paths)
         target = self.directory / name
         if target.exists():
             target.unlink()
@@ -231,26 +257,11 @@ class ExportWriter:
         connection = self._connection()
         try:
             connection.register("members", members)
-            if not paths:
-                # Nothing committed for the selection: an empty file with the header only.
-                empty_sql = sql.replace(
-                    "FROM read_parquet($parts_files)", "FROM (SELECT NULL) WHERE false"
-                )
-                empty_sql = (
-                    "WITH parts AS (SELECT "
-                    + ", ".join(f"NULL AS {c}" for c in PART_READ_COLUMNS)
-                    + " WHERE false) "
-                    + empty_sql.split(") ", 1)[1]
-                )
-                parameters.pop("parts_files")
-                connection.execute(f"COPY ({empty_sql}) TO '{literal}' ({options})", parameters)
-                rows, profiles = 0, 0
-            else:
-                connection.execute(f"COPY ({sql}) TO '{literal}' ({options})", parameters)
-                counted = connection.execute(
-                    f"SELECT count(*), count(DISTINCT profile_id) FROM ({sql})", parameters
-                ).fetchone()
-                rows, profiles = int(counted[0]), int(counted[1])  # type: ignore[index]
+            connection.execute(f"COPY ({sql}) TO '{literal}' ({options})", parameters)
+            counted = connection.execute(
+                f"SELECT count(*), count(DISTINCT profile_id) FROM ({sql})", parameters
+            ).fetchone()
+            rows, profiles = int(counted[0]), int(counted[1])  # type: ignore[index]
         except duckdb.OutOfMemoryException:
             raise QueryError(
                 "cost_over_budget", message="The export exceeded the worker's memory."
