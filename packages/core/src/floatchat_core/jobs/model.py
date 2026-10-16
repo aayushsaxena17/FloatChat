@@ -45,7 +45,10 @@ class JobLimits(BaseSettings):
     heartbeat_seconds: int = Field(default=30, ge=5, le=600)
     run_execution_seconds: int = Field(default=10800, ge=61, le=43200)
     run_poll_seconds: float = Field(default=15.0, gt=0, le=600)
-    overlap_wait_seconds: float = Field(default=30.0, gt=0, le=3600)
+    overlap_wait_seconds: float = Field(default=10.0, gt=0, le=3600)
+    # A job that has just finished a run yields this long before admitting its next one, so a
+    # job already waiting for the scope (polling every overlap_wait_seconds) gets it first.
+    yield_seconds: float = Field(default=20.0, ge=0, le=3600)
     export_memory_mib: int = Field(default=256, ge=64, le=65536)
     export_threads: int = Field(default=2, ge=1, le=64)
     cache_bytes: int = Field(default=4 * 1024**3, ge=1024 * 1024, le=1024**4)

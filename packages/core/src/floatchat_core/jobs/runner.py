@@ -113,6 +113,8 @@ class JobRunner:
         self.sleep = sleep
         self.clock = clock
         self._last_heartbeat = 0.0
+        # True after this process saw one of its runs close: the next admission yields first.
+        self._yield_before_admit = False
         # Stage 6 (ADR-0082): jobs of kind ``forecast`` are handed to the forecast runner.
         self.forecaster: Any | None = None
 
@@ -368,6 +370,10 @@ class JobRunner:
 
     def _admit(self, job: Job, chunk: JobChunk, interval: Interval, tiles: list[list[int]]) -> str:
         waited = 0
+        if self._yield_before_admit and self.limits.yield_seconds > 0:
+            # Fairness: a job that just held the scope lets a waiting job admit first.
+            self._yield_before_admit = False
+            self._pause(job, self.limits.yield_seconds)
         while True:
             self._check_cancel(job)
             kind, run_id = self.ingestion.admit(uuid.uuid4(), interval, tiles, job.id)
@@ -390,6 +396,7 @@ class JobRunner:
                 raise
             self._pause(job, self.limits.run_poll_seconds)
             status = self.ingestion.status(run_id)
+        self._yield_before_admit = True
         return status
 
     # -- bookkeeping -----------------------------------------------------------------------
