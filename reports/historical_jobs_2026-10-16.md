@@ -1,6 +1,6 @@
 # Historical jobs report (2026-10-16)
 
-Commit `2e8956a97a28b41b579a3203619eb5d7e02b9dff`; API `http://127.0.0.1:8000`; client `stage5-report`. One export request run 3 times through `POST /v1/exports` (ADR-0079); every number below is read from the job rows and the ingestion runs they created.
+Commit `b124896cac25d2fb66868074e1bec39cda7950d4`; API `http://127.0.0.1:8000`; client `stage5-report`. One export request run 3 times through `POST /v1/exports` (ADR-0079); every number below is read from the job rows and the ingestion runs they created.
 
 ## Request
 
